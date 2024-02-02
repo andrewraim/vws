@@ -59,30 +59,38 @@ fmm_proposal = function(regions)
 	return(fmm)
 }
 
-FMMProposal$methods(rejection_bound = function(log = FALSE)
+FMMProposal$methods(rejection_bound = function(byregion = FALSE, log = FALSE)
 {
-	vws::rejection_bound(.self$log_xi_upper, .self$log_xi_lower, log = log)
+	# Each region's contribution to the rejection rate bound
+	out = log_sub2_exp(log_xi_upper, log_xi_lower) - log_sum_exp(log_xi_upper)
+
+	if (!byregion) {
+		# Overall rejection rate bound
+		out = vws::log_sum_exp(out)
+	}
+
+	if (log) { return (out) } else { return(exp(out)) }
 })
 
 FMMProposal$methods(nc = function(log = FALSE)
 {
-	log_nc = vws::log_sum_exp(.self$log_xi_upper)
-	if (log) { return (log_nc) } else { return(exp(log_nc)) }
+	out = vws::log_sum_exp(log_xi_upper)
+	if (log) { return (out) } else { return(exp(out)) }
 })
 
 FMMProposal$methods(r = function(n = 1, indices = FALSE)
 {
-	N = length(.self$regions)
+	N = length(regions)
 
 	# Draw from the mixing weights, which are given on the log scale and not
 	# normalized.
-	idx = r_categ(n, p = .self$log_xi_upper, log_p = TRUE)
+	idx = r_categ(n, p = log_xi_upper, log_p = TRUE)
 
 	# Draw the values from the respective mixture components.
 	x = list()
 	for (i in 1:n) {
 		j = idx[i]
-		x[[i]] = .self$regions[[j]]$r(n = 1) |> unlist()
+		x[[i]] = regions[[j]]$r(n = 1) |> unlist()
 	}
 
 	if (indices) {
@@ -101,15 +109,15 @@ FMMProposal$methods(d = function(x, normalize = TRUE, log = FALSE)
 
 	log_nc = 0
 	if (normalize) {
-		log_nc = .self$nc(log = TRUE)
+		log_nc = nc(log = TRUE)
 	}
 
 	log_wg = rep(-Inf, n)
 
-	N = length(.self$regions)
+	N = length(regions)
 	for (i in 1:n) {
 		for (j in 1:N) {
-			reg = .self$regions[[j]]
+			reg = regions[[j]]
 			if (reg$in_support(x[[i]])) {
 				log_wg[i] = reg$w_major(x[[i]], log = TRUE) +
 					reg$d_base(x[[i]], log = TRUE)
@@ -125,7 +133,7 @@ FMMProposal$methods(d = function(x, normalize = TRUE, log = FALSE)
 FMMProposal$methods(log_target_pdf_unnorm = function(x)
 {
 	if (!is.list(x)) { x = Map(identity, x) }
-	reg = .self$regions[[1]]
+	reg = regions[[1]]
 	out = Map(function(x) { reg$w(x, log = TRUE) + reg$d_base(x, log = TRUE) }, x)
 	return(unlist(out))
 })
@@ -133,19 +141,19 @@ FMMProposal$methods(log_target_pdf_unnorm = function(x)
 FMMProposal$methods(summary = function()
 {
 	tbl = data.frame(
-		Region = Map(function(x) { x$description() }, .self$regions) |> unlist(),
-		log_xi_upper = Map(function(x) { x$xi_upper(log = TRUE) }, .self$regions) |> unlist(),
-		log_xi_lower = Map(function(x) { x$xi_lower(log = TRUE) }, .self$regions) |> unlist()
+		Region = Map(function(x) { x$description() }, regions) |> unlist(),
+		log_xi_upper = Map(function(x) { x$xi_upper(log = TRUE) }, regions) |> unlist(),
+		log_xi_lower = Map(function(x) { x$xi_lower(log = TRUE) }, regions) |> unlist()
 	)
 	return(tbl)
 })
 
 FMMProposal$methods(show = function(n = 5)
 {
-	N = length(.self$regions)
+	N = length(regions)
 	printf("FMM Proposal with %d regions (display is unsorted)\n", N)
 
-	tbl = .self$summary()
+	tbl = summary()
 	print(head(tbl, n))
 
 	if (N > n) {

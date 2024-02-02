@@ -37,17 +37,19 @@
 #'
 #' # Define weight function
 #' w = function(x, log = FALSE) {
-#'     dlnorm(10 - x, 5, 2, log)
+#'     dlnorm(10 - x, meanlog = 5, sdlog = 2, log)
 #' }
 #'
 #' # Set up support
 #' support = univariate_const_region(-Inf, 10, w, g)
 #' regions = support$bifurcate()
 #'
-#' # Create a finite mixture with one component
+#' # Create a finite mixture proposal
 #' h = fmm_proposal(regions)
+#' h$rejection_bound()
+#' h$rejection_bound(byregion = TRUE)
 #'
-#' out = rejection(h, n = 10)
+#' out = rejection(h, n = 1000)
 #' print(out |> unlist())
 #'
 #' out = rejection(h, n = 1000, rejection_control(extra_outputs = TRUE))
@@ -85,7 +87,7 @@ rejection = function(h, n = 1, control = rejection_control())
 
 			if (log(v) < log_ratio) {
 				# Accept x as a draw from f(x)
-				out[[i]] = x
+				out[[i]] = x |> unlist()
 				accept = TRUE
 			} else {
 				# Reject x and adapt the proposal

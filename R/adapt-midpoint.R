@@ -10,16 +10,54 @@
 #' probability of rejection. The \code{pps} method draws randomly, with
 #' probability proportion to that contribution.
 #'
+#' @examples
+#' #  Define base distribution
+#' g = univariate_helper(
+#'     r = function(n) rnorm(n, 0, 5),
+#'     d = function(x, log = FALSE) dnorm(x, 0, 5, log),
+#'     p = function(q, lower.tail = TRUE, log.p = FALSE) {
+#'         pnorm(q, 0, 5, lower.tail, log.p)
+#'     },
+#'     q = function(p, lower.tail = TRUE, log.p = FALSE) {
+#'         qnorm(p, 0, 5, lower.tail, log.p)
+#'     },
+#'     in_support = function(x) { TRUE }
+#' )
+#'
+#' # Define weight function
+#' w = function(x, log = FALSE) {
+#'     dlnorm(10 - x, meanlog = 5, sdlog = 2, log)
+#' }
+#'
+#' # Set up support
+#' support = univariate_const_region(-Inf, 10, w, g)
+#' regions = list(support)
+#'
+#' # Adapt the proposal
+#' adapt_out = adapt_midpoint(h, N = 100, control = rejection_control(report = 1))
+#'
+#' # Create a finite mixture proposal
+#' h = adapt_out$h
+#' h$rejection_bound()
+#' h$rejection_bound(byregion = TRUE)
+#'
+#' out = rejection(h, n = 1000)
+#' print(out |> unlist())
+#'
+#' out = rejection(h, n = 1000, rejection_control(extra_outputs = TRUE))
+#' print(out$draws)
+#' print(out$rejects)
+#'
 #' @name adapt
 #' @export
-adapt_midpoint = function(h, N, control = rejection_control(), method = "greedy")
+adapt_midpoint = function(h, N, method = "pps", control = rejection_control())
 {
 	log_ub_hist = numeric(N+1)
 	log_lb_hist = numeric(N+1)
 	log_bdd_hist = numeric(N+1)
 	log_ub_hist[1] = log_sum_exp(h$log_xi_upper)
 	log_lb_hist[1] = log_sum_exp(h$log_xi_lower)
-	log_bdd_hist[1] = rejection_bound(h$log_xi_upper, h$log_xi_lower, log = TRUE)
+	log_bdd_hist[1] = h$rejection_bound(log = TRUE)
 
 	report = control$report
 
@@ -37,8 +75,7 @@ adapt_midpoint = function(h, N, control = rejection_control(), method = "greedy"
 		log_xi_lower = h$log_xi_lower
 
 		# Each region's contribution to the rejection rate
-		log_volume = log_sub2_exp(log_xi_upper, log_xi_lower) -
-			log_sum_exp(log_xi_upper)
+		log_volume = h$rejection_bound(byregion = TRUE, log = TRUE)
 
 		bifurcatable = h$bifurcatable
 		idx = which(bifurcatable)
@@ -57,17 +94,16 @@ adapt_midpoint = function(h, N, control = rejection_control(), method = "greedy"
 		reg = h$regions[[idx[jdx]]]
 
 		# Split the target region and make another proposal with it
-		bif_out = bifurcate(reg)
+		bif_out = reg$bifurcate()
 		regions_new = append(h$regions[-idx[jdx]], bif_out)
-		h = get_fmm_proposal(regions_new)
+		h = fmm_proposal(regions_new)
 
 		log_ub_hist[j+1] = log_sum_exp(h$log_xi_upper)
 		log_lb_hist[j+1] = log_sum_exp(h$log_xi_lower)
-		log_bdd_hist[j+1] = rejection_bound(h$log_xi_upper, h$log_xi_lower, log = TRUE)
+		log_bdd_hist[j+1] = h$rejection_bound(log = TRUE)
 
 		if (j %% report == 0) {
-			logger("After %d steps, attained a = %g ",
-				j, log_ub_hist[j+1])
+			logger("After %d steps, attained a = %g ", j, log_ub_hist[j+1])
 			printf("rejection prob <= %g\n", exp(log_bdd_hist[j+1]))
 		}
 	}

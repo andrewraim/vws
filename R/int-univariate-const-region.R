@@ -104,7 +104,6 @@ int_univariate_const_region = function(a, b, w, g)
 #' @export
 IntUnivariateConstRegion$methods(d_base = function(x, log = FALSE)
 {
-	# g = .self$g
 	g$d(x, log = log)
 })
 
@@ -112,7 +111,6 @@ IntUnivariateConstRegion$methods(d_base = function(x, log = FALSE)
 #' @export
 IntUnivariateConstRegion$methods(w = function(x, log = TRUE)
 {
-	# w = .self$w
 	w(x, log = log)
 })
 
@@ -120,18 +118,13 @@ IntUnivariateConstRegion$methods(w = function(x, log = TRUE)
 #' @export
 IntUnivariateConstRegion$methods(r = function(n)
 {
-	# g = .self$g
-	# a = .self$a
-	# b = .self$b
-	# log_pdiff = .self$log_prob
-
 	# Compute g$q((pb - pa) * u + pa) on the log scale.
 	# Some of the quantile functions seem to produce NaN if the probability
 	# is is numerically larger than one: or zero on the log scale. We
 	# replace these values of >= 0 with a negative of machine epsilon.
 	u = runif(n)
 	log_pa = g$p(a, log.p = TRUE)
-	log_p = log_add2_exp(log_pdiff + log(u), rep(log_pa,n))
+	log_p = log_add2_exp(log_prob + log(u), rep(log_pa,n))
 	log_p_adj = pmin(log_p, -.Machine$double.eps)
 	x = g$q(log_p_adj, log.p = TRUE)
 	return(as.list(x))
@@ -141,10 +134,6 @@ IntUnivariateConstRegion$methods(r = function(n)
 #' @export
 IntUnivariateConstRegion$methods(d = function(x)
 {
-	# g = .self$g
-	# a = .self$a
-	# b = .self$b
-
 	n = length(x)
 	out = rep(-Inf, n)
 	idx = which(a < x & x <= b)
@@ -158,9 +147,6 @@ IntUnivariateConstRegion$methods(d = function(x)
 #' @export
 IntUnivariateConstRegion$methods(in_support = function(x)
 {
-	# a = .self$a
-	# b = .self$b
-	# g = .self$g
 	a < x & x <= b & g$in_support(x)
 })
 
@@ -168,9 +154,6 @@ IntUnivariateConstRegion$methods(in_support = function(x)
 #' @export
 IntUnivariateConstRegion$methods(w_major = function(x, log = TRUE)
 {
-	# g = .self$g
-	# log_w_max = .self$log_w_max
-
 	if (!g$in_support(x)) {
 		out = ifelse(log, -Inf, 0)
 		return(out)
@@ -183,11 +166,6 @@ IntUnivariateConstRegion$methods(w_major = function(x, log = TRUE)
 #' @export
 IntUnivariateConstRegion$methods(bifurcate = function(x = NULL)
 {
-	# a = .self$field(a)
-	# b = .self$field(b)
-	# w = .self$field(w)
-	# g = .self$field(g)
-
 	if (is.null(x)) {
 		if (is.infinite(a) && is.infinite(a) && a < 0 && b > 0) {
 			# In this case, we have an interval (-Inf, Inf). Make a split at zero.
@@ -214,9 +192,6 @@ IntUnivariateConstRegion$methods(bifurcate = function(x = NULL)
 #' @export
 IntUnivariateConstRegion$methods(is_bifurcatable = function(x)
 {
-	# a = .self$field(a)
-	# b = .self$field(b)
-
 	# A discrete interval is bifurcatable if there is at least one integer
 	# between the limits
 	if (is.infinite(a) || is.infinite(b)) {
@@ -232,8 +207,6 @@ IntUnivariateConstRegion$methods(is_bifurcatable = function(x)
 #' @export
 IntUnivariateConstRegion$methods(xi_upper = function(log = TRUE)
 {
-	# log_w_max = .self$log_w_max
-	# log_prob = .self$log_prob
 	log_xi_upper = log_w_max + log_prob
 	ifelse(log, log_xi_upper, exp(log_xi_upper))
 })
@@ -242,8 +215,6 @@ IntUnivariateConstRegion$methods(xi_upper = function(log = TRUE)
 #' @export
 IntUnivariateConstRegion$methods(xi_lower = function(log = TRUE)
 {
-	# log_w_min = .self$log_w_min
-	# log_prob = .self$log_prob
 	log_xi_lower = log_w_min + log_prob
 	ifelse(log, log_xi_lower, exp(log_xi_lower))
 })

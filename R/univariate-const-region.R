@@ -113,18 +113,11 @@ UnivariateConstRegion$methods(w = function(x, log = TRUE)
 #' @export
 UnivariateConstRegion$methods(r = function(n)
 {
-	# g = .self$g
-	# a = .self$a
-	# b = .self$b
-	# log_pdiff = .self$log_prob
-
-	log_pdiff = log_prob
-
 	# Generate a draw from $g_j$; i.e., the density $g$ truncated to this region.
 	# Compute g$q((pb - pa) * u + pa) on the log scale
 	u = runif(n)
 	log_pa = g$p(a, log.p = TRUE)
-	log_p = log_add2_exp(log_pdiff + log(u), rep(log_pa,n))
+	log_p = log_add2_exp(log_prob + log(u), rep(log_pa,n))
 	x = g$q(log_p, log.p = TRUE)
 	return(as.list(x))
 })
@@ -134,10 +127,6 @@ UnivariateConstRegion$methods(r = function(n)
 UnivariateConstRegion$methods(d = function(x)
 {
 	n = length(x)
-	# g = .self$g
-	# a = .self$a
-	# b = .self$b
-
 	out = rep(-Inf, n)
 	idx = which(a < x & x <= b)
 	out[idx] = d(x[idx], log = TRUE) -
@@ -150,9 +139,6 @@ UnivariateConstRegion$methods(d = function(x)
 #' @export
 UnivariateConstRegion$methods(in_support = function(x)
 {
-	# a = .self$a
-	# b = .self$b
-	# g = .self$g
 	a < x & x <= b & g$in_support(x)
 })
 
@@ -160,9 +146,6 @@ UnivariateConstRegion$methods(in_support = function(x)
 #' @export
 UnivariateConstRegion$methods(w_major = function(x, log = TRUE)
 {
-	# g = .self$g
-	# log_w_max = .self$log_w_max
-
 	if (!g$in_support(x)) {
 		out = ifelse(log, -Inf, 0)
 		return(out)
@@ -174,11 +157,6 @@ UnivariateConstRegion$methods(w_major = function(x, log = TRUE)
 #' @export
 UnivariateConstRegion$methods(bifurcate = function(x = NULL)
 {
-	# a = .self$a
-	# b = .self$b
-	# w = .self$w
-	# g = .self$g
-
 	if (is.null(x)) {
 		if (is.infinite(a) && is.infinite(b) && a < 0 && b > 0) {
 			# In this case, we have an interval (-Inf, Inf). Make a split at zero.
