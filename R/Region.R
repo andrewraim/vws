@@ -10,7 +10,7 @@
 #' \item{\code{w}}{Weight function \eqn{w}.}
 #' \item{\code{r}}{Generate a draw from \eqn{g_j} specific to this region.}
 #' \item{\code{d}}{Density of \eqn{g_j} specific to this region.}
-#' \item{\code{in_support}}{Test if given \code{x} is in the support for the
+#' \item{\code{s}}{Test if given \code{x} is in the support for the
 #' \eqn{g_j} specific to this region.}
 #' \item{\code{w_major}}{Majorized weight function \eqn{\overline{w}_j} for
 #' this region.}
@@ -44,8 +44,8 @@ Region$methods(d = function(x) {
 	stop("d: please implement for your Region")
 })
 
-Region$methods(in_support = function(x) {
-	stop("in_support: please implement for your Region")
+Region$methods(s = function(x) {
+	stop("s: please implement for your Region")
 })
 
 Region$methods(w_major = function(x, log = TRUE)

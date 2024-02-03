@@ -115,14 +115,14 @@ IntUnivariateConstRegion$methods(d = function(x)
 	if (log) { return(out) } else { return(exp(out)) }
 })
 
-IntUnivariateConstRegion$methods(in_support = function(x)
+IntUnivariateConstRegion$methods(s = function(x)
 {
-	a < x & x <= b & g$in_support(x)
+	a < x & x <= b & g$s(x)
 })
 
 IntUnivariateConstRegion$methods(w_major = function(x, log = TRUE)
 {
-	if (!g$in_support(x)) {
+	if (!g$s(x)) {
 		out = ifelse(log, -Inf, 0)
 		return(out)
 	}

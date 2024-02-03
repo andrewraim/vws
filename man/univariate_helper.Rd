@@ -4,30 +4,55 @@
 \alias{univariate_helper}
 \title{Univariate Distribution Helper}
 \usage{
-univariate_helper(d, p, q, in_support)
+univariate_helper(d, p, q, s)
 }
 \arguments{
-\item{d}{Density function for base distribution.}
+\item{d}{Density function.}
 
-\item{p}{Cumulative distribution function for base distribution.}
+\item{p}{Cumulative distribution function.}
 
-\item{q}{Quantile function for base distribution.}
+\item{q}{Quantile function.}
 
-\item{in_support}{Support inclusion function for base distribution.}
+\item{s}{Indicator function that returns \code{TRUE} when the
+argument is in the support of the distribution; otherwise returns
+\code{FALSE}.}
 }
 \description{
 A container to support VWS with univariate distributions.
 }
+\details{
+The specified functions must support the following interfaces.
+\describe{
+\item{\code{d(x, log = FALSE)}}{}
+\item{\code{p(q, lower.tail = TRUE, log.p = FALSE)}}{}
+\item{\code{q(p, lower.tail = TRUE, log.p = FALSE)}}{}
+\item{\code{s(x)}}{}
+}
+
+Arguments to these functions are interpreted as usual for the \code{stats}
+package. (Other arguments will be ignored if present).
+\describe{
+\item{\code{x}, \code{q}}{vector of quantiles.}{}
+\item{\code{log}, \code{log.p}}{logical; if \code{TRUE}, probabilities
+\code{p} are given as \eqn{\log(p)}.}{}
+\item{\code{lower.tail}}{logical; if \code{TRUE}, probabilities are
+\eqn{\text{P}(X \leq x)}; otherwise \eqn{\text{P}(X > x)}}{}
+}
+}
 \examples{
-univariate_helper(
-    d = function(x, log = FALSE) dpois(x, log),
+helper = univariate_helper(
+    d = function(x, log = FALSE) dpois(x, 10, log),
     p = function(q, lower.tail = TRUE, log.p = FALSE) {
-        ppois(q, lower.tail, log.p)
+        ppois(q, 10, lower.tail, log.p)
     },
     q = function(p, lower.tail = TRUE, log.p = FALSE) {
-        qpois(p, lower.tail, log.p)
+        qpois(p, 10, lower.tail, log.p)
     },
-    in_support = function(x) { TRUE }
+    s = function(x) { is.numeric(x) }
 )
+
+helper$d(5)
+helper$p(10)
+helper$q(0.025)
 
 }

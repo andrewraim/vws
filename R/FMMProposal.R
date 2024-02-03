@@ -142,7 +142,7 @@ FMMProposal$methods(d = function(x, normalize = TRUE, log = FALSE)
 	for (i in 1:n) {
 		for (j in 1:N) {
 			reg = regions[[j]]
-			if (reg$in_support(x[[i]])) {
+			if (reg$s(x[[i]])) {
 				log_wg[i] = reg$w_major(x[[i]], log = TRUE) +
 					reg$d_base(x[[i]], log = TRUE)
 			}
