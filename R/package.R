@@ -6,7 +6,6 @@
 #' @import stats
 #' @importFrom stats plogis optim runif
 #' @importFrom utils head
-#' @importFrom numDeriv grad jacobian
 #' @importFrom methods is new
 #' @docType package
 "_PACKAGE"

@@ -2,7 +2,7 @@
 #'
 #' Compute the expression
 #' \deqn{
-#' 1 - \sum_{j=1}^N \underline{\xi}_j \Big/ \sum_{j=1}^N \overline{\xi}_j
+#' 1 - \sum_{j=1}^N \underline{\xi}_j \Bigg/ \sum_{j=1}^N \overline{\xi}_j
 #' }
 #' in a numerically stable way.
 #'

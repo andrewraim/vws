@@ -32,23 +32,9 @@ sampling, but that is currently not done.
 Accept-reject algorithm using our proposal for weighted distributions.
 }
 \examples{
-#  Define base distribution
-g = univariate_helper(
-    r = function(n) rnorm(n, 0, 5),
-    d = function(x, log = FALSE) dnorm(x, 0, 5, log),
-    p = function(q, lower.tail = TRUE, log.p = FALSE) {
-        pnorm(q, 0, 5, lower.tail, log.p)
-    },
-    q = function(p, lower.tail = TRUE, log.p = FALSE) {
-        qnorm(p, 0, 5, lower.tail, log.p)
-    },
-    in_support = function(x) { TRUE }
-)
-
-# Define weight function
-w = function(x, log = FALSE) {
-    dlnorm(10 - x, meanlog = 5, sdlog = 2, log)
-}
+# Define base distribution and weight function
+g = normal_univariate_helper(0, 5)
+w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 
 # Set up support
 support = univariate_const_region(-Inf, 10, w, g)

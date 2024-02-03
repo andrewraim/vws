@@ -7,28 +7,11 @@
 #' @param b Upper knot of region.
 #' @param w Weight function.
 #' @param g Object that encapsulates base distribution.
-#' @param s Object of type \code{univariate_const_region}.
-#' @param x Object of type \code{univariate_const_region}.
-#' @param ... additional arguments.
 #'
 #' @examples
-#' #  Define base distribution
-#' g = univariate_helper(
-#'     r = function(n) rpois(n, 5),
-#'     d = function(x, log = FALSE) dpois(x, 5, log),
-#'     p = function(q, lower.tail = TRUE, log.p = FALSE) {
-#'         ppois(q, 5, lower.tail, log.p)
-#'     },
-#'     q = function(p, lower.tail = TRUE, log.p = FALSE) {
-#'         qpois(p, 5, lower.tail, log.p)
-#'     },
-#'     in_support = function(x) { is.integer(x) & x >= 0 }
-#' )
-#'
-#' # Define weight function
-#' w = function(x, log = FALSE) {
-#'     dlnorm(10 - x, 5, 2, log)
-#' }
+#' # Define base distribution and weight function
+#' g = poisson_univariate_helper(lambda = 5)
+#' w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 #'
 #' reg = int_univariate_const_region(-Inf, 10, w, g)
 #' print(reg)
@@ -37,9 +20,6 @@
 #' print(out[[1]])
 #' print(out[[2]])
 #'
-#' @name IntUnivariateConstRegion
-NULL
-
 #' @name IntUnivariateConstRegion
 #' @export
 int_univariate_const_region = function(a, b, w, g)
@@ -100,22 +80,16 @@ int_univariate_const_region = function(a, b, w, g)
 		log_w_max = log_w_max, log_w_min = log_w_min, log_prob = log_prob)
 }
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(d_base = function(x, log = FALSE)
 {
 	g$d(x, log = log)
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(w = function(x, log = TRUE)
 {
 	w(x, log = log)
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(r = function(n)
 {
 	# Compute g$q((pb - pa) * u + pa) on the log scale.
@@ -130,8 +104,6 @@ IntUnivariateConstRegion$methods(r = function(n)
 	return(as.list(x))
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(d = function(x)
 {
 	n = length(x)
@@ -143,15 +115,11 @@ IntUnivariateConstRegion$methods(d = function(x)
 	if (log) { return(out) } else { return(exp(out)) }
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(in_support = function(x)
 {
 	a < x & x <= b & g$in_support(x)
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(w_major = function(x, log = TRUE)
 {
 	if (!g$in_support(x)) {
@@ -162,8 +130,6 @@ IntUnivariateConstRegion$methods(w_major = function(x, log = TRUE)
 
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(bifurcate = function(x = NULL)
 {
 	if (is.null(x)) {
@@ -188,8 +154,6 @@ IntUnivariateConstRegion$methods(bifurcate = function(x = NULL)
 	list(s1, s2)
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(is_bifurcatable = function(x)
 {
 	# A discrete interval is bifurcatable if there is at least one integer
@@ -203,31 +167,23 @@ IntUnivariateConstRegion$methods(is_bifurcatable = function(x)
 	return(out)
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(xi_upper = function(log = TRUE)
 {
 	log_xi_upper = log_w_max + log_prob
 	ifelse(log, log_xi_upper, exp(log_xi_upper))
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(xi_lower = function(log = TRUE)
 {
 	log_xi_lower = log_w_min + log_prob
 	ifelse(log, log_xi_lower, exp(log_xi_lower))
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(description = function()
 {
 	sprintf("(%g, %g]", a, b)
 })
 
-#' @name IntUnivariateConstRegion
-#' @export
 IntUnivariateConstRegion$methods(show = function()
 {
 	printf("Integer Univariate Const Region (%g, %g]\n", a, b)

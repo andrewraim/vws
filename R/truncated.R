@@ -18,8 +18,8 @@
 #' @param ... Additional arguments.
 #'
 #' @details
-#' This code was initially copied from the \link[LearnBayes]{rtruncated}
-#' function in the LearnBayes package.
+#' This code was initially copied from the \code{rtruncated} function in the
+#' LearnBayes package.
 #'
 #' @examples
 #' # Take a large sample from truncated standard normal

@@ -7,27 +7,11 @@
 #' @param b Upper knot of region.
 #' @param w Weight function.
 #' @param g Object that encapsulates base distribution.
-#' @param x Object of type \code{univariate_const_region}.
-#' @param ... additional arguments.
 #'
 #' @examples
-#' #  Define base distribution
-#' g = univariate_helper(
-#'     r = function(n) rnorm(n, 0, 5),
-#'     d = function(x, log = FALSE) dnorm(x, 0, 5, log),
-#'     p = function(q, lower.tail = TRUE, log.p = FALSE) {
-#'         pnorm(q, 0, 5, lower.tail, log.p)
-#'     },
-#'     q = function(p, lower.tail = TRUE, log.p = FALSE) {
-#'         qnorm(p, 0, 5, lower.tail, log.p)
-#'     },
-#'     in_support = function(x) { TRUE }
-#' )
-#'
-#' # Define weight function
-#' w = function(x, log = FALSE) {
-#'     dlnorm(10 - x, 5, 2, log)
-#' }
+#' # Define base distribution and weight function
+#' g = normal_univariate_helper(mean = 0, sd = 5)
+#' w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 #'
 #' reg = univariate_const_region(-Inf, 10, w, g)
 #' print(reg)
@@ -36,9 +20,6 @@
 #' print(out[[1]])
 #' print(out[[2]])
 #'
-#' @name UnivariateConstRegion
-NULL
-
 #' @name UnivariateConstRegion
 #' @export
 univariate_const_region = function(a, b, w, g)
@@ -95,22 +76,16 @@ univariate_const_region = function(a, b, w, g)
 		log_w_min = log_w_min, log_prob = log_prob)
 }
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(d_base = function(x, log = FALSE)
 {
 	g$d(x, log = log)
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(w = function(x, log = TRUE)
 {
 	w(x, log = log)
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(r = function(n)
 {
 	# Generate a draw from $g_j$; i.e., the density $g$ truncated to this region.
@@ -122,8 +97,6 @@ UnivariateConstRegion$methods(r = function(n)
 	return(as.list(x))
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(d = function(x)
 {
 	n = length(x)
@@ -135,15 +108,11 @@ UnivariateConstRegion$methods(d = function(x)
 	if (log) { return(out) } else { return(exp(out)) }
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(in_support = function(x)
 {
 	a < x & x <= b & g$in_support(x)
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(w_major = function(x, log = TRUE)
 {
 	if (!g$in_support(x)) {
@@ -153,8 +122,6 @@ UnivariateConstRegion$methods(w_major = function(x, log = TRUE)
 	if (log) { return(log_w_max) } else { return(exp(log_w_max)) }
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(bifurcate = function(x = NULL)
 {
 	if (is.null(x)) {
@@ -177,38 +144,28 @@ UnivariateConstRegion$methods(bifurcate = function(x = NULL)
 	list(s1, s2)
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(is_bifurcatable = function(x)
 {
-	TRUE
+	return(TRUE)
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(xi_upper = function(log = TRUE)
 {
 	log_xi_upper = log_w_max + log_prob
 	ifelse(log, log_xi_upper, exp(log_xi_upper))
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(xi_lower = function(log = TRUE)
 {
 	log_xi_lower = log_w_min + log_prob
 	ifelse(log, log_xi_lower, exp(log_xi_lower))
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(description = function()
 {
 	sprintf("(%g, %g]", a, b)
 })
 
-#' @name UnivariateConstRegion
-#' @export
 UnivariateConstRegion$methods(show = function()
 {
 	printf("Univariate Const Region (%g, %g]\n", a, b)

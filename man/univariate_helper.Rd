@@ -4,19 +4,30 @@
 \alias{univariate_helper}
 \title{Univariate Distribution Helper}
 \usage{
-univariate_helper(r, d, p, q, in_support)
+univariate_helper(d, p, q, in_support)
 }
 \arguments{
-\item{r}{Drawing function for base distribution.}
-
 \item{d}{Density function for base distribution.}
 
-\item{p}{CDF function for base distribution.}
+\item{p}{Cumulative distribution function for base distribution.}
 
 \item{q}{Quantile function for base distribution.}
 
 \item{in_support}{Support inclusion function for base distribution.}
 }
 \description{
-TBD: document expected function interface.
+A container to support VWS with univariate distributions.
+}
+\examples{
+univariate_helper(
+    d = function(x, log = FALSE) dpois(x, log),
+    p = function(q, lower.tail = TRUE, log.p = FALSE) {
+        ppois(q, lower.tail, log.p)
+    },
+    q = function(p, lower.tail = TRUE, log.p = FALSE) {
+        qpois(p, lower.tail, log.p)
+    },
+    in_support = function(x) { TRUE }
+)
+
 }

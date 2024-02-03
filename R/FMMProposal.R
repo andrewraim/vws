@@ -2,7 +2,7 @@
 #'
 #' @param regions A list of regions that form a partition of the support.
 #'
-#' @field regions A list of regions that form a partition of the support.
+#' @field regions A list of \code{N} regions that form a partition of the support.
 #' @field log_xi_upper The numeric vector
 #' \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
 #' @field log_xi_lower The numeric vector
@@ -16,23 +16,9 @@
 #' R's reference class construct.
 #'
 #' @examples
-#' #  Define base distribution
-#' g = univariate_helper(
-#'     r = function(n) rnorm(n, 0, 5),
-#'     d = function(x, log = FALSE) dnorm(x, 0, 5, log),
-#'     p = function(q, lower.tail = TRUE, log.p = FALSE) {
-#'         pnorm(q, 0, 5, lower.tail, log.p)
-#'     },
-#'     q = function(p, lower.tail = TRUE, log.p = FALSE) {
-#'         qnorm(p, 0, 5, lower.tail, log.p)
-#'     },
-#'     in_support = function(x) { TRUE }
-#' )
-#'
-#' # Define weight function
-#' w = function(x, log = FALSE) {
-#'     dlnorm(10 - x, 5, 2, log)
-#' }
+#' # Define base distribution and weight function
+#' g = normal_univariate_helper(mean = 0, sd = 5)
+#' w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 #'
 #' # Set up support
 #' support = univariate_const_region(-Inf, 10, w, g)
@@ -42,17 +28,6 @@
 #' fmm = fmm_proposal(regions)
 #' print(fmm)
 #'
-#' @import methods
-#' @name FMMProposal
-NULL
-
-#' FMMProposal
-#'
-#' @name FMMProposal
-#' @export
-FMMProposal = setRefClass("FMMProposal",
-	fields = c("regions", "log_xi_upper", "log_xi_lower", "bifurcatable"))
-
 #' @name FMMProposal
 #' @export
 fmm_proposal = function(regions)

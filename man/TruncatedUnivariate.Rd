@@ -46,8 +46,8 @@ Functions to truncate a given univariate distribution to an interval of the
 form \eqn{(\text{lo}, \text{hi}]}.
 }
 \details{
-This code was initially copied from the \link[LearnBayes]{rtruncated}
-function in the LearnBayes package.
+This code was initially copied from the \code{rtruncated} function in the
+LearnBayes package.
 }
 \examples{
 # Take a large sample from truncated standard normal
