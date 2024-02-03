@@ -46,7 +46,8 @@ support = univariate_const_region(-Inf, 10, w, g)
 regions = list(support)
 
 # Adapt the proposal
-adapt_out = adapt_midpoint(h, N = 100, control = rejection_control(report = 1))
+h_init = fmm_proposal(regions)
+adapt_out = adapt_midpoint(h_init, N = 100, control = rejection_control(report = 1))
 
 # Create a finite mixture proposal
 h = adapt_out$h

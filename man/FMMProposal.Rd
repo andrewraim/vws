@@ -9,19 +9,75 @@
 fmm_proposal(regions)
 }
 \arguments{
-\item{regions}{A list of regions that form a partition of the support}
-
-\item{x}{An FMM Proposal to operate on}
-
-\item{object}{An FMM Proposal to operate on}
-
-\item{n}{Number of regions to}
-
-\item{...}{Additional arguments}
+\item{regions}{A list of regions that form a partition of the support.}
 }
 \description{
-Use reference classes here to allow proposal to be mutable.
+FMM Proposal
+
+FMMProposal
 }
+\details{
+The \code{regions} list represents \eqn{\mathcal{D}_1, \ldots, \mathcal{D}_N}.
+They should be objects based on a subclass of \code{Region}, which uses
+R's reference class construct.
+}
+\section{Fields}{
+
+\describe{
+\item{\code{regions}}{A list of regions that form a partition of the support.}
+
+\item{\code{log_xi_upper}}{The numeric vector
+\eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.}
+
+\item{\code{log_xi_lower}}{The numeric vector
+\eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.}
+
+\item{\code{bifurcatable}}{A vector of logical values which indicates whether the
+corresponding regions may be bifurcated further.}
+}}
+
+\section{Methods}{
+
+\describe{
+\item{\code{d(x, normalize = TRUE, log = FALSE)}}{Compute density of proposal distribution.
+\subsection{Arguments}{\itemize{
+    \item{\code{x} A list where each element is a density value to
+        evaluate.}
+    \item{\code{normalize} If \code{TRUE}, apply the normalizing
+        constant; otherwise do not.}
+    \item{\code{log} If \code{TRUE}, return density results on the
+        log-scale.}
+}}
+\subsection{Value}{A vector of density values corresponing to \code{x}.}}
+
+\item{\code{log_target_pdf_unnorm(x)}}{Compute \eqn{\log w(x) + \log g(x)} for each element of the given
+\code{x} which is a list whose elements are density values.}
+
+\item{\code{nc(log = FALSE)}}{Normalizing constant for proposal distribution.
+\subsection{Arguments}{\itemize{
+    \item{\code{log} If \code{TRUE} compute result on log-scale.}
+}}
+\subsection{Value}{A scalar.}}
+
+\item{\code{r(n = 1, indices = FALSE)}}{Generate draws from proposal distribution.
+\subsection{Arguments}{\itemize{
+    \item{\code{n} Number of draws to generate.}
+    \item{\code{indices} If \code{TRUE}, return indices of mixture
+        components selected during draws.}
+}}
+\subsection{Value}{A list which each element is a saved draw.}}
+
+\item{\code{rejection_bound(byregion = FALSE, log = FALSE)}}{Upper bound for rejection probability.
+\subsection{Arguments}{\itemize{
+    \item{\code{byregion} If \code{TRUE}, compute bound by region.
+        Otherwise compute total.}
+    \item{\code{log} If \code{TRUE} compute result on log-scale.}
+}}
+\subsection{Value}{A vector of size \code{N} or a single scalar.}}
+
+\item{\code{summary()}}{Summary table of regions which compose the proposal distribution. Returns a
+data frame.}
+}}
 
 \examples{
 #  Define base distribution
