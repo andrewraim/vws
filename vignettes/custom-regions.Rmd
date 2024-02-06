@@ -1,0 +1,44 @@
+---
+title: "Custom Regions for VWS Sampling"
+author: Andrew Raim, James Livsey, and Kyle Irimata
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{custom-regions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+bibliography: references.bib
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+	collapse = TRUE,
+	comment = "#>",
+	prompt = "R>"
+)
+library(vws)
+```
+
+**TBD**
+
+- Add example for VMF maybe...
+- Add example for TMVN maybe...
+
+# Introduction
+
+To implement a rejection sampler with the `vws` package, the user must make use
+of an existing subclass of `Region` or implement a new one. Two such subclasses
+included in the package implement the univariate "constant VWS" method described
+by @VWS2024:
+
+- `UnivariateConstRegion`: constant VWS with a continuous support.
+- `IntUnivariateConstRegion`: constant VWS with an integer support.
+
+See the manual pages for each sampler for usage and examples. These two regions
+are somewhat flexible and can be adapted to a variety of problems. In this
+vignette, we will describe the process of coding a customized region. We will
+give one univariate example that makes use of the linear VWS method for
+improved efficiency, and one multivariate example where the regions go beyond
+intervals. To do this, we may use of the reference class construct for
+object-orientation in R.
+
+# References
