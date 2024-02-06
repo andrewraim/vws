@@ -10,7 +10,7 @@ fmm_proposal(regions)
 \item{regions}{A list of regions that form a partition of the support.}
 }
 \description{
-A more friendly constructor for \code{FMMProposal}
+A more friendly constructor for \code{FMMProposal}.
 }
 \examples{
 # Define base distribution and weight function

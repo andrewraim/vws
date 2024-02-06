@@ -2,34 +2,252 @@
 % Please edit documentation in R/IntUnivariateConstRegion.R
 \name{IntUnivariateConstRegion}
 \alias{IntUnivariateConstRegion}
-\alias{int_univariate_const_region}
 \title{Integer Univariate Region with Constant Majorizer}
-\usage{
-int_univariate_const_region(a, b, w, g)
-}
-\arguments{
-\item{a}{Lower knot of region.}
-
-\item{b}{Upper knot of region.}
-
-\item{w}{Weight function.}
-
-\item{g}{Object that encapsulates base distribution.}
-}
 \description{
+Integer Univariate Region with Constant Majorizer
+
+Integer Univariate Region with Constant Majorizer
+}
+\details{
 A region based on univariate intervals with a constant majorizer for the
 weight function. This version is for integer supports.
 }
-\examples{
-# Define base distribution and weight function
-g = poisson_univariate_helper(lambda = 5)
-w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-IntUnivariateConstRegion-new}{\code{IntUnivariateConstRegion$new()}}
+\item \href{#method-IntUnivariateConstRegion-d_base}{\code{IntUnivariateConstRegion$d_base()}}
+\item \href{#method-IntUnivariateConstRegion-r}{\code{IntUnivariateConstRegion$r()}}
+\item \href{#method-IntUnivariateConstRegion-d}{\code{IntUnivariateConstRegion$d()}}
+\item \href{#method-IntUnivariateConstRegion-s}{\code{IntUnivariateConstRegion$s()}}
+\item \href{#method-IntUnivariateConstRegion-w_major}{\code{IntUnivariateConstRegion$w_major()}}
+\item \href{#method-IntUnivariateConstRegion-bifurcate}{\code{IntUnivariateConstRegion$bifurcate()}}
+\item \href{#method-IntUnivariateConstRegion-is_bifurcatable}{\code{IntUnivariateConstRegion$is_bifurcatable()}}
+\item \href{#method-IntUnivariateConstRegion-xi_upper}{\code{IntUnivariateConstRegion$xi_upper()}}
+\item \href{#method-IntUnivariateConstRegion-xi_lower}{\code{IntUnivariateConstRegion$xi_lower()}}
+\item \href{#method-IntUnivariateConstRegion-description}{\code{IntUnivariateConstRegion$description()}}
+\item \href{#method-IntUnivariateConstRegion-print}{\code{IntUnivariateConstRegion$print()}}
+\item \href{#method-IntUnivariateConstRegion-clone}{\code{IntUnivariateConstRegion$clone()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-new"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-new}{}}}
+\subsection{Method \code{new()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$new(a, b, w, g, log_w_max, log_w_min)}\if{html}{\out{</div>}}
+}
 
-reg = int_univariate_const_region(-Inf, 10, w, g)
-print(reg)
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{a}}{Lower limit of interval.}
 
-out = reg$bifurcate(0)
-print(out[[1]])
-print(out[[2]])
+\item{\code{b}}{Upper limit of interval.}
 
+\item{\code{w}}{Weight function for the target distribution.}
+
+\item{\code{g}}{An object created by \code{univariate_helper}.}
+
+\item{\code{log_w_max}}{The value \eqn{\max_{x \in (a,b]}\log w(x)}.}
+
+\item{\code{log_w_min}}{The value \eqn{\min_{x \in (a,b]}\log w(x)}.}
+
+\item{\code{log_prob}}{The value \eqn{\log \text{P}(a < T \leq b)} for \eqn{T \sim g}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-d_base"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-d_base}{}}}
+\subsection{Method \code{d_base()}}{
+Density function \eqn{g} for the base distribution.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$d_base(x, log = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{Density argument.}
+
+\item{\code{log}}{logical; if \code{TRUE}, return result on the log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-r"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-r}{}}}
+\subsection{Method \code{r()}}{
+Generate a draw from \eqn{g_j} specific to this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$r(n)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Number of draws to generate.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list of draws, with one draw per list element.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-d"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-d}{}}}
+\subsection{Method \code{d()}}{
+Density of \eqn{g_j} specific to this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$d(x)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{Density argument.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-s"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-s}{}}}
+\subsection{Method \code{s()}}{
+Test if given \code{x} is in the support for the \eqn{g_j} specific to this
+region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$s(x)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{Density argument.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-w_major"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-w_major}{}}}
+\subsection{Method \code{w_major()}}{
+Majorized weight function \eqn{\overline{w}_j} for this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$w_major(x, log = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{Argument to weight function.}
+
+\item{\code{log}}{logical; if \code{TRUE}, return result on the log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-bifurcate"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-bifurcate}{}}}
+\subsection{Method \code{bifurcate()}}{
+Bifurcate this region into two regions. Use \code{x} as the bifurcation
+point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$bifurcate(x = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{An optional bifurcation point.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-is_bifurcatable"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-is_bifurcatable}{}}}
+\subsection{Method \code{is_bifurcatable()}}{
+Return a logical value indicating whether this region is bifurcatable.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$is_bifurcatable()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-xi_upper"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-xi_upper}{}}}
+\subsection{Method \code{xi_upper()}}{
+The quantity \eqn{\overline{\xi}_j} for this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$xi_upper(log = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{log}}{logical; if \code{TRUE}, return result on the log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-xi_lower"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-xi_lower}{}}}
+\subsection{Method \code{xi_lower()}}{
+The quantity \eqn{\underline{\xi}_j} for this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$xi_lower(log = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{log}}{logical; if \code{TRUE}, return result on the log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-description"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-description}{}}}
+\subsection{Method \code{description()}}{
+A string that describes the region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$description()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-print"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-print}{}}}
+\subsection{Method \code{print()}}{
+Print a description of the region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$print()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

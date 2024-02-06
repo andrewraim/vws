@@ -1,6 +1,6 @@
 #' fmm_proposal
 #'
-#' A more friendly constructor for \code{FMMProposal}
+#' A more friendly constructor for \code{FMMProposal}.
 #'
 #' @param regions A list of regions that form a partition of the support.
 #'
@@ -25,7 +25,6 @@ fmm_proposal = function(regions)
 
 #' FMMProposal
 #'
-#' @description
 #' An R6 class which represents a VWS proposal: a finite mixture that some
 #' specific certain operations.
 #'
@@ -115,7 +114,8 @@ get_regions = function()
 rejection_bound = function(byregion = FALSE, log = FALSE)
 {
 	# Each region's contribution to the rejection rate bound
-	out = log_sub2_exp(private$log_xi_upper, private$log_xi_lower) - log_sum_exp(private$log_xi_upper)
+	out = log_sub2_exp(private$log_xi_upper, private$log_xi_lower) -
+		log_sum_exp(private$log_xi_upper)
 
 	if (!byregion) {
 		# Overall rejection rate bound
@@ -178,7 +178,7 @@ d = function(x, normalize = TRUE, log = FALSE)
 
 	log_nc = 0
 	if (normalize) {
-		log_nc = nc(log = TRUE)
+		log_nc = self$nc(log = TRUE)
 	}
 
 	log_wg = rep(-Inf, n)

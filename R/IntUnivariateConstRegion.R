@@ -1,7 +1,6 @@
-#' Integer Univariate Region with Constant Majorizer
+#' int_univariate_const_region
 #'
-#' A region based on univariate intervals with a constant majorizer for the
-#' weight function. This version is for integer supports.
+#' A more friendly constructor for \code{IntUnivariateConstRegion}.
 #'
 #' @param a Lower knot of region.
 #' @param b Upper knot of region.
@@ -20,7 +19,6 @@
 #' print(out[[1]])
 #' print(out[[2]])
 #'
-#' @name IntUnivariateConstRegion
 #' @export
 int_univariate_const_region = function(a, b, w, g)
 {
@@ -73,48 +71,78 @@ int_univariate_const_region = function(a, b, w, g)
 		log_w_min = min(f_opt(floor(opt2_out$par)), f_opt(ceiling(opt2_out$par)), log_w_endpoints)
 	}
 
-	# Compute g$p(b) - g$p(a) on the log scale
-	log_prob = log_sub2_exp(g$p(b, log.p = TRUE), g$p(a, log.p = TRUE))
-
 	IntUnivariateConstRegion$new(a = a, b = b, w = w, g = g,
-		log_w_max = log_w_max, log_w_min = log_w_min, log_prob = log_prob)
+		log_w_max = log_w_max, log_w_min = log_w_min,)
 }
 
+#' Integer Univariate Region with Constant Majorizer
+#'
+#' A region based on univariate intervals with a constant majorizer for the
+#' weight function. This version is for integer supports.
+#'
+#' @param a Lower limit of interval.
+#' @param b Upper limit of interval.
+#' @param g An object created by \code{univariate_helper}.
+#' @param log_w_max The value \eqn{\max_{x \in (a,b]}\log w(x)}.
+#' @param log_w_min The value \eqn{\min_{x \in (a,b]}\log w(x)}.
+#' @param log_prob The value \eqn{\log \text{P}(a < T \leq b)} for \eqn{T \sim g}.
+#' @param w Weight function for the target distribution.
+#'
+#' @export
 IntUnivariateConstRegion = R6::R6Class(
-	classname = "IntUnivariateConstRegion",
-	portable = TRUE,
-	lock_class = FALSE,
-	private = list(
-		a = NULL,
-		b = NULL,
-		g = NULL,
-		log_w_max = NULL,
-		log_w_min = NULL,
-		log_prob = NULL
-	),
-	public = list(
-		w = NULL
-	)
-)
 
-IntUnivariateConstRegion$set("public", "initialize", function(a, b, w, g,
-	log_w_max, log_w_min, log_prob)
+classname = "IntUnivariateConstRegion",
+portable = TRUE,
+lock_class = FALSE,
+private = list(
+	a = NULL,
+	b = NULL,
+	g = NULL,
+	log_w_max = NULL,
+	log_w_min = NULL,
+	log_prob = NULL
+),
+public = list(
+
+w = NULL,
+
+#' @param a Lower limit of interval.
+#' @param b Upper limit of interval.
+#' @param g An object created by \code{univariate_helper}.
+#' @param log_w_max The value \eqn{\max_{x \in (a,b]}\log w(x)}.
+#' @param log_w_min The value \eqn{\min_{x \in (a,b]}\log w(x)}.
+#' @param log_prob The value \eqn{\log \text{P}(a < T \leq b)} for \eqn{T \sim g}.
+#' @param w Weight function for the target distribution.
+initialize = function(a, b, w, g, log_w_max, log_w_min)
 {
+	stopifnot(a <= b)
+	stopifnot("univariate_helper" %in% class(g))
+
 	private$a = a
 	private$b = b
 	private$g = g
 	private$log_w_max = log_w_max
 	private$log_w_min = log_w_min
-	private$log_prob = log_prob
 	self$w = w
-})
 
-IntUnivariateConstRegion$set("public", "d_base", function(x, log = FALSE)
+	# Compute g$p(b) - g$p(a) on the log scale
+	private$log_prob = log_sub2_exp(g$p(b, log.p = TRUE), g$p(a, log.p = TRUE))
+},
+
+#' @description
+#' Density function \eqn{g} for the base distribution.
+#' @param x Density argument.
+#' @param log logical; if \code{TRUE}, return result on the log-scale.
+d_base = function(x, log = FALSE)
 {
 	private$g$d(x, log = log)
-})
+},
 
-IntUnivariateConstRegion$set("public", "r", function(n)
+#' @description
+#' Generate a draw from \eqn{g_j} specific to this region.
+#' @param n Number of draws to generate.
+#' @return A list of draws, with one draw per list element.
+r = function(n)
 {
 	# Compute g$q((pb - pa) * u + pa) on the log scale.
 	# Some of the quantile functions seem to produce NaN if the probability
@@ -126,9 +154,12 @@ IntUnivariateConstRegion$set("public", "r", function(n)
 	log_p_adj = pmin(log_p, -.Machine$double.eps)
 	x = private$g$q(log_p_adj, log.p = TRUE)
 	as.list(x)
-})
+},
 
-IntUnivariateConstRegion$set("public", "d", function(x)
+#' @description
+#' Density of \eqn{g_j} specific to this region.
+#' @param x Density argument.
+d = function(x)
 {
 	n = length(x)
 	out = rep(-Inf, n)
@@ -137,15 +168,22 @@ IntUnivariateConstRegion$set("public", "d", function(x)
 		log_sub2_exp(private$g$p(private$b, log.p = TRUE), private$g$p(private$a, log.p = TRUE))
 
 	if (log) { return(out) } else { return(exp(out)) }
-})
+},
 
-
-IntUnivariateConstRegion$set("public", "s", function(x)
+#' @description
+#' Test if given \code{x} is in the support for the \eqn{g_j} specific to this
+#' region.
+#' @param x Density argument.
+s = function(x)
 {
 	private$a < x & x <= private$b & private$g$s(x)
-})
+},
 
-IntUnivariateConstRegion$set("public", "w_major", function(x, log = TRUE)
+#' @description
+#' Majorized weight function \eqn{\overline{w}_j} for this region.
+#' @param x Argument to weight function.
+#' @param log logical; if \code{TRUE}, return result on the log-scale.
+w_major = function(x, log = TRUE)
 {
 	if (!private$g$s(x)) {
 		out = ifelse(log, -Inf, 0)
@@ -154,9 +192,13 @@ IntUnivariateConstRegion$set("public", "w_major", function(x, log = TRUE)
 	out = private$log_w_max
 	if (log) { return(out) } else { return(exp(out)) }
 
-})
+},
 
-IntUnivariateConstRegion$set("public", "bifurcate", function(x = NULL)
+#' @description
+#' Bifurcate this region into two regions. Use \code{x} as the bifurcation
+#' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
+#' @param x An optional bifurcation point.
+bifurcate = function(x = NULL)
 {
 	a = private$a
 	b = private$b
@@ -181,9 +223,11 @@ IntUnivariateConstRegion$set("public", "bifurcate", function(x = NULL)
 	s1 = int_univariate_const_region(a, x, self$w, private$g)
 	s2 = int_univariate_const_region(x, b, self$w, private$g)
 	list(s1, s2)
-})
+},
 
-IntUnivariateConstRegion$set("public", "is_bifurcatable", function(x)
+#' @description
+#' Return a logical value indicating whether this region is bifurcatable.
+is_bifurcatable = function()
 {
 	a = private$a
 	b = private$b
@@ -197,28 +241,39 @@ IntUnivariateConstRegion$set("public", "is_bifurcatable", function(x)
 	}
 
 	return(out)
-})
+},
 
-IntUnivariateConstRegion$set("public", "xi_upper", function(log = TRUE)
+#' @description
+#' The quantity \eqn{\overline{\xi}_j} for this region.
+#' @param log logical; if \code{TRUE}, return result on the log-scale.
+xi_upper = function(log = TRUE)
 {
 	log_xi_upper = private$log_w_max + private$log_prob
 	ifelse(log, log_xi_upper, exp(log_xi_upper))
-})
+},
 
-IntUnivariateConstRegion$set("public", "xi_lower", function(log = TRUE)
+#' @description
+#' The quantity \eqn{\underline{\xi}_j} for this region.
+#' @param log logical; if \code{TRUE}, return result on the log-scale.
+xi_lower = function(log = TRUE)
 {
 	log_xi_lower = private$log_w_min + private$log_prob
 	ifelse(log, log_xi_lower, exp(log_xi_lower))
-})
+},
 
-IntUnivariateConstRegion$set("public", "description", function()
+#' @description
+#' A string that describes the region.
+description = function()
 {
 	sprintf("(%g, %g]", private$a, private$b)
-})
+},
 
-IntUnivariateConstRegion$set("public", "print", function()
+#' @description
+#' Print a description of the region.
+print = function()
 {
 	printf("Integer Univariate Const Region (%g, %g]\n", private$a, private$b)
-})
+}
 
-IntUnivariateConstRegion$lock()
+) # Close public
+) # Close class

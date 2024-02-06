@@ -7,7 +7,6 @@ public = list(
 
 #' @description
 #' Density function \eqn{g} for the base distribution.
-#'
 #' @param x Density argument.
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 d_base = function(x, log = FALSE)
@@ -17,7 +16,6 @@ d_base = function(x, log = FALSE)
 
 #' @description
 #' Weight function \eqn{w}.
-#'
 #' @param x Argument to weight function.
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 w = function(x, log = TRUE)
@@ -27,9 +25,7 @@ w = function(x, log = TRUE)
 
 #' @description
 #' Generate a draw from \eqn{g_j} specific to this region.
-#'
 #' @param n Number of draws to generate.
-#'
 #' @return A list of draws, with one draw per list element.
 r = function(n)
 {
@@ -38,7 +34,6 @@ r = function(n)
 
 #' @description
 #' Density of \eqn{g_j} specific to this region.
-#'
 #' @param x Density argument.
 d = function(x)
 {
@@ -48,7 +43,6 @@ d = function(x)
 #' @description
 #' Test if given \code{x} is in the support for the \eqn{g_j} specific to this
 #' region.
-#'
 #' @param x Density argument.
 s = function(x)
 {
@@ -57,7 +51,6 @@ s = function(x)
 
 #' @description
 #' Majorized weight function \eqn{\overline{w}_j} for this region.
-#'
 #' @param x Argument to weight function.
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 w_major = function(x, log = TRUE)
@@ -68,7 +61,6 @@ w_major = function(x, log = TRUE)
 #' @description
 #' Bifurcate this region into two regions. Use \code{x} as the bifurcation
 #' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
-#'
 #' @param x An optional bifurcation point.
 bifurcate = function(x = NULL)
 {
@@ -76,8 +68,14 @@ bifurcate = function(x = NULL)
 },
 
 #' @description
+#' Return a logical value indicating whether this region is bifurcatable.
+is_bifurcatable = function()
+{
+	stop("is_bifurcatable: abstract interface method")
+},
+
+#' @description
 #' The quantity \eqn{\overline{\xi}_j} for this region.
-#'
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 xi_upper = function(log = TRUE)
 {
@@ -86,11 +84,24 @@ xi_upper = function(log = TRUE)
 
 #' @description
 #' The quantity \eqn{\underline{\xi}_j} for this region.
-#'
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 xi_lower = function(log = TRUE)
 {
 	stop("xi_lower: abstract interface method")
+},
+
+#' @description
+#' A string that describes the region.
+description = function()
+{
+	stop("description: abstract interface method")
+},
+
+#' @description
+#' Print a description of the region.
+print = function()
+{
+	stop("print: abstract interface method")
 }
 
 ) # Close public

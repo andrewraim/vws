@@ -17,8 +17,11 @@ This is an "abstract" R6 class that defines the interface for a Region.
 \item \href{#method-Region-s}{\code{Region$s()}}
 \item \href{#method-Region-w_major}{\code{Region$w_major()}}
 \item \href{#method-Region-bifurcate}{\code{Region$bifurcate()}}
+\item \href{#method-Region-is_bifurcatable}{\code{Region$is_bifurcatable()}}
 \item \href{#method-Region-xi_upper}{\code{Region$xi_upper()}}
 \item \href{#method-Region-xi_lower}{\code{Region$xi_lower()}}
+\item \href{#method-Region-description}{\code{Region$description()}}
+\item \href{#method-Region-print}{\code{Region$print()}}
 \item \href{#method-Region-clone}{\code{Region$clone()}}
 }
 }
@@ -153,6 +156,16 @@ point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-is_bifurcatable"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-is_bifurcatable}{}}}
+\subsection{Method \code{is_bifurcatable()}}{
+Return a logical value indicating whether this region is bifurcatable.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$is_bifurcatable()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Region-xi_upper"></a>}}
 \if{latex}{\out{\hypertarget{method-Region-xi_upper}{}}}
 \subsection{Method \code{xi_upper()}}{
@@ -185,6 +198,26 @@ The quantity \eqn{\underline{\xi}_j} for this region.
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-description"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-description}{}}}
+\subsection{Method \code{description()}}{
+A string that describes the region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$description()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-print"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-print}{}}}
+\subsection{Method \code{print()}}{
+Print a description of the region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$print()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Region-clone"></a>}}
