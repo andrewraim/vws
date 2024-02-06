@@ -4,27 +4,203 @@
 \alias{Region}
 \title{Region}
 \description{
-A region contains all of the problem-specific logic for the vws sampler.
-This is an "abstract" region that shows which functions need to be
-implemented.
+A Region contains all of the problem-specific logic for the vws sampler.
+This is an "abstract" R6 class that defines the interface for a Region.
 }
-\details{
-The following methods should be implemented:
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-Region-d_base}{\code{Region$d_base()}}
+\item \href{#method-Region-w}{\code{Region$w()}}
+\item \href{#method-Region-r}{\code{Region$r()}}
+\item \href{#method-Region-d}{\code{Region$d()}}
+\item \href{#method-Region-s}{\code{Region$s()}}
+\item \href{#method-Region-w_major}{\code{Region$w_major()}}
+\item \href{#method-Region-bifurcate}{\code{Region$bifurcate()}}
+\item \href{#method-Region-xi_upper}{\code{Region$xi_upper()}}
+\item \href{#method-Region-xi_lower}{\code{Region$xi_lower()}}
+\item \href{#method-Region-clone}{\code{Region$clone()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-d_base"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-d_base}{}}}
+\subsection{Method \code{d_base()}}{
+Density function \eqn{g} for the base distribution.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$d_base(x, log = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{d_base}}{Density function \eqn{g} for the base distribution.}
-\item{\code{w}}{Weight function \eqn{w}.}
-\item{\code{r}}{Generate a draw from \eqn{g_j} specific to this region.}
-\item{\code{d}}{Density of \eqn{g_j} specific to this region.}
-\item{\code{s}}{Test if given \code{x} is in the support for the
-\eqn{g_j} specific to this region.}
-\item{\code{w_major}}{Majorized weight function \eqn{\overline{w}_j} for
-this region.}
-\item{\code{bifurcate}}{	Bifurcate this region into two regions. Use
-\\code{x} as the bifurcation point if it is not \code{NULL}. Otherwise,
-select a point for bifurcation.}
-\item{\code{xi_upper}}{The quantity \eqn{\overline{\xi}_j} for this
-region.}
-\item{\code{xi_lower}}{The quantity \eqn{\underline{\xi}_j} for this
-region.}
+\item{\code{x}}{Density argument.}
+
+\item{\code{log}}{logical; if \code{TRUE}, return result on the log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-w"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-w}{}}}
+\subsection{Method \code{w()}}{
+Weight function \eqn{w}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$w(x, log = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{Argument to weight function.}
+
+\item{\code{log}}{logical; if \code{TRUE}, return result on the log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-r"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-r}{}}}
+\subsection{Method \code{r()}}{
+Generate a draw from \eqn{g_j} specific to this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$r(n)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Number of draws to generate.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list of draws, with one draw per list element.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-d"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-d}{}}}
+\subsection{Method \code{d()}}{
+Density of \eqn{g_j} specific to this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$d(x)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{Density argument.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-s"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-s}{}}}
+\subsection{Method \code{s()}}{
+Test if given \code{x} is in the support for the \eqn{g_j} specific to this
+region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$s(x)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{Density argument.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-w_major"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-w_major}{}}}
+\subsection{Method \code{w_major()}}{
+Majorized weight function \eqn{\overline{w}_j} for this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$w_major(x, log = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{Argument to weight function.}
+
+\item{\code{log}}{logical; if \code{TRUE}, return result on the log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-bifurcate"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-bifurcate}{}}}
+\subsection{Method \code{bifurcate()}}{
+Bifurcate this region into two regions. Use \code{x} as the bifurcation
+point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$bifurcate(x = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{An optional bifurcation point.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-xi_upper"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-xi_upper}{}}}
+\subsection{Method \code{xi_upper()}}{
+The quantity \eqn{\overline{\xi}_j} for this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$xi_upper(log = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{log}}{logical; if \code{TRUE}, return result on the log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-xi_lower"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-xi_lower}{}}}
+\subsection{Method \code{xi_lower()}}{
+The quantity \eqn{\underline{\xi}_j} for this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$xi_lower(log = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{log}}{logical; if \code{TRUE}, return result on the log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
 }
 }

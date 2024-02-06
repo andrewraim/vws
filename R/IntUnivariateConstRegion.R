@@ -80,58 +80,87 @@ int_univariate_const_region = function(a, b, w, g)
 		log_w_max = log_w_max, log_w_min = log_w_min, log_prob = log_prob)
 }
 
-IntUnivariateConstRegion$methods(d_base = function(x, log = FALSE)
+IntUnivariateConstRegion = R6::R6Class(
+	classname = "IntUnivariateConstRegion",
+	portable = TRUE,
+	lock_class = FALSE,
+	private = list(
+		a = NULL,
+		b = NULL,
+		g = NULL,
+		log_w_max = NULL,
+		log_w_min = NULL,
+		log_prob = NULL
+	),
+	public = list(
+		w = NULL
+	)
+)
+
+IntUnivariateConstRegion$set("public", "initialize", function(a, b, w, g,
+	log_w_max, log_w_min, log_prob)
 {
-	g$d(x, log = log)
+	private$a = a
+	private$b = b
+	private$g = g
+	private$log_w_max = log_w_max
+	private$log_w_min = log_w_min
+	private$log_prob = log_prob
+	self$w = w
 })
 
-IntUnivariateConstRegion$methods(w = function(x, log = TRUE)
+IntUnivariateConstRegion$set("public", "d_base", function(x, log = FALSE)
 {
-	w(x, log = log)
+	private$g$d(x, log = log)
 })
 
-IntUnivariateConstRegion$methods(r = function(n)
+IntUnivariateConstRegion$set("public", "r", function(n)
 {
 	# Compute g$q((pb - pa) * u + pa) on the log scale.
 	# Some of the quantile functions seem to produce NaN if the probability
 	# is is numerically larger than one: or zero on the log scale. We
 	# replace these values of >= 0 with a negative of machine epsilon.
 	u = runif(n)
-	log_pa = g$p(a, log.p = TRUE)
-	log_p = log_add2_exp(log_prob + log(u), rep(log_pa,n))
+	log_pa = private$g$p(private$a, log.p = TRUE)
+	log_p = log_add2_exp(private$log_prob + log(u), rep(log_pa, n))
 	log_p_adj = pmin(log_p, -.Machine$double.eps)
-	x = g$q(log_p_adj, log.p = TRUE)
-	return(as.list(x))
+	x = private$g$q(log_p_adj, log.p = TRUE)
+	as.list(x)
 })
 
-IntUnivariateConstRegion$methods(d = function(x)
+IntUnivariateConstRegion$set("public", "d", function(x)
 {
 	n = length(x)
 	out = rep(-Inf, n)
-	idx = which(a < x & x <= b)
-	out[idx] = d(x[idx], log = TRUE) -
-		log_sub2_exp(p(b, log.p = TRUE), p(a, log.p = TRUE))
+	idx = which(private$a < x & x <= private$b)
+	out[idx] = private$g$d(x[idx], log = TRUE) -
+		log_sub2_exp(private$g$p(private$b, log.p = TRUE), private$g$p(private$a, log.p = TRUE))
 
 	if (log) { return(out) } else { return(exp(out)) }
 })
 
-IntUnivariateConstRegion$methods(s = function(x)
+
+IntUnivariateConstRegion$set("public", "s", function(x)
 {
-	a < x & x <= b & g$s(x)
+	private$a < x & x <= private$b & private$g$s(x)
 })
 
-IntUnivariateConstRegion$methods(w_major = function(x, log = TRUE)
+IntUnivariateConstRegion$set("public", "w_major", function(x, log = TRUE)
 {
-	if (!g$s(x)) {
+	if (!private$g$s(x)) {
 		out = ifelse(log, -Inf, 0)
 		return(out)
 	}
-	if (log) { return(log_w_max) } else { return(exp(log_w_max)) }
+	out = private$log_w_max
+	if (log) { return(out) } else { return(exp(out)) }
 
 })
 
-IntUnivariateConstRegion$methods(bifurcate = function(x = NULL)
+IntUnivariateConstRegion$set("public", "bifurcate", function(x = NULL)
 {
+	a = private$a
+	b = private$b
+
 	if (is.null(x)) {
 		if (is.infinite(a) && is.infinite(a) && a < 0 && b > 0) {
 			# In this case, we have an interval (-Inf, Inf). Make a split at zero.
@@ -149,13 +178,16 @@ IntUnivariateConstRegion$methods(bifurcate = function(x = NULL)
 		}
 	}
 
-	s1 = int_univariate_const_region(a, x, w, g)
-	s2 = int_univariate_const_region(x, b, w, g)
+	s1 = int_univariate_const_region(a, x, self$w, private$g)
+	s2 = int_univariate_const_region(x, b, self$w, private$g)
 	list(s1, s2)
 })
 
-IntUnivariateConstRegion$methods(is_bifurcatable = function(x)
+IntUnivariateConstRegion$set("public", "is_bifurcatable", function(x)
 {
+	a = private$a
+	b = private$b
+
 	# A discrete interval is bifurcatable if there is at least one integer
 	# between the limits
 	if (is.infinite(a) || is.infinite(b)) {
@@ -167,24 +199,26 @@ IntUnivariateConstRegion$methods(is_bifurcatable = function(x)
 	return(out)
 })
 
-IntUnivariateConstRegion$methods(xi_upper = function(log = TRUE)
+IntUnivariateConstRegion$set("public", "xi_upper", function(log = TRUE)
 {
-	log_xi_upper = log_w_max + log_prob
+	log_xi_upper = private$log_w_max + private$log_prob
 	ifelse(log, log_xi_upper, exp(log_xi_upper))
 })
 
-IntUnivariateConstRegion$methods(xi_lower = function(log = TRUE)
+IntUnivariateConstRegion$set("public", "xi_lower", function(log = TRUE)
 {
-	log_xi_lower = log_w_min + log_prob
+	log_xi_lower = private$log_w_min + private$log_prob
 	ifelse(log, log_xi_lower, exp(log_xi_lower))
 })
 
-IntUnivariateConstRegion$methods(description = function()
+IntUnivariateConstRegion$set("public", "description", function()
 {
-	sprintf("(%g, %g]", a, b)
+	sprintf("(%g, %g]", private$a, private$b)
 })
 
-IntUnivariateConstRegion$methods(show = function()
+IntUnivariateConstRegion$set("public", "print", function()
 {
-	printf("Integer Univariate Const Region (%g, %g]\n", a, b)
+	printf("Integer Univariate Const Region (%g, %g]\n", private$a, private$b)
 })
+
+IntUnivariateConstRegion$lock()

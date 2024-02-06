@@ -2,48 +2,268 @@
 % Please edit documentation in R/FMMProposal.R
 \name{FMMProposal}
 \alias{FMMProposal}
-\alias{fmm_proposal}
-\title{FMM Proposal}
-\usage{
-fmm_proposal(regions)
-}
-\arguments{
-\item{regions}{A list of regions that form a partition of the support.}
-}
+\title{FMMProposal}
 \description{
-FMM Proposal
+An R6 class which represents a VWS proposal: a finite mixture that some
+specific certain operations.
 }
 \details{
-The \code{regions} list represents \eqn{\mathcal{D}_1, \ldots, \mathcal{D}_N}.
-They should be objects based on a subclass of \code{Region}, which uses
-R's reference class construct.
+\itemize{
+\item The list \code{regions} represents
+(\eqn{\mathcal{D}_1, \ldots, \mathcal{D}_N}).
+Each entry should be an object based on an R6  subclass of \code{Region}.
+\item The numeric vectors \code{log_xi_upper} and \code{log_xi_lower}
+represent
+\eqn{(\log \overline{\xi}_1, \ldots, \log \overline{\xi}_N)}
+and
+\eqn{(\log \underline{\xi}_1, \ldots, \log \underline{\xi}_N)},
+respectively.
+\item The logical vector \code{bifurcatable} indicates whether each
+region can be bifurcated or not.
 }
-\section{Fields}{
+}
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-FMMProposal-new}{\code{FMMProposal$new()}}
+\item \href{#method-FMMProposal-get_xi_upper}{\code{FMMProposal$get_xi_upper()}}
+\item \href{#method-FMMProposal-get_xi_lower}{\code{FMMProposal$get_xi_lower()}}
+\item \href{#method-FMMProposal-get_bifurcatable}{\code{FMMProposal$get_bifurcatable()}}
+\item \href{#method-FMMProposal-get_regions}{\code{FMMProposal$get_regions()}}
+\item \href{#method-FMMProposal-rejection_bound}{\code{FMMProposal$rejection_bound()}}
+\item \href{#method-FMMProposal-nc}{\code{FMMProposal$nc()}}
+\item \href{#method-FMMProposal-r}{\code{FMMProposal$r()}}
+\item \href{#method-FMMProposal-d}{\code{FMMProposal$d()}}
+\item \href{#method-FMMProposal-log_target_pdf_unnorm}{\code{FMMProposal$log_target_pdf_unnorm()}}
+\item \href{#method-FMMProposal-summary}{\code{FMMProposal$summary()}}
+\item \href{#method-FMMProposal-print}{\code{FMMProposal$print()}}
+\item \href{#method-FMMProposal-clone}{\code{FMMProposal$clone()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-new"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-new}{}}}
+\subsection{Method \code{new()}}{
+Constructor for FMMProposal.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$new(regions)}\if{html}{\out{</div>}}
+}
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{regions}}{A list of \code{N} regions that form a partition of the support.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-get_xi_upper"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-get_xi_upper}{}}}
+\subsection{Method \code{get_xi_upper()}}{
+Access the vector \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$get_xi_upper(log = FALSE)}\if{html}{\out{</div>}}
+}
 
-\item{\code{log_xi_upper}}{The numeric vector
-\eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.}
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{log}}{If \code{TRUE} compute result on log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-get_xi_lower"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-get_xi_lower}{}}}
+\subsection{Method \code{get_xi_lower()}}{
+Access the vector \eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$get_xi_lower(log = FALSE)}\if{html}{\out{</div>}}
+}
 
-\item{\code{log_xi_lower}}{The numeric vector
-\eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.}
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{log}}{If \code{TRUE} compute result on log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-get_bifurcatable"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-get_bifurcatable}{}}}
+\subsection{Method \code{get_bifurcatable()}}{
+Access the vector \code{bifurcatable}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$get_bifurcatable()}\if{html}{\out{</div>}}
+}
 
-\item{\code{bifurcatable}}{A vector of logical values which indicates whether the
-corresponding regions may be bifurcated further.}
-}}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-get_regions"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-get_regions}{}}}
+\subsection{Method \code{get_regions()}}{
+Access the vector \code{regions}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$get_regions()}\if{html}{\out{</div>}}
+}
 
-\examples{
-# Define base distribution and weight function
-g = normal_univariate_helper(mean = 0, sd = 5)
-w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-rejection_bound"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-rejection_bound}{}}}
+\subsection{Method \code{rejection_bound()}}{
+Upper bound for rejection probability.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$rejection_bound(byregion = FALSE, log = FALSE)}\if{html}{\out{</div>}}
+}
 
-# Set up support
-support = univariate_const_region(-Inf, 10, w, g)
-regions = support$bifurcate()
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{byregion}}{If \code{TRUE}, compute bound by region. Otherwise compute
+total.}
 
-# Create a finite mixture with one component
-fmm = fmm_proposal(regions)
-print(fmm)
+\item{\code{log}}{If \code{TRUE} compute result on log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A vector of size \code{N} or a single scalar.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-nc"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-nc}{}}}
+\subsection{Method \code{nc()}}{
+Normalizing constant for proposal distribution.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$nc(log = FALSE)}\if{html}{\out{</div>}}
+}
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{log}}{If \code{TRUE} compute result on log-scale}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-r"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-r}{}}}
+\subsection{Method \code{r()}}{
+Generate draws from proposal distribution.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$r(n = 1, indices = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Number of draws to generate.}
+
+\item{\code{indices}}{If \code{TRUE}, return indices of mixture components selected
+during draws.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A list which each element is a saved draw.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-d"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-d}{}}}
+\subsection{Method \code{d()}}{
+Compute density of proposal distribution.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$d(x, normalize = TRUE, log = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{A list where each element is a density value to evaluate.}
+
+\item{\code{normalize}}{If \code{TRUE}, apply the normalizing constant; otherwise
+do not.}
+
+\item{\code{log}}{If \code{TRUE}, return density results on the log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A vector or scalar of density values corresponding to \code{x}.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-log_target_pdf_unnorm"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-log_target_pdf_unnorm}{}}}
+\subsection{Method \code{log_target_pdf_unnorm()}}{
+Compute \eqn{\log w(x) + \log g(x)} for each element of the given \code{x}
+which is a list whose elements are density values.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$log_target_pdf_unnorm(x)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{a list where each element represents one argument.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A vector or scalar of density values corresponding to \code{x}.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-summary"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-summary}{}}}
+\subsection{Method \code{summary()}}{
+Summary table of regions which compose the proposal distribution. Returns a
+data frame.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$summary()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-print"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-print}{}}}
+\subsection{Method \code{print()}}{
+Display summary table of regions which compose the proposal distribution.
+Limit the display to \code{n} regions.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$print(n = 5)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Number of regions to print.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

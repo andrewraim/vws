@@ -38,7 +38,7 @@ are somewhat flexible and can be adapted to a variety of problems. In this
 vignette, we will describe the process of coding a customized region. We will
 give one univariate example that makes use of the linear VWS method for
 improved efficiency, and one multivariate example where the regions go beyond
-intervals. To do this, we may use of the reference class construct for
-object-orientation in R.
+intervals. To do this, we make use of the [R6](https://r6.r-lib.org) construct
+for object-orientation in R.
 
 # References

@@ -76,54 +76,82 @@ univariate_const_region = function(a, b, w, g)
 		log_w_min = log_w_min, log_prob = log_prob)
 }
 
-UnivariateConstRegion$methods(d_base = function(x, log = FALSE)
+UnivariateConstRegion = R6::R6Class(
+	classname = "UnivariateConstRegion",
+	portable = TRUE,
+	lock_class = FALSE,
+	private = list(
+		a = NULL,
+		b = NULL,
+		g = NULL,
+		log_w_max = NULL,
+		log_w_min = NULL,
+		log_prob = NULL
+	),
+	public = list(
+		w = NULL
+	)
+)
+
+UnivariateConstRegion$set("public", "initialize", function(a, b, w, g,
+	log_w_max, log_w_min, log_prob)
 {
-	g$d(x, log = log)
+	private$a = a
+	private$b = b
+	private$g = g
+	private$log_w_max = log_w_max
+	private$log_w_min = log_w_min
+	private$log_prob = log_prob
+	self$w = w
 })
 
-UnivariateConstRegion$methods(w = function(x, log = TRUE)
+UnivariateConstRegion$set("public", "d_base", function(x, log = FALSE)
 {
-	w(x, log = log)
+	private$g$d(x, log = log)
 })
 
-UnivariateConstRegion$methods(r = function(n)
+UnivariateConstRegion$set("public", "r", function(n)
 {
 	# Generate a draw from $g_j$; i.e., the density $g$ truncated to this region.
 	# Compute g$q((pb - pa) * u + pa) on the log scale
 	u = runif(n)
-	log_pa = g$p(a, log.p = TRUE)
-	log_p = log_add2_exp(log_prob + log(u), rep(log_pa,n))
-	x = g$q(log_p, log.p = TRUE)
-	return(as.list(x))
+	log_pa = private$g$p(private$a, log.p = TRUE)
+	log_p = log_add2_exp(private$log_prob + log(u), rep(log_pa, n))
+	x = private$g$q(log_p, log.p = TRUE)
+	as.list(x)
 })
 
-UnivariateConstRegion$methods(d = function(x)
+UnivariateConstRegion$set("public", "d", function(x)
 {
 	n = length(x)
 	out = rep(-Inf, n)
 	idx = which(a < x & x <= b)
-	out[idx] = d(x[idx], log = TRUE) -
-		log_sub2_exp(p(b, log.p = TRUE), p(a, log.p = TRUE))
+	out[idx] = private$g$d(x[idx], log = TRUE) -
+		log_sub2_exp(private$g$p(private$b, log.p = TRUE), private$g$p(private$a, log.p = TRUE))
 
 	if (log) { return(out) } else { return(exp(out)) }
 })
 
-UnivariateConstRegion$methods(s = function(x)
+UnivariateConstRegion$set("public", "s", function(x)
 {
-	a < x & x <= b & g$s(x)
+	private$a < x & x <= private$b & private$g$s(x)
 })
 
-UnivariateConstRegion$methods(w_major = function(x, log = TRUE)
+UnivariateConstRegion$set("public", "w_major", function(x, log = TRUE)
 {
-	if (!g$s(x)) {
+	if (!private$g$s(x)) {
 		out = ifelse(log, -Inf, 0)
 		return(out)
 	}
-	if (log) { return(log_w_max) } else { return(exp(log_w_max)) }
+	out = private$log_w_max
+	if (log) { return(out) } else { return(exp(out)) }
 })
 
-UnivariateConstRegion$methods(bifurcate = function(x = NULL)
+UnivariateConstRegion$set("public", "bifurcate", function(x = NULL)
 {
+	a = private$a
+	b = private$b
+
 	if (is.null(x)) {
 		if (is.infinite(a) && is.infinite(b) && a < 0 && b > 0) {
 			# In this case, we have an interval (-Inf, Inf). Make a split at zero.
@@ -139,34 +167,36 @@ UnivariateConstRegion$methods(bifurcate = function(x = NULL)
 		}
 	}
 
-	s1 = univariate_const_region(a, x, w, g)
-	s2 = univariate_const_region(x, b, w, g)
+	s1 = univariate_const_region(a, x, self$w, private$g)
+	s2 = univariate_const_region(x, b, self$w, private$g)
 	list(s1, s2)
 })
 
-UnivariateConstRegion$methods(is_bifurcatable = function(x)
+UnivariateConstRegion$set("public", "is_bifurcatable", function(x)
 {
 	return(TRUE)
 })
 
-UnivariateConstRegion$methods(xi_upper = function(log = TRUE)
+UnivariateConstRegion$set("public", "xi_upper", function(log = TRUE)
 {
-	log_xi_upper = log_w_max + log_prob
+	log_xi_upper = private$log_w_max + private$log_prob
 	ifelse(log, log_xi_upper, exp(log_xi_upper))
 })
 
-UnivariateConstRegion$methods(xi_lower = function(log = TRUE)
+UnivariateConstRegion$set("public", "xi_lower", function(log = TRUE)
 {
-	log_xi_lower = log_w_min + log_prob
+	log_xi_lower = private$log_w_min + private$log_prob
 	ifelse(log, log_xi_lower, exp(log_xi_lower))
 })
 
-UnivariateConstRegion$methods(description = function()
+UnivariateConstRegion$set("public", "description", function()
 {
-	sprintf("(%g, %g]", a, b)
+	sprintf("(%g, %g]", private$a, private$b)
 })
 
-UnivariateConstRegion$methods(show = function()
+UnivariateConstRegion$set("public", "print", function()
 {
-	printf("Univariate Const Region (%g, %g]\n", a, b)
+	printf("Univariate Const Region (%g, %g]\n", private$a, private$b)
 })
+
+UnivariateConstRegion$lock()
