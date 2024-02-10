@@ -12,6 +12,13 @@ Univariate Region with Constant Majorizer
 An R6 class which represents a region based on univariate intervals with a
 constant majorizer for the weight function.
 }
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{w}}{Weight function for the target distribution.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -34,6 +41,7 @@ constant majorizer for the weight function.
 \if{html}{\out{<a id="method-UnivariateConstRegion-new"></a>}}
 \if{latex}{\out{\hypertarget{method-UnivariateConstRegion-new}{}}}
 \subsection{Method \code{new()}}{
+This function gets passed in as an argument
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$new(a, b, w, g, log_w_max, log_w_min)}\if{html}{\out{</div>}}
 }

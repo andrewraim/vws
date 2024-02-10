@@ -12,6 +12,13 @@ Integer Univariate Region with Constant Majorizer
 A region based on univariate intervals with a constant majorizer for the
 weight function. This version is for integer supports.
 }
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{w}}{Weight function for the target distribution.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{

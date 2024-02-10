@@ -70,13 +70,7 @@ univariate_const_region = function(a, b, w, g)
 #' An R6 class which represents a region based on univariate intervals with a
 #' constant majorizer for the weight function.
 #'
-#' @param a Lower limit of interval.
-#' @param b Upper limit of interval.
-#' @param g An object created by \code{univariate_helper}.
-#' @param log_w_max The value \eqn{\max_{x \in (a,b]}\log w(x)}.
-#' @param log_w_min The value \eqn{\min_{x \in (a,b]}\log w(x)}.
-#' @param log_prob The value \eqn{\log \text{P}(a < T \leq b)} for \eqn{T \sim g}.
-#' @param w Weight function for the target distribution.
+#' @field w Weight function for the target distribution.
 #'
 #' @export
 UnivariateConstRegion = R6::R6Class(
@@ -93,7 +87,8 @@ private = list(
 ),
 public = list(
 
-# This function gets passed in as an argument
+#' @description
+#'  This function gets passed in as an argument
 w = NULL,
 
 #' @param a Lower limit of interval.
