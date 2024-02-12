@@ -26,8 +26,11 @@ w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 reg = int_univariate_const_region(-Inf, 10, w, g)
 print(reg)
 
-out = reg$bifurcate(0)
+out = reg$bifurcate(5)
 print(out[[1]])
 print(out[[2]])
+
+out[[1]]$r(100) |> as.numeric()
+out[[2]]$r(100) |> as.numeric()
 
 }

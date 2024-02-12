@@ -1,0 +1,239 @@
+---
+title: "Rejection Sampling with Vertical Weighted Strips in R"
+author: Andrew M. Raim, James A. Livsey, and Kyle M. Irimata
+# output:
+  # pdf
+  # rmarkdown::html_vignette:
+  #  number_sections: true
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
+    margin-left: 0.5 in
+    margin-right: 0.5 in
+    margin-top: 0.5 in
+    margin-bottom: 0.5 in
+    prompt: false
+mainfont: Latin Modern Roman
+vignette: >
+  %\VignetteIndexEntry{examples}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{vws::quarto::pdf}
+bibliography: references.bib
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#| include: false
+# knitr::opts_chunk$set(
+#	collapse = TRUE,
+#	comment = "#>",
+#	prompt = TRUE
+# )
+library(R6)
+library(vws)
+library(ggplot2)
+
+set.seed(1234)
+```
+
+**TBD**
+
+- Add example for VMF maybe...
+- Add example for TMVN maybe...
+- Mention up front that many of the computations are on the log-scale for
+  stability. Show the log-sum-exp functions.
+
+# Introduction
+
+To implement a rejection sampler with the `vws` package, the user must make use
+of an existing subclass of `Region` or implement a new one. Two such subclasses
+included in the package implement the univariate "constant VWS" method described
+by @VWS2024:
+
+- `UnivariateConstRegion`: constant VWS with a continuous support.
+- `IntUnivariateConstRegion`: constant VWS with an integer support.
+
+See the manual pages for each sampler for usage and examples. These two regions
+are somewhat flexible and can be adapted to a variety of problems. In this
+vignette, we will describe the process of coding a customized region. We will
+give one univariate example that makes use of the linear VWS method for
+improved efficiency, and one multivariate example where the regions go beyond
+intervals. To do this, we make use of the [R6](https://r6.r-lib.org) construct
+for object-orientation in R.
+
+# Von Mises Fisher
+
+(TBD: needs some explanation). Suppose $X$ has density
+
+\begin{align}
+f(x) =
+\frac{
+(\kappa / 2)^{d/2 - 1} (1 - x^2)^{(d-3)/2} \exp(\kappa x)
+}{
+\sqrt{\pi} \cdot I_{d/2 - 1}(\kappa) \cdot \Gamma((d-1)/2)
+} \cdot \textrm{I}(-1 < x < 1).
+\label{eqn:vmf-target}
+\end{align}
+
+Let us decompose $f$ into
+
+\begin{align*}
+f(x) \propto
+\underbrace{(1 - x^2)^{(d-3)/2}}_{w(x)}
+\underbrace{\exp(\kappa x) \cdot \textrm{I}(-1 < x < 1)}_{g_0(x)},
+\end{align*}
+
+where $w$ is a nonnegative weight function and $g_0$ is proportional to density
+
+\begin{align*}
+g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \textrm{I}(-1 < x < 1).
+\end{align*}
+
+The CDF corresponding to $g$ is
+
+\begin{align*}
+G(x) = \begin{cases}
+0 & \text{if $x < -1$}, \\
+1 & \text{if $x > 1$}, \\
+\frac{e^{\kappa x} - e^{-\kappa x}}{e^\kappa - e^{-\kappa}} & \text{otherwise},
+\end{cases}
+\end{align*}
+
+and the quantile function is
+
+\begin{align*}
+G^{-1}(\varphi) = \frac{1}{\kappa} \log\left[e^{\kappa a} + \varphi (e^{\kappa b} - e^{\kappa a}) \right], \quad \varphi \in [0,1].
+\end{align*}
+
+
+Check the manual entry for `Region` to see which methods need to be implemented.
+
+```{r}
+#| eval: false
+#| prompt: true
+?Region
+```
+
+The needed operations for the base and target distributions are defined in the
+following files.
+
+```{r}
+#| prompt: true
+source("../inst/examples/base.R")
+source("../inst/examples/target.R")
+source("../inst/examples/VMFLinearRegion.R")
+```
+
+## Constant VWS
+
+Define base distribution and weight function.
+
+```{r}
+d = 2
+kappa = 0.2
+	
+helper = univariate_helper(
+	d = function(x, log = FALSE) {
+		d_base(x, kappa = kappa, log = log)
+	},
+	p = function(q, lower.tail = TRUE, log.p = FALSE) {
+		p_base(q, kappa = kappa, lower.tail = lower.tail, log.p = log.p)
+	},
+	q = function(p, lower.tail = TRUE, log.p = FALSE) {
+		q_base(p, kappa = kappa, lower.tail = lower.tail, log.p = log.p)
+	},
+	s = function(x) { -1 < x & x < 1 }
+)
+
+w = function(x, log = FALSE) {
+	out = (d - 3) / 2 * log(1 - x^2)
+	if (log) { return(out) } else { return(exp(out)) }
+}
+```
+
+```{r}
+support = univariate_const_region(a = 1e-4 - 1, b = 1 - 1e-4, w = w, g = helper)
+regions = list(support)
+```
+
+Adapt the proposal.
+
+```{r}
+h_init = fmm_proposal(regions)
+ctrl = rejection_control(report = 20)
+adapt_out = adapt_midpoint(h_init, N = 100, control = ctrl)
+h = adapt_out$h
+```
+
+Plot the rate of adaptation improvement.
+
+```{r}
+dat_plot = data.frame(
+	step = seq_along(adapt_out$log_bdd_hist),
+	bdd = exp(adapt_out$log_bdd_hist))
+ggplot(dat_plot) +
+	geom_line(aes(x = step, y = bdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Bound") +
+	theme_minimal()
+```
+
+Generate draws.
+
+```{r}
+ctrl = rejection_control(max_rejects = 10000, report = 1000)
+out = rejection(h, n = 10000, control = ctrl)
+x = unlist(out)
+```
+
+Plot the empirical distribution of the draws with the target density.
+
+```{r}
+ggplot(data.frame(x = x)) +
+	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(kappa = kappa, d = d),
+		lty = 2, xlim = c(1e-2 - 1, 1 - 1e-2)) +
+	theme_minimal()
+```
+
+## Linear VWS
+
+For this region:
+
+- `w` is assumed to be $(1 - x^2)^{d/3 - 3/2}$
+- `g` is assumed to be proportional to $\exp(\kappa x)$
+- majorized `w` is assumed to be of the form $\exp(\beta_0 + \beta_1 x)$
+
+Note that `log(w(-1)) = log(w(1)) = Inf` with this choice when `d < 3`. A
+workaround is to exclude the endpoints from the support.
+
+TBD: looks like there are still bugs in here. Results aren't correct. We saw a
+much better acceptance rate in the other (messy) version of the code.
+
+```{r}
+if (FALSE) {
+	support = VMFLinearRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, kappa = 0.1, d = 4)
+
+	# Adapt the proposal
+	h_init = fmm_proposal(list(support))
+	ctrl = rejection_control(report = 20)
+	adapt_out = adapt_midpoint(h_init, N = 100, control = )
+	h = adapt_out$h
+
+	# Generate draws
+	control = rejection_control(max_rejects = 10000)
+	out = rejection(h, n = 10000, control = control)
+	out |> unlist() |> hist()
+
+	x = seq(-1, 1, length.out = 100)
+	log_h0x = h$d(x |> as.list(), normalize = TRUE, log = TRUE)
+	plot(x, log_h0x)
+}
+```
+
+# References

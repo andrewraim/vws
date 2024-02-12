@@ -15,9 +15,12 @@
 #' reg = int_univariate_const_region(-Inf, 10, w, g)
 #' print(reg)
 #'
-#' out = reg$bifurcate(0)
+#' out = reg$bifurcate(5)
 #' print(out[[1]])
 #' print(out[[2]])
+#'
+#' out[[1]]$r(100) |> as.numeric()
+#' out[[2]]$r(100) |> as.numeric()
 #'
 #' @export
 int_univariate_const_region = function(a, b, w, g)
@@ -72,7 +75,7 @@ int_univariate_const_region = function(a, b, w, g)
 	}
 
 	IntUnivariateConstRegion$new(a = a, b = b, w = w, g = g,
-		log_w_max = log_w_max, log_w_min = log_w_min,)
+		log_w_max = log_w_max, log_w_min = log_w_min)
 }
 
 #' Integer Univariate Region with Constant Majorizer
@@ -85,7 +88,7 @@ int_univariate_const_region = function(a, b, w, g)
 #' @export
 IntUnivariateConstRegion = R6::R6Class(
 
-classname = "IntUnivariateConstRegion",
+classname = "UnivariateConstRegion",
 portable = TRUE,
 lock_class = FALSE,
 private = list(
@@ -120,16 +123,13 @@ initialize = function(a, b, w, g, log_w_max, log_w_min)
 	self$w = w
 
 	# Compute g$p(b) - g$p(a) on the log scale
-	private$log_prob = log_sub2_exp(g$p(b, log.p = TRUE), g$p(a, log.p = TRUE))
-},
-
-#' @description
-#' Density function \eqn{g} for the base distribution.
-#' @param x Density argument.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
-d_base = function(x, log = FALSE)
-{
-	private$g$d(x, log = log)
+	if (a < b) {
+		# Not a point mass
+		private$log_prob = log_sub2_exp(g$p(b, log.p = TRUE), g$p(a, log.p = TRUE))
+	} else {
+		# Point mass
+		private$log_prob = g$d(b, log = TRUE)
+	}
 },
 
 #' @description
@@ -148,44 +148,6 @@ r = function(n)
 	log_p_adj = pmin(log_p, -.Machine$double.eps)
 	x = private$g$q(log_p_adj, log.p = TRUE)
 	as.list(x)
-},
-
-#' @description
-#' Density of \eqn{g_j} specific to this region.
-#' @param x Density argument.
-d = function(x)
-{
-	n = length(x)
-	out = rep(-Inf, n)
-	idx = which(private$a < x & x <= private$b)
-	out[idx] = private$g$d(x[idx], log = TRUE) -
-		log_sub2_exp(private$g$p(private$b, log.p = TRUE), private$g$p(private$a, log.p = TRUE))
-
-	if (log) { return(out) } else { return(exp(out)) }
-},
-
-#' @description
-#' Test if given \code{x} is in the support for the \eqn{g_j} specific to this
-#' region.
-#' @param x Density argument.
-s = function(x)
-{
-	private$a < x & x <= private$b & private$g$s(x)
-},
-
-#' @description
-#' Majorized weight function \eqn{\overline{w}_j} for this region.
-#' @param x Argument to weight function.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
-w_major = function(x, log = TRUE)
-{
-	if (!private$g$s(x)) {
-		out = ifelse(log, -Inf, 0)
-		return(out)
-	}
-	out = private$log_w_max
-	if (log) { return(out) } else { return(exp(out)) }
-
 },
 
 #' @description
@@ -235,31 +197,6 @@ is_bifurcatable = function()
 	}
 
 	return(out)
-},
-
-#' @description
-#' The quantity \eqn{\overline{\xi}_j} for this region.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
-xi_upper = function(log = TRUE)
-{
-	log_xi_upper = private$log_w_max + private$log_prob
-	ifelse(log, log_xi_upper, exp(log_xi_upper))
-},
-
-#' @description
-#' The quantity \eqn{\underline{\xi}_j} for this region.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
-xi_lower = function(log = TRUE)
-{
-	log_xi_lower = private$log_w_min + private$log_prob
-	ifelse(log, log_xi_lower, exp(log_xi_lower))
-},
-
-#' @description
-#' A string that describes the region.
-description = function()
-{
-	sprintf("(%g, %g]", private$a, private$b)
 },
 
 #' @description

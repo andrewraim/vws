@@ -12,8 +12,9 @@ LazyData: true
 RoxygenNote: 7.3.1
 Imports:
 	methods,
-    R6
+    R6,
+    quarto
 Suggests: 
     knitr,
     rmarkdown
-VignetteBuilder: knitr
+VignetteBuilder: knitr, vws

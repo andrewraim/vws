@@ -2,3 +2,10 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 notes.md
+^doc$
+^Meta$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+vignettes/bak
+vignettes/.quarto

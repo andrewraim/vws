@@ -39,7 +39,7 @@
 #' print(out |> unlist())
 #'
 #' out = rejection(h, n = 1000, rejection_control(extra_outputs = TRUE))
-#' print(out$draws)
+#' print(out$draws |> unlist())
 #' print(out$rejects)
 #'
 #' @name rejection

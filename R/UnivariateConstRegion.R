@@ -111,14 +111,7 @@ initialize = function(a, b, w, g, log_w_max, log_w_min)
 	private$log_w_min = log_w_min
 
 	# Compute g$p(b) - g$p(a) on the log scale
-	if (a < b) {
-		# Not a point mass
-		private$log_prob = log_sub2_exp(g$p(b, log.p = TRUE), g$p(a, log.p = TRUE))
-	} else {
-		# Point mass
-		private$log_prob = g$d(b, log = TRUE)
-	}
-
+	private$log_prob = log_sub2_exp(g$p(b, log.p = TRUE), g$p(a, log.p = TRUE))
 },
 
 #' @description
