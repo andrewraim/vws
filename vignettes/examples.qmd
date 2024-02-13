@@ -95,11 +95,8 @@ g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \textrm{I}(-1 < 
 The CDF corresponding to $g$ is
 
 \begin{align*}
-G(x) = \begin{cases}
-0 & \text{if $x < -1$}, \\
-1 & \text{if $x > 1$}, \\
-\frac{e^{\kappa x} - e^{-\kappa x}}{e^\kappa - e^{-\kappa}} & \text{otherwise},
-\end{cases}
+G(x) = \frac{e^{\kappa x} - e^{-\kappa x}}{e^\kappa - e^{-\kappa}},
+\quad x \in (-1, 1)
 \end{align*}
 
 and the quantile function is
@@ -123,6 +120,7 @@ following files.
 ```{r}
 #| prompt: true
 source("../inst/examples/base.R")
+source("../inst/examples/vmf-helper.R")
 source("../inst/examples/target.R")
 source("../inst/examples/VMFLinearRegion.R")
 ```
@@ -134,19 +132,8 @@ Define base distribution and weight function.
 ```{r}
 d = 2
 kappa = 0.2
-	
-helper = univariate_helper(
-	d = function(x, log = FALSE) {
-		d_base(x, kappa = kappa, log = log)
-	},
-	p = function(q, lower.tail = TRUE, log.p = FALSE) {
-		p_base(q, kappa = kappa, lower.tail = lower.tail, log.p = log.p)
-	},
-	q = function(p, lower.tail = TRUE, log.p = FALSE) {
-		q_base(p, kappa = kappa, lower.tail = lower.tail, log.p = log.p)
-	},
-	s = function(x) { -1 < x & x < 1 }
-)
+
+helper = vmf_base_helper(kappa)
 
 w = function(x, log = FALSE) {
 	out = (d - 3) / 2 * log(1 - x^2)
