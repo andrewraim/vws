@@ -46,8 +46,7 @@ adapt_midpoint = function(h, N, method = "pps", control = rejection_control())
 	report = control$report
 
 	if (report <= N) {
-		logger("After 0 steps, attained a = %g ", log_ub_hist[1])
-		printf("rejection prob <= %g\n", exp(log_bdd_hist[1]))
+		logger("Initial log Pr{rejection} <= %g\n", log_bdd_hist[1])
 	}
 
 	for (j in seq_len(N)) {
@@ -86,8 +85,7 @@ adapt_midpoint = function(h, N, method = "pps", control = rejection_control())
 		log_bdd_hist[j+1] = h$rejection_bound(log = TRUE)
 
 		if (j %% report == 0) {
-			logger("After %d steps, attained a = %g ", j, log_ub_hist[j+1])
-			printf("rejection prob <= %g\n", exp(log_bdd_hist[j+1]))
+			logger("After %d steps log Pr{rejection} <= %g\n", j, log_bdd_hist[j+1])
 		}
 	}
 

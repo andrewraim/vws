@@ -9,6 +9,11 @@ For each example, we can give a bit of background, show the target, show the
 decomposition, show or point to the code for functions, demonstrate the sampler
 in action, plot the adaptation rate achieved, and plot the result.
 
+Some misc items
+
+- Give figures captions
+- Make figures render nicely. This might be doable with a global option.
+
 # Outline
 
 Review of VWS Method

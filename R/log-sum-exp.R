@@ -83,7 +83,11 @@ log_add2_exp = function(x, y)
 #' @export
 log_sub2_exp = function(x, y)
 {
-	x + log1p(-exp(y - x))
+	# For cases where x and y are both -Inf, the initial calculation will
+	# evaluate to NaN in R, but the result should be -Inf.
+	out = x + log1p(-exp(y - x))
+	out[ is.infinite(x) & is.infinite(y) & x < 0 & y < 0 ] = -Inf
+	return(out)
 }
 
 #' @name log_sum_exp

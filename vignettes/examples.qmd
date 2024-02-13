@@ -24,10 +24,10 @@ format:
     number-sections: true
     colorlinks: true
     link-citations: true
-    margin-left: 0.50 in
-    margin-right: 0.50 in
-    margin-top: 0.75 in
-    margin-bottom: 1.00 in
+#    margin-left: 0.50 in
+#    margin-right: 0.50 in
+#    margin-top: 0.75 in
+#    margin-bottom: 1.00 in
     prompt: false
     template-partials: 
       - title.tex
@@ -47,6 +47,15 @@ editor_options:
   chunk_output_type: console
 abstract: |
   TBD abstract goes here.
+geometry:
+  - left=0.5in
+  - right=0.5in
+  - top=0.75in
+  - bottom=1.00in
+  # - textwidth=4.5in
+  # - marginparsep=.25in
+  # - marginparwidth=2.25in
+  # - showframe
 ---
 
 ```{r}
@@ -54,10 +63,13 @@ abstract: |
 library(R6)
 library(vws)
 library(tidyverse)
-library(ggplot2)
 
 set.seed(1234)
 ```
+
+**TBD**
+
+- If plotting code gets too repetitive, consider making functions for plots.
 
 # Introduction
 
@@ -107,6 +119,11 @@ TBD: this problem came up in @DirectSamplingDAS2021 and @DPSimulation2022.
 ## Bessel Count Distribution
 
 TBD: this sampling problem comes up in @Devroye2002.
+
+```{r}
+#| prompt: true
+source("../inst/examples/bessel/functions.R")
+```
 
 In this example, we consider generating from the Bessel density described by
 @Devroye2002 as
@@ -178,6 +195,73 @@ extremely rare to reject any candidates.
 Consider giving background information about the Bessel distribution to show
 why it was of special interest to Devroye.
 
+```{r}
+nu = -0.5
+lambda = 10
+
+helper = poisson_univariate_helper(lambda^2 / 4)
+
+w = function(x, log = TRUE) {
+	out = -lgamma(x + nu + 1) + lambda^2 / 4 + nu * log(lambda / 2)
+	if (log) { return(out) } else { return(exp(out)) }
+}
+
+support = int_univariate_const_region(a = -1, b = Inf, w = w, g = helper)
+regions = list(support)
+
+h_init = fmm_proposal(regions)
+ctrl = rejection_control(report = 20)
+adapt_out = adapt_midpoint(h_init, N = 100, control = ctrl)
+h = adapt_out$h
+
+data.frame(logbdd = adapt_out$log_bdd_hist) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = logbdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Log of Bound") +
+	theme_minimal()
+
+ctrl = rejection_control(max_rejects = 10000, report = 2000)
+out = rejection(h, n = 10000, control = ctrl)
+x = unlist(out)
+```
+
+Plot the empirical distribution of the draws with the target density.
+
+```{r}
+# Compute empirical density of draws and density values
+n = length(x)
+tab_out = factor(x, levels = seq(0, 11)) |> table()
+x_vals = tab_out |> names() |> as.integer()
+d_vals_emp = (tab_out / n) |> as.numeric()
+d_vals = d_bessel(x_vals, a = lambda, nu = nu)
+
+data.frame(x = x_vals, d_emp = d_vals_emp, d = d_vals) %>%
+	ggplot() +
+	geom_point(aes(x = x, y = d), pch = 1) +
+	geom_point(aes(x = x, y = d_emp), pch = 3) +
+	ylab("Probability") +
+	theme_minimal()
+```
+
+Plot proposal versus the target on the log-scale.
+
+```{r}
+log_h = function(x) { h$d(as.list(x), log = TRUE) }
+log_f = function(x) { d_bessel(x, a = lambda, nu = nu, log = TRUE) }
+
+df = data.frame(x = x_vals) %>%
+	mutate(log_h_vals = log_h(x)) %>%
+	mutate(log_f_vals = log_f(x))
+
+ggplot(df) +
+	geom_point(aes(x, log_h_vals), pch = 1) +
+	geom_point(aes(x, log_f_vals), pch = 3) +
+	theme_minimal()
+```
+
 ## Von Mises Fisher
 
 TBD: needs some explanation. We use both constant and linear majorizers here.
@@ -236,10 +320,10 @@ following files.
 
 ```{r}
 #| prompt: true
-source("../inst/examples/base.R")
-source("../inst/examples/vmf-helper.R")
-source("../inst/examples/target.R")
-source("../inst/examples/VMFLinearRegion.R")
+source("../inst/examples/vmf/base.R")
+source("../inst/examples/vmf/vmf-base-helper.R")
+source("../inst/examples/vmf/target.R")
+source("../inst/examples/vmf/VMFLinearRegion.R")
 ```
 
 TBD: we have to truncate support to something within $[-1,1]$ when $d < 3$
@@ -279,10 +363,9 @@ Plot the rate of adaptation improvement. (TBD: consider making this an object
 that can quickly be plotted. But this might add a dependency if it's ggplot).
 
 ```{r}
-dat_plot = data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
-	mutate(step = row_number() - 1)
-
-ggplot(dat_plot) +
+data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
 	geom_line(aes(x = step, y = bdd)) +
 	scale_y_continuous(n.breaks = 10) +
 	xlab("Step") +
@@ -301,7 +384,8 @@ x = unlist(out)
 Plot the empirical distribution of the draws with the target density.
 
 ```{r}
-ggplot(data.frame(x = x)) +
+data.frame(x = x) %>%
+	ggplot() +
 	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
 		fill = NA, bins = 25) +
 	geom_function(fun = d_target, args = list(kappa = kappa, d = d),
@@ -321,31 +405,90 @@ For this region:
 Note that $\log(w(-1)) = \log(w(1)) = \infty$ with this choice when $d < 3$. A
 workaround is to exclude the endpoints from the support.
 
-TBD: looks like there are still bugs in here. Results aren't correct. We saw a
-much better acceptance rate in the other (messy) version of the code.
+```{r}
+d = 2
+kappa = 0.2
+```
+
+Create a single region of class `VMFLinearRegion`.
 
 ```{r}
-if (FALSE) {
-	support = VMFLinearRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, kappa = kappa, d = d)
+support = VMFLinearRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, kappa = kappa, d = d)
+regions = list(support)
+```
 
-	# Adapt the proposal
-	h_init = fmm_proposal(list(support))
-	ctrl = rejection_control(report = 20)
-	adapt_out = adapt_midpoint(h_init, N = 100, control = ctrl)
-	h = adapt_out$h
+Adapt the proposal.
 
-	# Generate draws
-	control = rejection_control(max_rejects = 100)
-	out = rejection(h, n = 10000, control = control)
-	x = unlist(out)
+```{r}
+h_init = fmm_proposal(regions)
+ctrl = rejection_control(report = 20)
+adapt_out = adapt_midpoint(h_init, N = 100, control = ctrl)
+h = adapt_out$h
+```
 
-	hist(x)
+Plot the rate of adaptation improvement. Plot on both the original scale and
+log-scale; the log-scale helps to see improvement in later steps.
 
-	x_seq = seq(-1, 1, length.out = 100)
-	log_h0x = h$d(x_seq |> as.list(), normalize = TRUE, log = TRUE)
-	plot(x_seq, log_h0x, type = "l")
-	curve(d_target(x, kappa = kappa, d = d, log = TRUE), lty = 2, add = TRUE)
-}
+```{r}
+#| out-width: "48%"
+#| fig-show: hold
+#| fig-cap:
+#|   - "Original scale."
+#|   - "Log scale."
+
+# TBD: why doesn't the following chunk option work to get two columns?
+# layout-ncol: 2
+# fig-column: body
+
+data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = bdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Bound") +
+	theme_minimal()
+data.frame(logbdd = adapt_out$log_bdd_hist) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = logbdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Log of Bound") +
+	theme_minimal()
+```
+
+Generate draws.
+```{r}
+control = rejection_control(max_rejects = 100, report = 2000)
+out = rejection(h, n = 10000, control = control)
+x = unlist(out)
+```
+
+Plot the empirical distribution of the draws with the target density.
+
+```{r}
+data.frame(x = x) %>%
+	ggplot() +
+	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(kappa = kappa, d = d),
+		lty = 2, xlim = c(1e-2 - 1, 1 - 1e-2)) +
+	ylab("Density") +
+	theme_minimal()
+```
+
+Plot proposal versus the target on the log-scale.
+
+```{r}
+log_h = function(x) { h$d(as.list(x), log = TRUE) }
+log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
+
+ggplot() +
+	geom_function(fun = log_f) +
+	geom_function(fun = log_h, lty = 2) +
+	scale_x_continuous(limits = c(1e-2 - 1, 1 - 1e-2)) +
+	theme_minimal()
 ```
 
 # Conclusions

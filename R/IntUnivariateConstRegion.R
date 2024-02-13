@@ -88,7 +88,8 @@ int_univariate_const_region = function(a, b, w, g)
 #' @export
 IntUnivariateConstRegion = R6::R6Class(
 
-classname = "UnivariateConstRegion",
+classname = "IntUnivariateConstRegion",
+inherit = UnivariateConstRegion,
 portable = TRUE,
 lock_class = FALSE,
 private = list(
@@ -166,7 +167,7 @@ bifurcate = function(x = NULL)
 		} else if (is.infinite(a) && a < 0) {
 			# Left endpoint is -Inf. Split based on right endpoint.
 			x = b - abs(b) - 1
-		} else if (is.infinite(s$b) && b > 0) {
+		} else if (is.infinite(b) && b > 0) {
 			# Right endpoint is Inf. Split based on left endpoint.
 			x = a + abs(a) + 1
 		} else {
