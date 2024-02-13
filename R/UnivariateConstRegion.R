@@ -88,7 +88,9 @@ private = list(
 public = list(
 
 #' @description
-#'  This function gets passed in as an argument
+#' This function gets passed in as an argument. The expected interface is
+#' \code{w(x, log = TRUE)} so that results are returned on the log-scale by
+#' default.
 w = NULL,
 
 #' @param a Lower limit of interval.

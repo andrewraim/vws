@@ -19,9 +19,9 @@ Review of VWS Method
 
 Overview of Package
 
-- We use R6 in some places to promote more formal object-orientation.
 - We don't use Rcpp at the moment because interoperability between C++ classes
   and R becomes more complicated. It is possible with Rcpp Modules though.
+- We use R6 in some places to promote more formal object-orientation.
 - The `FMMProposal` class encapsulates the finite mixture proposal.
 - A `Region` contains all of the problem-specific logic.
 - `UnivariateConstRegion` implements constant VWS for univariate regions that
@@ -39,6 +39,7 @@ Overview of Package
   log-sum-exp functions.
 - Remark: Gumbel trick to draw from the proposal. (Does this preclude doing a
   binary search though?)
+- Identify the main functions in the interface.
 
 Possible Examples
 

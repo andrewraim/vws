@@ -41,7 +41,9 @@ constant majorizer for the weight function.
 \if{html}{\out{<a id="method-UnivariateConstRegion-new"></a>}}
 \if{latex}{\out{\hypertarget{method-UnivariateConstRegion-new}{}}}
 \subsection{Method \code{new()}}{
-This function gets passed in as an argument
+This function gets passed in as an argument. The expected interface is
+\code{w(x, log = TRUE)} so that results are returned on the log-scale by
+default.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$new(a, b, w, g, log_w_max, log_w_min)}\if{html}{\out{</div>}}
 }

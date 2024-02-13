@@ -35,13 +35,14 @@ VMFLinearRegion$set("public", "initialize", function(a, b, kappa, d)
 
 	# MGF the truncated and reweighted g
 	mgf = function(s, log = FALSE)  {
-		if ((s + kappa) >= 0) {
-			out = log(kappa) - log(s + kappa) +
-				log_sub2_exp((s + kappa) * b, (s + kappa) * a) -
+		kappa_s = s + kappa
+		if (kappa_s < 0) {
+			out = log(kappa) - log(-kappa_s) +
+				log_sub2_exp(kappa_s * a, kappa_s * b) -
 				log_sub2_exp(kappa * b, kappa * a)
 		} else {
-			out = log(kappa) - log(-(s + kappa)) +
-				log_sub2_exp((s + kappa) * a, (s + kappa) * b) -
+			out = log(kappa) - log(kappa_s) +
+				log_sub2_exp(kappa_s * b, kappa_s * a) -
 				log_sub2_exp(kappa * b, kappa * a)
 		}
 		if (log) { return(out) } else { return(exp(out)) }
@@ -108,7 +109,7 @@ VMFLinearRegion$set("public", "d_base", function(x, log = FALSE)
 
 ## Weight Function
 ## Define the weight function as a method.
-VMFLinearRegion$set("public", "w", function(x, log = FALSE)
+VMFLinearRegion$set("public", "w", function(x, log = TRUE)
 {
 	out = (private$dim - 3) / 2 * log(1 - x^2)
 	if (log) { return(out) } else { return(exp(out)) }
