@@ -1,19 +1,16 @@
 ---
 title: "Rejection Sampling with Vertical Weighted Strips in R"
 author: Andrew M. Raim, James A. Livsey, and Kyle M. Irimata
-# output:
-  # pdf
-  # rmarkdown::html_vignette:
-  #  number_sections: true
 format:
   pdf:
     toc: true
     number-sections: true
     colorlinks: true
+    link-citations: true
     margin-left: 0.5 in
     margin-right: 0.5 in
-    margin-top: 0.5 in
-    margin-bottom: 0.5 in
+    margin-top: 0.75 in
+    margin-bottom: 0.75 in
     prompt: false
 mainfont: Latin Modern Roman
 vignette: >
@@ -39,13 +36,6 @@ library(ggplot2)
 set.seed(1234)
 ```
 
-**TBD**
-
-- Add example for VMF maybe...
-- Add example for TMVN maybe...
-- Mention up front that many of the computations are on the log-scale for
-  stability. Show the log-sum-exp functions.
-
 # Introduction
 
 To implement a rejection sampler with the `vws` package, the user must make use
@@ -62,11 +52,105 @@ vignette, we will describe the process of coding a customized region. We will
 give one univariate example that makes use of the linear VWS method for
 improved efficiency, and one multivariate example where the regions go beyond
 intervals. To do this, we make use of the [R6](https://r6.r-lib.org) construct
-for object-orientation in R.
+for object-orientation in R [@Chang2021].
+
+TBD: The package is available from <https://github.com/andrewraim/vws> and
+possibly on CRAN(?).
+
+TBD: some of the lengthier codes are not given in this document, but are
+provided in external files. The paths are relative to 
+<https://github.com/andrewraim/vws> (make sure this is correct).
+
+TBD: an `R>` prompt is shown in some code displays to emphasize interaction via
+the console.
+.
+
+
+# Lognormal-Normal Convolution
+
+TBD: this problem came up in @DirectSamplingDAS2021 and @DPSimulation2022.
+
+# Bessel Count Distribution
+
+TBD: this sampling problem comes up in @Devroye2002.
+
+In this example, we consider generating from the Bessel density described by
+@Devroye2002 as
+
+$$
+f(x) = \frac{(a/2)^{2x+\nu}}{I_v(a) \cdot x! \cdot \Gamma(x + \nu + 1)}
+\cdot \mathbb{1}_{\mathbb{N}}(x), \quad
+\nu > -1, \quad
+a > 0,
+$$
+
+where we denote the positive integers as $\mathbb{N} = \{ 0, 1, 2, \ldots \}$,
+$\mathbb{1}_{A}(x)$ as the indicator function for the event $[x \in A]$,
+and
+
+$$
+I_v(a) = \sum_{x=0}^\infty \frac{(a/2)^{2x+\nu}}{x! \cdot \Gamma(x + \nu + 1)}
+$$
+
+is a modified Bessel function of the first kind.
+
+At the time the paper was written, @Devroye2002 considered it difficult to
+generate exact draws from this distribution. He develops what appears to be a
+customized accept-reject method after establishing properties of the
+distribution. We can draw from this distribution fairly easily without such an
+in-depth analysis.
+
+Our approach is to decompose the density into
+
+\begin{align*}
+f(x)
+&= \frac{(a/2)^{2x+\nu}}{I_v(a) \cdot x! \cdot \Gamma(x + \nu + 1)}
+\cdot \mathbb{1}_{\mathbb{N}}(x) \\
+%
+&\propto 
+\frac{e^{a^2/4} (a/2)^\nu}{\Gamma(x + \nu + 1)}
+\frac{(a/2)^{2x} e^{-a^2/4}}{x!} \mathbb{1}_{\mathbb{N}}(x) \\
+%
+&\propto w(x) g(x),
+\end{align*}
+
+where $g(x) = \frac{(a^2/4)^x e^{-a^2/4}}{x!} \mathbb{1}_{\mathbb{N}}(x)$
+represents a $\text{Poisson}(a^2/4)$ base distribution and weight function
+specified on the log scale as by $\log w(x) = -\log \Gamma(x + \nu + 1)$.
+Notice that we can disregard many of the normalizing constants with this
+sampler.
+
+We can explicitly describe computations involved in the sampler.
+
+- Make regions of the form $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$.
+- Compute $P(T \in \mathcal{D}_j)$.
+- Optimize $w(x)$ on $\mathcal{D}_j$ to obtain $\overline{w}_j$ and
+	  $\underline{w}_j$.
+- Draw from Poisson truncated to $\mathcal{D}_j$.
+- Adaptation algorithm that uses integer midpoint.
+
+We can also show some displays of how the sampler performs.
+
+- Volume and/or log volume as we increase $N$ with adaptation.
+- The exact density versus the proposal density for several values of $N$ along
+  the adaptation path.
+- The number of draws rejected in practice along the adaptation path (say, if
+  we request a large number such as $n = 10^7$).
+
+It looks like we can capture the distribution almost exactly by covering the
+entire support with a not-too-large choice of $N$, but this will depend on the
+parameters $a$ and $\nu$. When we have adapted to this point, it becomes
+extremely rare to reject any candidates.
+
+Consider giving background information about the Bessel distribution to show
+why it was of special interest to Devroye.
 
 # Von Mises Fisher
 
-(TBD: needs some explanation). Suppose $X$ has density
+TBD: needs some explanation. We use both constant and linear majorizers here.
+For both versions of the sampler, we consider the same decomposition.
+
+Suppose $X$ has density
 
 \begin{align}
 f(x) =
@@ -124,6 +208,9 @@ source("../inst/examples/vmf-helper.R")
 source("../inst/examples/target.R")
 source("../inst/examples/VMFLinearRegion.R")
 ```
+
+TBD: we have to truncate support to something within $[-1,1]$ when $d < 3$
+because $w$ is not finite at the endpoints.
 
 ## Constant VWS
 
