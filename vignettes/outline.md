@@ -13,6 +13,9 @@ Some misc items
 
 - Give figures captions
 - Make figures render nicely. This might be doable with a global option.
+- See if there's a nice way to let the user determine how optimization works in
+  UnivariateConstRegion and Int version. What if they can do it in closed form?
+  Maybe make the min and max functions into methods that can be overridden.
 
 # Outline
 

@@ -210,8 +210,8 @@ support = int_univariate_const_region(a = -1, b = Inf, w = w, g = helper)
 regions = list(support)
 
 h_init = fmm_proposal(regions)
-ctrl = rejection_control(report = 20)
-adapt_out = adapt_midpoint(h_init, N = 100, control = ctrl)
+ctrl = rejection_control(report = 10)
+adapt_out = adapt_midpoint(h_init, N = 30, control = ctrl)
 h = adapt_out$h
 
 data.frame(logbdd = adapt_out$log_bdd_hist) %>%

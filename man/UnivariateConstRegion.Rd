@@ -34,6 +34,7 @@ constant majorizer for the weight function.
 \item \href{#method-UnivariateConstRegion-xi_lower}{\code{UnivariateConstRegion$xi_lower()}}
 \item \href{#method-UnivariateConstRegion-description}{\code{UnivariateConstRegion$description()}}
 \item \href{#method-UnivariateConstRegion-print}{\code{UnivariateConstRegion$print()}}
+\item \href{#method-UnivariateConstRegion-optimize}{\code{UnivariateConstRegion$optimize()}}
 \item \href{#method-UnivariateConstRegion-clone}{\code{UnivariateConstRegion$clone()}}
 }
 }
@@ -45,7 +46,7 @@ This function gets passed in as an argument. The expected interface is
 \code{w(x, log = TRUE)} so that results are returned on the log-scale by
 default.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$new(a, b, w, g, log_w_max, log_w_min)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$new(a, b, w, g)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -58,12 +59,6 @@ default.
 \item{\code{w}}{Weight function for the target distribution.}
 
 \item{\code{g}}{An object created by \code{univariate_helper}.}
-
-\item{\code{log_w_max}}{The value \eqn{\max_{x \in (a,b]}\log w(x)}.}
-
-\item{\code{log_w_min}}{The value \eqn{\min_{x \in (a,b]}\log w(x)}.}
-
-\item{\code{log_prob}}{The value \eqn{\log \text{P}(a < T \leq b)} for \eqn{T \sim g}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -242,6 +237,30 @@ Print a description of the region.
 \if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$print()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-UnivariateConstRegion-optimize"></a>}}
+\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-optimize}{}}}
+\subsection{Method \code{optimize()}}{
+Maximize or minimize the function \eqn{w(x)} over this region. Optimization
+is carried out with \code{optim} using arguments
+\code{method = "Nelder-Mead"} and
+\code{control = list(maxit = 100000, warn.1d.NelderMead = FALSE)}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$optimize(maximize = TRUE, log = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{maximize}}{logical; if \code{TRUE} do maximization. Otherwise do
+minimization.}
+
+\item{\code{log}}{logical; if \code{TRUE} return optimized value of \eqn{\log w(x)}.
+Otherwise return optimized value of \eqn{w(x)}.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-UnivariateConstRegion-clone"></a>}}

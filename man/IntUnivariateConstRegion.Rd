@@ -30,6 +30,7 @@ weight function. This version is for integer supports.
 \item \href{#method-IntUnivariateConstRegion-bifurcate}{\code{IntUnivariateConstRegion$bifurcate()}}
 \item \href{#method-IntUnivariateConstRegion-is_bifurcatable}{\code{IntUnivariateConstRegion$is_bifurcatable()}}
 \item \href{#method-IntUnivariateConstRegion-print}{\code{IntUnivariateConstRegion$print()}}
+\item \href{#method-IntUnivariateConstRegion-optimize}{\code{IntUnivariateConstRegion$optimize()}}
 \item \href{#method-IntUnivariateConstRegion-clone}{\code{IntUnivariateConstRegion$clone()}}
 }
 }
@@ -51,7 +52,7 @@ weight function. This version is for integer supports.
 \if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$new(a, b, w, g, log_w_max, log_w_min)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$new(a, b, w, g)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -64,12 +65,6 @@ weight function. This version is for integer supports.
 \item{\code{w}}{Weight function for the target distribution.}
 
 \item{\code{g}}{An object created by \code{univariate_helper}.}
-
-\item{\code{log_w_max}}{The value \eqn{\max_{x \in (a,b]}\log w(x)}.}
-
-\item{\code{log_w_min}}{The value \eqn{\min_{x \in (a,b]}\log w(x)}.}
-
-\item{\code{log_prob}}{The value \eqn{\log \text{P}(a < T \leq b)} for \eqn{T \sim g}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -131,6 +126,30 @@ Print a description of the region.
 \if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$print()}\if{html}{\out{</div>}}
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-optimize"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-optimize}{}}}
+\subsection{Method \code{optimize()}}{
+Maximize or minimize the function \eqn{w(x)} over this region. Optimization
+is carried out with \code{optim} using arguments
+\code{method = "Nelder-Mead"} and
+\code{control = list(maxit = 100000, warn.1d.NelderMead = FALSE)}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$optimize(maximize = TRUE, log = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{maximize}}{logical; if \code{TRUE} do maximization. Otherwise do
+minimization.}
+
+\item{\code{log}}{logical; if \code{TRUE} return optimized value of \eqn{\log w(x)}.
+Otherwise return optimized value of \eqn{w(x)}.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-IntUnivariateConstRegion-clone"></a>}}

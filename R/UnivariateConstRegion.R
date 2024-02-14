@@ -22,47 +22,7 @@
 #' @export
 univariate_const_region = function(a, b, w, g)
 {
-	stopifnot(a <= b)
-	stopifnot("univariate_helper" %in% class(g))
-
-	# Transform to bounded interval, if necessary
-	tx = function(x) {
-		if (is.infinite(a) && is.infinite(b) && a < 0 && b > 0) {
-			out = x
-		} else if (is.infinite(a) && a < 0) {
-			out = b*plogis(x)
-		} else if (is.infinite(b) && b > 0) {
-			out = exp(x) + a
-		} else {
-			out = (b-a) * plogis(x) + a
-		}
-		return(out)
-	}
-
-	f_opt = function(x) {
-		w(tx(x), log = TRUE)
-	}
-
-	init = 0
-	log_w_endpoints = c(w(a, log = TRUE), w(b, log = TRUE))
-	log_w_endpoints = log_w_endpoints[!is.na(log_w_endpoints)]
-
-	control1 = list(fnscale = -1, maxit = 100000, warn.1d.NelderMead = FALSE)
-	opt1_out = optim(init, f_opt, method = "Nelder-Mead", control = control1)
-	if (opt1_out$convergence != 0) {
-		warning("opt1_out: convergence status was ", opt1_out$convergence)
-	}
-	log_w_max = max(f_opt(floor(opt1_out$par)), f_opt(ceiling(opt1_out$par)), log_w_endpoints)
-
-	control2 = list(fnscale = 1, maxit = 100000, warn.1d.NelderMead = FALSE)
-	opt2_out = optim(init, f_opt, method = "Nelder-Mead", control = control2)
-	if (opt2_out$convergence != 0) {
-		warning("opt2_out: convergence status was ", opt2_out$convergence)
-	}
-	log_w_min = min(f_opt(floor(opt2_out$par)), f_opt(ceiling(opt2_out$par)), log_w_endpoints)
-
-	UnivariateConstRegion$new(a = a, b = b, w = w, g = g,
-		log_w_max = log_w_max, log_w_min = log_w_min)
+	UnivariateConstRegion$new(a = a, b = b, w = w, g = g)
 }
 
 #' Univariate Region with Constant Majorizer
@@ -95,12 +55,9 @@ w = NULL,
 
 #' @param a Lower limit of interval.
 #' @param b Upper limit of interval.
-#' @param g An object created by \code{univariate_helper}.
-#' @param log_w_max The value \eqn{\max_{x \in (a,b]}\log w(x)}.
-#' @param log_w_min The value \eqn{\min_{x \in (a,b]}\log w(x)}.
-#' @param log_prob The value \eqn{\log \text{P}(a < T \leq b)} for \eqn{T \sim g}.
 #' @param w Weight function for the target distribution.
-initialize = function(a, b, w, g, log_w_max, log_w_min)
+#' @param g An object created by \code{univariate_helper}.
+initialize = function(a, b, w, g)
 {
 	stopifnot(a <= b)
 	stopifnot("univariate_helper" %in% class(g))
@@ -109,8 +66,9 @@ initialize = function(a, b, w, g, log_w_max, log_w_min)
 	private$b = b
 	private$g = g
 	self$w = w
-	private$log_w_max = log_w_max
-	private$log_w_min = log_w_min
+
+	private$log_w_max = self$optimize(maximize = TRUE)
+	private$log_w_min = self$optimize(maximize = FALSE)
 
 	# Compute g$p(b) - g$p(a) on the log scale
 	private$log_prob = log_sub2_exp(g$p(b, log.p = TRUE), g$p(a, log.p = TRUE))
@@ -201,8 +159,8 @@ bifurcate = function(x = NULL)
 		}
 	}
 
-	s1 = univariate_const_region(a, x, self$w, private$g)
-	s2 = univariate_const_region(x, b, self$w, private$g)
+	s1 = UnivariateConstRegion$new(a = a, b = x, w = self$w, g = private$g)
+	s2 = UnivariateConstRegion$new(a = x, b = b, w = self$w, g = private$g)
 	list(s1, s2)
 },
 
@@ -243,8 +201,77 @@ description = function()
 print = function()
 {
 	printf("Univariate Const Region (%g, %g]\n", private$a, private$b)
+},
+
+#' @description
+#' Maximize or minimize the function \eqn{w(x)} over this region. Optimization
+#' is carried out with \code{optim} using arguments
+#' \code{method = "Nelder-Mead"} and
+#' \code{control = list(maxit = 100000, warn.1d.NelderMead = FALSE)}.
+#' @param maximize logical; if \code{TRUE} do maximization. Otherwise do
+#' minimization.
+#' @param log logical; if \code{TRUE} return optimized value of \eqn{\log w(x)}.
+#' Otherwise return optimized value of \eqn{w(x)}.
+optimize = function(maximize = TRUE, log = TRUE)
+{
+	a = private$a
+	b = private$b
+	w = self$w
+
+	method = "Nelder-Mead"
+	control = list(maxit = 100000, warn.1d.NelderMead = FALSE)
+
+	# Transformation to bounded interval, if necessary
+	tx = function(x) {
+		if (is.infinite(a) && is.infinite(b) && a < 0 && b > 0) {
+			out = x
+		} else if (is.infinite(a) && a < 0) {
+			out = b*plogis(x)
+		} else if (is.infinite(b) && b > 0) {
+			out = exp(x) + a
+		} else {
+			out = (b-a) * plogis(x) + a
+		}
+		return(out)
+	}
+
+	f_opt = function(x) {
+		w(tx(x), log = TRUE)
+	}
+
+	init = 0
+	log_w_endpoints = c(w(a, log = TRUE), w(b, log = TRUE))
+	log_w_endpoints = log_w_endpoints[!is.na(log_w_endpoints)]
+
+	endpoint_pos_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints > 0)
+	endpoint_neg_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints < 0)
+
+	if (maximize && endpoint_pos_inf) {
+		out = Inf
+	} else if (maximize) {
+		control$fnscale = -1
+		opt_out = optim(init, f_opt, method = method, control = control)
+		if (opt_out$convergence != 0) {
+			warning("opt_out: convergence status was ", opt_out$convergence)
+			browser()
+		}
+		out = max(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
+	}
+
+	if (!maximize && endpoint_neg_inf) {
+		out = -Inf
+	} else if (!maximize) {
+		control$fnscale = 1
+		opt_out = optim(init, f_opt, method = method, control = control)
+		if (opt_out$convergence != 0) {
+			warning("opt_out: convergence status was ", opt_out$convergence)
+			browser()
+		}
+		out = min(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
+	}
+
+	if (log) { return(out) } else { return(exp(out)) }
 }
 
 ) # Close public
 ) # Close class
-
