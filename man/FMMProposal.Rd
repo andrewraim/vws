@@ -57,7 +57,7 @@ Constructor for FMMProposal.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{regions}}{A list of \code{N} regions that form a partition of the support.}
+\item{\code{regions}}{A list of objects whose class derives from \code{Region}.}
 }
 \if{html}{\out{</div>}}
 }

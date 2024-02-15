@@ -2,6 +2,8 @@
 #' @description
 #' A Region contains all of the problem-specific logic for the vws sampler.
 #' This is an "abstract" R6 class that defines the interface for a Region.
+#'
+#' @export
 Region = R6::R6Class(classname = "Region", portable = TRUE, lock_class = TRUE,
 public = list(
 

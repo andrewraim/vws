@@ -15,7 +15,9 @@ constant majorizer for the weight function.
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{w}}{Weight function for the target distribution.}
+\item{\code{w}}{Weight function for the target distribution. Its expected interface
+is \code{w(x, log = TRUE)} so that results are returned on the log-scale by
+default.}
 }
 \if{html}{\out{</div>}}
 }
@@ -42,9 +44,6 @@ constant majorizer for the weight function.
 \if{html}{\out{<a id="method-UnivariateConstRegion-new"></a>}}
 \if{latex}{\out{\hypertarget{method-UnivariateConstRegion-new}{}}}
 \subsection{Method \code{new()}}{
-This function gets passed in as an argument. The expected interface is
-\code{w(x, log = TRUE)} so that results are returned on the log-scale by
-default.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$new(a, b, w, g)}\if{html}{\out{</div>}}
 }

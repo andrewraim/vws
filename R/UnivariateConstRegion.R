@@ -30,7 +30,9 @@ univariate_const_region = function(a, b, w, g)
 #' An R6 class which represents a region based on univariate intervals with a
 #' constant majorizer for the weight function.
 #'
-#' @field w Weight function for the target distribution.
+#' @field w Weight function for the target distribution. Its expected interface
+#' is \code{w(x, log = TRUE)} so that results are returned on the log-scale by
+#' default.
 #'
 #' @export
 UnivariateConstRegion = R6::R6Class(
@@ -47,10 +49,6 @@ private = list(
 ),
 public = list(
 
-#' @description
-#' This function gets passed in as an argument. The expected interface is
-#' \code{w(x, log = TRUE)} so that results are returned on the log-scale by
-#' default.
 w = NULL,
 
 #' @param a Lower limit of interval.

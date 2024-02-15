@@ -28,13 +28,13 @@ fmm_proposal = function(regions)
 #' An R6 class which represents a VWS proposal: a finite mixture that some
 #' specific certain operations.
 #'
-#' @param regions A list of \code{N} regions that form a partition of the support.
-#' @param log_xi_upper The numeric vector
-#' \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
-#' @param log_xi_lower The numeric vector
-#' \eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.
-#' @param bifurcatable A vector of logical values which indicates whether the
-#' corresponding regions may be bifurcated further.
+# @field regions A list of \code{N} regions that form a partition of the support.
+# @field log_xi_upper The numeric vector
+# \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
+# @field log_xi_lower The numeric vector
+# \eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.
+# @field bifurcatable A vector of logical values which indicates whether the
+# corresponding regions may be bifurcated further.
 #'
 #' @details
 #' \itemize{
@@ -50,6 +50,8 @@ fmm_proposal = function(regions)
 #' \item The logical vector \code{bifurcatable} indicates whether each
 #' region can be bifurcated or not.
 #' }
+#'
+#' @export
 FMMProposal = R6::R6Class(
 
 classname = "FMMProposal",
@@ -65,6 +67,7 @@ public = list(
 
 #' @description
 #' Constructor for FMMProposal.
+#' @param regions A list of objects whose class derives from \code{Region}.
 initialize = function(regions)
 {
 	private$regions = regions
