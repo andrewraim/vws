@@ -204,9 +204,22 @@ Outline of this section
 Maybe we should get rid of friendly constructors... they don't do much
 
 Can we remove `log_target_pdf_unnorm` and just use `d` with the right combination of arguments?
+
+How about the name `d_g` instead of `d_base`?
 :::
 
 The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples. Use of the package focuses on two `R6` classes. The `FMMProposal` class represents finite mixture \eqref{eqn:fmm-proposal} and encapsulates operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations that must be supported on it for VWS; essentially, all problem-specific logic is coded within a `Region`. An `FMMProposal` object is created from a list of one or more `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$. Details of all included `R6` classes are provided in manual pages such as `?FMMProposal` and `?Region`.
+
+<!--
+![An overview of the `vws` package design.](diagram.pdf){#fig-diagram}
+-->
+
+\begin{figure}
+\centering
+\includegraphics[trim={0 5.5in 4in 0},clip, width=0.8\textwidth]{diagram.pdf}
+\caption{An overview of the `vws` package design.}
+\label{fig:diagram}
+\end{figure}
 
 `FMMProposal` has the following public methods.
 
@@ -218,30 +231,31 @@ names(FMMProposal$public_methods)
 ```{r}
 #| include: false
 # If the interface has changed, catch it and bail out
-x = c("initialize", "get_xi_upper", "get_xi_lower", "get_bifurcatable",
+actual = names(FMMProposal$public_methods)
+expected = c("initialize", "get_xi_upper", "get_xi_lower", "get_bifurcatable",
 	"get_regions", "rejection_bound", "nc", "r", "d", "log_target_pdf_unnorm",
 	"summary", "print", "clone")
-stopifnot(setequal(names(FMMProposal$public_methods), x))
+setequal(actual, expected) |> stopifnot()
 ```
 
 The methods `r`, `d`, and `nc` represent operations of the finite mixture distribution: `r` generates draws, `d` evaluates the density, and `nc` evaluates normalizing constant $\psi_N$. Method `rejection_bound` returns either the bound \eqref{eqn:bound} or a vector \eqref{eqn:bound-components} which represents the contribution to \eqref{eqn:bound} of each region.
 
 The remaining methods will typically not be directly needed by users. 
 
-- `initialize`is a standard `R6` constructor that allows objects to be created
+- `initialize` is a standard `R6` constructor that allows objects to be created
   via `FMMProposal$new(...)`.
 - Methods `summary` and `print` provide a meaningful display for objects of
   the class when printed.
 - Method `log_target_pdf_unnorm` computes the unnormalized log-density
   $\log h_0(x) = \log \overline{w}(x) + \log g(x)$ for $x \in \Omega$ which is
   used as an envelope in rejection sampling.
-- Methods `get_xi_upper`, `get_xi_lower`, `get_bifurcatable`, and
-  `get_regions` are accessors for private data members: `get_xi_upper` returns
-  $\overline{\xi}_1, \ldots, \overline{\xi}_N$; `get_xi_lower` returns
-  $\underline{\xi}_1, \ldots, \underline{\xi}_N$; `get_bifurcatable` returns a
-  vector of logical values indicating whether respective regions can be
-  bifurcated (described further in Section TBD); and `get_regions` returns the
-  list of `Region` objects on which the `FMMProposal` was constructed.
+- Accessors for private data members:
+	a. `get_xi_upper` returns $\overline{\xi}_1, \ldots, \overline{\xi}_N$; 				a. `get_xi_lower` returns $\underline{\xi}_1, \ldots, \underline{\xi}_N$;
+	a. `get_bifurcatable` returns a vector of logical values indicating whether 
+	   respective regions can be bifurcated (described further in Section TBD);
+	   and
+	a. `get_regions` returns the list of `Region` objects on which the
+	   `FMMProposal` was constructed.
 
 `Region` is an abstract base class whose interface represents all problem-specific logic that must be coded to implement VWS. The interface consists of the following methods.
 
@@ -253,9 +267,10 @@ names(Region$public_methods)
 ```{r}
 #| include: false
 # If the interface has changed, catch it and bail out
-x = c("d_base", "w", "r", "d", "s", "w_major", "bifurcate", "is_bifurcatable",
+actual = names(Region$public_methods)
+expected = c("d_base", "w", "r", "d", "s", "w_major", "bifurcate", "is_bifurcatable",
 	"xi_upper", "xi_lower", "description", "print", "clone")
-stopifnot(setequal(names(Region$public_methods), x))
+setequal(actual, expected) |> stopifnot()
 ```
 
 The methods are briefly described as follows. Expressions with an index $j$ correspond to a $\mathcal{D}_j$ which is associated with the `Region` object.
@@ -264,8 +279,10 @@ The methods are briefly described as follows. Expressions with an index $j$ corr
   weight function $\overline{w}_j(x)$ .
 - `d_base` represents the density function $g$.
 - `r`, `d`, and `s` are distribution functions for the truncated and reweighted
-  distribution $g_j$.
-- `xi_upper` and `xi_lower` compute $\overline{\xi}_j$ and $\underline{\xi}_j$.
+  distribution $g_j$. `r` generates draws, `d` computes the density, and `s` is
+  an indicator of whether a given point is in the support.
+- `xi_upper` and `xi_lower` compute $\overline{\xi}_j$ and $\underline{\xi}_j$,
+  respectively.
 - `bifurcate` and `is_bifurcatable` are used in adaptation which discussed in
   Section TBD. `is_bifurcatable` is an indicator of whether the region can be
   bifurcated into two new `Region` objects; i.e., the indicator is `FALSE` if 
@@ -273,7 +290,24 @@ The methods are briefly described as follows. Expressions with an index $j$ corr
   out the bifurcation and returns two new `Region` objects.
 - `description` and `print` create a meaningful display when printing an object.
 
-TBD: Show a typical workflow, maybe something abstract that doesn't evaluate...
+The `rejection` function takes an object `h` of class `FMMProposal` and carries out
+the rejection sampling algorithm to obtain `n` draws. The return value of `rejection` is a list where each element represents an accepted draw. Optional arguments may be passed
+through a `rejection_control` (S3) object, including: a count of rejections that can be tolerated before halting, and whether to return additional information on rejections which occurred during sampling. The following display gives a typical workflow for sampling.
+
+```{R}
+#| eval: false
+h = FMMProposal$new(regions)
+ctrl = rejection_control(max_rejects = 1000)
+rejection(h, n = 1000)
+```
+
+```{r}
+#| include: false
+# If the interface has changed, catch it and bail out
+actual = names(formals(rejection_control))
+expected = c("max_rejects", "report", "extra_outputs", "action_incomplete")
+base::setequal(actual, expected) |> stopifnot()
+```
 
 ## Constant VWS with Univariate Regions
 

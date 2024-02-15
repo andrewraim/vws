@@ -96,7 +96,7 @@ rejection = function(h, n = 1, control = rejection_control())
 	}
 
 	if (extra_outputs) {
-		res = list(draws = out, rejects = rejects, h = h)
+		res = list(draws = out, rejects = rejects)
 	} else {
 		res = out
 	}
