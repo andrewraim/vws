@@ -10,7 +10,21 @@ Univariate Region with Constant Majorizer
 }
 \details{
 An R6 class which represents a region based on univariate intervals with a
-constant majorizer for the weight function.
+constant majorizer for the weight function. This version is for continuous
+supports.
+}
+\examples{
+# Define base distribution and weight function
+g = normal_univariate_helper(mean = 0, sd = 5)
+w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
+
+reg = UnivariateConstRegion$new(-Inf, 10, w, g)
+print(reg)
+
+out = reg$bifurcate(0)
+print(out[[1]])
+print(out[[2]])
+
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}

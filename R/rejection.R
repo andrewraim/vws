@@ -27,11 +27,11 @@
 #' w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 #'
 #' # Set up support
-#' support = univariate_const_region(-Inf, 10, w, g)
+#' support = UnivariateConstRegion$new(-Inf, 10, w, g)
 #' regions = support$bifurcate()
 #'
 #' # Create a finite mixture proposal
-#' h = fmm_proposal(regions)
+#' h = FMMProposal$new(regions)
 #' h$rejection_bound()
 #' h$rejection_bound(byregion = TRUE)
 #'
@@ -67,7 +67,7 @@ rejection = function(h, n = 1, control = rejection_control())
 		while (!accept && N_rejects < max_rejects) {
 			v = runif(1)
 			x = h$r(n = 1)
-			log_fx = h$log_target_pdf_unnorm(x)
+			log_fx = h$d_target_unnorm(x)
 			log_hx = h$d(x, normalize = FALSE, log = TRUE)
 			log_ratio = log_fx - log_hx - log_M
 

@@ -1,40 +1,7 @@
-#' fmm_proposal
-#'
-#' A more friendly constructor for \code{FMMProposal}.
-#'
-#' @param regions A list of regions that form a partition of the support.
-#'
-#' @examples
-#' # Define base distribution and weight function
-#' g = normal_univariate_helper(mean = 0, sd = 5)
-#' w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
-#'
-#' # Set up support
-#' support = univariate_const_region(-Inf, 10, w, g)
-#' regions = support$bifurcate()
-#'
-#' # Create a finite mixture with one component
-#' fmm = fmm_proposal(regions)
-#' print(fmm)
-#'
-#' @export
-fmm_proposal = function(regions)
-{
-	FMMProposal$new(regions)
-}
-
 #' FMMProposal
 #'
 #' An R6 class which represents a VWS proposal: a finite mixture that some
 #' specific certain operations.
-#'
-# @field regions A list of \code{N} regions that form a partition of the support.
-# @field log_xi_upper The numeric vector
-# \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
-# @field log_xi_lower The numeric vector
-# \eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.
-# @field bifurcatable A vector of logical values which indicates whether the
-# corresponding regions may be bifurcated further.
 #'
 #' @details
 #' \itemize{
@@ -206,16 +173,17 @@ d = function(x, normalize = TRUE, log = FALSE)
 },
 
 #' @description
-#' Compute \eqn{\log w(x) + \log g(x)} for each element of the given \code{x}
+#' Compute \eqn{f_0(x) = w(x) g(x)} for each element of the given \code{x}
 #' which is a list whose elements are density values.
 #' @param x a list where each element represents one argument.
+#' @param log If \code{TRUE}, return density results on the log-scale.
 #' @return A vector or scalar of density values corresponding to \code{x}.
-log_target_pdf_unnorm = function(x)
+d_target_unnorm = function(x, log = TRUE)
 {
 	stopifnot(is.list(x))
 	reg = private$regions[[1]]
 	out = Map(function(z) { reg$w(z, log = TRUE) + reg$d_base(z, log = TRUE) }, x)
-	return(unlist(out))
+	if (log) { return(unlist(out)) } else { return(exp(unlist(out))) }
 },
 
 #' @description

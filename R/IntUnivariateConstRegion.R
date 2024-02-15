@@ -1,18 +1,16 @@
-#' int_univariate_const_region
+#' Integer Univariate Region with Constant Majorizer
 #'
-#' A more friendly constructor for \code{IntUnivariateConstRegion}.
+#' A region based on univariate intervals with a constant majorizer for the
+#' weight function. This version is for integer supports.
 #'
-#' @param a Lower knot of region.
-#' @param b Upper knot of region.
-#' @param w Weight function.
-#' @param g Object that encapsulates base distribution.
+#' @field w Weight function for the target distribution.
 #'
 #' @examples
 #' # Define base distribution and weight function
 #' g = poisson_univariate_helper(lambda = 5)
 #' w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 #'
-#' reg = int_univariate_const_region(-Inf, 10, w, g)
+#' reg = IntUnivariateConstRegion$new(-Inf, 10, w, g)
 #' print(reg)
 #'
 #' out = reg$bifurcate(5)
@@ -21,19 +19,6 @@
 #'
 #' out[[1]]$r(100) |> as.numeric()
 #' out[[2]]$r(100) |> as.numeric()
-#'
-#' @export
-int_univariate_const_region = function(a, b, w, g)
-{
-	IntUnivariateConstRegion$new(a = a, b = b, w = w, g = g)
-}
-
-#' Integer Univariate Region with Constant Majorizer
-#'
-#' A region based on univariate intervals with a constant majorizer for the
-#' weight function. This version is for integer supports.
-#'
-#' @field w Weight function for the target distribution.
 #'
 #' @export
 IntUnivariateConstRegion = R6::R6Class(

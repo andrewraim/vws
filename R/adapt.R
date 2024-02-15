@@ -2,26 +2,22 @@
 #'
 #' Adapt an FMM proposal using a midpoint rule-of-thumb.
 #'
-#' @param h An FMM proposal
+#' @param h An object of class \code{FMMProposal}.
 #' @param N Number of additional mixture components after adaptation.
-#' @param control A control object from \code{rejection_control}
-#' @param method Either \code{greedy} or \code{pps}. The \code{greedy} method
-#' always chooses to bifrucate the region with the largest contribution to the
-#' probability of rejection. The \code{pps} method draws randomly, with
-#' probability proportion to that contribution.
+#' @param report Report progress each time this many candidates are proposed.
 #'
 #' @examples
 #' g = normal_univariate_helper(0, 5)
 #' w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
-#' support = univariate_const_region(-Inf, 10, w, g)
+#' support = UnivariateConstRegion$new(-Inf, 10, w, g)
 #' regions = list(support)
 #'
 #' # Adapt the proposal
-#' h_init = fmm_proposal(regions)
-#' adapt_out = adapt_midpoint(h_init, N = 100, control = rejection_control(report = 1))
+#' h_init = FMMProposal$new(regions)
+#' adapt_out = adapt(h_init, N = 100)
+#' h = adapt_out$h
 #'
 #' # Create a finite mixture proposal
-#' h = adapt_out$h
 #' h$rejection_bound()
 #' h$rejection_bound(byregion = TRUE)
 #'
@@ -32,9 +28,9 @@
 #' print(out$draws |> unlist())
 #' print(out$rejects)
 #'
-#' @name adapt_midpoint
+#' @name adapt
 #' @export
-adapt_midpoint = function(h, N, method = "pps", control = rejection_control())
+adapt = function(h, N, report = N+1)
 {
 	log_ub_hist = numeric(N+1)
 	log_lb_hist = numeric(N+1)
@@ -42,8 +38,6 @@ adapt_midpoint = function(h, N, method = "pps", control = rejection_control())
 	log_ub_hist[1] = log_sum_exp(h$get_xi_upper(log = TRUE))
 	log_lb_hist[1] = log_sum_exp(h$get_xi_lower(log = TRUE))
 	log_bdd_hist[1] = h$rejection_bound(log = TRUE)
-
-	report = control$report
 
 	if (report <= N) {
 		logger("Initial log Pr{rejection} <= %g\n", log_bdd_hist[1])
@@ -66,13 +60,7 @@ adapt_midpoint = function(h, N, method = "pps", control = rejection_control())
 			break
 		}
 
-		if (method == "greedy") {
-			jdx = which.max(log_volume[idx])
-		} else if (method == "pps") {
-			jdx = r_categ(n = 1, log_volume[idx], log_p = TRUE)
-		} else {
-			stopifnot("method must be greedy or pps")
-		}
+		jdx = r_categ(n = 1, log_volume[idx], log_p = TRUE)
 		reg = h$get_regions()[[idx[jdx]]]
 
 		# Split the target region and make another proposal with it

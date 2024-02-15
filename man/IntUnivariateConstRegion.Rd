@@ -12,6 +12,22 @@ Integer Univariate Region with Constant Majorizer
 A region based on univariate intervals with a constant majorizer for the
 weight function. This version is for integer supports.
 }
+\examples{
+# Define base distribution and weight function
+g = poisson_univariate_helper(lambda = 5)
+w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
+
+reg = IntUnivariateConstRegion$new(-Inf, 10, w, g)
+print(reg)
+
+out = reg$bifurcate(5)
+print(out[[1]])
+print(out[[2]])
+
+out[[1]]$r(100) |> as.numeric()
+out[[2]]$r(100) |> as.numeric()
+
+}
 \section{Super class}{
 \code{\link[vws:UnivariateConstRegion]{vws::UnivariateConstRegion}} -> \code{IntUnivariateConstRegion}
 }

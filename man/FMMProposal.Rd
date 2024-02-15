@@ -39,7 +39,7 @@ region can be bifurcated or not.
 \item \href{#method-FMMProposal-nc}{\code{FMMProposal$nc()}}
 \item \href{#method-FMMProposal-r}{\code{FMMProposal$r()}}
 \item \href{#method-FMMProposal-d}{\code{FMMProposal$d()}}
-\item \href{#method-FMMProposal-log_target_pdf_unnorm}{\code{FMMProposal$log_target_pdf_unnorm()}}
+\item \href{#method-FMMProposal-d_target_unnorm}{\code{FMMProposal$d_target_unnorm()}}
 \item \href{#method-FMMProposal-summary}{\code{FMMProposal$summary()}}
 \item \href{#method-FMMProposal-print}{\code{FMMProposal$print()}}
 \item \href{#method-FMMProposal-clone}{\code{FMMProposal$clone()}}
@@ -205,19 +205,21 @@ A vector or scalar of density values corresponding to \code{x}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FMMProposal-log_target_pdf_unnorm"></a>}}
-\if{latex}{\out{\hypertarget{method-FMMProposal-log_target_pdf_unnorm}{}}}
-\subsection{Method \code{log_target_pdf_unnorm()}}{
-Compute \eqn{\log w(x) + \log g(x)} for each element of the given \code{x}
+\if{html}{\out{<a id="method-FMMProposal-d_target_unnorm"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-d_target_unnorm}{}}}
+\subsection{Method \code{d_target_unnorm()}}{
+Compute \eqn{f_0(x) = w(x) g(x)} for each element of the given \code{x}
 which is a list whose elements are density values.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$log_target_pdf_unnorm(x)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$d_target_unnorm(x, log = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{x}}{a list where each element represents one argument.}
+
+\item{\code{log}}{If \code{TRUE}, return density results on the log-scale.}
 }
 \if{html}{\out{</div>}}
 }

@@ -1,38 +1,24 @@
-#' univariate_const_region
+#' Univariate Region with Constant Majorizer
 #'
-#' A more friendly constructor for \code{UnivariateConstRegion}.
+#' An R6 class which represents a region based on univariate intervals with a
+#' constant majorizer for the weight function. This version is for continuous
+#' supports.
 #'
-#' @param a Lower knot of region.
-#' @param b Upper knot of region.
-#' @param w Weight function.
-#' @param g Object that encapsulates base distribution.
+#' @field w Weight function for the target distribution. Its expected interface
+#' is \code{w(x, log = TRUE)} so that results are returned on the log-scale by
+#' default.
 #'
 #' @examples
 #' # Define base distribution and weight function
 #' g = normal_univariate_helper(mean = 0, sd = 5)
 #' w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 #'
-#' reg = univariate_const_region(-Inf, 10, w, g)
+#' reg = UnivariateConstRegion$new(-Inf, 10, w, g)
 #' print(reg)
 #'
 #' out = reg$bifurcate(0)
 #' print(out[[1]])
 #' print(out[[2]])
-#'
-#' @export
-univariate_const_region = function(a, b, w, g)
-{
-	UnivariateConstRegion$new(a = a, b = b, w = w, g = g)
-}
-
-#' Univariate Region with Constant Majorizer
-#'
-#' An R6 class which represents a region based on univariate intervals with a
-#' constant majorizer for the weight function.
-#'
-#' @field w Weight function for the target distribution. Its expected interface
-#' is \code{w(x, log = TRUE)} so that results are returned on the log-scale by
-#' default.
 #'
 #' @export
 UnivariateConstRegion = R6::R6Class(
