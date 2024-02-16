@@ -62,9 +62,9 @@ library(tidyverse)
 set.seed(1234)
 ```
 
-**TBD**
-
+::: {.callout-note title="TBD"}
 - If plotting code gets too repetitive, consider making functions for plots.
+:::
 
 # Introduction
 
@@ -84,32 +84,35 @@ improved efficiency, and one multivariate example where the regions go beyond
 intervals. To do this, we make use of the [R6](https://r6.r-lib.org) construct
 for object-orientation in R [@Chang2021].
 
-TBD: The package is available from <https://github.com/andrewraim/vws> and
-possibly on CRAN(?).
-
-TBD: some of the lengthier codes are not given in this document, but are
-provided in external files. The paths are relative to 
-<https://github.com/andrewraim/vws> (make sure this is correct).
-
-TBD: an `R>` prompt is shown in some code displays to emphasize interaction via
-the console.
-
-TBD: For the first example, we should explain things in a lot of detail. After that,
-we can give less detail, except any new aspects.
-
-TBD: Let $\mathbb{1}_{A}(x)$ be the indicator function for the event $[x \in A]$,
-
-TBD: We will use `ggplot2`, `dplyr` and other packages of the tidyverse [@Tidyverse2019] in the examples.
+::: {.callout-note title="TBD"}
+- The package is available from <https://github.com/andrewraim/vws> and
+  possibly on CRAN(?).
+- Some of the lengthier codes are not given in this document, but are
+  provided in external files. The paths are relative to 
+  <https://github.com/andrewraim/vws> (make sure this is correct).
+- An `R>` prompt is shown in some code displays to emphasize interaction via
+  the console.
+- For the first example, we should explain things in a lot of detail. After
+  that, we can give less detail, except any new aspects.
+- Let $\mathbb{1}_{A}(x)$ be the indicator function for the event $[x \in A]$,
+- We will use `ggplot2`, `dplyr` and other packages of the tidyverse
+  [@Tidyverse2019] in the examples.
+- We use R6 in some places to promote more formal object-orientation.
+- Remark: We don't use Rcpp at the moment because interoperability between C++
+  classes and R becomes more complicated. It is possible with Rcpp Modules
+  though.
+:::
 
 # A Brief Review of VWS
 
 The objective of VWS is to sample from a weighted density
 <!-- -->
-\begin{align*}
+\begin{align}
 f(x) = f_0(x) / \psi, \quad
 f_0(x) = w(x) g(x), \quad
 \psi = \int_\Omega f_0(x) d\nu(x),
-\end{align*}
+\label{eqn:weighted-target}
+\end{align}
 <!-- -->
 where $\Omega$ is the support, $\nu$ is a dominating measure, $g$ is assumed to be a normalized density, $w(x)$ is a nonnegative weight function, and $\psi$ is a normalizing constant. We will construct a proposal of the form
 <!-- -->
@@ -157,55 +160,19 @@ TBD: mention the constant and linear majorizers. Perhaps we want these subsectio
 # Package Design
 
 ::: {.callout-note title="TBD"}
-- We use R6 in some places to promote more formal object-orientation.
-- The `FMMProposal` class encapsulates the finite mixture proposal.
-- A `Region` contains all of the problem-specific logic.
-- `UnivariateConstRegion` implements constant VWS for univariate regions that
-  are partitioned into intervals. It has a built in optimization (may want to
-  make this more configurable!)
-- `IntUnivariateConstRegion` is a special version for integer supports. E.g.,
-  it avoids bifurcating into regions that contain no integers.
-- `univariate_helper` for `UnivariateConstRegion` and `IntUnivariateConstRegion`.
-- The `adapt` function partitions the proposal to make it better
-  approximate the target.
-- The `rejection` function does rejection sampling with a proposal.
-- Maybe explain all of the pieces first, then show how to use them in more
-  detail.
-- Remark: many of the calculations are done on the log-scale. Describe the
-  log-sum-exp functions.
-- Remark: Gumbel trick to draw from the proposal. (Does this preclude doing a
-  binary search though?)
-- Remark: We don't use Rcpp at the moment because interoperability between C++
-  classes and R becomes more complicated. It is possible with Rcpp Modules
-  though.
-- Identify the main functions in the interface.
+Misc
 
-Outline of this section
-
-1. (DONE) High level description of the design
-	a. `FMMProposal`
-	b. `rejection`
-	c. `adapt`
-	d. Other stuff at a high level
-2. Constant VWS with Univariate Regions
-	a. `UnivariateConstRegion`
-	b. `univariate_helper`
-	c. `IntUnivariateConstRegion`
-	d. `optimize` and how to override
-3. User-Defined Problems
-	a. `Region` abstract class and how to override.
-	   Maybe easier to show by example later.
-4. (DONE) Adapt
-	a. `adapt`
-
-How about the name `d_g` instead of `d_base`?
-
-Consider making tables for functions and their arguments, to make browsing
-easier.
-
-We'll want to show some examples where we override `optimize` and maybe the
-bifurcate functions. Consider pointing to them somewhere in this section. We
-may want to avoid reviewing R6 inheritance in a more general way.
+- How about the name `d_g` instead of `d_base`?
+- Consider making tables for functions and their arguments, to make browsing
+  easier.
+- We'll want to show some examples where we override `optimize` and maybe the
+  bifurcate functions. Consider pointing to them somewhere in this section. We
+  may want to avoid reviewing R6 inheritance in a more general way.
+- Readers might want to check out one of the first / easiest examples (name
+  one) to see the basic usage pattern, then jump back up here to see the
+  components described in more detail. May want to say this before we start
+  going into any detail.
+- Show how to pass in manual list of regions before adapt?
 :::
 
 The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples. Use of the package focuses on two `R6` classes. The `FMMProposal` class represents finite mixture \eqref{eqn:fmm-proposal} and encapsulates operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations that must be supported on it for VWS; i.e., all problem-specific logic is coded within a `Region`. An `FMMProposal` object is created from a list of one or more `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
@@ -217,9 +184,10 @@ through a `rejection_control` (S3) object, including: a count of rejections to b
 ```{R}
 #| eval: false
 #| prompt: true
+regions = list(region1, region2)
 h = FMMProposal$new(regions)
 ctrl = rejection_control(max_rejects = 1000)
-rejection(h, n = 1000)
+rejection(h, n = 1000, control = ctrl)
 ```
 
 ```{r}
@@ -230,19 +198,12 @@ expected = c("max_rejects", "report", "extra_outputs", "action_incomplete")
 base::setequal(actual, expected) |> stopifnot()
 ```
 
-Before sampling, the function `adapt` can be used to adapt a given
-`FMMProposal` object by partitioning the initial set of regions into a finer
-set. In the following example, a proposal `h_init` is adapted `N = 10` times
-to yield an improved proposal `h`.
+Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections TBD, TBD, and TBD.
 
-```{R}
-#| eval: false
-#| prompt: true
-h_init = FMMProposal$new(regions)
-out = adapt(h_init, N = 10)
-h = out$h
-```
-
+Before sampling, the `adapt` function can be used to refine a given
+`FMMProposal` object by partitioning a given set of regions into a finer set.
+The can make it a better approximation of the target distribution. Details are
+given in Section TBD.
 
 Figure \ref{fig:diagram} displays a diagram of the high-level design just described. We will now walk through the components in more depth; however, the user should consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
 
@@ -324,21 +285,9 @@ The methods are briefly described as follows. Expressions with an index $j$ corr
   out the bifurcation and returns two new `Region` objects.
 - `description` and `print` create a meaningful display when printing an object.
 
-## Constant VWS with Univariate Regions
-
-When $w_j(x)$ is finite on $\mathcal{D}_j$, the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizer $\overline{w}_j$. The minorizer may also be taken as the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
-$g_j(x) = g(x) \ind(x \in \mathcal{D}_j) / \Prob(T \in \mathcal{D}_j)$
-along with the quantities
-$\overline{\xi}_j = \overline{w}_j \Prob(T \in \mathcal{D}_j)$ and
-$\underline{\xi}_j = \underline{w}_j \Prob(T \in \mathcal{D}_j)$.
-Operations in the univariate case can be automated, making this choice of VWS sampler
-relatively easy to implement. More details will be given in Section TBD.
-
-## User-Defined Problems
-
 ## Adapting the Proposal
 
-The `adapt` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N'}$, by sequentially selecting and bifurcating regions $N$ times to obtain $\mathcal{D}_1, \ldots, \mathcal{D}_{N' + N}$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
+The `adapt` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain $\mathcal{D}_1, \ldots, \mathcal{D}_{N + N'}$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
 <!-- -->
 \begin{align}
 \rho_\ell = \{
@@ -350,6 +299,111 @@ The `adapt` function refines a given proposal, which is based on partition $\mat
 \end{align}
 <!-- -->
 be the contribution of region $\ell$ to \eqref{eqn:bound}. Draw index $\ell$ from $(1, \ldots, N)$ with probabilities proportional to $\rho_1, \ldots, \rho_N$, then bifurcate region $\ell$ into regions $\mathcal{D}_\ell^{(1)}$ and $\mathcal{D}_\ell^{(2)}$. There may be a number of ways to define bifurcation when $\Omega$ is a multivariate set. For a given subclass of `Region`, the bifurcation approach is to be implemented in the `bifurcate` method. Additionally, each subclass of `Region` should implement the `is_bifurcatable` method which returns `FALSE` if a `Region` object should not be further bifurcated; otherwise it returns `TRUE`.
+
+In the following example, a proposal `h_init` is refined `N = 10` times
+to yield an improved proposal `h`.
+
+```{R}
+#| eval: false
+#| prompt: true
+h_init = FMMProposal$new(regions)
+out = adapt(h_init, N = 10)
+h = out$h
+```
+
+In addition to the element `h` in the return value which represents the adapted
+proposal, the element `log_bdd_hist` contains a vector with values
+<!-- -->
+\begin{align*}
+\log\left\{
+1 - \frac{\sum_{j=1}^{N+t} \underline{\xi}_j^{(t)}}{\sum_{j=1}^{N+t} \overline{\xi}_j^{(t)}}
+\right\}
+\end{align*}
+<!-- -->
+computed at steps $t = 0, 1, \ldots, N'$ of the refinement process. Here, $\overline{\xi}_j^{(t)}$ and $\underline{\xi}_j^{(t)}$ respectively represent $\overline{\xi}_j$ and $\underline{\xi}_j$ at step $t$. Effectiveness of a call to `adapt` can be evaluated by examining `log_bdd_hist`.
+
+```{r}
+#| eval: false
+#| prompt: true
+step = seq_along(out$log_bdd_hist) - 1  ## Make sequence 0, 1, ..., N'
+bdd = exp(out$log_bdd_hist)             ## Exponentiate to probability scale
+plot(step, bdd, type = "l")
+```
+
+If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `adapt` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
+
+## Univariate Regions with Constant Majorizer
+
+::: {.callout-note title="TBD"}
+What to write about in here?
+
+a. `UnivariateConstRegion`
+	- It is a subclass `Region`
+	- How to construct one, including `univariate_helper`
+b. `IntUnivariateConstRegion`
+c. `optimize`: the default method and how to override
+:::
+
+`UnivariateConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Fuethermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
+$g_j(x) = g(x) \ind(x \in \mathcal{D}_j) / \Prob(T \in \mathcal{D}_j)$
+along with the quantities
+$\overline{\xi}_j = \overline{w}_j \Prob(T \in \mathcal{D}_j)$ and
+$\underline{\xi}_j = \underline{w}_j \Prob(T \in \mathcal{D}_j)$.
+
+Several components are needed to construct a object of class `UnivariateConstRegion`: scalars `a` and `b` define the support, a weight function `w`, and an object that provides the necessary operations for base distribution $g$. 
+
+```{r}
+#| eval: false
+#| prompt: true
+region = UnivariateConstRegion$new(a, b, w, g)
+```
+
+The argument `w` is a standard R function, but is expected to have two arguments: the first argument is the input to the function and the second argument `log` indicates whether the result should be returned on the log-scale (`log = TRUE`) or the original scale (`log = FALSE`).
+
+```{r}
+#| eval: false
+#| prompt: true
+w = function(x, log = TRUE) { ... }
+```
+
+For the argument `g`, the `vws` package provides a `univariate_helper` function that wraps these operations together in an `S3` object. Here is an example with $g$ as the $\text{N}(\mu, \sigma^2)$ distribution.
+
+```{r}
+mu = 0
+sigma = 1
+
+g = univariate_helper(
+	d = function(x, log = FALSE) {
+		# Density function with mean and sd fixed to mu and sigma
+		dnorm(x, mean = mu, sd = sigma, log = log)
+	},
+	p = function(q, lower.tail = TRUE, log.p = FALSE) {
+		# CDF function with mean and sd fixed to mu and sigma
+		pnorm(q, mean = mu, sd = sigma, lower.tail = lower.tail, log.p = log.p)
+	},
+	q = function(p, lower.tail = TRUE, log.p = FALSE) {
+		# Quantile function with mean and sd fixed to mu and sigma
+		qnorm(p, mean = mu, sd = sigma, lower.tail = lower.tail, log.p = log.p)
+	},
+	s = function(x) {
+		# Indicator of whether x is in the support of this distribution.
+		is.numeric(x)
+	}
+)
+```
+
+For a similar setting with an integer-valued support, the subclass
+`IntUnivariateConstRegion` of `UnivariateConstRegion` may be considered. Usage
+of `IntUnivariateConstRegion` is similar to `UnivariateConstRegion`, with some
+implementation details customized to the integer case. In this setting, `g`
+should be a `univariate_helper` based on an integer-valued distribution.
+
+```{r}
+#| eval: false
+#| prompt: true
+g = poisson_univariate_helper(lambda = 10)  ## A predefined helper for Poisson(lambda)
+region = IntUnivariateConstRegion$new(a, b, w, g)
+```
 
 A natural choice to partition a univariate $\Omega = (a,b]$ is to break it into intervals defined by knots $\alpha_0 < \cdots < \alpha_N$, with $\alpha_0 \equiv a$ and $\alpha_N \equiv b$ fixed. For a univariate support and a constant majorizer, the baseline strategy of `bifurcate` in the `UnivariateConstRegion` class is to replace $\mathcal{D}_\ell = (\alpha_{\ell-1}, \alpha_{\ell}]$ with $\mathcal{D}_\ell^{(1)} = (\alpha_{\ell-1}, \alpha_{\ell^*}]$ and $\mathcal{D}_\ell^{(2)} = (\alpha_{\ell^*}, \alpha_\ell]$, where
 <!-- -->
@@ -376,6 +430,34 @@ Here, `is_bifurcatable` is always taken to be `TRUE`. When the support is intege
 \end{align*}
 <!-- -->
 The function `is_bifurcatable` returns `FALSE` for regions which contain no integers.
+
+The `IntUnivariateConstRegion` and `UnivariateConstRegion` classes have an `optimize` method to compute the constants $\overline{w}_j$ and $\underline{w}_j$ numerically. 
+
+```{r}
+#| eval: false
+#| prompt: true
+region$optimize(maximize = TRUE, log = TRUE)
+```
+
+The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntUnivariateConstRegion` or `UnivariateConstRegion` and override the `optimize` method. An example of this is given in TBD.
+
+## User-Defined Regions
+
+::: {.callout-note title="TBD"}
+Material needed here.
+
+`Region` abstract class and how to override. Maybe easier to show by example
+later.
+:::
+
+## Remarks
+
+::: {.callout-note title="TBD"}
+- Many of the calculations are done on the log-scale. Describe the log-sum-exp
+  functions.
+- Gumbel trick to draw from the proposal. (Does this preclude doing a binary
+  search though?)
+:::
 
 # Examples
 
@@ -477,8 +559,7 @@ support = IntUnivariateConstRegion$new(a = -1, b = Inf, w = w, g = helper)
 regions = list(support)
 
 h_init = FMMProposal$new(regions)
-ctrl = rejection_control(report = 10)
-adapt_out = adapt(h_init, N = 30, control = ctrl)
+adapt_out = adapt(h_init, N = 30, report = 10)
 h = adapt_out$h
 
 data.frame(logbdd = adapt_out$log_bdd_hist) %>%

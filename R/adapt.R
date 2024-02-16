@@ -66,7 +66,7 @@ adapt = function(h, N, report = N+1)
 		# Split the target region and make another proposal with it
 		bif_out = reg$bifurcate()
 		regions_new = append(h$get_regions()[-idx[jdx]], bif_out)
-		h = fmm_proposal(regions_new)
+		h = FMMProposal$new(regions_new)
 
 		log_ub_hist[j+1] = log_sum_exp(h$get_xi_upper(log = TRUE))
 		log_lb_hist[j+1] = log_sum_exp(h$get_xi_lower(log = TRUE))
