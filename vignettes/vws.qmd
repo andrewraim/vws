@@ -94,7 +94,8 @@ for object-orientation in R [@Chang2021].
   the console.
 - For the first example, we should explain things in a lot of detail. After
   that, we can give less detail, except any new aspects.
-- Let $\mathbb{1}_{A}(x)$ be the indicator function for the event $[x \in A]$,
+- Let $\mathbb{1}_{A}(x)$ be the indicator function for the event $[x \in A]$.
+  Make sure we're consistent about using either this notation or something else.
 - We will use `ggplot2`, `dplyr` and other packages of the tidyverse
   [@Tidyverse2019] in the examples.
 - We use R6 in some places to promote more formal object-orientation.
@@ -139,10 +140,10 @@ h(x)
 <!-- -->
 Equation \eqref{eqn:fmm-proposal} is seen to be a finite mixture with mixing weights $\pi_j = \overline{\xi}_j / \{ \sum_{\ell=1}^N \overline{\xi}_\ell \}$, and component densities
 <!-- -->
-$$
+\begin{align*}
 g_j(x) = 
 \overline{w}_j(x) g(x) \mathbb{1}_{\mathcal{D}_j}(x) / \overline{\xi}_j
-$$
+\end{align*}
 <!-- -->
 which are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a minorizer of $w$ so that
 $0 \leq \underline{w}_j(x) \leq w(x)$ for all $x \in \mathcal{D}_j$,
@@ -163,8 +164,6 @@ TBD: mention the constant and linear majorizers. Perhaps we want these subsectio
 Misc
 
 - How about the name `d_g` instead of `d_base`?
-- Consider making tables for functions and their arguments, to make browsing
-  easier.
 - We'll want to show some examples where we override `optimize` and maybe the
   bifurcate functions. Consider pointing to them somewhere in this section. We
   may want to avoid reviewing R6 inheritance in a more general way.
@@ -172,7 +171,6 @@ Misc
   one) to see the basic usage pattern, then jump back up here to see the
   components described in more detail. May want to say this before we start
   going into any detail.
-- Show how to pass in manual list of regions before adapt?
 :::
 
 The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples. Use of the package focuses on two `R6` classes. The `FMMProposal` class represents finite mixture \eqref{eqn:fmm-proposal} and encapsulates operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations that must be supported on it for VWS; i.e., all problem-specific logic is coded within a `Region`. An `FMMProposal` object is created from a list of one or more `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
@@ -198,12 +196,12 @@ expected = c("max_rejects", "report", "extra_outputs", "action_incomplete")
 base::setequal(actual, expected) |> stopifnot()
 ```
 
-Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections TBD, TBD, and TBD.
+Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-Region], [-@sec-UnivariateConstRegion], and [-@sec-UserRegion].
 
 Before sampling, the `adapt` function can be used to refine a given
 `FMMProposal` object by partitioning a given set of regions into a finer set.
 The can make it a better approximation of the target distribution. Details are
-given in Section TBD.
+given in Section [-@sec-adapt].
 
 Figure \ref{fig:diagram} displays a diagram of the high-level design just described. We will now walk through the components in more depth; however, the user should consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
 
@@ -214,7 +212,8 @@ Figure \ref{fig:diagram} displays a diagram of the high-level design just descri
 \label{fig:diagram}
 \end{figure}
 
-## FMMProposal
+## FMMProposal {#sec-FMMProposal}
+
 `FMMProposal` has the following public methods.
 
 ```{r}
@@ -236,7 +235,7 @@ The following table summarizes the methods.
 
 :  {tbl-colwidths="[20,80]"}
 
-Function | Description
+Method | Description
 :-----|:-----
 | `initialize`       | A standard `R6` constructor that allows objects to be created via `FMMProposal$new(...)`. |
  | `r`  | Generate draws from finite mixture. |
@@ -246,12 +245,13 @@ Function | Description
 | `print` | Provides a meaningful display for objects of the class when printed. |
 | `summary` | Supports the `print` method. |
 | `d_target_unnorm`  | Computes the unnormalized log-density $\log h_0(x) = \log \overline{w}(x) + \log g(x)$ for $x \in \mathcal{D}_j$ which is used as an envelope in rejection sampling.  |
-| `get_xi_upper`     | Returns $\overline{\xi}_1, \ldots, \overline{\xi}_N$. |
-| `get_xi_lower`     | Returns $\underline{\xi}_1, \ldots, \underline{\xi}_N$. |
-| `get_bifurcatable` | Returns a vector of logical values indicating whether respective regions can be bifurcated (described further in Section TBD). |
+| `get_xi_upper`     | Returns the vector $\overline{\xi}_1, \ldots, \overline{\xi}_N$. |
+| `get_xi_lower`     | Returns the vector $\underline{\xi}_1, \ldots, \underline{\xi}_N$. |
+| `get_bifurcatable` | Returns a vector of logical values indicating whether respective regions can be bifurcated (described in Section [-@sec-adapt]). |
 | `get_regions`      | Returns the list of `Region` objects on which the `FMMProposal` was constructed.|
 
-## Region
+## Region {#sec-Region}
+
 `Region` is an abstract base class whose interface represents all problem-specific logic that must be coded to implement VWS. The interface consists of the following methods.
 
 ```{r}
@@ -272,7 +272,7 @@ The methods are briefly described in the following table. Expressions with an in
 
 :  {tbl-colwidths="[20,80]"}
 
-Function | Description
+Method | Description
 :-----|:-----
 | `w` | The weight function $w(x)$ |
 | `w_maj` | The majorized weight function $\overline{w}_j(x)$. |
@@ -282,12 +282,12 @@ Function | Description
 | `s` | Indicator of whether a given point is in the support of truncated and reweighted distribution $g_j$. |
 | `xi_upper` | Compute $\overline{\xi}_j$. |
 | `xi_lower` | Compute $\underline{\xi}_j$. |
-| `bifurcate` | Used with `adapt` which is discussed in Section TBD. Bifurcates region object into two new `Region` objects. |
-| `is_bifurcatable` | Used with `adapt` which is discussed in Section TBD. Indicator of whether the region is eligible to be bifurcated into two new `Region` objects. |
+| `bifurcate` | Used with `adapt` discussed in Section [-@sec-adapt]. Bifurcates region object into two new `Region` objects. |
+| `is_bifurcatable` | Used with `adapt`. Indicator of whether the region is eligible to be bifurcated. |
 | `print` | Provides a meaningful display for objects of the class when printed. |
 | `description` | Produce a short label that describes the region. |
 
-## Adapting the Proposal
+## Adapting the Proposal {#sec-adapt}
 
 The `adapt` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain $\mathcal{D}_1, \ldots, \mathcal{D}_{N + N'}$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
 <!-- -->
@@ -334,7 +334,7 @@ plot(step, bdd, type = "l")
 
 If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `adapt` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
 
-## Univariate Regions with Constant Majorizer
+## Univariate Regions with Constant Majorizer {#sec-UnivariateConstRegion}
 
 `UnivariateConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Fuethermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
 $g_j(x) = g(x) \ind(x \in \mathcal{D}_j) / \Prob(T \in \mathcal{D}_j)$
@@ -433,7 +433,7 @@ region$optimize(maximize = TRUE, log = TRUE)
 
 The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntUnivariateConstRegion` or `UnivariateConstRegion` and override the `optimize` method. An example of this is given in TBD.
 
-## User-Defined Regions
+## User-Defined Regions {#sec-UserRegion}
 
 ::: {.callout-note title="TBD"}
 Material needed here.
@@ -442,7 +442,7 @@ Material needed here.
   later.
 :::
 
-## Remarks
+## Remarks {#sec-Remarks}
 
 Several additional remarks about the design of `vws` are given in this section.
 
@@ -457,12 +457,12 @@ following table.
 
 Function | Description
 :-----|:-----
-|`log_sum_exp(x)`     | computes $\log\{ \sum_{i=1}^n \exp(x_i) \}$ based on a vector `x`.|
-|`log_add2_exp(x, y)` | computes the value $\log(e^x + e^y)$. If `x` and/or `y` is a vector, the functions produces a vector of corresponding results.|
-|`log_sub2_exp(x, y)` | computes the value $\log(e^x - e^y)$ and is vectorized similar to `log_add2_exp`. Here, elements of `x` smaller than `y` result in `NaN` outputs.|
+|`log_sum_exp(x)`     | Compute $\log\{ \sum_{i=1}^n \exp(x_i) \}$ based on a vector `x`.|
+|`log_add2_exp(x, y)` | Compute $\log(e^x + e^y)$. If `x` and/or `y` is a vector, the functions produces a vector of corresponding results.|
+|`log_sub2_exp(x, y)` | Compute $\log(e^x - e^y)$; vectorized similar to `log_add2_exp`. Here, elements of `x` smaller than `y` result in `NaN` outputs. |
 
-We make use of the Gumbel trick (TBD: cite) in several places to draw from a
-discrete distribution with values $1, \ldots, k$ and corresponding
+We make use of the Gumbel trick [e.g., @MaddisonTarlowMinka2014] in several places to
+draw from a discrete distribution with values $1, \ldots, k$ and corresponding
 probabilities $p_1, \ldots, p_k$. This approach allows probabilities
 to be specified on the log-scale without the need to exponentiate them or
 normalize them to sum to one. The Gumbel trick generates a draw $x$
@@ -474,7 +474,18 @@ X = \argmax \{ Z_1 + \log p_1, \ldots, Z_k + \log p_k \},
 \end{align*}
 <!-- -->
 where $\text{Gumbel}(0,1)$ is a standard Gumbel distribution with density
-$f(x) = e^{-(x + e^{x})}$.
+$f(x) = e^{-(x + e^{x})}$. See the functions specified in the following table.
+
+:  {tbl-colwidths="[20,80]"}
+
+Function | Description
+:-----|:-----
+|`r_categ`      | Generate draws from discrete distribution with values $1, \ldots, k$ and corresponding probabilities (unnormalized, specified on the log-scale) $p_1, \ldots, p_k$ via Gumbel trick.|
+|`r_gumbel`     | Generate draws from Gumbel distribution.|
+|`d_gumbel`     | Compute density of Gumbel distribution.|
+|`p_gumbel`     | Compute CDF of Gumbel distribution.|
+|`q_gumbel`     | Compute quantiles of Gumbel distribution.|
+
 
 # Examples
 
@@ -856,8 +867,14 @@ ggplot() +
 
 # Conclusions
 
+::: {.callout-note title="TBD"}
+Content needed
+:::
+
 # Acknowledgments {-}
 
-TBD
+::: {.callout-note title="TBD"}
+Content needed
+:::
 
 # References
