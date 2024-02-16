@@ -232,24 +232,24 @@ expected = c("initialize", "get_xi_upper", "get_xi_lower", "get_bifurcatable",
 setequal(actual, expected) |> stopifnot()
 ```
 
-The methods `r`, `d`, and `nc` represent operations of the finite mixture distribution: `r` generates draws, `d` evaluates the density, and `nc` evaluates normalizing constant $\psi_N$. Method `rejection_bound` returns either the bound \eqref{eqn:bound} or a vector \eqref{eqn:bound-components} which represents the contribution of each region to the bound.
+The following table summarizes the methods.
 
-The remaining methods will typically not be directly needed by users. 
+:  {tbl-colwidths="[20,80]"}
 
-- `initialize` is a standard `R6` constructor that allows objects to be created
-  via `FMMProposal$new(...)`.
-- Methods `summary` and `print` provide a meaningful display for objects of
-  the class when printed.
-- Method `d_target_unnorm` computes the unnormalized log-density
-  $\log h_0(x) = \log \overline{w}(x) + \log g(x)$ for $x \in \mathcal{D}_j$ which is
-  used as an envelope in rejection sampling.
-- Accessors for private data members:
-	a. `get_xi_upper` returns $\overline{\xi}_1, \ldots, \overline{\xi}_N$; 				a. `get_xi_lower` returns $\underline{\xi}_1, \ldots, \underline{\xi}_N$;
-	a. `get_bifurcatable` returns a vector of logical values indicating whether 
-	   respective regions can be bifurcated (described further in Section TBD);
-	   and
-	a. `get_regions` returns the list of `Region` objects on which the
-	   `FMMProposal` was constructed.
+Function | Description
+:-----|:-----
+| `initialize`       | A standard `R6` constructor that allows objects to be created via `FMMProposal$new(...)`. |
+ | `r`  | Generate draws from finite mixture. |
+| `d`  | Evaluates the finite mixture density. |
+| `nc` | Evaluate normalizing constant $\psi_N$ of the finite mixture density. |
+| `rejection_bound` | Returns either the bound \eqref{eqn:bound} or a vector \eqref{eqn:bound-components} which represents the contribution of each region to the bound. |
+| `print` | Provides a meaningful display for objects of the class when printed. |
+| `summary` | Supports the `print` method. |
+| `d_target_unnorm`  | Computes the unnormalized log-density $\log h_0(x) = \log \overline{w}(x) + \log g(x)$ for $x \in \mathcal{D}_j$ which is used as an envelope in rejection sampling.  |
+| `get_xi_upper`     | Returns $\overline{\xi}_1, \ldots, \overline{\xi}_N$. |
+| `get_xi_lower`     | Returns $\underline{\xi}_1, \ldots, \underline{\xi}_N$. |
+| `get_bifurcatable` | Returns a vector of logical values indicating whether respective regions can be bifurcated (described further in Section TBD). |
+| `get_regions`      | Returns the list of `Region` objects on which the `FMMProposal` was constructed.|
 
 ## Region
 `Region` is an abstract base class whose interface represents all problem-specific logic that must be coded to implement VWS. The interface consists of the following methods.
@@ -268,22 +268,24 @@ expected = c("d_base", "w", "r", "d", "s", "w_major", "bifurcate", "is_bifurcata
 setequal(actual, expected) |> stopifnot()
 ```
 
-The methods are briefly described as follows. Expressions with an index $j$ correspond to a $\mathcal{D}_j$ which is associated with the `Region` object.
+The methods are briefly described in the following table. Expressions with an index $j$ correspond to a $\mathcal{D}_j$ which is associated with the `Region` object.
 
-- `w` is the original weight function $w(x)$ and `w_maj` is the majorized
-  weight function $\overline{w}_j(x)$ .
-- `d_base` represents the density function $g$.
-- `r`, `d`, and `s` are distribution functions for the truncated and reweighted
-  distribution $g_j$. `r` generates draws, `d` computes the density, and `s` is
-  an indicator of whether a given point is in the support.
-- `xi_upper` and `xi_lower` compute $\overline{\xi}_j$ and $\underline{\xi}_j$,
-  respectively.
-- `bifurcate` and `is_bifurcatable` are used in adaptation which discussed in
-  Section TBD. `is_bifurcatable` is an indicator of whether the region can be
-  bifurcated into two new `Region` objects; i.e., the indicator is `FALSE` if 
-  $\mathcal{D}_j$ contains no support points. The function `bifurcate` carries
-  out the bifurcation and returns two new `Region` objects.
-- `description` and `print` create a meaningful display when printing an object.
+:  {tbl-colwidths="[20,80]"}
+
+Function | Description
+:-----|:-----
+| `w` | The weight function $w(x)$ |
+| `w_maj` | The majorized weight function $\overline{w}_j(x)$. |
+| `d_base` | Compute the density function $g$ of the base distribution. |
+| `r` | Generate draws from truncated and reweighted distribution $g_j$. |
+| `d` | Compute the density of truncated and reweighted distribution $g_j$. |
+| `s` | Indicator of whether a given point is in the support of truncated and reweighted distribution $g_j$. |
+| `xi_upper` | Compute $\overline{\xi}_j$. |
+| `xi_lower` | Compute $\underline{\xi}_j$. |
+| `bifurcate` | Used with `adapt` which is discussed in Section TBD. Bifurcates region object into two new `Region` objects. |
+| `is_bifurcatable` | Used with `adapt` which is discussed in Section TBD. Indicator of whether the region is eligible to be bifurcated into two new `Region` objects. |
+| `print` | Provides a meaningful display for objects of the class when printed. |
+| `description` | Produce a short label that describes the region. |
 
 ## Adapting the Proposal
 
@@ -333,16 +335,6 @@ plot(step, bdd, type = "l")
 If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `adapt` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
 
 ## Univariate Regions with Constant Majorizer
-
-::: {.callout-note title="TBD"}
-What to write about in here?
-
-a. `UnivariateConstRegion`
-	- It is a subclass `Region`
-	- How to construct one, including `univariate_helper`
-b. `IntUnivariateConstRegion`
-c. `optimize`: the default method and how to override
-:::
 
 `UnivariateConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Fuethermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
 $g_j(x) = g(x) \ind(x \in \mathcal{D}_j) / \Prob(T \in \mathcal{D}_j)$
@@ -446,18 +438,43 @@ The arguments `maximize` and `log` are both indicators: optimization is carried 
 ::: {.callout-note title="TBD"}
 Material needed here.
 
-`Region` abstract class and how to override. Maybe easier to show by example
-later.
+- `Region` abstract class and how to override. Maybe easier to show by example
+  later.
 :::
 
 ## Remarks
 
-::: {.callout-note title="TBD"}
-- Many of the calculations are done on the log-scale. Describe the log-sum-exp
-  functions.
-- Gumbel trick to draw from the proposal. (Does this preclude doing a binary
-  search though?)
-:::
+Several additional remarks about the design of `vws` are given in this section.
+
+Calculations in the package are carried out on the log-scale, where possible,
+to avoid issues from floating point numbers with very small or very large
+magnitudes. Users may want to follow this convention when customizing to their
+own sampling problems. Several included functions help to avoid explicit
+exponentiation and may be helpful for this purpose; they are listed in the
+following table.
+
+:  {tbl-colwidths="[20,80]"}
+
+Function | Description
+:-----|:-----
+|`log_sum_exp(x)`     | computes $\log\{ \sum_{i=1}^n \exp(x_i) \}$ based on a vector `x`.|
+|`log_add2_exp(x, y)` | computes the value $\log(e^x + e^y)$. If `x` and/or `y` is a vector, the functions produces a vector of corresponding results.|
+|`log_sub2_exp(x, y)` | computes the value $\log(e^x - e^y)$ and is vectorized similar to `log_add2_exp`. Here, elements of `x` smaller than `y` result in `NaN` outputs.|
+
+We make use of the Gumbel trick (TBD: cite) in several places to draw from a
+discrete distribution with values $1, \ldots, k$ and corresponding
+probabilities $p_1, \ldots, p_k$. This approach allows probabilities
+to be specified on the log-scale without the need to exponentiate them or
+normalize them to sum to one. The Gumbel trick generates a draw $x$
+from the desired discrete distribution via
+<!-- -->
+\begin{align*}
+X = \argmax \{ Z_1 + \log p_1, \ldots, Z_k + \log p_k \},
+\quad Z_1, \ldots, Z_k \iid \text{Gumbel}(0,1),
+\end{align*}
+<!-- -->
+where $\text{Gumbel}(0,1)$ is a standard Gumbel distribution with density
+$f(x) = e^{-(x + e^{x})}$.
 
 # Examples
 
