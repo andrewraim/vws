@@ -123,10 +123,10 @@ h_0(x) = \overline{w}(x) g(x), \quad
 \psi_N = \int_\Omega h_0(x) d\nu(x).
 \end{align*}
 <!-- -->
-Suppose $\Omega$ is partitioned into regions $\mathcal{D}_1, \ldots, \mathcal{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathcal{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \mathbb{1}_{\mathcal{D}_j}(x)$, the unnormalized proposal becomes
+The construction assumes that $\Omega$ is partitioned into regions $\mathcal{D}_1, \ldots, \mathcal{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathcal{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \mathbb{1}_{\mathcal{D}_j}(x)$, the unnormalized proposal becomes
 <!-- -->
 \begin{align*}
-h_0(x) = g(x) \sum_{j=1}^N \overline{w}_j(x) \mathbb{1}_{\mathcal{D}_j}(x)
+h_0(x) = g(x) \sum_{j=1}^N \overline{w}_j(x) \mathbb{1}_{\mathcal{D}_j}(x).
 \end{align*}
 <!-- -->
 With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. The normalized $h$ can be obtained by defining $\overline{\xi}_j = \E[\overline{w}_j(T) \mathbb{1}_{\mathcal{D}_j}(T)]$ with $T \sim g$ and $\psi_N = \sum_{j=1}^N \overline{\xi}_j$, giving the finite mixture
@@ -158,7 +158,7 @@ This bound can be used to quickly determine whether the proposal will be viable 
 
 TBD: mention the constant and linear majorizers. Perhaps we want these subsections in the code design section near their implementation details?
 
-# Package Design
+# Usage
 
 ::: {.callout-note title="TBD"}
 Misc
@@ -287,20 +287,26 @@ Method | Description
 | `print` | Provides a meaningful display for objects of the class when printed. |
 | `description` | Produce a short label that describes the region. |
 
-## Adapting the Proposal {#sec-adapt}
+## Refining the Proposal {#sec-adapt}
 
-The `adapt` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain $\mathcal{D}_1, \ldots, \mathcal{D}_{N + N'}$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
+The `adapt` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain a new partition $\mathcal{D}_1^*, \ldots, \mathcal{D}_{N + N'}^*$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
 <!-- -->
 \begin{align}
-\rho_\ell = \{
-\overline{\xi}_\ell - \underline{\xi}_\ell
-\} \Big/ \{
+\rho_1 = \frac{
+\overline{\xi}_1 - \underline{\xi}_1
+}{
 \sum_{j=1}^N \overline{\xi}_j
-\},
+},
+\quad \ldots, \quad
+\rho_N = \frac{
+\overline{\xi}_N - \underline{\xi}_N
+}{
+\sum_{j=1}^N \overline{\xi}_j
+}
 \label{eqn:bound-components}
 \end{align}
 <!-- -->
-be the contribution of region $\ell$ to \eqref{eqn:bound}. Draw index $\ell$ from $(1, \ldots, N)$ with probabilities proportional to $\rho_1, \ldots, \rho_N$, then bifurcate region $\ell$ into regions $\mathcal{D}_\ell^{(1)}$ and $\mathcal{D}_\ell^{(2)}$. There may be a number of ways to define bifurcation when $\Omega$ is a multivariate set. For a given subclass of `Region`, the bifurcation approach is to be implemented in the `bifurcate` method. Additionally, each subclass of `Region` should implement the `is_bifurcatable` method which returns `FALSE` if a `Region` object should not be further bifurcated; otherwise it returns `TRUE`.
+be the contribution of each region to \eqref{eqn:bound} when there are $N$ regions. We draw index $\ell$ from $(1, \ldots, N)$ with probabilities proportional to $\rho_1, \ldots, \rho_N$, then bifurcate region $\ell$ into regions $\mathcal{D}_\ell^{(1)}$ and $\mathcal{D}_\ell^{(2)}$. There may be a number of ways to define bifurcation when $\Omega$ is a multivariate set. For a given subclass of `Region`, the bifurcation approach is to be implemented in the `bifurcate` method. Additionally, each subclass of `Region` should implement the `is_bifurcatable` method which returns `FALSE` if a `Region` object should not be further bifurcated; otherwise it returns `TRUE`.
 
 In the following example, a proposal `h_init` is refined `N = 10` times
 to yield an improved proposal `h`.
@@ -458,7 +464,7 @@ following table.
 Function | Description
 :-----|:-----
 |`log_sum_exp(x)`     | Compute $\log\{ \sum_{i=1}^n \exp(x_i) \}$ based on a vector `x`.|
-|`log_add2_exp(x, y)` | Compute $\log(e^x + e^y)$. If `x` and/or `y` is a vector, the functions produces a vector of corresponding results.|
+|`log_add2_exp(x, y)` | Compute $\log(e^x + e^y)$. If `x` and/or `y` is a vector, the function produces a vector of corresponding results.|
 |`log_sub2_exp(x, y)` | Compute $\log(e^x - e^y)$; vectorized similar to `log_add2_exp`. Here, elements of `x` smaller than `y` result in `NaN` outputs. |
 
 We make use of the Gumbel trick [e.g., @MaddisonTarlowMinka2014] in several places to
@@ -491,9 +497,28 @@ Function | Description
 
 ## Lognormal-Normal Convolution
 
+::: {.callout-note title="TBD"}
+Under construction. What to do here?
+
+- Briefly explain the motivation.
+- Show the target (is it still the conditional that we want)?
+- Show the decomposition.
+- Do the most naive sampler using `UnivariateConstRegion`.
+- Try to do a little better and override the optimize function.
+- Try to do even better and use a linear majorizer.
+- We might want to compare the samplers: 
+	+ run time of numerical versus closed-form optimize;
+	+ efficiency of const versus linear majorizers.
+:::
+
 TBD: this problem came up in @DirectSamplingDAS2021 and @DPSimulation2022.
 
 ## Bessel Count Distribution
+
+::: {.callout-note title="TBD"}
+Under construction. The example is working, but the writing needs to be fleshed
+out.
+:::
 
 TBD: this sampling problem comes up in @Devroye2002.
 
@@ -640,8 +665,10 @@ ggplot(df) +
 
 ## Von Mises Fisher
 
-TBD: needs some explanation. We use both constant and linear majorizers here.
-For both versions of the sampler, we consider the same decomposition.
+::: {.callout-note title="TBD"}
+Under construction. Both versions of the sampler are implemented, but writing
+is needed.
+:::
 
 Suppose $X$ has density
 
