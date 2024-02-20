@@ -502,44 +502,99 @@ Function | Description
 ::: {.callout-note title="TBD"}
 Under construction. What to do here?
 
-- Briefly explain the motivation.
-- Show the target (is it still the conditional that we want)?
-- Show the decomposition.
-- Do the most naive sampler using `UnivariateConstRegion`.
-- Try to do a little better and override the optimize function.
-- Try to do even better and use a linear majorizer.
-- We might want to compare the samplers: 
-	+ run time of numerical versus closed-form optimize;
-	+ efficiency of const versus linear majorizers.
+- [x] Briefly explain the motivation.
+- [x] Show the target (is it still the conditional that we want)?
+- [x] Show the decomposition.
+- [x] Do the most naive sampler using `UnivariateConstRegion`.
+- [ ] Try to do a little better and override the optimize function.
+- [ ] Try to do even better and use a linear majorizer.
+- [ ] We might want to compare the samplers: 
+	+ [ ] Run time of numerical versus closed-form optimize;
+	+ [ ] Efficiency of const versus linear majorizers.
+
+TBD: why are the first two samplers so slow? They seemed much faster before. Did
+I break something in the code?
 :::
 
-TBD: this problem came up in @DirectSamplingDAS2021 and @DPSimulation2022.
+The setting $Z = Y + \xi$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021 and @DPSimulation2022 under privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondent data and $\xi$ is random noise purposefully added via a privacy protection mechanism. The resulting $Z$ is considered protected. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria (TBD: cite). To demonstrate a simple but nontrivial sampling problem, suppose $Y$ and $\xi$ are independently distributed with $Y \sim \text{LogNormal}(\mu, \sigma^2)$ and $\xi \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ of the noise mechanism is often known and provided with the noisy data under differential privacy. We will also assume that $\mu$ and $\sigma^2$ are known, though in practice these would need to be learned from an observed sample $z_1, \ldots, z_n$.
 
-### Constant VWS with Numerical Optimization
+Suppose the target distribution is the conditional of $[Y \mid Z = z]$ which is given by
+<!-- -->
+\begin{align*}
+f(y \mid z) \propto \frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
+-\frac{1}{2\lambda^2} (z - y)^2
+\right\} \cdot
+\frac{1}{y\sigma \sqrt{2\pi}} \exp\left\{
+-\frac{1}{2\sigma^2} (\log y - \mu)^2
+\right\}
+\end{align*}
+<!-- -->
+Let us decompose $f$ into weight function
+<!-- -->
+\begin{math}
+w(x) = \frac{1}{x} \exp\left\{ -\frac{1}{2\sigma^2} (\log x - \mu)^2 \right\},
+\end{math}
+<!-- -->
+from the LogNormal term in $f$, and base distribution $g$ as $\text{N}(z, \lambda^2)$. We will consider three variations of VWS sampler, which progressive from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. Section [-@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
+
+Before proceeding, let us fix the following values.
 
 ```{r}
+#| prompt: true
 mu = 0
 sigma2 = 1
 z = 3
 lambda2 = 5
+```
 
+### Constant VWS with Numerical Optimization {#sec-ln-norm-const}
+
+To implement this version of the sampler, let us first code the weight function. Note that calculations are carried out on the log-scale, and only exponentiated if explicitly requested.
+
+```{r}
 w = function(x, log = TRUE) {
 	out = -log(x) - (log(x) - mu)^2 / (2*sigma2) + log(x > 0)
 	out[x == 0] = -Inf
 	if (log) { return(out) } else { return(exp(out)) }
 }
+```
 
+There is a built-in variant of `univariate_helper` based on the normal distribution with mean and standard deviation parameters. It is appropriate for use in this problem.
+
+```{r}
 helper = normal_univariate_helper(mean = z, sd = sqrt(lambda2))
+```
 
-curve(w, xlim = c(1e-2, 5))
+Let us code the target density to assist in evaluating sampler results later. Numerical integration is used to obtain the normalizing constant.
 
-support = UnivariateConstRegion$new(a = 1e-4, b = Inf, w = w, g = helper)
+```{r}
+int_out = integrate(lower = 0, upper = Inf, f = function(x) { 
+	w(x, log = FALSE) * helper$d(x, log = FALSE)
+})
+d_target = function(x, log = TRUE) {
+	out = w(x, log = TRUE) + helper$d(x, log = TRUE) - log(int_out$value)
+	if (log) { return(out) } else { return(exp(out)) }
+}
+```
+
+Let us instantiate a single region that consists of the full support $\Omega$ and construct a proposal based on it.
+
+```{r}
+support = UnivariateConstRegion$new(a = 0, b = Inf, w = w, g = helper)
 regions = list(support)
-
 h_init = FMMProposal$new(regions)
+```
+
+We now refine the proposal using the `adapt` function.
+
+```{r}
 adapt_out = adapt(h_init, N = 30, report = 1)
 h = adapt_out$h
+```
 
+The following plot shows the rate of decrease in bound \eqref{eqn:bound} over `N` steps of the adapt call. Let us also print the final bound that was obtained.
+
+```{r}
 data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
@@ -548,19 +603,29 @@ data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
 	xlab("Step") +
 	ylab("Bound") +
 	theme_minimal()
+bdd = tail(exp(adapt_out$log_bdd_hist), 1)
+cat("Upper bound for percent of rejections:", 100 * bdd)
+```
 
-ctrl = rejection_control(report = 2000)
+Now proceed with rejection sampling.
+
+```{r}
+ctrl = rejection_control(report = 2000, extra_outputs = TRUE)
 out = rejection(h, n = 10000, control = ctrl)
-x = unlist(out)
+x = unlist(out$draws)
+```
 
-int_out = integrate(lower = 0, upper = Inf, f = function(x) { 
-	w(x, log = FALSE) * helper$d(x, log = FALSE)
-})
-d_target = function(x, log = TRUE) {
-	out = w(x, log = TRUE) + helper$d(x, log = TRUE) - log(int_out$value)
-	if (log) { return(out) } else { return(exp(out)) }
-}
+Let us compute the actual rejection rate.
 
+```{r}
+cat("Percent of proposed draws which were rejected:", 
+	sum(out$rejects) / (length(x) + sum(out$rejects)) * 100)
+```
+
+Here is a plot comparing the empirical distribution of the sample to the target
+density to ensure we have generated from the correct distribution.
+
+```{r}
 data.frame(x = x) %>%
 	ggplot() +
 	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
@@ -570,7 +635,11 @@ data.frame(x = x) %>%
 	theme_minimal()
 ```
 
-### Constant VWS with Custom Optimization
+### Constant VWS with Custom Optimization {#sec-ln-norm-const-cf}
+
+```{r}
+curve(w, xlim = c(1e-2, 5))
+```
 
 ```{r}
 CustomConstRegion = R6::R6Class(
@@ -640,7 +709,7 @@ data.frame(x = x) %>%
 	theme_minimal()
 ```
 
-### Linear VWS
+### Linear VWS {#sec-ln-norm-linear}
 
 ```{r}
 source("../inst/examples/lnorm-norm/CustomLinearRegion.R")
@@ -651,7 +720,7 @@ region2 = CustomLinearRegion$new(a = y_star, b = 1e3, mu, sigma2, z, lambda2)
 regions = list(region1, region2)
 
 h_init = FMMProposal$new(regions)
-adapt_out = adapt(h_init, N = 50, report = 1)
+adapt_out = adapt(h_init, N = 30, report = 1)
 h = adapt_out$h
 
 data.frame(bdd = adapt_out$log_bdd_hist) %>%
@@ -663,9 +732,12 @@ data.frame(bdd = adapt_out$log_bdd_hist) %>%
 	ylab("Log of Bound") +
 	theme_minimal()
 
-ctrl = rejection_control(report = 2000, max_rejects = 100000)
+ctrl = rejection_control(report = 2000, extra_outputs = TRUE)
 out = rejection(h, n = 10000, control = ctrl)
-x = unlist(out)
+x = unlist(out$draws)
+
+cat("Percent of proposed draws rejected:",
+	sum(out$rejects) / (length(x) + sum(out$rejects)) * 100)
 
 data.frame(x = x) %>%
 	ggplot() +
@@ -680,15 +752,15 @@ data.frame(x = x) %>%
 log_h = function(x) { h$d(as.list(x), log = TRUE) }
 log_f = function(x) { d_target(x, log = TRUE) }
 
-x_vals = seq(0, 10, length.out = 100)
+x_vals = seq(0, 15, length.out = 100)
 
 df = data.frame(x = x_vals) %>%
 	mutate(log_h_vals = log_h(x)) %>%
 	mutate(log_f_vals = log_f(x))
 
 ggplot(df) +
-	geom_point(aes(x, log_h_vals), pch = 1) +
-	geom_point(aes(x, log_f_vals), pch = 3) +
+	geom_line(aes(x, log_h_vals), lty = 1) +
+	geom_line(aes(x, log_f_vals), lty = 2, col = "blue") +
 	theme_minimal()
 ```
 
