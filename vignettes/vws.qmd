@@ -64,6 +64,8 @@ set.seed(1234)
 
 ::: {.callout-note title="TBD"}
 - If plotting code gets too repetitive, consider making functions for plots.
+- `w_major` and other functions whose arguments are support points: they should
+  probably take a list of points to be consistent, right?
 :::
 
 # Introduction
@@ -495,7 +497,7 @@ Function | Description
 
 # Examples
 
-## Lognormal-Normal Convolution
+## Lognormal-Normal Conditional Distribution
 
 ::: {.callout-note title="TBD"}
 Under construction. What to do here?
@@ -512,6 +514,183 @@ Under construction. What to do here?
 :::
 
 TBD: this problem came up in @DirectSamplingDAS2021 and @DPSimulation2022.
+
+### Constant VWS with Numerical Optimization
+
+```{r}
+mu = 0
+sigma2 = 1
+z = 3
+lambda2 = 5
+
+w = function(x, log = TRUE) {
+	out = -log(x) - (log(x) - mu)^2 / (2*sigma2) + log(x > 0)
+	out[x == 0] = -Inf
+	if (log) { return(out) } else { return(exp(out)) }
+}
+
+helper = normal_univariate_helper(mean = z, sd = sqrt(lambda2))
+
+curve(w, xlim = c(1e-2, 5))
+
+support = UnivariateConstRegion$new(a = 1e-4, b = Inf, w = w, g = helper)
+regions = list(support)
+
+h_init = FMMProposal$new(regions)
+adapt_out = adapt(h_init, N = 30, report = 1)
+h = adapt_out$h
+
+data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = bdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Bound") +
+	theme_minimal()
+
+ctrl = rejection_control(report = 2000)
+out = rejection(h, n = 10000, control = ctrl)
+x = unlist(out)
+
+int_out = integrate(lower = 0, upper = Inf, f = function(x) { 
+	w(x, log = FALSE) * helper$d(x, log = FALSE)
+})
+d_target = function(x, log = TRUE) {
+	out = w(x, log = TRUE) + helper$d(x, log = TRUE) - log(int_out$value)
+	if (log) { return(out) } else { return(exp(out)) }
+}
+
+data.frame(x = x) %>%
+	ggplot() +
+	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
+	ylab("Density") +
+	theme_minimal()
+```
+
+### Constant VWS with Custom Optimization
+
+```{r}
+CustomConstRegion = R6::R6Class(
+
+classname = "CustomConstRegion",
+inherit = UnivariateConstRegion,
+
+public = list(
+
+initialize = function(a, b, w, g) {
+	super$initialize(a, b, w, g)
+},
+
+optimize = function(maximize = TRUE, log = TRUE) {
+	a = private$a
+	b = private$b
+	w = self$w
+
+	y_star = exp(mu - sigma2)
+
+	if (maximize) {
+		if (y_star > b) {
+			out = w(b, log = TRUE)
+		} else if (y_star < a) {
+			out = w(a, log = TRUE)
+		} else { 
+			out = w(y_star, log = TRUE)
+		}
+	} else {
+		out = min(w(a, log = TRUE), w(b, log = TRUE))
+	}
+
+	if (log) { return(out) } else { return(exp(out)) }
+}
+
+) # Close public
+) # Close class
+```
+
+```{r}
+support = CustomConstRegion$new(a = 0, b = Inf, w = w, g = helper)
+regions = list(support)
+
+h_init = FMMProposal$new(regions)
+adapt_out = adapt(h_init, N = 30, report = 1)
+h = adapt_out$h
+
+data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = bdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Bound") +
+	theme_minimal()
+
+ctrl = rejection_control(report = 2000)
+out = rejection(h, n = 10000, control = ctrl)
+x = unlist(out)
+
+data.frame(x = x) %>%
+	ggplot() +
+	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
+	ylab("Density") +
+	theme_minimal()
+```
+
+### Linear VWS
+
+```{r}
+source("../inst/examples/lnorm-norm/CustomLinearRegion.R")
+
+y_star = exp(mu - sigma2 + 1)
+region1 = CustomLinearRegion$new(a = 1e-6, b = y_star, mu, sigma2, z, lambda2)
+region2 = CustomLinearRegion$new(a = y_star, b = 1e3, mu, sigma2, z, lambda2)
+regions = list(region1, region2)
+
+h_init = FMMProposal$new(regions)
+adapt_out = adapt(h_init, N = 50, report = 1)
+h = adapt_out$h
+
+data.frame(bdd = adapt_out$log_bdd_hist) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = bdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Log of Bound") +
+	theme_minimal()
+
+ctrl = rejection_control(report = 2000, max_rejects = 100000)
+out = rejection(h, n = 10000, control = ctrl)
+x = unlist(out)
+
+data.frame(x = x) %>%
+	ggplot() +
+	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
+	ylab("Density") +
+	theme_minimal()
+```
+
+```{r}
+log_h = function(x) { h$d(as.list(x), log = TRUE) }
+log_f = function(x) { d_target(x, log = TRUE) }
+
+x_vals = seq(0, 10, length.out = 100)
+
+df = data.frame(x = x_vals) %>%
+	mutate(log_h_vals = log_h(x)) %>%
+	mutate(log_f_vals = log_f(x))
+
+ggplot(df) +
+	geom_point(aes(x, log_h_vals), pch = 1) +
+	geom_point(aes(x, log_f_vals), pch = 3) +
+	theme_minimal()
+```
 
 ## Bessel Count Distribution
 

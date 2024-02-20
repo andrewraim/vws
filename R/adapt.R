@@ -72,6 +72,8 @@ adapt = function(h, N, report = N+1)
 		log_lb_hist[j+1] = log_sum_exp(h$get_xi_lower(log = TRUE))
 		log_bdd_hist[j+1] = h$rejection_bound(log = TRUE)
 
+		if (is.na(log_bdd_hist[j+1])) browser()
+
 		if (j %% report == 0) {
 			logger("After %d steps log Pr{rejection} <= %g\n", j, log_bdd_hist[j+1])
 		}

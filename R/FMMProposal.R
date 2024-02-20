@@ -91,7 +91,7 @@ rejection_bound = function(byregion = FALSE, log = FALSE)
 		# Overall rejection rate bound
 		out = vws::log_sum_exp(out)
 	}
-if (any(is.na(out))) browser()
+
 	if (log) { return (out) } else { return(exp(out)) }
 },
 
