@@ -506,7 +506,7 @@ Under construction. What to do here?
 - [x] Show the target (is it still the conditional that we want)?
 - [x] Show the decomposition.
 - [x] Do the most naive sampler using `UnivariateConstRegion`.
-- [ ] Try to do a little better and override the optimize function.
+- [x] Try to do a little better and override the optimize function.
 - [ ] Try to do even better and use a linear majorizer.
 - [ ] We might want to compare the samplers: 
 	+ [ ] Run time of numerical versus closed-form optimize;
@@ -514,6 +514,9 @@ Under construction. What to do here?
 
 TBD: why are the first two samplers so slow? They seemed much faster before. Did
 I break something in the code?
+
+TBD: maybe we should show more detail in this first example and less in
+subsequent examples. If we do, let's inform the reader.
 :::
 
 The setting $Z = Y + \xi$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021 and @DPSimulation2022 under privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondent data and $\xi$ is random noise purposefully added via a privacy protection mechanism. The resulting $Z$ is considered protected. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria (TBD: cite). To demonstrate a simple but nontrivial sampling problem, suppose $Y$ and $\xi$ are independently distributed with $Y \sim \text{LogNormal}(\mu, \sigma^2)$ and $\xi \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ of the noise mechanism is often known and provided with the noisy data under differential privacy. We will also assume that $\mu$ and $\sigma^2$ are known, though in practice these would need to be learned from an observed sample $z_1, \ldots, z_n$.
@@ -526,13 +529,13 @@ f(y \mid z) \propto \frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
 \right\} \cdot
 \frac{1}{y\sigma \sqrt{2\pi}} \exp\left\{
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
-\right\}
+\right\} \mathbb{1}_{(0,\infty)}(x)
 \end{align*}
 <!-- -->
 Let us decompose $f$ into weight function
 <!-- -->
 \begin{math}
-w(x) = \frac{1}{x} \exp\left\{ -\frac{1}{2\sigma^2} (\log x - \mu)^2 \right\},
+w(x) = \frac{1}{x} \exp\left\{ -\frac{1}{2\sigma^2} (\log x - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(x),
 \end{math}
 <!-- -->
 from the LogNormal term in $f$, and base distribution $g$ as $\text{N}(z, \lambda^2)$. We will consider three variations of VWS sampler, which progressive from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. Section [-@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
@@ -588,7 +591,7 @@ h_init = FMMProposal$new(regions)
 We now refine the proposal using the `adapt` function.
 
 ```{r}
-adapt_out = adapt(h_init, N = 30, report = 1)
+adapt_out = adapt(h_init, N = 30, report = 10)
 h = adapt_out$h
 ```
 
@@ -637,9 +640,35 @@ data.frame(x = x) %>%
 
 ### Constant VWS with Custom Optimization {#sec-ln-norm-const-cf}
 
+The weight function for this problem can be either maximized or minimized in closed form. On the log-scale with $\phi(x) = \log w(x)$, we have
+<!-- -->
+\begin{align*}
+\phi(x) = -\log x - \frac{(\log x - \mu)^2}{2 \sigma^2} + \log \mathbb{1}_{(0,\infty)}(x)
+\end{align*}
+<!-- -->
+with first derivative
+<!-- -->
+\begin{align*}
+&\phi'(x) = -\frac{1}{x}\left(
+1 + \frac{\log x - \mu}{\sigma^2}
+\right),
+\end{align*}
+<!-- -->
+for $x \in (0, \infty)$. Let $x^* = \exp(\mu - \sigma^2)$; it is seen that $\phi'(x)$ is positive when $x < x^*$, negative when $x > x^*$, and takes value zero at $x = x'$. Then $x^*$ maximizes $\phi(x)$ with maximum value $\phi(x^*) = \sigma^2 / 2 - \mu$. Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $x^*$, the maximum of $\log w(x)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $x^*$, the maximum of $\log w(x)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
+
+Here is a plot of $\log w(x)$ with our selected $\mu$ and $\sigma^2$ values.
+
 ```{r}
-curve(w, xlim = c(1e-2, 5))
+ggplot() +
+	geom_function(fun = w, xlim = c(1e-2, 5)) +
+	geom_vline(xintercept = exp(mu - sigma2), lty = 2) +
+	geom_hline(yintercept = sigma2 / 2 - mu, lty = 2) +
+	xlab("x") +
+	ylab(expression("log w(x)")) +
+	theme_minimal()
 ```
+
+To override the numerical optimization with our closed-form solution, we now create a subclass `CustomConstRegion` of `UnivariateConstRegion` and specify the `optimize` method. Furthermore, we specify an `initialize` method which simply invokes `initialize` from the superclass `UnivariateConstRegion`. Otherwise, the behavior of `CustomConstRegion` is identical to `UnivariateConstRegion`.
 
 ```{r}
 CustomConstRegion = R6::R6Class(
@@ -679,37 +708,43 @@ optimize = function(maximize = TRUE, log = TRUE) {
 ) # Close class
 ```
 
+From here, the code to construct, refine, and sample from a proposal using `CustomConstRegion` is identical to `UnivariateConstRegion`.
+
 ```{r}
 support = CustomConstRegion$new(a = 0, b = Inf, w = w, g = helper)
 regions = list(support)
 
 h_init = FMMProposal$new(regions)
-adapt_out = adapt(h_init, N = 30, report = 1)
+adapt_out = adapt(h_init, N = 30)
 h = adapt_out$h
-
-data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
-	mutate(step = row_number() - 1) %>%
-	ggplot() +
-	geom_line(aes(x = step, y = bdd)) +
-	scale_y_continuous(n.breaks = 10) +
-	xlab("Step") +
-	ylab("Bound") +
-	theme_minimal()
 
 ctrl = rejection_control(report = 2000)
 out = rejection(h, n = 10000, control = ctrl)
 x = unlist(out)
-
-data.frame(x = x) %>%
-	ggplot() +
-	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
-		fill = NA, bins = 25) +
-	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
-	ylab("Density") +
-	theme_minimal()
 ```
 
 ### Linear VWS {#sec-ln-norm-linear}
+
+::: {.callout-note title="TBD"}
+Furthermore, it is seen that
+<!-- -->
+\begin{align*}
+&\phi''(x) = -\frac{1}{x^2}\left(
+\frac{\log x - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2}
+\right)
+\end{align*}
+<!-- -->
+and
+<!-- -->
+\begin{align*}
+\phi''(x) < 0
+&\iff \frac{\log x - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2} > 0 \\
+&\iff x < \exp(\mu - \sigma^2 + 1)
+\end{align*}
+<!-- -->
+so that $\phi(x)$ is concave when $x < \exp(\mu - \sigma^2 + 1)$ and convex when $x > \exp(\mu - \sigma^2 + 1)$.
+:::
+
 
 ```{r}
 source("../inst/examples/lnorm-norm/CustomLinearRegion.R")
