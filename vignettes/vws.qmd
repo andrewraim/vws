@@ -216,7 +216,7 @@ Figure \ref{fig:diagram} displays a diagram of the high-level design just descri
 
 ## FMMProposal {#sec-FMMProposal}
 
-`FMMProposal` has the following public methods.
+`FMMProposal` has the following public methods which are described in [@tbl-fmmproposal-methods].
 
 ```{r}
 #| prompt: true
@@ -233,24 +233,47 @@ expected = c("initialize", "get_xi_upper", "get_xi_lower", "get_bifurcatable",
 setequal(actual, expected) |> stopifnot()
 ```
 
-The following table summarizes the methods.
+: Methods of the `FMMProposal` class. {#tbl-fmmproposal-methods tbl-colwidths="[20,80]"}
 
-:  {tbl-colwidths="[20,80]"}
+-------------------------------------------------------------------------------
+Method             Description
+-----              -----
+`initialize`       A standard `R6` constructor that allows objects to be
+                   created via `FMMProposal$new(...)`.
 
-Method | Description
-:-----|:-----
-| `initialize`       | A standard `R6` constructor that allows objects to be created via `FMMProposal$new(...)`. |
- | `r`  | Generate draws from finite mixture. |
-| `d`  | Evaluates the finite mixture density. |
-| `nc` | Evaluate normalizing constant $\psi_N$ of the finite mixture density. |
-| `rejection_bound` | Returns either the bound \eqref{eqn:bound} or a vector \eqref{eqn:bound-components} which represents the contribution of each region to the bound. |
-| `print` | Provides a meaningful display for objects of the class when printed. |
-| `summary` | Supports the `print` method. |
-| `d_target_unnorm`  | Computes the unnormalized log-density $\log h_0(x) = \log \overline{w}(x) + \log g(x)$ for $x \in \mathcal{D}_j$ which is used as an envelope in rejection sampling.  |
-| `get_xi_upper`     | Returns the vector $\overline{\xi}_1, \ldots, \overline{\xi}_N$. |
-| `get_xi_lower`     | Returns the vector $\underline{\xi}_1, \ldots, \underline{\xi}_N$. |
-| `get_bifurcatable` | Returns a vector of logical values indicating whether respective regions can be bifurcated (described in Section [-@sec-adapt]). |
-| `get_regions`      | Returns the list of `Region` objects on which the `FMMProposal` was constructed.|
+`r`                Generate draws from finite mixture.
+ 
+`d`                Evaluates the finite mixture density.
+ 
+`nc`               Evaluate normalizing constant $\psi_N$ of the finite
+                   mixture density.
+
+`rejection_bound`  Returns either the bound \eqref{eqn:bound} or a vector
+                   \eqref{eqn:bound-components} which represents the
+                   contribution of each region to the bound.
+
+`print`            Provides a meaningful display for objects of the class when
+                   printed.
+
+`summary`          Supports the `print` method.
+
+`d_target_unnorm`  Computes the unnormalized log-density
+                   $\log h_0(x) = \log \overline{w}(x) + \log g(x)$ for
+                   $x \in \mathcal{D}_j$ which is used as an envelope in
+                   rejection sampling.
+
+`get_xi_upper`     Returns the vector $\overline{\xi}_1, \ldots, \overline{\xi}_N$
+                   from the underlying $\mathcal{D}_1, \ldots, \mathcal{D}_N$.
+
+`get_xi_lower`     Returns the vector $\underline{\xi}_1, \ldots, \underline{\xi}_N$
+                   from the underlying $\mathcal{D}_1, \ldots, \mathcal{D}_N$.
+
+`get_bifurcatable` Returns a vector of logical values indicating whether
+                   respective regions can be bifurcated (described in
+                   [@sec-adapt]).
+
+`get_regions`      Returns the list of `Region` objects based on the underlying                                  $\mathcal{D}_1, \ldots, \mathcal{D}_N$.
+-------------------------------------------------------------------------------
 
 ## Region {#sec-Region}
 
@@ -270,24 +293,43 @@ expected = c("d_base", "w", "r", "d", "s", "w_major", "bifurcate", "is_bifurcata
 setequal(actual, expected) |> stopifnot()
 ```
 
-The methods are briefly described in the following table. Expressions with an index $j$ correspond to a $\mathcal{D}_j$ which is associated with the `Region` object.
+The methods are briefly described in [@tbl-region-methods]. Expressions with an index $j$ correspond to a $\mathcal{D}_j$ which is associated with the `Region` object.
 
-:  {tbl-colwidths="[20,80]"}
+: Methods of the abstract `Region` class. {#tbl-region-methods tbl-colwidths="[20,80]"}
 
-Method | Description
-:-----|:-----
-| `w` | The weight function $w(x)$ |
-| `w_maj` | The majorized weight function $\overline{w}_j(x)$. |
-| `d_base` | Compute the density function $g$ of the base distribution. |
-| `r` | Generate draws from truncated and reweighted distribution $g_j$. |
-| `d` | Compute the density of truncated and reweighted distribution $g_j$. |
-| `s` | Indicator of whether a given point is in the support of truncated and reweighted distribution $g_j$. |
-| `xi_upper` | Compute $\overline{\xi}_j$. |
-| `xi_lower` | Compute $\underline{\xi}_j$. |
-| `bifurcate` | Used with `adapt` discussed in Section [-@sec-adapt]. Bifurcates region object into two new `Region` objects. |
-| `is_bifurcatable` | Used with `adapt`. Indicator of whether the region is eligible to be bifurcated. |
-| `print` | Provides a meaningful display for objects of the class when printed. |
-| `description` | Produce a short label that describes the region. |
+-------------------------------------------------------------------------------
+Method            Description
+-----             -----
+`w`               The weight function $w(x)$
+
+`w_maj`           The majorized weight function $\overline{w}_j(x)$.
+
+`d_base`          Compute the density function $g$ of the base distribution.
+
+`r`               Generate draws from truncated and reweighted distribution
+                  $g_j$.
+
+`d`               Compute the density of truncated and reweighted distribution
+                  $g_j$.
+
+`s`               Indicator of whether a given point is in the support of
+                  truncated and reweighted distribution $g_j$.
+
+`xi_upper`        Compute $\overline{\xi}_j$.
+
+`xi_lower`        Compute $\underline{\xi}_j$.
+
+`bifurcate`       Used with `adapt` discussed in Section [-@sec-adapt].
+                  Bifurcates region object into two new `Region` objects.
+
+`is_bifurcatable` Used with `adapt`. Indicator of whether the region is
+                  eligible to be bifurcated.
+
+`print`           Provides a meaningful display for objects of the class when
+                  printed.
+
+`description`     Produce a short label that describes the region.
+-------------------------------------------------------------------------------
 
 ## Refining the Proposal {#sec-adapt}
 
@@ -446,9 +488,37 @@ The arguments `maximize` and `log` are both indicators: optimization is carried 
 ::: {.callout-note title="TBD"}
 Material needed here.
 
-- `Region` abstract class and how to override. Maybe easier to show by example
-  later.
+- `Region` abstract class and how to override.
+- We have already listed the operations that need to be implemented in `Region`.
+- May be best to keep this section very short and refer to an example.
 :::
+
+
+```{r}
+#| eval: false
+CustomRegion = R6::R6Class(
+
+classname = "CustomRegion",
+private = list( ... ),
+public = list(
+
+initialize = function(...) { ... },
+d_base = function(x, log = FALSE) { ... },
+w = function(x, log = TRUE) { ... },
+r = function(n) { ... },
+d = function(x, log = FALSE) { ... },
+s = function(x) { ... },
+w_major = function(x, log = TRUE) { ... },
+is_bifurcatable = function() { ... },
+bifurcate = function(x = NULL, ...) { ... },
+xi_upper = function(log = TRUE) { ... },
+xi_lower = function(log = TRUE) { ... },
+description = function() { ... },
+print = function() { ... }
+
+) # Close public	
+) # Close class
+```
 
 ## Remarks {#sec-Remarks}
 
@@ -458,16 +528,24 @@ Calculations in the package are carried out on the log-scale, where possible,
 to avoid issues from floating point numbers with very small or very large
 magnitudes. Users may want to follow this convention when customizing to their
 own sampling problems. Several included functions help to avoid explicit
-exponentiation and may be helpful for this purpose; they are listed in the
-following table.
+exponentiation and may be helpful for this purpose; they are listed in
+[@tbl-log-sum-exp].
 
-:  {tbl-colwidths="[20,80]"}
+: Functions for sums and differences on the log-scale. {#tbl-log-sum-exp tbl-colwidths="[20,80]"}
 
-Function | Description
-:-----|:-----
-|`log_sum_exp(x)`     | Compute $\log\{ \sum_{i=1}^n \exp(x_i) \}$ based on a vector `x`.|
-|`log_add2_exp(x, y)` | Compute $\log(e^x + e^y)$. If `x` and/or `y` is a vector, the function produces a vector of corresponding results.|
-|`log_sub2_exp(x, y)` | Compute $\log(e^x - e^y)$; vectorized similar to `log_add2_exp`. Here, elements of `x` smaller than `y` result in `NaN` outputs. |
+-------------------------------------------------------------------------------
+Function             Description
+-----                -----
+`log_sum_exp(x)`     Compute $\log\{ \sum_{i=1}^n \exp(x_i) \}$ based on a
+                     vector `x`.
+
+`log_add2_exp(x, y)` Compute $\log(e^x + e^y)$. If `x` and/or `y` is a vector,
+                     the function produces a vector of corresponding results.
+
+`log_sub2_exp(x, y)` Compute $\log(e^x - e^y)$; vectorized similar to
+                     `log_add2_exp`. Here, elements of `x` smaller than `y`
+                     result in `NaN` outputs.
+-------------------------------------------------------------------------------
 
 We make use of the Gumbel trick [e.g., @MaddisonTarlowMinka2014] in several places to
 draw from a discrete distribution with values $1, \ldots, k$ and corresponding
@@ -482,18 +560,25 @@ X = \argmax \{ Z_1 + \log p_1, \ldots, Z_k + \log p_k \},
 \end{align*}
 <!-- -->
 where $\text{Gumbel}(0,1)$ is a standard Gumbel distribution with density
-$f(x) = e^{-(x + e^{x})}$. See the functions specified in the following table.
+$f(x) = e^{-(x + e^{x})}$. See the functions specified in [@tbl-gumbel].
 
-:  {tbl-colwidths="[20,80]"}
+: Gumbel distribution and variate generation from discrete distribution  {#tbl-gumbel tbl-colwidths="[20,80]"}
 
-Function | Description
-:-----|:-----
-|`r_categ`      | Generate draws from discrete distribution with values $1, \ldots, k$ and corresponding probabilities (unnormalized, specified on the log-scale) $p_1, \ldots, p_k$ via Gumbel trick.|
-|`r_gumbel`     | Generate draws from Gumbel distribution.|
-|`d_gumbel`     | Compute density of Gumbel distribution.|
-|`p_gumbel`     | Compute CDF of Gumbel distribution.|
-|`q_gumbel`     | Compute quantiles of Gumbel distribution.|
+-------------------------------------------------------------------------------
+Function   Description
+-----      -----
+`r_categ`  Generate draws from discrete distribution with values $1, \ldots, k$
+           and corresponding probabilities (unnormalized and specified on the
+           log-scale) $p_1, \ldots, p_k$ via Gumbel trick.
+           
+`r_gumbel` Generate draws from Gumbel distribution.
 
+`d_gumbel` Compute density of Gumbel distribution.
+
+`p_gumbel` Compute CDF of Gumbel distribution.
+
+`q_gumbel` Compute quantiles of Gumbel distribution.
+-------------------------------------------------------------------------------
 
 # Examples
 
@@ -507,19 +592,21 @@ Under construction. What to do here?
 - [x] Show the decomposition.
 - [x] Do the most naive sampler using `UnivariateConstRegion`.
 - [x] Try to do a little better and override the optimize function.
-- [ ] Try to do even better and use a linear majorizer.
+- [x] Try to do even better and use a linear majorizer.
 - [ ] We might want to compare the samplers: 
 	+ [ ] Run time of numerical versus closed-form optimize;
 	+ [ ] Efficiency of const versus linear majorizers.
 
-TBD: why are the first two samplers so slow? They seemed much faster before. Did
-I break something in the code?
+TBD: why are the first two samplers so slow to refine? They seemed much faster
+before. Did I break something in the code?
 
 TBD: maybe we should show more detail in this first example and less in
 subsequent examples. If we do, let's inform the reader.
 :::
 
-The setting $Z = Y + \xi$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021 and @DPSimulation2022 under privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondent data and $\xi$ is random noise purposefully added via a privacy protection mechanism. The resulting $Z$ is considered protected. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria (TBD: cite). To demonstrate a simple but nontrivial sampling problem, suppose $Y$ and $\xi$ are independently distributed with $Y \sim \text{LogNormal}(\mu, \sigma^2)$ and $\xi \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ of the noise mechanism is often known and provided with the noisy data under differential privacy. We will also assume that $\mu$ and $\sigma^2$ are known, though in practice these would need to be learned from an observed sample $z_1, \ldots, z_n$.
+The setting $Z = Y + \xi$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021 and @DPSimulation2022 where sensitive data are released under a measure of privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondents' data collected by an official statistics agency and $\xi$ is random noise added for privacy protection. The resulting $Z$ is considered protected and suitable for release. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe recent work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
+
+Suppose $Y$ and $\xi$ are independently distributed with $Y \sim \text{LogNormal}(\mu, \sigma^2)$ and $\xi \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ of the noise mechanism is often known and provided with the noisy data under differential privacy. We will also assume that $\mu$ and $\sigma^2$ are known, though in practice these would need to be learned from an observed sample $z_1, \ldots, z_n$.
 
 Suppose the target distribution is the conditional of $[Y \mid Z = z]$ which is given by
 <!-- -->
@@ -544,10 +631,16 @@ Before proceeding, let us fix the following values.
 
 ```{r}
 #| prompt: true
-mu = 0
-sigma2 = 1
-z = 3
-lambda2 = 5
+mu = 5
+sigma2 = 0.5
+lambda2 = 100
+```
+
+TBD: explain.
+
+```{r}
+y_true = rlnorm(1, mu, sqrt(sigma2))
+z = rnorm(1, y_true, sqrt(lambda2))
 ```
 
 ### Constant VWS with Numerical Optimization {#sec-ln-norm-const}
@@ -571,7 +664,7 @@ helper = normal_univariate_helper(mean = z, sd = sqrt(lambda2))
 Let us code the target density to assist in evaluating sampler results later. Numerical integration is used to obtain the normalizing constant.
 
 ```{r}
-int_out = integrate(lower = 0, upper = Inf, f = function(x) { 
+int_out = integrate(lower = z - 200, upper = z + 200, f = function(x) { 
 	w(x, log = FALSE) * helper$d(x, log = FALSE)
 })
 d_target = function(x, log = TRUE) {
@@ -595,7 +688,7 @@ adapt_out = adapt(h_init, N = 30, report = 10)
 h = adapt_out$h
 ```
 
-The following plot shows the rate of decrease in bound \eqref{eqn:bound} over `N` steps of the adapt call. Let us also print the final bound that was obtained.
+The following plot shows the rate of decrease in bound \eqref{eqn:bound} over `N` steps of the adapt call.
 
 ```{r}
 data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
@@ -606,6 +699,11 @@ data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
 	xlab("Step") +
 	ylab("Bound") +
 	theme_minimal()
+```
+
+Let us also print the final bound that was obtained.
+
+```{r}
 bdd = tail(exp(adapt_out$log_bdd_hist), 1)
 cat("Upper bound for percent of rejections:", 100 * bdd)
 ```
@@ -629,32 +727,44 @@ Here is a plot comparing the empirical distribution of the sample to the target
 density to ensure we have generated from the correct distribution.
 
 ```{r}
-data.frame(x = x) %>%
+g = data.frame(x = x) %>%
 	ggplot() +
 	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
 		fill = NA, bins = 25) +
 	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
 	ylab("Density") +
 	theme_minimal()
+print(g)
+```
+
+TBD: explain interval.
+
+```{r}
+interval_lo = quantile(x, probs = 0.025)
+interval_hi = quantile(x, probs = 0.975)
+g + annotate("rect", xmin = interval_lo, xmax = hi, ymin = 0, ymax = Inf,
+	alpha = 0.1, fill = "blue") +
+	geom_vline(xintercept = z, col = "blue", lwd = 1.05) +
+	geom_vline(xintercept = y_true, col = "red", lwd = 1.05)
 ```
 
 ### Constant VWS with Custom Optimization {#sec-ln-norm-const-cf}
 
-The weight function for this problem can be either maximized or minimized in closed form. On the log-scale with $\phi(x) = \log w(x)$, we have
+The weight function for this problem can be either maximized or minimized in closed form. On the log-scale with $\zeta(x) = \log w(x)$, we have
 <!-- -->
 \begin{align*}
-\phi(x) = -\log x - \frac{(\log x - \mu)^2}{2 \sigma^2} + \log \mathbb{1}_{(0,\infty)}(x)
+\zeta(x) = -\log x - \frac{(\log x - \mu)^2}{2 \sigma^2} + \log \mathbb{1}_{(0,\infty)}(x)
 \end{align*}
 <!-- -->
 with first derivative
 <!-- -->
 \begin{align*}
-&\phi'(x) = -\frac{1}{x}\left(
+&\zeta'(x) = -\frac{1}{x}\left(
 1 + \frac{\log x - \mu}{\sigma^2}
 \right),
 \end{align*}
 <!-- -->
-for $x \in (0, \infty)$. Let $x^* = \exp(\mu - \sigma^2)$; it is seen that $\phi'(x)$ is positive when $x < x^*$, negative when $x > x^*$, and takes value zero at $x = x'$. Then $x^*$ maximizes $\phi(x)$ with maximum value $\phi(x^*) = \sigma^2 / 2 - \mu$. Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $x^*$, the maximum of $\log w(x)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $x^*$, the maximum of $\log w(x)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
+for $x \in (0, \infty)$. Let $x^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(x)$ is positive when $x < x^*$, negative when $x > x^*$, and takes value zero at $x = x'$. Then $x^*$ maximizes $\zeta(x)$ with maximum value $\zeta(x^*) = \sigma^2 / 2 - \mu$. Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $x^*$, the maximum of $\log w(x)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $x^*$, the maximum of $\log w(x)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
 
 Here is a plot of $\log w(x)$ with our selected $\mu$ and $\sigma^2$ values.
 
@@ -726,26 +836,108 @@ x = unlist(out)
 ### Linear VWS {#sec-ln-norm-linear}
 
 ::: {.callout-note title="TBD"}
-Furthermore, it is seen that
+Here is a rough outline.
+
+- [ ] Now we use the linear majorizer. This is the place to give background on
+  what that is.
+- [ ] Give the second derivative and characterize when weight function is
+  log-concave versus log-convex.
+- [ ] We assume the transition point is not contained in the interior of any
+  interval.
+- [ ] Form the linear majorizer and minorizer for log-concave regions. For
+  log-convex regions, we just swap the two.
+- [ ] @VWS2024 suggest an optimization to find a $c$ to obtain the linear
+  coefficients. This is based on computing a certain MGF. Show what that MGF is
+  in this problem.
+- [ ] The function `d_base` is just the density of $\text{N}(z, \lambda^2)$.
+- [ ] The function `w_major` is
+  $w(x) = \exp\{ \overline{\beta}_{1j} + \overline{\beta}_{1j} x \}$.
+- [ ] The `d` and `r` functions depend on $g_j$. Show that this is the
+  distribution $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$
+  truncated to $(\alpha_{j-1}, \alpha_j]$.
+- [x] The $\overline{\xi}_j$ and $\underline{\xi}_j$ functions are computed via
+  similar integrals as the MGF.
+- [x] We can state a general result for the integral $\int_a^b e^{tx} \phi(x) dx$ and
+  reuse it in several places here.
+- [ ] If possible, let's make a table to summarize the functions that are coded
+  in the class.
+- [ ] Link to the code for the class.
+- [ ] Show some code to construct the sampler, refine it, and sample from it.
+  Show the improved efficiency.
+:::
+
+Sections [-@sec-ln-norm-const] and [-@sec-ln-norm-const-cf] utilized a constant 
+majorizer $\overline{w}_j = \max_{x \in \mathcal{D}_j} w(x)$ and minorizer $\underline{w}_j = \min_{x \in \mathcal{D}_j} w(x)$ for VWS sampling. Let us now consider a linear majorizer $\log \overline{w}_j(x) = \overline{\beta}_{0j} + \overline{\beta}_{1j} x$ and minorizer $\log \underline{w}_j(x) = \underline{\beta}_{0j} + \underline{\beta}_{1j} x$. This strategy is more involved to derive an implement, but often captures the weight function effectively with fewer mixture components and therefore yields more efficient proposals.
+
+Proceeding from the first derivative of $\zeta(x) = \log w(x)$ in [@sec-ln-norm-const-cf], the second derivative is seen to be
 <!-- -->
 \begin{align*}
-&\phi''(x) = -\frac{1}{x^2}\left(
+&\zeta''(x) = -\frac{1}{x^2}\left(
 \frac{\log x - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2}
-\right)
+\right),
 \end{align*}
 <!-- -->
-and
+with
 <!-- -->
 \begin{align*}
-\phi''(x) < 0
+\zeta''(x) < 0
 &\iff \frac{\log x - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2} > 0 \\
 &\iff x < \exp(\mu - \sigma^2 + 1)
 \end{align*}
 <!-- -->
-so that $\phi(x)$ is concave when $x < \exp(\mu - \sigma^2 + 1)$ and convex when $x > \exp(\mu - \sigma^2 + 1)$.
+so that $\zeta(x)$ is concave when $x < \exp(\mu - \sigma^2 + 1)$ and convex when $x > \exp(\mu - \sigma^2 + 1)$.
+
+TBD: To keep things simple, let's start with two regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$, so that for all regions considered thereafter, $w$ is either log-concave or log-convex on the entire region.
+
+TBD: in log-concave regions we have majorizer and minorizer blah and blah.
+
+TBD: in log-convex regions we switch them.
+
+::: {#rem-normal-mgf-kernel}
+Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the density and CDF of $X \sim \text{N}(\mu, \sigma^2)$, respectively. If $a < b$ are scalars (possibly infinite), then 
+<!-- -->
+\begin{align*}
+\int_a^b e^{tx} \phi(x \mid \mu, \sigma^2) dx
+= \exp(\mu t + t^2 \sigma^2 / 2) \left\{ 
+\Phi(b \mid \mu + t \sigma^2, \sigma^2) - \Phi(a \mid \mu + t \sigma^2, \sigma^2)
+\right\}.
+\end{align*}
 :::
 
 
+The quantity $\overline{\xi}_j$ may be evaluated using [@rem-normal-mgf-kernel] as
+<!-- -->
+\begin{align*}
+\overline{\xi}_j
+&= \int_{\alpha_{j-1}}^{\alpha_j}
+\exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} x \} \phi(x \mid z, \lambda^2) dx \\
+&= \exp\left\{
+\overline{\beta}_{0j} + z \overline{\beta}_{1j} + \overline{\beta}_{1j}^2 \lambda^2 / 2
+\right\}
+\left\{ 
+\Phi(\alpha_j \mid z + \overline{\beta}_{1j} \lambda^2, \sigma^2)
+- \Phi(\alpha_{j-1} \mid z + \overline{\beta}_{1j} \lambda^2, \lambda^2)
+\right\}.
+\end{align*}
+<!-- -->
+Similarly,
+<!-- -->
+\begin{align*}
+\underline{\xi}_j
+&= \int_{\alpha_{j-1}}^{\alpha_j}
+\exp\{ \underline{\beta}_{0j} + \underline{\beta}_{1j} x \} \phi(x \mid z, \lambda^2) dx \\
+&= \exp\left\{
+\underline{\beta}_{0j} + z \underline{\beta}_{1j} + \underline{\beta}_{1j}^2 \lambda^2 / 2
+\right\}
+\left\{ 
+\Phi(\alpha_j \mid z + \underline{\beta}_{1j} \lambda^2, \sigma^2)
+- \Phi(\alpha_{j-1} \mid z + \underline{\beta}_{1j} \lambda^2, \lambda^2)
+\right\}.
+\end{align*}
+<!-- -->
+
+
+ 
 ```{r}
 source("../inst/examples/lnorm-norm/CustomLinearRegion.R")
 
