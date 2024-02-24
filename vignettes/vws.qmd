@@ -66,8 +66,8 @@ set.seed(1234)
 
 ::: {.callout-note title="TBD"}
 - If plotting code gets too repetitive, consider making functions for plots.
-- `w_major` and other functions whose arguments are support points: they should
-  probably take a list of points to be consistent, right?
+- `w_major` and other functions whose arguments are support points: should they
+  take a list of points to be consistent? They currently take a vector as input.
 :::
 
 # Introduction
@@ -160,9 +160,7 @@ and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind(T \in \mathcal{D}_j)]$ w
 \label{eqn:bound}
 \end{align}
 <!-- -->
-This bound can be used to quickly determine whether the proposal will be viable for rejection sampling. If the bound is seen to be large, the proposal may be refined by altering the partition or considering a different majorizer.
-
-TBD: mention the constant and linear majorizers. Perhaps we want these subsections in the code design section near their implementation details?
+This bound can be used to quickly determine whether the proposal will be viable for rejection sampling. If the bound is seen to be large, the proposal may be refined by altering the partition or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2024 and will be reviewed in the present document. [@sec-UnivariateConstRegion] discusses the use of a constant function. A linear function is discussed in the context of specific examples in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
 
 # Usage
 
@@ -190,7 +188,7 @@ through a `rejection_control` (S3) object, including: a count of rejections to b
 #| prompt: true
 regions = list(region1, region2)
 h = FMMProposal$new(regions)
-ctrl = rejection_control(max_rejects = 1000)
+ctrl = rejection_control(max_rejects = 5000)
 rejection(h, n = 1000, control = ctrl)
 ```
 
@@ -209,12 +207,12 @@ Before sampling, the `adapt` function can be used to refine a given
 The can make it a better approximation of the target distribution. Details are
 given in Section [-@sec-adapt].
 
-Figure \ref{fig:diagram} displays a diagram of the high-level design just described. We will now walk through the components in more depth; however, the user should consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
+Figure \ref{fig:diagram} displays a diagram of the high-level design just described. Sections [-@sec-FMMProposal] through [-@sec-Remarks] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
 
 \begin{figure}
 \centering
 \includegraphics[trim={0 5.5in 4in 0},clip, width=0.8\textwidth]{diagram.pdf}
-\caption{An overview of the vws package design.}
+\caption{An overview of the vws package.}
 \label{fig:diagram}
 \end{figure}
 
@@ -442,6 +440,14 @@ g = univariate_helper(
 )
 ```
 
+Because the $\text{N}(\mu, \sigma^2)$ distribution is used as a
+`univariate_helper` in `vws` package demonstrations, the following function is
+provided as a shortcut to return the same structure as the call above.
+
+```{r}
+g = normal_univariate_helper(mu, sigma)
+```
+
 For a similar setting with an integer-valued support, the subclass
 `IntUnivariateConstRegion` of `UnivariateConstRegion` may be considered. Usage
 of `IntUnivariateConstRegion` is similar to `UnivariateConstRegion`, with some
@@ -489,18 +495,11 @@ The `IntUnivariateConstRegion` and `UnivariateConstRegion` classes have an `opti
 region$optimize(maximize = TRUE, log = TRUE)
 ```
 
-The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntUnivariateConstRegion` or `UnivariateConstRegion` and override the `optimize` method. An example of this is given in TBD.
+The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntUnivariateConstRegion` or `UnivariateConstRegion` and override the `optimize` method. An example of this is given in [@sec-ln-norm-const-cf].
 
 ## User-Defined Regions {#sec-UserRegion}
 
-::: {.callout-note title="TBD"}
-Material needed here.
-
-- `Region` abstract class and how to override.
-- We have already listed the operations that need to be implemented in `Region`.
-- May be best to keep this section very short and refer to an example.
-:::
-
+For targets where the support is not univariate, or where the desired majorizer is something other than a constant, the user may create a subclass `Region` to implement VWS. This new class must implement the methods in [@tbl-region-methods] using `R6`. Here is a skeleton of a such a subclass named `CustomRegion` to illustrate this process. Complete implementations of such subclasses are given in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
 
 ```{r}
 #| eval: false
@@ -588,28 +587,15 @@ Function   Description
 `q_gumbel` Compute quantiles of Gumbel distribution.
 -------------------------------------------------------------------------------
 
-# Examples
+# Examples {#sec-examples}
 
-## Lognormal-Normal Conditional Distribution
+The following subsections illustrate VWS samplers implemented using the `vws` package. The first example in [@sec-ln-norm] is described in the most explicit level of detail.
+
+## Lognormal-Normal Conditional Distribution {#sec-ln-norm}
 
 ::: {.callout-note title="TBD"}
-Under construction. What to do here?
-
-- [x] Briefly explain the motivation.
-- [x] Show the target (is it still the conditional that we want)?
-- [x] Show the decomposition.
-- [x] Do the most naive sampler using `UnivariateConstRegion`.
-- [x] Try to do a little better and override the optimize function.
-- [x] Try to do even better and use a linear majorizer.
-- [ ] We might want to compare the samplers: 
-	+ [ ] Run time of numerical versus closed-form optimize;
-	+ [ ] Efficiency of const versus linear majorizers.
-
-TBD: why are the first two samplers so slow to refine? They seemed much faster
-before. Did I break something in the code?
-
-TBD: maybe we should show more detail in this first example and less in
-subsequent examples. If we do, let's inform the reader.
+- [ ] Why are the first two samplers so slow to adapt? They seemed much faster
+  before. Did I break something in the code?
 :::
 
 The setting $Z = Y + \xi$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021 and @DPSimulation2022 where sensitive data are released under a measure of privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondents' data collected by an official statistics agency and $\xi$ is random noise added for privacy protection. The resulting $Z$ is considered protected and suitable for release. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe recent work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
@@ -635,7 +621,7 @@ w(x) = \frac{1}{x} \exp\left\{ -\frac{1}{2\sigma^2} (\log x - \mu)^2 \right\} \m
 <!-- -->
 from the LogNormal term in $f$, and base distribution $g$ as $\text{N}(z, \lambda^2)$. We will consider three variations of VWS sampler, which progressive from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. Section [-@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
 
-Before proceeding, let us fix the following values.
+Before proceeding, let us fix the following values for the parameters.
 
 ```{r}
 #| prompt: true
@@ -644,7 +630,7 @@ sigma2 = 0.5
 lambda2 = 100
 ```
 
-TBD: explain.
+Jointly draw values $Y$ and $Z$ from the model; $Z$ is considered observed while $Y$ is latent and the objective for inference.
 
 ```{r}
 y_true = rlnorm(1, mu, sqrt(sigma2))
@@ -755,7 +741,7 @@ g = data.frame(x = x) %>%
 print(g)
 ```
 
-TBD: explain interval.
+Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y | \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
 
 ```{r}
 #| out-width: 60%
@@ -770,7 +756,7 @@ g + annotate("rect", xmin = interval_lo, xmax = interval_hi, ymin = 0,
 	geom_vline(xintercept = y_true, col = "red", lwd = 1.05)
 ```
 
-Plot proposal versus the target on the log-scale.
+Plotting the proposal $h$ versus the target $f$ on the log-scale, the two distributions are seen to be very similar.
 
 ```{r}
 #| out-width: 60%
@@ -885,12 +871,7 @@ x = unlist(out)
 ### Linear Majorizer {#sec-ln-norm-linear}
 
 ::: {.callout-note title="TBD"}
-TODO
-
-- [ ] Show some code to construct the sampler, refine it, and sample from it.
-  Show the improved efficiency.
-
-We need to pick finite endpoints I think ...
+TBD: We need to pick finite endpoints I think ...
 :::
 
 Sections [-@sec-ln-norm-const] and [-@sec-ln-norm-const-cf] utilized a constant 
@@ -1076,7 +1057,7 @@ Method            Description
 `is_bifurcatable` Return `TRUE`.
 -------------------------------------------------------------------------------
 
-TBD: create two initial regions around the point $\exp(\mu - \sigma^2 + 1)$, where $w(x)$ switches from log-concave to log-convex.
+Let us proceed with a demonstrate of the VWS sampler based on `CustomLinearRegion`. First create two initial regions around the point $\exp(\mu - \sigma^2 + 1)$, where $w(x)$ switches from log-concave to log-convex.
  
 ```{r}
 y_star = exp(mu - sigma2 + 1)
@@ -1085,7 +1066,7 @@ region2 = CustomLinearRegion$new(a = y_star, b = 1e3, mu, sigma2, z, lambda2)
 regions = list(region1, region2)
 ```
 
-TBD: construct proposal and refine it.
+Construct the proposal and refine it.
 
 ```{r}
 h_init = FMMProposal$new(regions)
@@ -1093,7 +1074,7 @@ adapt_out = adapt(h_init, N = 30)
 h = adapt_out$h
 ```
 
-TBD: plot the rate of refinement.
+Plot the rate of refinement during the adaptation process.
 
 ```{r}
 #| out-width: 60%
@@ -1110,7 +1091,7 @@ data.frame(bdd = adapt_out$log_bdd_hist) %>%
 	theme_minimal()
 ```
 
-TBD: run the rejection sampler.
+Proceed with rejection sampling using the resulting proposal.
 
 ```{r}
 ctrl = rejection_control(report = 5000, extra_outputs = TRUE)
@@ -1118,14 +1099,14 @@ out = rejection(h, n = 10000, control = ctrl)
 x = unlist(out$draws)
 ```
 
-TBD: print the actual rejection rate.
+Print the actual rejection rate. Notice that it is substantially lower than the rate achieved in [@sec-ln-norm-const].
 
 ```{r}
 cat("Percent of proposed draws rejected:",
 	sum(out$rejects) / (length(x) + sum(out$rejects)) * 100)
 ```
 
-TBD: compare the empirical distribution of the draws to the target density.
+Plot the empirical distribution of the draws overlaid with the target density.
 
 ```{r}
 #| out-width: 60%
@@ -1143,7 +1124,7 @@ data.frame(x = x) %>%
 	theme_minimal()
 ```
 
-TBD: compare the unnormalized proposal and target density on the log-scale. They are almost indistinguishable.
+Finally, comparing the unnormalized proposal $h$ and target density $f$ on the log-scale, we notice that visually they are almost indistinguishable.
 
 ```{r}
 #| out-width: 60%
@@ -1447,7 +1428,7 @@ data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
 Generate draws.
 
 ```{r}
-ctrl = rejection_control(max_rejects = 10000, report = 1000)
+ctrl = rejection_control(max_rejects = 10000, report = 5000)
 out = rejection(h, n = 10000, control = ctrl)
 x = unlist(out)
 ```
@@ -1471,7 +1452,7 @@ data.frame(x = x) %>%
 	theme_minimal()
 ```
 
-### Linear Majorizer
+### Linear Majorizer {#sec-vws-linear}
 
 For this region:
 
