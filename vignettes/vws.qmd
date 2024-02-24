@@ -34,7 +34,6 @@ format:
         \renewcommand*{\Authsep}{, }
         \renewcommand*{\Authand}{, }
         \renewcommand*{\Authands}{, and }
-mainfont: Latin Modern Roman
 vignette: >
   %\VignetteIndexEntry{vws}
   %\VignetteEncoding{UTF-8}
@@ -851,7 +850,7 @@ Here is a rough outline.
   in this problem.
 - [ ] The function `d_base` is just the density of $\text{N}(z, \lambda^2)$.
 - [ ] The function `w_major` is
-  $w(x) = \exp\{ \overline{\beta}_{1j} + \overline{\beta}_{1j} x \}$.
+  $\overline{w}(x) = \exp\{ \overline{\beta}_{1j} + \overline{\beta}_{1j} x \}$.
 - [ ] The `d` and `r` functions depend on $g_j$. Show that this is the
   distribution $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$
   truncated to $(\alpha_{j-1}, \alpha_j]$.
@@ -867,9 +866,28 @@ Here is a rough outline.
 :::
 
 Sections [-@sec-ln-norm-const] and [-@sec-ln-norm-const-cf] utilized a constant 
-majorizer $\overline{w}_j = \max_{x \in \mathcal{D}_j} w(x)$ and minorizer $\underline{w}_j = \min_{x \in \mathcal{D}_j} w(x)$ for VWS sampling. Let us now consider a linear majorizer $\log \overline{w}_j(x) = \overline{\beta}_{0j} + \overline{\beta}_{1j} x$ and minorizer $\log \underline{w}_j(x) = \underline{\beta}_{0j} + \underline{\beta}_{1j} x$. This strategy is more involved to derive an implement, but often captures the weight function effectively with fewer mixture components and therefore yields more efficient proposals.
+majorizer $\overline{w}_j = \max_{x \in \mathcal{D}_j} w(x)$ and minorizer $\underline{w}_j = \min_{x \in \mathcal{D}_j} w(x)$ for VWS sampling. Let us now consider a linear majorizer $\log \overline{w}_j(x) = \overline{\beta}_{0j} + \overline{\beta}_{1j} x$ and minorizer $\log \underline{w}_j(x) = \underline{\beta}_{0j} + \underline{\beta}_{1j} x$. This strategy is more involved to derive and implement, but often captures the weight function more effectively than a constant majorizer with fewer mixture components to yield more efficient proposals.
 
-Proceeding from the first derivative of $\zeta(x) = \log w(x)$ in [@sec-ln-norm-const-cf], the second derivative is seen to be
+The following construction assumes that $\zeta(x) = \log w(x)$ is finite and concave on the interval $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$. A majorizer is obtained from
+<!-- -->
+\begin{align*}
+\log w(x) &\leq \log w(c) + (x - c) \nabla(c)
+= \overline{\beta}_{j0} + \overline{\beta}_{j1} \cdot x
+\end{align*}
+<!-- -->
+for $\overline{\beta}_{j0} = \log w_j(c) - c \cdot \zeta'(c)$, $\overline{\beta}_{j1} = \zeta'(c)$ and some $c \in \mathcal{D}_j$. In particular, let us consider the value of $c$ as
+<!-- -->
+\begin{align*}
+c^* &= \argmin_{c \in \mathcal{D}_j} \int_{\mathcal{D}_j} | h_0(x) - f_0(x) | d\nu(x) \nonumber \\
+%
+&\equiv \argmin_{c \in \mathcal{D}_j} \Big\{ \log w(c) - c \nabla(c) + \log M_j(\nabla(c)) \Big\},
+\end{align*}
+<!-- -->
+where $M_j(s)$ is the moment generating function of random variable $T_j \sim g_j$.
+
+TBD: in this case, the MGF is ...
+
+Proceeding from the first derivative of $\zeta(x)$ in [@sec-ln-norm-const-cf], the second derivative is seen to be
 <!-- -->
 \begin{align*}
 &\zeta''(x) = -\frac{1}{x^2}\left(
