@@ -272,7 +272,7 @@ CustomLinearRegion$set("public", "xi_lower", function(log = TRUE, tol = 1e-6)
 		# with the complement of the CDF helps to retain precision.
 		clp_a = pnorm(a, z + beta1_min*lambda2, sqrt(lambda2), log.p = TRUE, lower.tail = FALSE)
 		clp_b = pnorm(b, z + beta1_min*lambda2, sqrt(lambda2), log.p = TRUE, lower.tail = FALSE)
-		out = beta0_max + beta1_min * z + beta1_min^2 * lambda2 / 2 +
+		out = beta0_min + beta1_min * z + beta1_min^2 * lambda2 / 2 +
 			log_sub2_exp(clp_a, clp_b)
 	} else {
 		# Otherwise, work with the CDF function.
