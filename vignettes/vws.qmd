@@ -600,7 +600,7 @@ The following subsections illustrate VWS samplers implemented using the `vws` pa
 
 The setting $Z = Y + \xi$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021 and @DPSimulation2022 where sensitive data are released under a measure of privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondents' data collected by an official statistics agency and $\xi$ is random noise added for privacy protection. The resulting $Z$ is considered protected and suitable for release. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe recent work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
 
-Suppose $Y$ and $\xi$ are independently distributed with $Y \sim \text{LogNormal}(\mu, \sigma^2)$ and $\xi \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ of the noise mechanism is often known and provided with the noisy data under differential privacy. We will also assume that $\mu$ and $\sigma^2$ are known, though in practice these would need to be learned from an observed sample $z_1, \ldots, z_n$.
+Suppose $Y$ and $\xi$ are independently distributed with $Y \sim \text{Lognormal}(\mu, \sigma^2)$ and $\xi \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ of the noise mechanism is often known and provided with the noisy data under differential privacy. We will also assume that $\mu$ and $\sigma^2$ are known, though in practice these would need to be learned from an observed sample $z_1, \ldots, z_n$.
 
 Suppose the target distribution is the conditional of $[Y \mid Z = z]$ which is given by
 <!-- -->
@@ -619,7 +619,7 @@ Let us decompose $f$ into weight function
 w(x) = \frac{1}{x} \exp\left\{ -\frac{1}{2\sigma^2} (\log x - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(x),
 \end{math}
 <!-- -->
-from the LogNormal term in $f$, and base distribution $g$ as $\text{N}(z, \lambda^2)$. We will consider three variations of VWS sampler, which progressive from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. Section [-@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
+from the Lognormal term in $f$, and base distribution $g$ as $\text{N}(z, \lambda^2)$. We will consider three variations of VWS sampler, which progressive from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. Section [-@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
 
 Before proceeding, let us fix the following values for the parameters.
 
@@ -686,7 +686,9 @@ The following plot shows the rate of decrease in bound \eqref{eqn:bound} over `N
 
 ```{r}
 #| out-width: 60%
-#| fig-cap: Proposal versus the target on the log-scale for Bessel.
+#| fig-cap: |
+#|   Rate of adaptation improvement for Lognormal-Normal example with
+#|   constant majorizer.
 #| label: fig-ln-norm-adapt
 
 data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
@@ -727,7 +729,7 @@ density to ensure we have generated from the correct distribution.
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Empirical distribution of draws versus target for LogNormal-Normal example
+#|   Empirical distribution of draws versus target for Lognormal-Normal example
 #|   with constant majorizer.
 #| label: fig-ln-norm-constant-draws
 
@@ -745,7 +747,11 @@ Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $
 
 ```{r}
 #| out-width: 60%
-#| fig-cap: Proposal versus the target on the log-scale for Bessel.
+#| fig-cap: |
+#|   Empirical distribution of draws versus target for Lognormal-Normal example
+#|   with constant majorizer. Observed value of $z$ (blue line) and latent value
+#|   of $y$ (red line) are displayed along with a 95\% interval (blue ribbon)
+#|   based on draws from $[Y | \mid Z = z]$.
 #| label: fig-ln-norm-interval
 
 interval_lo = quantile(x, probs = 0.025)
@@ -761,9 +767,9 @@ Plotting the proposal $h$ versus the target $f$ on the log-scale, the two distri
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Proposal versus target on the log-scale for VMF example with constant
-#|   majorizer.
-#| label: fig-vmf-const-proposal
+#|   Proposal versus target on the log-scale for Lognormal-Normal example with
+#|   constant majorizer.
+#| label: fig-ln-norm-const-proposal
 
 log_h = function(x) { h$d(as.list(x), log = TRUE) }
 log_f = function(x) { d_target(x, log = TRUE) }
@@ -800,7 +806,9 @@ Here is a plot of $\log w(x)$ with our selected $\mu$ and $\sigma^2$ values.
 
 ```{r}
 #| out-width: 60%
-#| fig-cap: Proposal versus the target on the log-scale for Bessel.
+#| fig-cap: |
+#|   Weight function for Lognormal-Normal example on the log-scale, with the
+#|   maximizer $x^* = exp(mu - sigma2)$ highlighted.
 #| label: fig-ln-norm-weight
 
 xlim = exp(mu - sigma2) + c(-10,10)
@@ -1078,7 +1086,9 @@ Plot the rate of refinement during the adaptation process.
 
 ```{r}
 #| out-width: 60%
-#| fig-cap: Empirical distribution versus target for Lognormal-Normal.
+#| fig-cap: |
+#|   Rate of adaptation improvement on the log-scale for Lognormal-Normal
+#|   example with linear majorizer.
 #| label: fig-ln-norm-linear-adapt
 
 data.frame(bdd = adapt_out$log_bdd_hist) %>%
@@ -1111,7 +1121,7 @@ Plot the empirical distribution of the draws overlaid with the target density.
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Empirical distribution of draws versus target for LogNormal-Normal example
+#|   Empirical distribution of draws versus target for Lognormal-Normal example
 #|   with linear majorizer.
 #| label: fig-ln-norm-linear-draws
 
@@ -1231,7 +1241,8 @@ why it was of special interest to Devroye.
 
 ```{r}
 #| out-width: 60%
-#| fig-cap: Proposal versus the target on the log-scale for Bessel.
+#| fig-cap: |
+#|   Rate of adaptation improvement on the log-scale for Bessel example.
 #| label: fig-bessel-adapt
 
 nu = -0.5
@@ -1411,8 +1422,7 @@ that can quickly be plotted. But this might add a dependency if it's ggplot).
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of adaptation improvement on the log-scale for VMF constant
-#|   majorizer.
+#|   Rate of adaptation improvement for VMF example with constant majorizer.
 #| label: fig-vmf-const-adapt
 
 data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
@@ -1452,6 +1462,26 @@ data.frame(x = x) %>%
 	theme_minimal()
 ```
 
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Proposal versus target on the log-scale for VMF example with constant
+#|   majorizer.
+#| label: fig-vmf-const-proposal
+
+log_h = function(x) { h$d(as.list(x), log = TRUE) }
+log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
+
+ggplot() +
+	geom_function(fun = log_f, col = "orange", lty = 1) +
+	geom_function(fun = log_h, col = "black", lty = 2) +
+	scale_x_continuous(limits = c(1e-2 - 1, 1 - 1e-2)) +
+	xlab("x") +
+	ylab("Density") +
+	theme_minimal()
+```
+
+
 ### Linear Majorizer {#sec-vws-linear}
 
 For this region:
@@ -1488,7 +1518,8 @@ Plot the rate of adaptation improvement. Plot on the log-scale; the log-scale he
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of adaptation improvement on the log-scale for VMF linear majorizer.
+#|   Rate of adaptation improvement on the log-scale for VMF example with
+#|   linear majorizer.
 #| label: fig-vmf-linear-adapt
 
 data.frame(logbdd = adapt_out$log_bdd_hist) %>%
