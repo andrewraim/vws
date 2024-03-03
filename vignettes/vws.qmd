@@ -658,9 +658,20 @@ helper = normal_univariate_helper(mean = z, sd = sqrt(lambda2))
 Let us code the target density to assist in evaluating sampler results later. Numerical integration is used to obtain the normalizing constant.
 
 ```{r}
-int_out = integrate(lower = 0, upper = Inf, f = function(x) { 
-	w(x, log = FALSE) * helper$d(x, log = FALSE)
-})
+# TBD: try quadrature
+library(statmod)
+quad_out = gauss.quad(n = 10, kind = "hermite")
+f_quad = function(x, log = FALSE) {
+	tx = z - sqrt(lambda2) * x
+	out = log(tx > 0) - log(tx) -
+		1/(2*sigma2) * (log(tx) - mu)^2 - 1/2 * log(2*pi) - x^2/2
+	if (log) { return(out) } else { return(exp(out)) }
+}
+stop("Keep writing the code here")
+int_out = sum(quad_out$weights * f_quad(quad_out$nodes))
+# int_out = integrate(lower = 0, upper = Inf, f = function(x) { 
+#	w(x, log = FALSE) * helper$d(x, log = FALSE)
+# })
 d_target = function(x, log = TRUE) {
 	out = w(x, log = TRUE) + helper$d(x, log = TRUE) - log(int_out$value)
 	if (log) { return(out) } else { return(exp(out)) }
