@@ -667,33 +667,36 @@ Let us code the target density to assist in evaluating sampler results later. To
 &= \int_{-\infty}^\infty \ind\left( z > \sqrt{2} \lambda x \right)
 \cdot \frac{1}{z - \sqrt{2} \lambda x}
 \exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( z - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}
-\frac{1}{\sqrt{\pi}} e^{-x^2} dx
+\frac{1}{\sqrt{\pi}} e^{-x^2} dx,
 \end{align*}
 <!-- -->
-so that
+by the transformation $y = z - \sqrt{2} \lambda x$, so that
 <!-- -->
 \begin{align*}
 q(x) = \ind\left( z > \sqrt{2} \lambda x \right)
 \cdot \frac{1}{z - \sqrt{2} \lambda x}
-\exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( z - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}.
+\exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( z - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}
+\frac{1}{\sqrt{\pi}}.
 \end{align*}
 <!-- -->
-Let us code $\psi$ using `statmod` and the resulting normalizing target density $f$.
+Here is the associated code using `statmod` along with the normalized target density $f$.
 
 ```{r}
 library(statmod)
-quad_out = gauss.quad(n = 10, kind = "hermite")
+
 q = function(x, log = FALSE) {
 	tx = z - sqrt(2 * lambda2) * x
 	out = log(tx > 0) - log(tx) - (log(tx) - mu)^2 / (2*sigma2) - 1/2 * log(pi)
 	if (log) { return(out) } else { return(exp(out)) }
 }
+
+quad_out = gauss.quad(n = 10, kind = "hermite")
 ww = quad_out$weights
 xx = quad_out$nodes
-nc = sum(ww * q(xx))
+psi = sum(ww * q(xx))
 
 d_target = function(x, log = TRUE) {
-	out = w(x, log = TRUE) + helper$d(x, log = TRUE) - log(nc)
+	out = w(x, log = TRUE) + helper$d(x, log = TRUE) - log(psi)
 	if (log) { return(out) } else { return(exp(out)) }
 }
 ```
