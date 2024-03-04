@@ -655,25 +655,45 @@ There is a built-in variant of `univariate_helper` based on the normal distribut
 helper = normal_univariate_helper(mean = z, sd = sqrt(lambda2))
 ```
 
-Let us code the target density to assist in evaluating sampler results later. Numerical integration is used to obtain the normalizing constant.
+Let us code the target density to assist in evaluating sampler results later. To compute the normalizing constant, we will use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated by $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
+<!-- -->
+\begin{align*}
+\psi &= \int_{-\infty}^\infty w(y) g(y) dy \\
+%
+&= \int_{-\infty}^\infty \ind(y > 0) \cdot \frac{1}{y}
+\exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
+\frac{1}{\lambda \sqrt{2\pi}} \exp\left\{ -\frac{1}{2\lambda^2} (z - y)^2 \right\} dy \\
+%
+&= \int_{-\infty}^\infty \ind\left( z > \sqrt{2} \lambda x \right)
+\cdot \frac{1}{z - \sqrt{2} \lambda x}
+\exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( z - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}
+\frac{1}{\sqrt{\pi}} e^{-x^2} dx
+\end{align*}
+<!-- -->
+so that
+<!-- -->
+\begin{align*}
+q(x) = \ind\left( z > \sqrt{2} \lambda x \right)
+\cdot \frac{1}{z - \sqrt{2} \lambda x}
+\exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( z - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}.
+\end{align*}
+<!-- -->
+Let us code $\psi$ using `statmod` and the resulting normalizing target density $f$.
 
 ```{r}
-# TBD: try quadrature
 library(statmod)
 quad_out = gauss.quad(n = 10, kind = "hermite")
-f_quad = function(x, log = FALSE) {
-	tx = z - sqrt(lambda2) * x
-	out = log(tx > 0) - log(tx) -
-		1/(2*sigma2) * (log(tx) - mu)^2 - 1/2 * log(2*pi) - x^2/2
+q = function(x, log = FALSE) {
+	tx = z - sqrt(2 * lambda2) * x
+	out = log(tx > 0) - log(tx) - (log(tx) - mu)^2 / (2*sigma2) - 1/2 * log(pi)
 	if (log) { return(out) } else { return(exp(out)) }
 }
-stop("Keep writing the code here")
-int_out = sum(quad_out$weights * f_quad(quad_out$nodes))
-# int_out = integrate(lower = 0, upper = Inf, f = function(x) { 
-#	w(x, log = FALSE) * helper$d(x, log = FALSE)
-# })
+ww = quad_out$weights
+xx = quad_out$nodes
+nc = sum(ww * q(xx))
+
 d_target = function(x, log = TRUE) {
-	out = w(x, log = TRUE) + helper$d(x, log = TRUE) - log(int_out$value)
+	out = w(x, log = TRUE) + helper$d(x, log = TRUE) - log(nc)
 	if (log) { return(out) } else { return(exp(out)) }
 }
 ```
