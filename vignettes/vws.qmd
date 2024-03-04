@@ -1,5 +1,7 @@
 ---
 title: "Vertical Weighted Strips in R"
+date: now
+date-format: "[Last modified:] YYYY-MM-DD HH:mm"
 author:
   - name: Andrew M. Raim^[Corresponding author <andrew.raim@gmail.com>.
       Center for Statistical Research & Methodology,
@@ -53,6 +55,7 @@ execute:
   eval: true
 code-block-bg: true
 code-block-border-left: "#31BAE9"
+callout-icon: false
 ---
 
 ```{r}
@@ -64,7 +67,7 @@ library(tidyverse)
 set.seed(1234)
 ```
 
-::: {.callout-note title="TBD"}
+::: {.callout-caution title="TBD"}
 - If plotting code gets too repetitive, consider making functions for plots.
 - `w_major` and other functions whose arguments are support points: should they
   take a list of points to be consistent? They currently take a vector as input.
@@ -72,7 +75,7 @@ set.seed(1234)
 
 # Introduction
 
-::: {.callout-note title="TBD"}
+::: {.callout-caution title="TBD"}
 This section is heavily under construction.
 
 - Package is available from <https://github.com/andrewraim/vws> and possibly on
@@ -164,7 +167,7 @@ This bound can be used to quickly determine whether the proposal will be viable 
 
 # Usage
 
-::: {.callout-note title="TBD"}
+::: {.callout-caution title="TBD"}
 Misc
 
 - How about the name `d_g` instead of `d_base`?
@@ -593,7 +596,7 @@ The following subsections illustrate VWS samplers implemented using the `vws` pa
 
 ## Lognormal-Normal Conditional Distribution {#sec-ln-norm}
 
-::: {.callout-note title="TBD"}
+::: {.callout-caution title="TBD"}
 - [ ] Why are the first two samplers so slow to adapt? They seemed much faster
   before. Did I break something in the code?
 :::
@@ -605,21 +608,39 @@ Suppose $Y$ and $\xi$ are independently distributed with $Y \sim \text{Lognormal
 Suppose the target distribution is the conditional of $[Y \mid Z = z]$ which is given by
 <!-- -->
 \begin{align*}
-f(y \mid z) \propto \frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
+f(y \mid z)
+%
+&\propto \frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
 -\frac{1}{2\lambda^2} (z - y)^2
 \right\} \cdot
 \frac{1}{y\sigma \sqrt{2\pi}} \exp\left\{
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
-\right\} \mathbb{1}_{(0,\infty)}(x).
+\right\} \mathbb{1}_{(0,\infty)}(y) \\
+%
+&\propto
+\underbrace{\frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
+-\frac{1}{2\lambda^2} (z - y)^2
+\right\}}_{g(y)} \cdot
+\underbrace{\frac{1}{y} \exp\left\{
+-\frac{1}{2\sigma^2} (\log y - \mu)^2
+\right\} \mathbb{1}_{(0,\infty)}(y)}_{w(y)}.
 \end{align*}
 <!-- -->
-Let us decompose $f$ into weight function
+Here we have decomposed $f$ into weight function
 <!-- -->
 \begin{math}
-w(x) = \frac{1}{x} \exp\left\{ -\frac{1}{2\sigma^2} (\log x - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(x),
+w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(x),
 \end{math}
 <!-- -->
-from the Lognormal term in $f$, and base distribution $g$ as $\text{N}(z, \lambda^2)$. We will consider three variations of VWS sampler, which progressive from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. Section [-@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
+from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution $g$ as $\text{N}(z, \lambda^2)$. It will sometimes be more convenient or numerically stable to work with $w$ on the log-scale; therefore, define
+<!-- -->
+\begin{align}
+\zeta(y) = \log w(y)
+= -\log y - \frac{(\log y - \mu)^2}{2 \sigma^2} + \log \mathbb{1}_{(0,\infty)}(y).
+\label{eqn:ln-norm-log-weight-fn}
+\end{align}
+
+We will consider three variations of VWS sampler, which progressive from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. [@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
 
 Before proceeding, let us fix the following values for the parameters.
 
@@ -633,6 +654,7 @@ lambda2 = 100
 Jointly draw values $Y$ and $Z$ from the model; $Z$ is considered observed while $Y$ is latent and the objective for inference.
 
 ```{r}
+set.seed(1234)
 y_true = rlnorm(1, mu, sqrt(sigma2))
 z = rnorm(1, y_true, sqrt(lambda2))
 ```
@@ -642,20 +664,20 @@ z = rnorm(1, y_true, sqrt(lambda2))
 To implement this version of the sampler, let us first code the weight function. Note that calculations are carried out on the log-scale, and only exponentiated if explicitly requested.
 
 ```{r}
-w = function(x, log = TRUE) {
-	out = -log(x) - (log(x) - mu)^2 / (2*sigma2) + log(x > 0)
-	out[x == 0] = -Inf
+w = function(y, log = TRUE) {
+	out = -log(y) - (log(y) - mu)^2 / (2*sigma2) + log(y > 0)
+	out[y == 0] = -Inf
 	if (log) { return(out) } else { return(exp(out)) }
 }
 ```
 
-There is a built-in variant of `univariate_helper` based on the normal distribution with mean and standard deviation parameters. It is appropriate for use in this problem.
+Recall from [@sec-UnivariateConstRegion] that a `univariate_helper` structure is used to construct an object of class `UnivariateConstRegion` to provide necessary functions of the base distribution $g$. The `vws` package contains a built-in variant of `univariate_helper` named `normal_univariate_helper` for the normal distribution with mean and standard deviation parameters, which is appropriate for use in this problem.
 
 ```{r}
 helper = normal_univariate_helper(mean = z, sd = sqrt(lambda2))
 ```
 
-Let us code the target density to assist in evaluating sampler results later. To compute the normalizing constant, we will use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated by $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
+Before proceeding with the sampler, let us code the target density to assist in evaluating the distribution of the draws. To compute the normalizing constant, we will use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
 <!-- -->
 \begin{align*}
 \psi &= \int_{-\infty}^\infty w(y) g(y) dy \\
@@ -675,7 +697,7 @@ by the transformation $y = z - \sqrt{2} \lambda x$, so that
 \begin{align*}
 q(x) = \ind\left( z > \sqrt{2} \lambda x \right)
 \cdot \frac{1}{z - \sqrt{2} \lambda x}
-\exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( z - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}
+\exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( x - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}
 \frac{1}{\sqrt{\pi}}.
 \end{align*}
 <!-- -->
@@ -695,8 +717,8 @@ ww = quad_out$weights
 xx = quad_out$nodes
 psi = sum(ww * q(xx))
 
-d_target = function(x, log = TRUE) {
-	out = w(x, log = TRUE) + helper$d(x, log = TRUE) - log(psi)
+d_target = function(y, log = TRUE) {
+	out = w(y, log = TRUE) + helper$d(y, log = TRUE) - log(psi)
 	if (log) { return(out) } else { return(exp(out)) }
 }
 ```
@@ -747,14 +769,14 @@ Now proceed with rejection sampling.
 ```{r}
 ctrl = rejection_control(report = 5000, extra_outputs = TRUE)
 out = rejection(h, n = 10000, control = ctrl)
-x = unlist(out$draws)
+y = unlist(out$draws)
 ```
 
 Let us compute the actual rejection rate.
 
 ```{r}
 cat("Percent of proposed draws which were rejected:", 
-	sum(out$rejects) / (length(x) + sum(out$rejects)) * 100)
+	sum(out$rejects) / (length(y) + sum(out$rejects)) * 100)
 ```
 
 Here is a plot comparing the empirical distribution of the sample to the target
@@ -767,11 +789,12 @@ density to ensure we have generated from the correct distribution.
 #|   with constant majorizer.
 #| label: fig-ln-norm-constant-draws
 
-g = data.frame(x = x) %>%
+g = data.frame(y = y) %>%
 	ggplot() +
-	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+	geom_histogram(aes(x = y, y = after_stat(density)), col = "black",
 		fill = NA, bins = 25) +
 	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
+	xlab("y") +
 	ylab("Density") +
 	theme_minimal()
 print(g)
@@ -788,8 +811,8 @@ Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $
 #|   based on draws from $[Y | \mid Z = z]$.
 #| label: fig-ln-norm-interval
 
-interval_lo = quantile(x, probs = 0.025)
-interval_hi = quantile(x, probs = 0.975)
+interval_lo = quantile(y, probs = 0.025)
+interval_hi = quantile(y, probs = 0.975)
 g + annotate("rect", xmin = interval_lo, xmax = interval_hi, ymin = 0,
 		ymax = Inf, alpha = 0.1, fill = "blue") +
 	geom_vline(xintercept = z, col = "blue", lwd = 1.05) +
@@ -805,38 +828,34 @@ Plotting the proposal $h$ versus the target $f$ on the log-scale, the two distri
 #|   constant majorizer.
 #| label: fig-ln-norm-const-proposal
 
-log_h = function(x) { h$d(as.list(x), log = TRUE) }
-log_f = function(x) { d_target(x, log = TRUE) }
+log_h = function(y) { h$d(as.list(y), log = TRUE) }
+log_f = function(y) { d_target(y, log = TRUE) }
 
-xlim = range(x)
+xlim = range(y)
 ggplot() +
 	geom_function(fun = log_f, col = "orange", lty = 1) +
 	geom_function(fun = log_h, col = "black", lty = 2) +
 	scale_x_continuous(limits = xlim) +
-	xlab("x") +
+	xlab("y") +
 	ylab("Density") +
 	theme_minimal()
 ```
 
 ### Constant Majorizer with Custom Optimization {#sec-ln-norm-const-cf}
 
-The weight function for this problem can be either maximized or minimized in closed form. On the log-scale with $\zeta(x) = \log w(x)$, we have
+The log-weight function $\zeta$ from \eqref{eqn:ln-norm-log-weight-fn} can be both maximized and minimized in closed form. Coding it explicitly may reduce computational overhead and avoid possible convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `UnivariateConstRegion`.
+
+We have first derivative
 <!-- -->
 \begin{align*}
-\zeta(x) = -\log x - \frac{(\log x - \mu)^2}{2 \sigma^2} + \log \mathbb{1}_{(0,\infty)}(x)
-\end{align*}
-<!-- -->
-with first derivative
-<!-- -->
-\begin{align*}
-&\zeta'(x) = -\frac{1}{x}\left(
-1 + \frac{\log x - \mu}{\sigma^2}
+&\zeta'(y) = -\frac{1}{y}\left(
+1 + \frac{\log y - \mu}{\sigma^2}
 \right),
 \end{align*}
 <!-- -->
-for $x \in (0, \infty)$. Let $x^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(x)$ is positive when $x < x^*$, negative when $x > x^*$, and takes value zero at $x = x'$. Then $x^*$ maximizes $\zeta(x)$ with maximum value $\zeta(x^*) = \sigma^2 / 2 - \mu$. Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $x^*$, the maximum of $\log w(x)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $x^*$, the maximum of $\log w(x)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
+for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(y)$ is positive when $y < y^*$, negative when $y > y^*$, and takes value zero at $y = y'$. Then $y^*$ maximizes $\zeta(y)$ with maximum value $\zeta(y^*) = \sigma^2 / 2 - \mu$. Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
 
-Here is a plot of $\log w(x)$ with our selected $\mu$ and $\sigma^2$ values.
+Here is a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
 
 ```{r}
 #| out-width: 60%
@@ -850,12 +869,12 @@ ggplot() +
 	geom_function(fun = w, xlim = xlim) +
 	geom_vline(xintercept = exp(mu - sigma2), lty = 2) +
 	geom_hline(yintercept = sigma2 / 2 - mu, lty = 2) +
-	xlab("x") +
-	ylab(expression("log w(x)")) +
+	xlab("y") +
+	ylab(expression("log w(y)")) +
 	theme_minimal()
 ```
 
-To override the numerical optimization with our closed-form solution, we now create a subclass `CustomConstRegion` of `UnivariateConstRegion` and specify the `optimize` method. Furthermore, we specify an `initialize` method which simply invokes `initialize` from the superclass `UnivariateConstRegion`. Otherwise, the behavior of `CustomConstRegion` is identical to `UnivariateConstRegion`.
+We now create a subclass `CustomConstRegion` of `UnivariateConstRegion` and specify an `optimize` method using the closed-form solution. Furthermore, we specify an `initialize` method which simply invokes `initialize` from the superclass `UnivariateConstRegion`. Otherwise, the behavior of `CustomConstRegion` is identical to `UnivariateConstRegion`.
 
 ```{r}
 CustomConstRegion = R6::R6Class(
@@ -907,56 +926,57 @@ h = adapt_out$h
 
 ctrl = rejection_control(report = 5000)
 out = rejection(h, n = 10000, control = ctrl)
-x = unlist(out)
+y = unlist(out)
 ```
 
 ### Linear Majorizer {#sec-ln-norm-linear}
 
-::: {.callout-note title="TBD"}
-TBD: We need to pick finite endpoints I think ...
+::: {.callout-caution title="TBD"}
+We need to pick finite endpoints I think ...
 :::
 
 Sections [-@sec-ln-norm-const] and [-@sec-ln-norm-const-cf] utilized a constant 
-majorizer $\overline{w}_j = \max_{x \in \mathcal{D}_j} w(x)$ and minorizer $\underline{w}_j = \min_{x \in \mathcal{D}_j} w(x)$ for VWS sampling. Let us now consider a linear majorizer $\log \overline{w}_j(x) = \overline{\beta}_{0j} + \overline{\beta}_{1j} x$ and minorizer $\log \underline{w}_j(x) = \underline{\beta}_{0j} + \underline{\beta}_{1j} x$. This strategy is more involved to derive and implement, but often captures the weight function more effectively than a constant majorizer with fewer mixture components to yield more efficient proposals. We will find appropriate values of $\overline{\beta}_{0j}$, $\overline{\beta}_{1j}$, $\underline{\beta}_{0j}$, and $\underline{\beta}_{1j}$; compute $\overline{\xi}_j$ and $\underline{\xi}_j$ needed for the proposal mixture weights and the bound \eqref{eqn:bound}; and determine how to sample from the reweighted & truncated densities $g_1, \ldots, g_N$.
+majorizer $\overline{w}_j = \max_{y \in \mathcal{D}_j} w(y)$ and minorizer $\underline{w}_j = \min_{y \in \mathcal{D}_j} w(y)$ for VWS sampling. Let us now consider a linear majorizer $\log \overline{w}_j(y) = \overline{\beta}_{0j} + \overline{\beta}_{1j} y$ and minorizer $\log \underline{w}_j(y) = \underline{\beta}_{0j} + \underline{\beta}_{1j} y$. This strategy is more involved to derive and implement, but often captures the weight function more effectively than a constant majorizer with fewer mixture components to yield more efficient proposals. We will find appropriate values of $\overline{\beta}_{0j}$, $\overline{\beta}_{1j}$, $\underline{\beta}_{0j}$, and $\underline{\beta}_{1j}$; compute $\overline{\xi}_j$ and $\underline{\xi}_j$ needed for the proposal mixture weights and the bound \eqref{eqn:bound}; and determine how to sample from the reweighted & truncated densities $g_1, \ldots, g_N$.
 
-We first note that with majorizer $\overline{w}_j(x) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} x\}$, the truncated & reweighted density $g_j$ has the form
+We first note that with majorizer $\overline{w}_j(y) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}$, the truncated & reweighted density $g_j$ has the form
 <!-- -->
 \begin{align*}
-g_j(x) &\propto \overline{w}_j(x) g(x) \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(x) \\
+g_j(y)
+&\propto \overline{w}_j(y) g(y) \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y) \\
 %
-&= \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} x\}
-\phi(x \mid z, \lambda^2) \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(x) \\
+&= \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}
+\phi(y \mid z, \lambda^2) \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y) \\
 %
-&\propto \exp\{ \overline{\beta}_{1j} x\} \exp\left\{
--\frac{1}{2 \lambda^2} (x^2 - 2xz)
-\right\} \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(x) \\
+&\propto \exp\{ \overline{\beta}_{1j} y\} \exp\left\{
+-\frac{1}{2 \lambda^2} (y^2 - 2yz)
+\right\} \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y) \\
 %
 &\propto \exp\left\{
--\frac{1}{2 \lambda^2} \left[ x^2 - 2(z + \lambda^2 \overline{\beta}_{1j}) x \right]
-\right\} \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(x).
+-\frac{1}{2 \lambda^2} \left[ y^2 - 2(z + \lambda^2 \overline{\beta}_{1j}) y \right]
+\right\} \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y).
 \end{align*}
 <!-- -->
-This can be recognized as the density of $T_j \sim \text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. Variates of $T_j$ can be generated using the CDF $\Phi(x \mid z + \lambda^2, \lambda^2)$ and its inverse $\Phi^{-1}(p \mid z + \lambda^2, \lambda^2)$ which can be accessed with `pnorm` and `qnorm` in R respectively. Next, it can be seen that $\zeta(x) = \log w(x)$ is either a convex or concave function, depending on the value of $x \in (0, \infty)$. The concavity or convexity of $\zeta$ on a region $\mathcal{D}_j$ can be used to determine a linear majorizing function. Proceeding from $\zeta'(x)$ given in [@sec-ln-norm-const-cf], the second derivative is seen to be
+This can be recognized as the density of $T_j \sim \text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. Variates of $T_j$ can be generated using the CDF $\Phi(y \mid z + \lambda^2, \lambda^2)$ and its inverse $\Phi^{-1}(p \mid z + \lambda^2, \lambda^2)$ which can be accessed with `pnorm` and `qnorm` in R respectively. Next, it can be seen that $\zeta(x) = \log w(x)$ is either a convex or concave function, depending on the value of $x \in (0, \infty)$. The concavity or convexity of $\zeta$ on a region $\mathcal{D}_j$ can be used to determine a linear majorizing function. Proceeding from $\zeta'(y)$ given in [@sec-ln-norm-const-cf], the second derivative is seen to be
 <!-- -->
 \begin{align*}
-&\zeta''(x) = -\frac{1}{x^2}\left(
-\frac{\log x - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2}
+&\zeta''(y) = -\frac{1}{y^2}\left(
+\frac{\log y - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2}
 \right),
 \end{align*}
 <!-- -->
 with
 <!-- -->
 \begin{align*}
-\zeta''(x) < 0
-&\iff \frac{\log x - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2} > 0 \\
-&\iff x < \exp(\mu - \sigma^2 + 1).
+\zeta''(y) < 0
+&\iff \frac{\log y - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2} > 0 \\
+&\iff y < \exp(\mu - \sigma^2 + 1).
 \end{align*}
 <!-- -->
-Therefore, $\zeta$ is concave when $x < \exp(\mu - \sigma^2 + 1)$ and convex when $x > \exp(\mu - \sigma^2 + 1)$. Let us assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will ensure so that all partitions considered thereafter will consist of regions on which $\zeta$ is entirely concave or convex.
+Therefore, $\zeta$ is concave when $y < \exp(\mu - \sigma^2 + 1)$ and convex when $y > \exp(\mu - \sigma^2 + 1)$. Let us assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will ensure so that all partitions considered thereafter will consist of regions on which $\zeta$ is entirely concave or convex.
 
 Before proceeding, the following integral is stated as a remark as it will be used several times.
 
-::: {#rem-normal-mgf-kernel}
+::: {.callout-note #rem-normal-mgf-kernel}
 Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the density and CDF of $X \sim \text{N}(\mu, \sigma^2)$, respectively. If $a < b$ are scalars (possibly infinite), then 
 <!-- -->
 \begin{align*}
@@ -965,13 +985,15 @@ Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the
 \Phi(b \mid \mu + t \sigma^2, \sigma^2) - \Phi(a \mid \mu + t \sigma^2, \sigma^2)
 \right\}.
 \end{align*}
+<!-- -->
+The special case $a = -\infty$ and $b = \infty$ yields the moment-generating function $M_X(t) = \exp(\mu t + t^2 \sigma^2 / 2)$ of $X$.
 :::
 
 The following construction assumes that $\zeta$ is finite and concave on the interval $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$. A majorizer is obtained from
 <!-- -->
 \begin{align}
-\zeta(x) &\leq \zeta(c) + (x - c) \nabla(c)
-= \overline{\beta}_{j0} + \overline{\beta}_{j1} x,
+\zeta(y) &\leq \zeta(c) + (y - c) \nabla(c)
+= \overline{\beta}_{j0} + \overline{\beta}_{j1} y,
 \quad 
 \overline{\beta}_{j0} = \zeta(c) - c \cdot \zeta'(c), \quad
 \overline{\beta}_{j1} = \zeta'(c),
@@ -981,7 +1003,8 @@ The following construction assumes that $\zeta$ is finite and concave on the int
 where $c$ is a point in $\mathcal{D}_j$. In particular, let us consider the value of $c$ as
 <!-- -->
 \begin{align*}
-c^* &= \argmin_{c \in \mathcal{D}_j} \int_{\mathcal{D}_j} | h_0(x) - f_0(x) | d\nu(x) \nonumber \\
+c^* &= \argmin_{c \in \mathcal{D}_j} \int_{\mathcal{D}_j} | h_0(y) - f_0(y) | dy
+\nonumber \\
 %
 &\equiv \argmin_{c \in \mathcal{D}_j} \Big\{ \log w(c) - c \nabla(c) + \log M_j(\nabla(c)) \Big\}.
 \end{align*}
@@ -991,11 +1014,11 @@ Here, $M_j(s)$ is the moment generating function of random variable $T \sim g$ w
 \begin{align*}
 M_j(s)
 %
-&= \int_{\alpha_{j-1}}^{\alpha^j} e^{sx} \frac{
-\phi(x \mid z, \lambda^2)
+&= \int_{\alpha_{j-1}}^{\alpha^j} e^{sy} \frac{
+\phi(y \mid z, \lambda^2)
 }{
 \Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
-} dx \\
+} dy \\
 %
 &= \exp(z s + s^2 \lambda^2 / 2) 
 \frac{
@@ -1005,11 +1028,12 @@ M_j(s)
 },
 \end{align*}
 <!-- -->
-using [@rem-normal-mgf-kernel]. A minorizer can be obtained by expressing $x = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$ for $\lambda \in [0,1]$ so that $\lambda = (x - \alpha_{j-1}) / (\alpha_j - \alpha_{j-1})$ and <!-- -->
+using [@rem-normal-mgf-kernel]. A minorizer can be obtained by expressing $y = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$ for $\lambda \in [0,1]$ so that $\lambda = (y - \alpha_{j-1}) / (\alpha_j - \alpha_{j-1})$ and
+<!-- -->
 \begin{align}
-\zeta(x) &\geq (1-\lambda) \zeta(\alpha_{j-1}) + \lambda \zeta(\alpha_j) \nonumber \\
-&= \zeta(\alpha_{j-1}) + \frac{x - \alpha_{j-1}}{\alpha_j - \alpha_{j-1}} [ \zeta(\alpha_j) - \zeta(\alpha_{j-1})]
-= \underline{\beta}_{j0} + \underline{\beta}_{j1} x,
+\zeta(y) &\geq (1-\lambda) \zeta(\alpha_{j-1}) + \lambda \zeta(\alpha_j) \nonumber \\
+&= \zeta(\alpha_{j-1}) + \frac{y - \alpha_{j-1}}{\alpha_j - \alpha_{j-1}} [ \zeta(\alpha_j) - \zeta(\alpha_{j-1})]
+= \underline{\beta}_{j0} + \underline{\beta}_{j1} y,
 \label{eqn:ln-norm-linear-minorizer}
 \end{align}
 <!-- -->
@@ -1023,12 +1047,13 @@ with
 <!-- -->
 If $\zeta$ is convex on $\mathcal{D}_j$ rather than concave, the roles of \eqref{eqn:ln-norm-linear-majorizer} and \eqref{eqn:ln-norm-linear-minorizer} are switched so that \eqref{eqn:ln-norm-linear-majorizer} is minorizer and \eqref{eqn:ln-norm-linear-minorizer} is majorizer.
 
-The quantity $\overline{\xi}_j$ may be evaluated using [@rem-normal-mgf-kernel] as
+Using [@rem-normal-mgf-kernel], we have
 <!-- -->
 \begin{align}
 \overline{\xi}_j
 &= \int_{\alpha_{j-1}}^{\alpha_j}
-\exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} x \} \phi(x \mid z, \lambda^2) dx
+\exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y \}
+\phi(y \mid z, \lambda^2) dy
 \nonumber \\
 &= \exp\left\{
 \overline{\beta}_{0j} + z \overline{\beta}_{1j} + \overline{\beta}_{1j}^2 \lambda^2 / 2
@@ -1036,16 +1061,17 @@ The quantity $\overline{\xi}_j$ may be evaluated using [@rem-normal-mgf-kernel] 
 \left\{ 
 \Phi(\alpha_j \mid z + \overline{\beta}_{1j} \lambda^2, \sigma^2)
 - \Phi(\alpha_{j-1} \mid z + \overline{\beta}_{1j} \lambda^2, \lambda^2)
-\right\}.
+\right\}
 \label{eqn:ln-norm-xi-upper}
 \end{align}
 <!-- -->
-Similarly,
+and
 <!-- -->
 \begin{align}
 \underline{\xi}_j
 &= \int_{\alpha_{j-1}}^{\alpha_j}
-\exp\{ \underline{\beta}_{0j} + \underline{\beta}_{1j} x \} \phi(x \mid z, \lambda^2) dx
+\exp\{ \underline{\beta}_{0j} + \underline{\beta}_{1j} y \}
+\phi(y \mid z, \lambda^2) dy
 \nonumber \\
 &= \exp\left\{
 \underline{\beta}_{0j} + z \underline{\beta}_{1j} + \underline{\beta}_{1j}^2 \lambda^2 / 2
@@ -1072,11 +1098,11 @@ source("../inst/examples/lnorm-norm/CustomLinearRegion.R")
 -------------------------------------------------------------------------------
 Method            Description
 -----             -----
-`w`               $w(x) = \frac{1}{x} \exp\left\{ -\frac{1}{2\sigma^2}
-                  (\log x - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(x)$.
+`w`               $w(x) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2}
+                  (\log y - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(y)$.
 
-`w_major`         $\overline{w}_j(x) = \exp\{
-                  \overline{\beta}_{0j} + \overline{\beta}_{1j} x\}$.
+`w_major`         $\overline{w}_j(y) = \exp\{
+                  \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}$.
 
 `d_base`          Density of $\text{N}(z, \lambda^2)$.
 
@@ -1140,14 +1166,14 @@ Proceed with rejection sampling using the resulting proposal.
 ```{r}
 ctrl = rejection_control(report = 5000, extra_outputs = TRUE)
 out = rejection(h, n = 10000, control = ctrl)
-x = unlist(out$draws)
+y = unlist(out$draws)
 ```
 
 Print the actual rejection rate. Notice that it is substantially lower than the rate achieved in [@sec-ln-norm-const].
 
 ```{r}
 cat("Percent of proposed draws rejected:",
-	sum(out$rejects) / (length(x) + sum(out$rejects)) * 100)
+	sum(out$rejects) / (length(y) + sum(out$rejects)) * 100)
 ```
 
 Plot the empirical distribution of the draws overlaid with the target density.
@@ -1159,11 +1185,12 @@ Plot the empirical distribution of the draws overlaid with the target density.
 #|   with linear majorizer.
 #| label: fig-ln-norm-linear-draws
 
-data.frame(x = x) %>%
+data.frame(y = y) %>%
 	ggplot() +
-	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+	geom_histogram(aes(x = y, y = after_stat(density)), col = "black",
 		fill = NA, bins = 25) +
 	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
+	ylab("y") +
 	ylab("Density") +
 	theme_minimal()
 ```
@@ -1177,21 +1204,22 @@ Finally, comparing the unnormalized proposal $h$ and target density $f$ on the l
 #|   linear majorizer.
 #| label: fig-ln-norm-proposal
 
-log_h = function(x) { h$d(as.list(x), log = TRUE) }
-log_f = function(x) { d_target(x, log = TRUE) }
+log_h = function(y) { h$d(as.list(y), log = TRUE) }
+log_f = function(y) { d_target(y, log = TRUE) }
 
+xlim = range(y)
 ggplot() +
 	geom_function(fun = log_f, lty = 1, col = "orange", lwd = 1.2) +
 	geom_function(fun = log_h, lty = 2, col = "black", lwd = 1.2) +
-	scale_x_continuous(limits = range(x)) +
-	xlab("x") +
+	scale_x_continuous(limits = xlim) +
+	xlab("y") +
 	ylab("Density") +
 	theme_minimal()
 ```
 
 ## Bessel Count Distribution
 
-::: {.callout-note title="TBD"}
+::: {.callout-caution title="TBD"}
 Under construction. The example is working, but the writing needs to be fleshed
 out.
 :::
@@ -1355,7 +1383,7 @@ ggplot(df) +
 
 ## Von Mises Fisher
 
-::: {.callout-note title="TBD"}
+::: {.callout-caution title="TBD"}
 Under construction. Both versions of the sampler are implemented, but writing
 is needed.
 :::
@@ -1615,13 +1643,13 @@ ggplot() +
 
 # Conclusions
 
-::: {.callout-note title="TBD"}
+::: {.callout-caution title="TBD"}
 Content needed
 :::
 
 # Acknowledgments {-}
 
-::: {.callout-note title="TBD"}
+::: {.callout-caution title="TBD"}
 Content needed
 :::
 
