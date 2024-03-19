@@ -7,10 +7,10 @@ author:
       Center for Statistical Research & Methodology,
       U.S. Census Bureau,
       Washington, DC, 20233, U.S.A.
-      **Disclaimer**`:` This document is released to inform interested parties
       of ongoing research and to encourage discussion of work in progress. Any
       views expressed are those of the authors and not those of the U.S. Census
       Bureau.]
+      **Disclaimer**`:` This document is released to inform interested parties
     email: andrew.raim@gmail.com
   - name: James A. Livsey
   - name: Kyle M. Irimata
@@ -629,7 +629,7 @@ f(y \mid z)
 Here we have decomposed $f$ into weight function
 <!-- -->
 \begin{math}
-w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(x),
+w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(y),
 \end{math}
 <!-- -->
 from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution $g$ as $\text{N}(z, \lambda^2)$. It will sometimes be more convenient or numerically stable to work with $w$ on the log-scale; therefore, define
@@ -640,7 +640,7 @@ from the Lognormal component---dropping some of the terms in its normalizing con
 \label{eqn:ln-norm-log-weight-fn}
 \end{align}
 
-We will consider three variations of VWS sampler, which progressive from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. [@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
+We will consider three variations of VWS sampler, which progresses from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. [@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
 
 Before proceeding, let us fix the following values for the parameters.
 
@@ -956,7 +956,7 @@ g_j(y)
 \right\} \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y).
 \end{align*}
 <!-- -->
-This can be recognized as the density of $T_j \sim \text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. Variates of $T_j$ can be generated using the CDF $\Phi(y \mid z + \lambda^2, \lambda^2)$ and its inverse $\Phi^{-1}(p \mid z + \lambda^2, \lambda^2)$ which can be accessed with `pnorm` and `qnorm` in R respectively. Next, it can be seen that $\zeta(x) = \log w(x)$ is either a convex or concave function, depending on the value of $x \in (0, \infty)$. The concavity or convexity of $\zeta$ on a region $\mathcal{D}_j$ can be used to determine a linear majorizing function. Proceeding from $\zeta'(y)$ given in [@sec-ln-norm-const-cf], the second derivative is seen to be
+This can be recognized as the density of $T_j \sim \text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. Variates of $T_j$ can be generated using the CDF $\Phi(y \mid z + \lambda^2, \lambda^2)$ and its inverse $\Phi^{-1}(p \mid z + \lambda^2, \lambda^2)$ which can be accessed with `pnorm` and `qnorm` in R respectively. Next, it can be seen that $\zeta(y) = \log w(y)$ is either a convex or concave function, depending on the value of $y \in (0, \infty)$. The concavity or convexity of $\zeta$ on a region $\mathcal{D}_j$ can be used to determine a linear majorizing function. Proceeding from $\zeta'(y)$ given in [@sec-ln-norm-const-cf], the second derivative is seen to be
 <!-- -->
 \begin{align*}
 &\zeta''(y) = -\frac{1}{y^2}\left(
@@ -1125,7 +1125,7 @@ Method            Description
 `is_bifurcatable` Return `TRUE`.
 -------------------------------------------------------------------------------
 
-Let us proceed with a demonstrate of the VWS sampler based on `CustomLinearRegion`. First create two initial regions around the point $\exp(\mu - \sigma^2 + 1)$, where $w(x)$ switches from log-concave to log-convex.
+Let us proceed with a demonstration of the VWS sampler based on `CustomLinearRegion`. First create two initial regions around the point $\exp(\mu - \sigma^2 + 1)$, where $w(y)$ switches from log-concave to log-convex.
  
 ```{r}
 y_star = exp(mu - sigma2 + 1)
