@@ -7,10 +7,10 @@ author:
       Center for Statistical Research & Methodology,
       U.S. Census Bureau,
       Washington, DC, 20233, U.S.A.
+      **Disclaimer**`:` This document is released to inform interested parties
       of ongoing research and to encourage discussion of work in progress. Any
       views expressed are those of the authors and not those of the U.S. Census
       Bureau.]
-      **Disclaimer**`:` This document is released to inform interested parties
     email: andrew.raim@gmail.com
   - name: James A. Livsey
   - name: Kyle M. Irimata
