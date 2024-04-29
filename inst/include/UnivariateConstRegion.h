@@ -252,6 +252,25 @@ double UnivariateConstRegion::optimize(bool maximize = true, bool log = true) co
 	endpoint_pos_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints > 0);
 	endpoint_neg_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints < 0);
 
+	// Nelder-Mead algorithm from R
+	void nmmin(
+		int n,               // Number of parameters
+		double *xin,         // Initial value
+		double *x,           // Point at which optimum is found
+		double *Fmin,        // Value at which optimum is found
+		optimfn fn,          // Function to optimize
+		int *fail,           // ...
+		double abstol,
+		double intol,
+		void *ex,
+		double alpha,
+		double beta,
+		double gamma,
+		int trace,
+		int *fncount,
+		int maxit
+	);
+
 	if (maximize && endpoint_pos_inf) {
 		out = Inf;
 	} else if (maximize) {
