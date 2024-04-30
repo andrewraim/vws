@@ -1,6 +1,12 @@
+#ifndef UNIVARIATE_CONST_H
+#define UNIVARIATE_CONST_H
+
 #include <Rcpp.h>
+#include <R_ext/Applic.h>
 #include "Region.h"
 #include "UnivariateHelper.h"
+
+namespace vws {
 
 //' Univariate Region with Constant Majorizer
 //'
@@ -30,19 +36,19 @@ class UnivariateConstRegion : public Region<double>
 private:
 	double _a;
 	double _b;
-	UnivariateHelper _g;
+	UnivariateHelper<double> _g;
 	double _log_w_max;
 	double _log_w_min;
 	double _log_prob;
 
 public:
-	double w(double x, bool log = false) = 0;
+	virtual double w(double x, bool log = false) = 0;
 
 	//' @param a Lower limit of interval.
 	//' @param b Upper limit of interval.
 	//' @param w Weight function for the target distribution.
 	//' @param g An object created by \code{univariate_helper}.
-	UnivariateConstRegion(a, b, w, g);
+	UnivariateConstRegion(double a, double b, const UnivariateHelper<double>& g);
 
 	//' @description
 	//' Density function \eqn{g} for the base distribution.
@@ -115,10 +121,12 @@ public:
 	double optimize(bool maximize = true, bool log = true) const;
 };
 
-UnivariateConstRegion(double a, double b, w, const UnivariateHelper& g)
-: _a(a), _b(b), _g(g), _w(w)
+UnivariateConstRegion::UnivariateConstRegion(double a, double b, const UnivariateHelper<double>& g)
+: _a(a), _b(b), _g(g)
 {
-	stopifnot(a <= b);
+	if (a > b) {
+		Rcpp::stop("a > b");
+	}
 
 	_log_w_max = optimize(true);
 	_log_w_min = optimize(false);
@@ -137,17 +145,20 @@ std::vector<double> UnivariateConstRegion::r(unsigned int n) const
 {
 	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this region.
 	// Compute g$q((pb - pa) * u + pa) on the log scale
-	const RcppNumericVector& u = Rcpp::runif(n);
-	log_pa = _g.p(_a, true);
-	log_p = log_add2_exp(_log_prob + log(u), Rcpp::rep(log_pa, n));
+	const Rcpp::NumericVector& u = Rcpp::runif(n);
+	double log_pa = _g.p(_a, true);
+	const Rcpp::NumericVector& log_p = log_add2_exp(_log_prob + log(u), Rcpp::rep(log_pa, n));
 	return _g.q(log_p, true);
 }
 
 double UnivariateConstRegion::d(double x) const
 {
-	double out = s(x) ?
-		_g.d(x, true) - log_sub2_exp(_g.p(_b, true), _g.p(_a, true)) :
-		Rcpp::NegInf;
+	double out;
+	if (!s(x)) {
+		out = R_NegInf;
+	} else {
+		out = _g.d(x, true) - log_sub2_exp(_g.p(_b, true), _g.p(_a, true));
+	}
 	return log ? out : exp(out);
 }
 
@@ -167,15 +178,15 @@ UnivariateConstRegion::bifurcate() const
 {
 	double x;
 
-	if (is.infinite(_a) && is.infinite(_b) && _a < 0 && _b > 0) {
+	if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
 		// In this case, we have an interval (-Inf, Inf). Make a split at zero.
 		x = 0;
-	} else if (is.infinite(_a) && _a < 0) {
+	} else if (std::isinf(_a) && _a < 0) {
 		// Left endpoint is -Inf. Split based on right endpoint.
-		x = b - abs(b) - 1;
-	} else if (is.infinite(_b) && _b > 0) {
+		x = _b - abs(_b) - 1;
+	} else if (std::isinf(_b) && _b > 0) {
 		// Right endpoint is Inf. Split based on left endpoint.
-		x = _a + abs(_a) + 1;
+		x = _a + fabs(_a) + 1;
 	} else {
 		x = (_a + _b) / 2;
 	}
@@ -186,8 +197,8 @@ UnivariateConstRegion::bifurcate() const
 std::pair<UnivariateConstRegion,UnivariateConstRegion>
 UnivariateConstRegion::bifurcate(double x) const
 {
-	UnivariateConstRegion(_a, x, w, _g) s1;
-	UnivariateConstRegion(x, _b, w, _g) s2;
+	UnivariateConstRegion s1(_a, x, _g);
+	UnivariateConstRegion s2(x, _b, _g);
 	std::make_pair(s1, s2);
 }
 
@@ -210,7 +221,9 @@ double UnivariateConstRegion::xi_lower(bool log = true) const
 
 std::string UnivariateConstRegion::description() const
 {
-	sprintf("(%g, %g]", _a, _b);
+	char buf[32];
+	sprintf(buf, "(%g, %g]", _a, _b);
+	return buf;
 }
 
 void UnivariateConstRegion::print() const
@@ -220,80 +233,93 @@ void UnivariateConstRegion::print() const
 
 double UnivariateConstRegion::optimize(bool maximize = true, bool log = true) const
 {
-	a = _a;
-	b = _b;
-	w = _w;
+	// control = list(maxit = 100000, warn.1d.NelderMead = false);
 
-	method = "Nelder-Mead";
-	control = list(maxit = 100000, warn.1d.NelderMead = false);
+	double f_opt(int n, double *par, void *ex)
+	{
+		double a = ex->a;
+		double b = ex->b;
+		double fnscale = ex->fnscale;
+		double x = par[0];
 
-	// Transformation to bounded interval, if necessary
-	tx = function(x) {
-		if (is.infinite(a) && is.infinite(b) && a < 0 && b > 0) {
-			out = x
-		} else if (is.infinite(a) && a < 0) {
-			out = b*plogis(x)
-		} else if (is.infinite(b) && b > 0) {
-			out = exp(x) + a
+		// Transform to the interval (a,b]
+		if (Rcpp::is_infinite(a) && Rcpp::is_infinite(b) && a < 0 && b > 0) {
+			x_tx = x;
+		} else if (Rcpp::is_infinite(a) && a < 0) {
+			x_tx = b*plogis(x);
+		} else if (Rcpp::is_infinite(b) && b > 0) {
+			x_tx = Rcpp::exp(x) + a;
 		} else {
-			out = (b-a) * plogis(x) + a
+			x_tx = (b-a) * Rcpp::plogis(x) + a;
 		}
-		return(out)
+
+		// Call the weight function
+		fnscale * w(x_tx, true);
 	}
 
-	f_opt = function(x) {
-		w(tx(x), true);
-	}
+	struct ext_data
+	{
+		int a;
+		int b;
+		double fnscale;
+	};
 
-	init = 0;
-	log_w_endpoints = c(w(a, log = TRUE), w(b, log = TRUE));
-	log_w_endpoints = log_w_endpoints[!is.na(log_w_endpoints)];
+	Rcpp::LogicalVector log_w_endpoints = Rcpp::LogicalVector::create(w(_a, true), w(_b, true));
+	log_w_endpoints = log_w_endpoints[!Rcpp::is_na(log_w_endpoints)];
+	bool endpoint_pos_inf = Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints > 0);
+	bool endpoint_neg_inf = Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints < 0);
 
-	endpoint_pos_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints > 0);
-	endpoint_neg_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints < 0);
-
-	// Nelder-Mead algorithm from R
-	void nmmin(
-		int n,               // Number of parameters
-		double *xin,         // Initial value
-		double *x,           // Point at which optimum is found
-		double *Fmin,        // Value at which optimum is found
-		optimfn fn,          // Function to optimize
-		int *fail,           // ...
-		double abstol,
-		double intol,
-		void *ex,
-		double alpha,
-		double beta,
-		double gamma,
-		int trace,
-		int *fncount,
-		int maxit
-	);
+	double out;
 
 	if (maximize && endpoint_pos_inf) {
-		out = Inf;
-	} else if (maximize) {
-		control$fnscale = -1;
-		opt_out = optim(init, f_opt, method = method, control = control);
-		if (opt_out.convergence != 0) {
-			warning("opt_out: convergence status was ", opt_out.convergence);
-			browser();
-		}
-		out = max(f_opt(floor(opt_out.par)), f_opt(ceiling(opt_out.par)), log_w_endpoints);
-	}
+		out = R_PosInf;
+	} else if (!maximize && endpoint_neg_inf) {
+		out = R_NegInf;
+	} else {
+		// Nelder-Mead algorithm from R.
+		// See https://cran.r-project.org/doc/manuals/R-exts.html#Optimization
+		// and https://stackoverflow.com/questions/12765304/calling-r-function-optim-from-c
+		int fail;
+		int fncount;
+		double Fmin;
+		double xin = 0;
+		double par;
+		double mach_eps = sqrt(std::numeric_limits<double>::epsilon);
 
-	if (!maximize && endpoint_neg_inf) {
-		out = -Inf;
-	} else if (!maximize) {
-		control$fnscale = 1;
-		opt_out = optim(init, f_opt, method = method, control = control);
-		if (opt_out.convergence != 0) {
-			warning("opt_out: convergence status was ", opt_out$convergence)
-			browser();
+		struct ext_data ex = { _a, _b, -1*maximize + 1*minimize };
+
+		nmmin(
+			1L,        // In:  int n [number of parameters]
+			&xin,      // In:  double *xin [initial value]
+			&par,      // Out: double *x [point at which optimum is found]
+			&Fmin,     // Out: double *Fmin [objective value at which optimum is found]
+			f_opt,     // In:  optimfn fn [objective function]
+			&fail,     // Out: int *fail [true if the function failed]
+			R_NegInf,  // In:  double abstol [absolute tolerance]
+			mach_eps,  // In:  double intol [user-initialized conversion tolerance]
+			&ex,       // In:  void *ex [external data to pass to the objective function]
+			1.0,       // In:  double alpha [reflection factor]
+			0.5,       // In:  double beta [contraction and reduction factor]
+			2.0,       // In:  double gamma [extension factor]
+			0,         // In:  int trace [if positive, print progress info]
+			&fncount,  // Out: int *fncount [number of times the objective function was called]
+			100000     // In:  int maxit [maximum number of iterations]
+		);
+
+		if (fail) {
+			Rcpp::warning("opt_out: convergence status was ", fail);
 		}
-		out = min(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints);
+
+		if (maximize) {
+			out = std::max(f_opt(std::floor(par)), f_opt(std::ceil(par)), log_w_endpoints);
+		} else {
+			out = std::min(f_opt(std::floor(par)), f_opt(std::ceil(par)), log_w_endpoints);
+		}
 	}
 
 	return log ? out : exp(out);
 }
+
+}
+
+#endif

@@ -1,8 +1,9 @@
 #ifndef ADAPT_H
 #define ADAPT_H
 
-#include "FMMProposal.h"
+#include <Rcpp.h>
 #include "log-sum-exp.h"
+#include "FMMProposal.h"
 
 namespace vws {
 
@@ -38,14 +39,15 @@ namespace vws {
 //'
 //' @name adapt
 //' @export
-std::tuple<FMMProposal, Rcpp::NumericVector, Rcpp::NumericVector, Rcpp::NumericVector>
+template <typename T>
+std::tuple<FMMProposal<T>, Rcpp::NumericVector, Rcpp::NumericVector, Rcpp::NumericVector>
 adapt(const FMMProposal<T>& h_init, unsigned int N, unsigned int report = N+1)
 {
 	FMMProposal<T> h = h_init;
 
-	log_ub_hist = Rcpp::NumericVector(N+1);
-	log_lb_hist = Rcpp::NumericVector(N+1);
-	log_bdd_hist = Rcpp::NumericVector(N+1);
+	Rcpp::NumericVector log_ub_hist(N+1);
+	Rcpp::NumericVector log_lb_hist(N+1);
+	Rcpp::NumericVector log_bdd_hist(N+1);
 
 	log_ub_hist(0) = log_sum_exp(h.get_xi_upper(true));
 	log_lb_hist(0) = log_sum_exp(h.get_xi_lower(true));
@@ -64,15 +66,15 @@ adapt(const FMMProposal<T>& h_init, unsigned int N, unsigned int report = N+1)
 		const Rcpp::NumericVector& log_xi_lower = h.xi_lower(true);
 
 		// Each region's contribution to the rejection rate
-		double log_volume = h.rejection_bound(true, true);
+		const Rcpp::NumericVector& log_volume = h.rejection_bound(true, true);
 
 		idx = Rcpp::which(h.get_bifurcatable());
 		if (idx.length() == 0) {
-			warning("No regions left to bifurcate");
+			Rcpp::warning("No regions left to bifurcate");
 			break;
 		}
 
-		jdx = r_categ(log_volume(idx), true);
+		unsigned int jdx = r_categ(log_volume(idx), true);
 		reg = h.get_regions()[[idx[jdx]]];
 
 		// Split the target region and make another proposal with it

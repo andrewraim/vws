@@ -1,4 +1,9 @@
+#ifndef GUMBEL_H
+#define GUMBEL_H
+
 #include <Rcpp.h>
+
+namespace vws {
 
 //' Gumbel Distribution
 //'
@@ -17,7 +22,20 @@
 //' @return A vector of draws
 //'
 //' @name Gumbel
-NULL
+Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
+	double sigma = 1, bool lower = true, bool log = false)
+{
+	// const Rcpp::NumericVector& lp0 = log ? p : Rcpp::log(p);
+	Rcpp::NumericVector lp0;
+	if (log) {
+		lp0 = p;
+	} else {
+		lp0 = Rcpp::log(p);
+	}
+
+	const Rcpp::NumericVector& lp = lower ? lp0 : Rcpp::log1p(-Rcpp::exp(lp0));
+	return mu - sigma * Rcpp::log(-lp);
+}
 
 //' @name Gumbel
 //' @export
@@ -32,28 +50,30 @@ Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1)
 Rcpp::NumericVector d_gumbel(const Rcpp::NumericVector& x, double mu = 0,
 	double sigma = 1, bool log = false)
 {
-	z = (x - mu) / sigma;
-	out = -log(sigma) - (z + exp(-z));
-	return log ? out : exp(out);
+	const Rcpp::NumericVector& z = (x - mu) / sigma;
+	const Rcpp::NumericVector& out = -std::log(sigma) - (z + Rcpp::exp(-z));
+	if (log) {
+		return out;
+	} else {
+		return Rcpp::exp(out);
+	}
 }
 
 //' @name Gumbel
 //' @export
 Rcpp::NumericVector p_gumbel(const Rcpp::NumericVector& q, double mu = 0,
-	double sigma = 1, bool lower = true, log = false)
-{
-	z = (q - mu) / sigma;
-	out0 = -exp(-z);
-	if (lower) { out = out0; } else { out = log1p(-exp(out0)); }
-	return log ? out : exp(out);
-}
-
-//' @name Gumbel
-//' @export
-Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
 	double sigma = 1, bool lower = true, bool log = false)
 {
-	if (log) { lp0 = p; } else { lp0 = log(p); }
-	if (lower) { lp = lp0; } else { lp = log1p(-exp(lp0)); }
-	return mu - sigma * log(-lp);
+	const Rcpp::NumericVector& z = (q - mu) / sigma;
+	const Rcpp::NumericVector& out0 = -exp(-z);
+	const Rcpp::NumericVector& out = lower ? out0 : Rcpp::log1p(-Rcpp::exp(out0));
+	if (log) {
+		return out;
+	} else {
+		return Rcpp::exp(out);
+	}
 }
+
+}
+
+#endif

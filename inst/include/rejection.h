@@ -1,7 +1,12 @@
+#ifndef REJECTION_H
+#define REJECTION_H
+
 #include <Rcpp.h>
+#include "logger.h"
+#include "Region.h"
+#include "RejectionControl.h"
 
 namespace vws {
-
 
 //' Vertical Weighted Strips Rejection Sampler
 //'
@@ -49,7 +54,6 @@ namespace vws {
 //'
 //' @name rejection
 //' @export
-//'
 template <typename T>
 std::pair<std::vector<T>, Rcpp::IntegerVector>
 rejection(const FMMProposal<T>& h, unsigned int n = 1, const RejectionControl& control)
@@ -62,10 +66,9 @@ rejection(const FMMProposal<T>& h, unsigned int n = 1, const RejectionControl& c
 	Rcpp::IntegerVector rejects(n);
 	bool accept = false;
 
-	unsigned int max_rejects = control.max_rejects;
-	unsigned int report = control.report;
-	unsigned int extra_outputs = control.extra_outputs;
-	char* action_incomplete = control.action_incomplete;
+	unsigned int max_rejects = control.get_max_rejects();
+	unsigned int report_period = control.get_report_period();
+	MaxRejectsAction max_rejects_action = control.get_max_rejects_action();
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
@@ -73,7 +76,7 @@ rejection(const FMMProposal<T>& h, unsigned int n = 1, const RejectionControl& c
 	for (unsigned int i = 0; i < n; i++) {
 		accept = false;
 		while (!accept && N_rejects < max_rejects) {
-			double v = R::runif();
+			double v = R::runif(0, 1);
 			const T& x = h.r(n = 1);
 			double log_fx = h.d_target_unnorm(x);
 			double log_hx = h.d(x, false, false);
@@ -90,20 +93,35 @@ rejection(const FMMProposal<T>& h, unsigned int n = 1, const RejectionControl& c
 			}
 
 			// Report progress after `report` candidates
-			N_accepts = i - 1 + accept;
-			if ((N_rejects + N_accepts) %% report == 0) {
+			unsigned int N_accepts = i + accept;
+			if ((N_rejects + N_accepts) %% report_period == 0) {
 				logger("After %d candidates, %d accepts and %d rejects\n",
-					N_accepts + N_rejects, N_accepts, N_rejects)
+					N_accepts + N_rejects, N_accepts, N_rejects);
 			}
 		}
 	}
 
 	if (N_rejects >= max_rejects) {
-		msg = sprintf("Reached maximum number of rejects: %d", max_rejects);
-		action_incomplete(msg);
+
+		// TBD: load this from a control object
+		MaxRejectsAction action_incomplete = stop;
+
+		switch(action_incomplete) {
+			case MaxRejectsAction::stop:
+		    	Rcpp::stop("Reached maximum number of rejects: %d\n", max_rejects);
+		    	break;
+		    case MaxRejectsAction::warning:
+		    	Rcpp::warning("Reached maximum number of rejects: %d\n", max_rejects);
+		    	break;
+		    case MaxRejectsAction::message:
+		    	Rprintf("Reached maximum number of rejects: %d\n", max_rejects);
+		    	break;
+		}
 	}
 
 	return std::pair<std::vector<T>, Rcpp::IntegerVector>(out, rejects);
 }
 
 }
+
+#endif

@@ -800,7 +800,7 @@ g = data.frame(y = y) %>%
 print(g)
 ```
 
-Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y | \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
+Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
 
 ```{r}
 #| out-width: 60%
@@ -808,7 +808,7 @@ Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $
 #|   Empirical distribution of draws versus target for Lognormal-Normal example
 #|   with constant majorizer. Observed value of $z$ (blue line) and latent value
 #|   of $y$ (red line) are displayed along with a 95\% interval (blue ribbon)
-#|   based on draws from $[Y | \mid Z = z]$.
+#|   based on draws from $[Y \mid Z = z]$.
 #| label: fig-ln-norm-interval
 
 interval_lo = quantile(y, probs = 0.025)
