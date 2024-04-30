@@ -42,7 +42,7 @@ private:
 	double _log_prob;
 
 public:
-	virtual double w(double x, bool log = false) = 0;
+	virtual double w(double x, bool log = false) const = 0;
 
 	//' @param a Lower limit of interval.
 	//' @param b Upper limit of interval.
@@ -94,12 +94,12 @@ public:
 	//' @description
 	//' The quantity \eqn{\overline{\xi}_j} for this region.
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.
-	double xi_upper(bool log = true) const;
+	double get_xi_upper(bool log = true) const;
 
 	//' @description
 	//' The quantity \eqn{\underline{\xi}_j} for this region.
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.
-	double xi_lower(bool log = true) const;
+	double get_xi_lower(bool log = true) const;
 
 	//' @description
 	//' A string that describes the region.
@@ -136,7 +136,7 @@ UnivariateConstRegion::UnivariateConstRegion(double a, double b, const Univariat
 }
 
 
-double UnivariateConstRegion::d_base(double x, bool log = false) const
+double UnivariateConstRegion::d_base(double x, bool log) const
 {
 	return _g.d(x, log);
 }
@@ -167,7 +167,7 @@ bool UnivariateConstRegion::s(double x) const
 	return (_a < x & x <= _b) && _g.s(x);
 }
 
-double UnivariateConstRegion::w_major(double x, bool log = true) const
+double UnivariateConstRegion::w_major(double x, bool log) const
 {
 	double out = _g.s(x) ? _log_w_max : R_NegInf;
 	return log ? out : exp(out);
@@ -199,7 +199,7 @@ UnivariateConstRegion::bifurcate(double x) const
 {
 	UnivariateConstRegion s1(_a, x, _g);
 	UnivariateConstRegion s2(x, _b, _g);
-	std::make_pair(s1, s2);
+	return std::make_pair(s1, s2);
 }
 
 bool UnivariateConstRegion::is_bifurcatable() const
@@ -207,13 +207,13 @@ bool UnivariateConstRegion::is_bifurcatable() const
 	return true;
 }
 
-double UnivariateConstRegion::xi_upper(bool log = true) const
+double UnivariateConstRegion::get_xi_upper(bool log) const
 {
 	double log_xi_upper = _log_w_max + _log_prob;
 	return log ? log_xi_upper : exp(log_xi_upper);
 }
 
-double UnivariateConstRegion::xi_lower(bool log = true) const
+double UnivariateConstRegion::get_xi_lower(bool log) const
 {
 	double log_xi_lower = _log_w_min + _log_prob;
 	return log ? log_xi_lower : exp(log_xi_lower);
@@ -231,40 +231,43 @@ void UnivariateConstRegion::print() const
 	printf("Univariate Const Region (%g, %g]\n", _a, _b);
 }
 
-double UnivariateConstRegion::optimize(bool maximize = true, bool log = true) const
+struct ext_data
+{
+	int a;
+	int b;
+	double fnscale;
+};
+
+double f_opt(int n, double *par, void *ex)
+{
+	ext_data* exd = (ext_data*) ex;
+
+	double a = exd->a;
+	double b = exd->b;
+	double fnscale = exd->fnscale;
+	double x = par[0];
+	double x_tx;
+
+	// Transform to the interval (a,b]
+	if (std::isinf(a) && std::isinf(b) && a < 0 && b > 0) {
+		x_tx = x;
+	} else if (std::isinf(a) && a < 0) {
+		x_tx = b*R::plogis(x, 0, 1, true, false);
+	} else if (std::isinf(b) && b > 0) {
+		x_tx = std::exp(x) + a;
+	} else {
+		x_tx = (b-a) * R::plogis(x, 0, 1, true, false) + a;
+	}
+
+	// Call the weight function
+	return fnscale * w(x_tx, true);
+}
+
+double UnivariateConstRegion::optimize(bool maximize, bool log) const
 {
 	// control = list(maxit = 100000, warn.1d.NelderMead = false);
 
-	double f_opt(int n, double *par, void *ex)
-	{
-		double a = ex->a;
-		double b = ex->b;
-		double fnscale = ex->fnscale;
-		double x = par[0];
-
-		// Transform to the interval (a,b]
-		if (Rcpp::is_infinite(a) && Rcpp::is_infinite(b) && a < 0 && b > 0) {
-			x_tx = x;
-		} else if (Rcpp::is_infinite(a) && a < 0) {
-			x_tx = b*plogis(x);
-		} else if (Rcpp::is_infinite(b) && b > 0) {
-			x_tx = Rcpp::exp(x) + a;
-		} else {
-			x_tx = (b-a) * Rcpp::plogis(x) + a;
-		}
-
-		// Call the weight function
-		fnscale * w(x_tx, true);
-	}
-
-	struct ext_data
-	{
-		int a;
-		int b;
-		double fnscale;
-	};
-
-	Rcpp::LogicalVector log_w_endpoints = Rcpp::LogicalVector::create(w(_a, true), w(_b, true));
+	Rcpp::NumericVector log_w_endpoints = Rcpp::NumericVector::create(w(_a, true), w(_b, true));
 	log_w_endpoints = log_w_endpoints[!Rcpp::is_na(log_w_endpoints)];
 	bool endpoint_pos_inf = Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints > 0);
 	bool endpoint_neg_inf = Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints < 0);
@@ -284,9 +287,9 @@ double UnivariateConstRegion::optimize(bool maximize = true, bool log = true) co
 		double Fmin;
 		double xin = 0;
 		double par;
-		double mach_eps = sqrt(std::numeric_limits<double>::epsilon);
+		double mach_eps = sqrt(std::numeric_limits<double>::epsilon());
 
-		struct ext_data ex = { _a, _b, -1*maximize + 1*minimize };
+		struct ext_data ex = { _a, _b, -1.0 * maximize + 1.0 * (!maximize) };
 
 		nmmin(
 			1L,        // In:  int n [number of parameters]
@@ -311,9 +314,17 @@ double UnivariateConstRegion::optimize(bool maximize = true, bool log = true) co
 		}
 
 		if (maximize) {
-			out = std::max(f_opt(std::floor(par)), f_opt(std::ceil(par)), log_w_endpoints);
+			double x1 = std::floor(par);
+			double x2 = std::ceil(par);
+			double f1 = f_opt(1L, &x1, &ex);
+			double f2 = f_opt(1L, &x2, &ex);
+			out = std::max(f1, f2, log_w_endpoints);
 		} else {
-			out = std::min(f_opt(std::floor(par)), f_opt(std::ceil(par)), log_w_endpoints);
+			double x1 = std::floor(par);
+			double x2 = std::ceil(par);
+			double f1 = f_opt(1L, &x1, &ex);
+			double f2 = f_opt(1L, &x2, &ex);
+			out = std::min(f1, f2, log_w_endpoints);
 		}
 	}
 

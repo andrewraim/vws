@@ -39,6 +39,18 @@ Rcpp::NumericVector log_sum_exp_mat(const Rcpp::NumericMatrix& x)
     return out;
 }
 
+double log_add2_exp(double x, double y)
+{
+	double s = std::min(x,y);
+	double t = std::max(x,y);
+	return t + std::log1p(exp(s - t));
+}
+
+double log_sub2_exp(double x, double y)
+{
+	return x + std::log1p(-exp(y - x));
+}
+
 Rcpp::NumericVector log_add2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y)
 {
 	const Rcpp::NumericVector& s = Rcpp::pmin(x,y);

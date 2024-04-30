@@ -1,10 +1,11 @@
-#ifndef FMMPROPOSAL_H
-#define FMMPROPOSAL_H
+#ifndef FMM_PROPOSAL_H
+#define FMM_PROPOSAL_H
 
 #include <Rcpp.h>
 #include "log-sum-exp.h"
 #include "categ.h"
 #include "Region.h"
+#include <iterator>
 
 namespace vws {
 
@@ -36,25 +37,25 @@ public:
 	//' @description
 	//' Constructor for FMMProposal.
 	//' @param regions A list of objects whose class derives from \code{Region}.
-	FMMProposal(const std::vector<Region<T>>& regions);
+	FMMProposal(ConstIterator itr);
 
 	//' @description
 	//' Access the vector \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
 	//' @param log If \code{TRUE} compute result on log-scale.
-	Rcpp::NumericVector xi_upper(bool log = false) const;
+	Rcpp::NumericVector get_xi_upper(bool log = false) const;
 
 	//' @description
 	//' Access the vector \eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.
 	//' @param log If \code{TRUE} compute result on log-scale.
-	Rcpp::NumericVector xi_lower(bool log = false) const;
+	Rcpp::NumericVector get_xi_lower(bool log = false) const;
 
 	//' @description
 	//' Access the vector \code{bifurcatable}.
-	bool get_bifurcatable() const;
+	Rcpp::LogicalVector get_bifurcatable() const;
 
 	//' @description
 	//' Access the vector \code{regions}.
-	std::vector<T> get_regions() const;
+	ConstIterator get_regions() const;
 
 	//' @description
 	//' Upper bound for rejection probability.
@@ -62,7 +63,9 @@ public:
 	//' total.
 	//' @param log If \code{TRUE} compute result on log-scale.
 	//' @return A vector of size \code{N} or a single scalar.
-	Rcpp::NumericVector rejection_bound(bool byregion = false, bool log = false) const;
+	Rcpp::NumericVector rejection_bound(bool log = false) const;
+
+	Rcpp::NumericVector rejection_bound_regions(bool log = false) const;
 
 	//' @description
 	//' Normalizing constant for proposal distribution.
@@ -77,8 +80,7 @@ public:
 	//' @return A list which each element is a saved draw.
 	std::vector<T> r(unsigned int n = 1) const;
 
-	std::pair<std::vector<T>, std::vector<unsigned int>>
-	r_ext(unsigned int n = 1) const;
+	std::pair<std::vector<T>, std::vector<unsigned int>> r_ext(unsigned int n = 1) const;
 
 	//' @description
 	//' Compute density of proposal distribution.
@@ -108,42 +110,95 @@ public:
 	//' @param n Number of regions to print.
 	void print(unsigned int n = 5) const;
 
+	void bifurcate(const Region<T>& r);
+
+	void adapt(unsigned int N);
+
 private:
-	std::vector<Region<T>> _regions; ////// TBD: Should these be sorted for subsequent searching?
+	void recache();
+
+	std::set<Region<T>> _regions; ////// TBD: Should these be sorted for subsequent searching?
 	Rcpp::NumericVector _log_xi_upper;
 	Rcpp::NumericVector _log_xi_lower;
-	std::vector<bool> _bifurcatable;
+	Rcpp::LogicalVector _bifurcatable;
 };
 
-
-template <class T>
-FMMProposal<T>::FMMProposal(const std::vector<Region<T>>& regions)
-	: _regions(std::vector<Region<T>>()), _log_xi_upper(), _log_xi_lower(), _bifurcatable()
+// Recall that region volumes reflect where there mixture is further
+// from the target: it takes into account both the weight difference
+// and the probability of being in that region.
+template <typename T>
+void FMMProposal<T>::adapt(unsigned int N)
 {
-	for (unsigned int j = 0; j < _regions.size(); j++) {
-		_regions.push_back(regions[j]);
-		_log_xi_upper.push_back(regions[j].xi_upper(true));
-		_log_xi_lower.push_back(regions[j].xi_lower(true));
-		_bifurcatable.push_back(regions[j].is_bifurcatable());
+	for (unsigned int j = 0; j < N; j++) {
+		unsigned int L = _regions.size();
+
+		// Each region's contribution to the rejection rate
+		Rcpp::NumericVector log_volume = rejection_bound_regions(true);
+
+		const Rcpp::LogicalVector& is_bifurcatable = get_bifurcatable();
+
+		const Rcpp::IntegerVector& idx = which(is_bifurcatable);
+		if (idx.length() == 0) {
+			Rcpp::warning("No regions left to bifurcate");
+			break;
+		}
+
+		for (unsigned int l = 0; l < L; l++) {
+			log_volume(l) *= std::pow(R_NegBin, is_bifurcatable);
+		}
+
+		unsigned int jdx = r_categ(1, log_volume, true);
+		const Region& r = _regions[jdx];
+
+		// Split the target region and make another proposal with it
+		std::pair<Region<T>,Region<T>> bif_out = r.bifurcate();
+		std::set<Region<T>>::iterator itr = _regions.find(r);
+		_regions.erase(itr);
+		_regions.insert(bif_out.left);
+		_regions.insert(bif_out.right);
+		recache();
 	}
 }
 
 template <class T>
-Rcpp::NumericVector FMMProposal<T>::xi_upper(bool log) const
+FMMProposal<T>::FMMProposal(ConstIterator itr)
+	: _regions(), _log_xi_upper(), _log_xi_lower(), _bifurcatable()
+{
+	_regions.insert(itr.begin(), itr.end());
+	recache();
+}
+
+template <class T>
+void FMMProposal<T>::recache()
+{
+	_log_xi_upper.clear();
+	_log_xi_lower.clear();
+	_bifurcatable.clear();
+
+	for (unsigned int j = 0; j < _regions.size(); j++) {
+		_log_xi_upper[j] = _regions[j].xi_upper(true);
+		_log_xi_lower[j] = _regions[j].xi_lower(true);
+		_bifurcatable[j] = _regions[j].is_bifurcatable();
+	}
+}
+
+
+template <class T>
+Rcpp::NumericVector FMMProposal<T>::get_xi_upper(bool log) const
 {
 	const Rcpp::NumericVector& out = _log_xi_upper;
 	if (log) { return out; } else { return exp(out); }
 }
 
 template <class T>
-Rcpp::NumericVector FMMProposal<T>::xi_lower(bool log) const
+Rcpp::NumericVector FMMProposal<T>::get_xi_lower(bool log) const
 {
 	const Rcpp::NumericVector& out = _log_xi_lower;
 	if (log) { return out; } else { return exp(out); }
 }
 
 template <class T>
-bool FMMProposal<T>::get_bifurcatable() const
+Rcpp::LogicalVector FMMProposal<T>::get_bifurcatable() const
 {
 	return _bifurcatable;
 }
@@ -155,30 +210,37 @@ std::vector<T> FMMProposal<T>::get_regions() const
 }
 
 template <class T>
-Rcpp::NumericVector FMMProposal<T>::rejection_bound(bool byregion, bool log) const
+Rcpp::NumericVector FMMProposal<T>::rejection_bound(bool log) const
 {
 	// Each region's contribution to the rejection rate bound
 	const Rcpp::NumericVector& out =
 		log_sub2_exp(_log_xi_upper, _log_xi_lower) -
 		log_sum_exp(_log_xi_upper);
 
-	if (!byregion) {
-		// Overall rejection rate bound
-		out = vws::log_sum_exp(out);
-	}
+	// Overall rejection rate bound
+	out = vws::log_sum_exp(out);
+	if (log) { return out; } else { return exp(out); }
+}
 
-	return log ? out : exp(out);
+template <class T>
+Rcpp::NumericVector FMMProposal<T>::rejection_bound_regions(bool log) const
+{
+	// Each region's contribution to the rejection rate bound
+	const Rcpp::NumericVector& out =
+		log_sub2_exp(_log_xi_upper, _log_xi_lower) -
+		log_sum_exp(_log_xi_upper);
+	if (log) { return out; } else { return exp(out); }
 }
 
 template <class T>
 double FMMProposal<T>::nc(bool log) const
 {
-	out = vws::log_sum_exp(_log_xi_upper);
+	double out = vws::log_sum_exp(_log_xi_upper);
 	return log ? out : exp(out);
 }
 
 template <class T>
-std::vector<T> FMMProposal<T>::r(unsigned int n = 1) const
+std::vector<T> FMMProposal<T>::r(unsigned int n) const
 {
 	return r_ext(n).first;
 }
@@ -191,12 +253,12 @@ FMMProposal<T>::r_ext(unsigned int n = 1) const
 
 	// Draw from the mixing weights, which are given on the log scale and
 	// not normalized.
-	idx = r_categ(n, p = _log_xi_upper, log_p = true);
+	idx = r_categ(n, _log_xi_upper, true);
 
 	// Draw the values from the respective mixture components.
 	std::vector<T> x;
 	for (unsigned int i = 0; i < n; i++) {
-		j = idx[i];
+		unsigned int j = idx[i];
 		x.push_back(_regions[j].r(1));
 	}
 
@@ -204,7 +266,7 @@ FMMProposal<T>::r_ext(unsigned int n = 1) const
 }
 
 template <class T>
-double FMMProposal<T>::d(const T& x, normalize = true, log = false) const
+double FMMProposal<T>::d(const T& x, bool normalize, bool log) const
 {
 	double log_nc = 0;
 	if (normalize) {
@@ -220,8 +282,8 @@ double FMMProposal<T>::d(const T& x, normalize = true, log = false) const
 	// define a "<" operator for region objects, we could consider a binary
 	// search.
 	for (unsigned int j = 0; j < N; j++) {
-		reg = _regions[j];
-		if (reg.s(x[i])) {
+		const Region<T>& reg = _regions[j];
+		if (reg.s(x)) {
 			out = reg.w_major(x, true) + reg.d_base(x, true) - log_nc;
 		}
 	}
@@ -230,11 +292,11 @@ double FMMProposal<T>::d(const T& x, normalize = true, log = false) const
 }
 
 template <class T>
-double FMMProposal<T>::d_target_unnorm(const T& x, bool log = true) const
+double FMMProposal<T>::d_target_unnorm(const T& x, bool log) const
 {
-	reg = _regions[0];
-	out = Map(function(z) { reg.w(z, true) + reg.d_base(z, true) }, x);
-	if (log) { return(unlist(out)); } else { return(exp(unlist(out))); }
+	const Region<T>& reg = _regions[0];
+	double out = reg.w(x, true) + reg.d_base(x, true);
+	return log ? out : exp(out);
 }
 
 template <class T>
