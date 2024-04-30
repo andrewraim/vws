@@ -11,6 +11,5 @@
 #include "FMMProposal.h"
 #include "RejectionControl.h"
 #include "rejection.h"
-#include "adapt.h"
 
 #endif

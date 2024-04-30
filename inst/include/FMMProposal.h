@@ -37,7 +37,7 @@ public:
 	//' @description
 	//' Constructor for FMMProposal.
 	//' @param regions A list of objects whose class derives from \code{Region}.
-	FMMProposal(ConstIterator itr);
+	FMMProposal(std::vector<Region<T>> regions);
 
 	//' @description
 	//' Access the vector \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
@@ -55,7 +55,7 @@ public:
 
 	//' @description
 	//' Access the vector \code{regions}.
-	ConstIterator get_regions() const;
+	template <typename T> std::set<Region<T>>::const_iterator get_regions() const;
 
 	//' @description
 	//' Upper bound for rejection probability.
@@ -118,9 +118,9 @@ private:
 	void recache();
 
 	std::set<Region<T>> _regions; ////// TBD: Should these be sorted for subsequent searching?
-	Rcpp::NumericVector _log_xi_upper;
-	Rcpp::NumericVector _log_xi_lower;
-	Rcpp::LogicalVector _bifurcatable;
+	std::vector<double> _log_xi_upper;
+	std::vector<double> _log_xi_lower;
+	std::vector<bool> _bifurcatable;
 };
 
 // Recall that region volumes reflect where there mixture is further
@@ -135,24 +135,24 @@ void FMMProposal<T>::adapt(unsigned int N)
 		// Each region's contribution to the rejection rate
 		Rcpp::NumericVector log_volume = rejection_bound_regions(true);
 
-		const Rcpp::LogicalVector& is_bifurcatable = get_bifurcatable();
-
-		const Rcpp::IntegerVector& idx = which(is_bifurcatable);
+		const Rcpp::IntegerVector& idx = which(_bifurcatable);
 		if (idx.length() == 0) {
 			Rcpp::warning("No regions left to bifurcate");
 			break;
 		}
 
 		for (unsigned int l = 0; l < L; l++) {
-			log_volume(l) *= std::pow(R_NegBin, is_bifurcatable);
+			log_volume(l) *= std::pow(R_NegInf, _bifurcatable[l]);
 		}
 
 		unsigned int jdx = r_categ(1, log_volume, true);
-		const Region& r = _regions[jdx];
+		auto itr = _regions.begin();
+		std::advance(itr, jdx);
+		const Region& r = *itr;
 
 		// Split the target region and make another proposal with it
 		std::pair<Region<T>,Region<T>> bif_out = r.bifurcate();
-		std::set<Region<T>>::iterator itr = _regions.find(r);
+		std::set<Region<T>>::const_iterator itr = _regions.find(r);
 		_regions.erase(itr);
 		_regions.insert(bif_out.left);
 		_regions.insert(bif_out.right);
@@ -161,19 +161,19 @@ void FMMProposal<T>::adapt(unsigned int N)
 }
 
 template <class T>
-FMMProposal<T>::FMMProposal(ConstIterator itr)
+FMMProposal<T>::FMMProposal(std::vector<Region<T>> regions)
 	: _regions(), _log_xi_upper(), _log_xi_lower(), _bifurcatable()
 {
-	_regions.insert(itr.begin(), itr.end());
+	_regions.insert(regions.begin(), regions.end());
 	recache();
 }
 
 template <class T>
 void FMMProposal<T>::recache()
 {
-	_log_xi_upper.clear();
-	_log_xi_lower.clear();
-	_bifurcatable.clear();
+	_log_xi_upper.resize(_regions.size());
+	_log_xi_lower.resize(_regions.size());
+	_bifurcatable.resize(_regions.size());
 
 	for (unsigned int j = 0; j < _regions.size(); j++) {
 		_log_xi_upper[j] = _regions[j].xi_upper(true);
@@ -204,7 +204,7 @@ Rcpp::LogicalVector FMMProposal<T>::get_bifurcatable() const
 }
 
 template <class T>
-std::vector<T> FMMProposal<T>::get_regions() const
+std::set<Region<T>>::const_iterator FMMProposal<T>::get_regions() const
 {
 	return _regions;
 }
@@ -253,7 +253,7 @@ FMMProposal<T>::r_ext(unsigned int n = 1) const
 
 	// Draw from the mixing weights, which are given on the log scale and
 	// not normalized.
-	idx = r_categ(n, _log_xi_upper, true);
+	const Rcpp::IntegerVector& idx = r_categ(n, Rcpp::as<Rcpp::NumericVector>(_log_xi_upper), true);
 
 	// Draw the values from the respective mixture components.
 	std::vector<T> x;
@@ -262,7 +262,7 @@ FMMProposal<T>::r_ext(unsigned int n = 1) const
 		x.push_back(_regions[j].r(1));
 	}
 
-	return std::pair<std::vector<T>, std::vector<unsigned int>>(x, idx);
+	return std::make_pair(x, idx);
 }
 
 template <class T>
@@ -320,7 +320,8 @@ void FMMProposal<T>::print(unsigned int n) const
 	printf("FMM Proposal with %d regions (display is unsorted)\n", N);
 
 	const Rcpp::DataFrame& tbl = summary();
-	Rcpp::print(Rcpp::head(tbl, n));
+	// Rcpp::print(Rcpp::head(tbl, n));
+	Rcpp::print(tbl);
 
 	if (N > n) {
 		printf("There are %d more regions not displayed\n", N - n);

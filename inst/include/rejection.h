@@ -56,7 +56,7 @@ namespace vws {
 //' @export
 template <typename T>
 std::pair<std::vector<T>, Rcpp::IntegerVector>
-rejection(const FMMProposal<T>& h, unsigned int n = 1, const RejectionControl& control)
+rejection(const FMMProposal<T>& h, unsigned int n, const RejectionControl& control)
 {
 	// TBD: Return a collection of saved T's. These may not be something Rcpp
 	// knows how to represent, but we will leave that up to the user.
@@ -94,7 +94,7 @@ rejection(const FMMProposal<T>& h, unsigned int n = 1, const RejectionControl& c
 
 			// Report progress after `report` candidates
 			unsigned int N_accepts = i + accept;
-			if ((N_rejects + N_accepts) %% report_period == 0) {
+			if ((N_rejects + N_accepts) % report_period == 0) {
 				logger("After %d candidates, %d accepts and %d rejects\n",
 					N_accepts + N_rejects, N_accepts, N_rejects);
 			}

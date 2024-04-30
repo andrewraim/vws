@@ -51,6 +51,37 @@ double log_sub2_exp(double x, double y)
 	return x + std::log1p(-exp(y - x));
 }
 
+
+std::vector<double> log_add2_exp(const std::vector<double>& x, const std::vector<double>& y)
+{
+	unsigned int n = x.size();
+	if (n != y.size()) {
+		Rcpp::stop("Dimensions do not match");
+	}
+
+	std::vector<double> out(n);
+	for (unsigned int i = 0; i < n; i++) {
+		out[i] =  log_add2_exp(x[i], y[i]);
+	}
+
+	return out;
+}
+
+std::vector<double> log_sub2_exp(const std::vector<double>& x, const std::vector<double>& y)
+{
+	unsigned int n = x.size();
+	if (n != y.size()) {
+		Rcpp::stop("Dimensions do not match");
+	}
+
+	std::vector<double> out(n);
+	for (unsigned int i = 0; i < n; i++) {
+		out[i] =  log_sub2_exp(x[i], y[i]);
+	}
+
+	return out;
+}
+
 Rcpp::NumericVector log_add2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y)
 {
 	const Rcpp::NumericVector& s = Rcpp::pmin(x,y);
