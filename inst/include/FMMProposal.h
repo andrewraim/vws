@@ -151,11 +151,11 @@ void FMMProposal<T>::adapt(unsigned int N)
 		const Region& r = *itr;
 
 		// Split the target region and make another proposal with it
-		std::pair<Region<T>,Region<T>> bif_out = r.bifurcate();
+		std::pair<std::unique_ptr<Region<T>>,std::unique_ptr<Region<T>>> bif_out = r.bifurcate();
 		std::set<Region<T>>::const_iterator itr = _regions.find(r);
 		_regions.erase(itr);
-		_regions.insert(bif_out.left);
-		_regions.insert(bif_out.right);
+		_regions.insert(*bif_out.left);
+		_regions.insert(*bif_out.right);
 		recache();
 	}
 }

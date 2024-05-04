@@ -53,13 +53,15 @@ namespace vws {
 //'
 //' @name univariate_helper
 //' @export
-template <class T> class UnivariateHelper
+template <class T>
+class UnivariateHelper
 {
 public:
-	virtual double d(const T& x, bool log = false) const = 0;
-	virtual double p(const T& q, bool lower = true, bool log = false) const = 0;
-	virtual double q(const T& p, bool lower = true, bool log = false) const = 0;
-	virtual double s(const T& x) const = 0;
+	virtual double d(T x, bool log = false) const = 0;
+	virtual double p(T q, bool lower = true, bool log = false) const = 0;
+	virtual double q(T p, bool lower = true, bool log = false) const = 0;
+	virtual double s(T x) const = 0;
+	virtual double w(T x, bool log = false) const = 0;
 };
 
 }
