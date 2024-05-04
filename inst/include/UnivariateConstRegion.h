@@ -206,7 +206,7 @@ UnivariateConstRegion::bifurcate(const double& x) const
 {
 	std::unique_ptr<Region<double>> p1(dynamic_cast<Region<double>*>(new UnivariateConstRegion(_a, x, *_helper)));
 	std::unique_ptr<Region<double>> p2(dynamic_cast<Region<double>*>(new UnivariateConstRegion(x, _b, *_helper)));
-	return std::make_pair(p1, p2);
+	return std::make_pair(std::move(p1), std::move(p2));
 
 	// UnivariateConstRegion s1(_a, x, *_helper);
 	// UnivariateConstRegion s2(x, _b, *_helper);
@@ -285,8 +285,8 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		_helper->w(_b, true)
 	);
 	log_w_endpoints = log_w_endpoints[!Rcpp::is_na(log_w_endpoints)];
-	bool endpoint_pos_inf = Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints > 0);
-	bool endpoint_neg_inf = Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints < 0);
+	bool endpoint_pos_inf = Rcpp::is_true(Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints > 0));
+	bool endpoint_neg_inf = Rcpp::is_true(Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints < 0));
 
 	double out;
 

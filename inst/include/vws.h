@@ -8,8 +8,8 @@
 #include "Region.h"
 #include "UnivariateHelper.h"
 #include "UnivariateConstRegion.h"
-// #include "FMMProposal.h"
+#include "FMMProposal.h"
 #include "RejectionControl.h"
-// #include "rejection.h"
+#include "rejection.h"
 
 #endif
