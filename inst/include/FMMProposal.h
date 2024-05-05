@@ -118,7 +118,8 @@ public:
 private:
 	void recache();
 
-	std::set<Region<T>> _regions; ////// TBD: Should these be sorted for subsequent searching?
+	std::set<Region<T>> _regions;
+	std::vector<Region<T>> _regions_vec;
 	std::vector<double> _log_xi_upper;
 	std::vector<double> _log_xi_lower;
 	std::vector<bool> _bifurcatable;
@@ -169,7 +170,7 @@ void FMMProposal<T>::adapt(unsigned int N)
 
 template <class T>
 FMMProposal<T>::FMMProposal(std::vector<Region<T>> regions)
-	: _regions(), _log_xi_upper(), _log_xi_lower(), _bifurcatable()
+	: _regions(), _regions_vec(), _log_xi_upper(), _log_xi_lower(), _bifurcatable()
 {
 	_regions.insert(regions.begin(), regions.end());
 	recache();
@@ -178,14 +179,22 @@ FMMProposal<T>::FMMProposal(std::vector<Region<T>> regions)
 template <class T>
 void FMMProposal<T>::recache()
 {
+	// TBD: This might be a good place to check for no overlaps, and perhaps to
+	// make sure there are no gaps?
+
+	_regions_vec.resize(_regions.size());
 	_log_xi_upper.resize(_regions.size());
 	_log_xi_lower.resize(_regions.size());
 	_bifurcatable.resize(_regions.size());
 
-	for (unsigned int j = 0; j < _regions.size(); j++) {
-		_log_xi_upper[j] = _regions[j].xi_upper(true);
-		_log_xi_lower[j] = _regions[j].xi_lower(true);
-		_bifurcatable[j] = _regions[j].is_bifurcatable();
+	unsigned int j = 0;
+	typename std::vector<Region<T>>::const_iterator itr = _regions.begin();
+	for (; itr != _regions.end(); ++itr) {
+		_regions_vec[j] = *itr;
+		_log_xi_upper[j] = itr->xi_upper(true);
+		_log_xi_lower[j] = itr->xi_lower(true);
+		_bifurcatable[j] = itr->is_bifurcatable();
+		j++;
 	}
 }
 
@@ -255,7 +264,7 @@ template <class T>
 typename std::pair<std::vector<T>, std::vector<unsigned int>>
 FMMProposal<T>::r_ext(unsigned int n) const
 {
-	unsigned int N = _regions.length();
+	unsigned int N = _regions.size();
 
 	// Draw from the mixing weights, which are given on the log scale and
 	// not normalized.
@@ -266,10 +275,11 @@ FMMProposal<T>::r_ext(unsigned int n) const
 	std::vector<T> x;
 	for (unsigned int i = 0; i < n; i++) {
 		unsigned int j = idx[i];
-		x.push_back(_regions[j].r(1));
+		const T& r = _regions[j].r(1);
+		x.push_back(r);
 	}
 
-	return std::make_pair(x, idx);
+	return std::make_pair(x, Rcpp::as<std::vector<unsigned int>>(idx));
 }
 
 template <class T>
@@ -289,16 +299,13 @@ double FMMProposal<T>::d(const T& x, bool normalize, bool log) const
 	// 2. Find the region in r _regions with lower bound x.
 	// 3. Make sure r contains x.
 	//
-	// We need a way to construct singleton regions of type Region<T> without
-	// accessing the specific subtype.
-	/*
-	const Region<T>& x_rej _regions.first()->singleton(x);
+	// Construct a singleton region with x to find which partition contains x.
+	const Region<T>& x_rej = _regions.begin()->singleton(x);
 	const Region<T>& reg = _regions.lower_bound(x_rej);
 	if (!reg.s(x)) {
 		Rcpp::stop("!reg.s(x)");
 	}
 	out = reg.w_major(x, true) + reg.d_base(x, true) - log_nc;
-	*/
 
 	// This search could be more efficient, but would need to be done in a
 	// way that can support any kind of region. For example, if we can
@@ -319,7 +326,7 @@ double FMMProposal<T>::d(const T& x, bool normalize, bool log) const
 template <class T>
 double FMMProposal<T>::d_target_unnorm(const T& x, bool log) const
 {
-	const Region<T>& reg = (*_regions.begin());
+	const Region<T>& reg = *_regions.begin();
 	double out = reg.w(x, true) + reg.d_base(x, true);
 	return log ? out : exp(out);
 }
