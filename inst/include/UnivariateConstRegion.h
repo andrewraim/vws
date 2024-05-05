@@ -72,21 +72,27 @@ public:
 	//' @param x Density argument.
 	bool s(const double& x) const;
 
+	double w(const double& x, bool log = true) const;
+
 	//' @description
 	//' Majorized weight function \eqn{\overline{w}_j} for this region.
 	//' @param x Argument to weight function.
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.
 	double w_major(const double& x, bool log = true) const;
 
-	std::pair<std::unique_ptr<Region<double>>,std::unique_ptr<Region<double>>>
-	bifurcate() const;
+	// std::pair<std::unique_ptr<Region<double>>,std::unique_ptr<Region<double>>>
+	// std::pair<Region<double>,Region<double>>
+	// bifurcate() const;
 
 	//' @description
 	//' Bifurcate this region into two regions. Use \code{x} as the bifurcation
 	//' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
 	//' @param x An optional bifurcation point.
-	std::pair<std::unique_ptr<Region<double>>,std::unique_ptr<Region<double>>>
-	bifurcate(const double& x) const;
+	// std::pair<std::unique_ptr<Region<double>>,std::unique_ptr<Region<double>>>
+	// std::pair<Region<double>,Region<double>>
+	// bifurcate(const double& x) const;
+
+	// Region<double> singleton(const double& x) const;
 
 	//' @description
 	//' Return a logical value indicating whether this region is bifurcatable.
@@ -174,14 +180,21 @@ bool UnivariateConstRegion::s(const double& x) const
 	return (_a < x & x <= _b) && _helper->s(x);
 }
 
+double UnivariateConstRegion::w(const double& x, bool log) const
+{
+	return _helper->w(x, log);
+}
+
 double UnivariateConstRegion::w_major(const double& x, bool log) const
 {
 	double out = _helper->s(x) ? _log_w_max : R_NegInf;
 	return log ? out : exp(out);
 }
 
-std::pair<std::unique_ptr<Region<double>>,std::unique_ptr<Region<double>>>
-UnivariateConstRegion::bifurcate() const
+// std::pair<std::unique_ptr<Region<double>>,std::unique_ptr<Region<double>>>
+std::pair<Region<double>,Region<double>>
+// UnivariateConstRegion::bifurcate() const
+bifurcate() const
 {
 	double x;
 
@@ -201,17 +214,31 @@ UnivariateConstRegion::bifurcate() const
 	return bifurcate(x);
 }
 
+/*
 std::pair<std::unique_ptr<Region<double>>,std::unique_ptr<Region<double>>>
 UnivariateConstRegion::bifurcate(const double& x) const
 {
 	std::unique_ptr<Region<double>> p1(dynamic_cast<Region<double>*>(new UnivariateConstRegion(_a, x, *_helper)));
 	std::unique_ptr<Region<double>> p2(dynamic_cast<Region<double>*>(new UnivariateConstRegion(x, _b, *_helper)));
 	return std::make_pair(std::move(p1), std::move(p2));
-
-	// UnivariateConstRegion s1(_a, x, *_helper);
-	// UnivariateConstRegion s2(x, _b, *_helper);
-	// return std::make_pair(s1, s2);
 }
+*/
+
+std::pair<Region<double>,Region<double>>
+// UnivariateConstRegion::bifurcate(const double& x) const
+bifurcate(const double& x) const
+{
+	return std::make_pair(
+		UnivariateConstRegion(_a, x, *_helper),
+		UnivariateConstRegion(x, _b, *_helper)
+	);
+}
+
+
+// Region<double> UnivariateConstRegion::singleton(const double& x) const
+// {
+// 	return UnivariateConstRegion(x, x, *_helper);
+// }
 
 bool UnivariateConstRegion::is_bifurcatable() const
 {
@@ -295,6 +322,9 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 	} else if (!maximize && endpoint_neg_inf) {
 		out = R_NegInf;
 	} else {
+
+		Rprintf("Trace: About to attempt Nelder-Mead call\n");
+
 		// Nelder-Mead algorithm from R.
 		// See https://cran.r-project.org/doc/manuals/R-exts.html#Optimization
 		// and https://stackoverflow.com/questions/12765304/calling-r-function-optim-from-c
@@ -325,6 +355,8 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 			100000     // In:  int maxit [maximum number of iterations]
 		);
 
+		Rprintf("Trace: Finished Nelder-Mead call\n");
+
 		if (fail) {
 			Rcpp::warning("opt_out: convergence status was ", fail);
 		}
@@ -334,15 +366,26 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 			double x2 = std::ceil(par);
 			double f1 = f_opt(1L, &x1, &ex);
 			double f2 = f_opt(1L, &x2, &ex);
-			out = std::max(f1, f2, log_w_endpoints);
+			Rcpp::print(log_w_endpoints);
+			Rprintf("Trace: about to call std::max\n");
+
+			double max_lwe = Rcpp::max(log_w_endpoints);
+			out = std::max({f1, f2, max_lwe});
+			// Rcpp::NumericVector el = concat
+			// out = std::max(f1, std::max(f2, Rcpp::max(log_w_endpoints)));
 		} else {
 			double x1 = std::floor(par);
 			double x2 = std::ceil(par);
 			double f1 = f_opt(1L, &x1, &ex);
 			double f2 = f_opt(1L, &x2, &ex);
-			out = std::min(f1, f2, log_w_endpoints);
+			Rprintf("Trace: about to call std::min\n");
+			double min_lwe = Rcpp::min(log_w_endpoints);
+			// out = std::min(f1, f2, Rcpp::max(log_w_endpoints));
+			out = std::min({f1, f2, min_lwe});
 		}
 	}
+
+	Rprintf("Trace: Result of optimize is out = %g\n", out);
 
 	return log ? out : exp(out);
 }

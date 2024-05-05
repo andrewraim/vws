@@ -77,7 +77,8 @@ rejection(const FMMProposal<T>& h, unsigned int n, const RejectionControl& contr
 		accept = false;
 		while (!accept && N_rejects < max_rejects) {
 			double v = R::runif(0, 1);
-			const T& x = h.r(n = 1);
+			const std::vector<T>& draws = h.r(n = 1);
+			const T& x = draws[0];
 			double log_fx = h.d_target_unnorm(x);
 			double log_hx = h.d(x, false, false);
 			double log_ratio = log_fx - log_hx - log_M;

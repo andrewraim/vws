@@ -284,16 +284,34 @@ double FMMProposal<T>::d(const T& x, bool normalize, bool log) const
 
 	unsigned int N = _regions.size();
 
+	// An idea
+	// 1. Create a singleton region with x only.
+	// 2. Find the region in r _regions with lower bound x.
+	// 3. Make sure r contains x.
+	//
+	// We need a way to construct singleton regions of type Region<T> without
+	// accessing the specific subtype.
+	/*
+	const Region<T>& x_rej _regions.first()->singleton(x);
+	const Region<T>& reg = _regions.lower_bound(x_rej);
+	if (!reg.s(x)) {
+		Rcpp::stop("!reg.s(x)");
+	}
+	out = reg.w_major(x, true) + reg.d_base(x, true) - log_nc;
+	*/
+
 	// This search could be more efficient, but would need to be done in a
 	// way that can support any kind of region. For example, if we can
 	// define a "<" operator for region objects, we could consider a binary
 	// search.
+	/*
 	for (unsigned int j = 0; j < N; j++) {
 		const Region<T>& reg = _regions[j];
 		if (reg.s(x)) {
 			out = reg.w_major(x, true) + reg.d_base(x, true) - log_nc;
 		}
 	}
+	*/
 
 	return log ? out : exp(out);
 }
@@ -301,7 +319,7 @@ double FMMProposal<T>::d(const T& x, bool normalize, bool log) const
 template <class T>
 double FMMProposal<T>::d_target_unnorm(const T& x, bool log) const
 {
-	const Region<T>& reg = _regions[0];
+	const Region<T>& reg = (*_regions.begin());
 	double out = reg.w(x, true) + reg.d_base(x, true);
 	return log ? out : exp(out);
 }
