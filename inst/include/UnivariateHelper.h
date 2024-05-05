@@ -62,7 +62,6 @@ public:
 	virtual double q(T p, bool lower = true, bool log = false) const = 0;
 	virtual double s(T x) const = 0;
 	virtual double w(T x, bool log = false) const = 0;
-	virtual void operator=(const UnivariateHelper<T>& x) = 0;
 };
 
 }

@@ -18,7 +18,7 @@ public:
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.
 	double d_base(const T& x, bool log = false) const {
 		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
+		return 0;
 	}
 
 	//' @description
@@ -27,15 +27,16 @@ public:
 	//' @return A list of draws, with one draw per list element.
 	std::vector<T> r(unsigned int n) const {
 		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
+		std::vector<T> out;
+		return out;
 	}
 
 	//' @description
 	//' Density of \eqn{g_j} specific to this region.
 	//' @param x Density argument.
-	double d(const T& x) const {
+	double d(const T& x, bool log = false) const {
 		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
+		return 0;
 	}
 
 	//' @description
@@ -44,12 +45,12 @@ public:
 	//' @param x Density argument.
 	bool s(const T& x) const {
 		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
+		return false;
 	}
 
 	double w(const T& x, bool log = true) const {
 		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
+		return 0;
 	}
 
 	//' @description
@@ -58,7 +59,7 @@ public:
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.
 	double w_major(const T& x, bool log = true) const {
 		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
+		return 0;
 	}
 
 	//' @description
@@ -87,7 +88,7 @@ public:
 	//' Return a logical value indicating whether this region is bifurcatable.
 	bool is_bifurcatable() const {
 		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
+		return false;
 	}
 
 	//' @description
@@ -95,7 +96,7 @@ public:
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.
 	double get_xi_upper(bool log = true) const {
 		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
+		return 0;
 	}
 
 	//' @description
@@ -103,7 +104,7 @@ public:
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.
 	double get_xi_lower(bool log = true) const {
 		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
+		return 0;
 	}
 
 	//' @description
@@ -119,7 +120,13 @@ public:
 		static_assert(false, "Specialized implementation for template is needed");
 	};
 
+	/*
 	bool operator<(const Region<T>& x) const {
+		static_assert(false, "Specialized implementation for template is needed");
+		return NULL;
+	}
+
+	bool operator==(const Region<T>& x) const {
 		static_assert(false, "Specialized implementation for template is needed");
 		return NULL;
 	}
@@ -128,6 +135,7 @@ public:
 		static_assert(false, "Specialized implementation for template is needed");
 		return NULL;
 	}
+	*/
 };
 
 }

@@ -25,7 +25,7 @@ public:
 		double out = x > 0 ? -std::log(x) - std::pow(std::log(x) - _mu, 2.0) / (2*_sigma2) + std::log(x > 0) : R_NegInf;
 		if (log) { return out; } else { return exp(out); }
 	}
-	UnivariateHelper<T> operator=(const UnivariateHelper<T>& x) {
+	MyHelper operator=(const MyHelper& x) {
 		_mu = x._mu;
 		_sigma2 = x._sigma2;
 		_z = x._z;
@@ -48,7 +48,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	printf("control.max_rejects_action = %d\n", control.get_max_rejects_action());
 
 	MyHelper helper(0.0, 1.0, -10, 5.0);
-	vws::Region<double> supp(0, R_PosInf, helper);
+	vws::UnivariateConstRegion supp(0, R_PosInf, helper);
 
 	std::vector<vws::Region<double>> regions;
 	regions.push_back(supp);

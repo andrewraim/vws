@@ -188,11 +188,11 @@ void FMMProposal<T>::recache()
 	_bifurcatable.resize(_regions.size());
 
 	unsigned int j = 0;
-	typename std::vector<Region<T>>::const_iterator itr = _regions.begin();
+	typename std::set<Region<T>>::const_iterator itr = _regions.begin();
 	for (; itr != _regions.end(); ++itr) {
 		_regions_vec[j] = *itr;
-		_log_xi_upper[j] = itr->xi_upper(true);
-		_log_xi_lower[j] = itr->xi_lower(true);
+		_log_xi_upper[j] = itr->get_xi_upper(true);
+		_log_xi_lower[j] = itr->get_xi_lower(true);
 		_bifurcatable[j] = itr->is_bifurcatable();
 		j++;
 	}
@@ -275,8 +275,8 @@ FMMProposal<T>::r_ext(unsigned int n) const
 	std::vector<T> x;
 	for (unsigned int i = 0; i < n; i++) {
 		unsigned int j = idx[i];
-		const T& r = _regions[j].r(1);
-		x.push_back(r);
+		const std::vector<T>& draws = _regions_vec[j].r(1);
+		x.push_back(draws[0]);
 	}
 
 	return std::make_pair(x, Rcpp::as<std::vector<unsigned int>>(idx));
@@ -301,11 +301,11 @@ double FMMProposal<T>::d(const T& x, bool normalize, bool log) const
 	//
 	// Construct a singleton region with x to find which partition contains x.
 	const Region<T>& x_rej = _regions.begin()->singleton(x);
-	const Region<T>& reg = _regions.lower_bound(x_rej);
-	if (!reg.s(x)) {
-		Rcpp::stop("!reg.s(x)");
+	typename std::set<Region<T>>::const_iterator itr_lower = _regions.lower_bound(x_rej);
+	if (!itr_lower->s(x)) {
+		Rcpp::stop("!itr_lower->s(x)");
 	}
-	out = reg.w_major(x, true) + reg.d_base(x, true) - log_nc;
+	out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - log_nc;
 
 	// This search could be more efficient, but would need to be done in a
 	// way that can support any kind of region. For example, if we can
