@@ -3,7 +3,6 @@
 
 #include <Rcpp.h>
 #include <memory>
-#include <type_traits>
 
 namespace vws {
 
@@ -16,7 +15,7 @@ public:
 	//' Density function \eqn{g} for the base distribution.
 	//' @param x Density argument.
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.
-	virtual double d_base(const T& x, bool log = false) const  = 0;
+	virtual double d_base(const T& x, bool log = false) const = 0;
 
 	//' @description
 	//' Generate a draw from \eqn{g_j} specific to this region.
@@ -33,9 +32,9 @@ public:
 	//' Test if given \code{x} is in the support for the \eqn{g_j} specific to this
 	//' region.
 	//' @param x Density argument.
-	virtual bool s(const T& x) const  = 0;
+	virtual bool s(const T& x) const = 0;
 
-	virtual double w(const T& x, bool log = true) const  = 0;
+	virtual double w(const T& x, bool log = true) const = 0;
 
 	//' @description
 	//' Majorized weight function \eqn{\overline{w}_j} for this region.
@@ -58,7 +57,7 @@ public:
 	virtual std::unique_ptr<Region<T>> bifurcate_first(const T& x) const = 0;
 	virtual std::unique_ptr<Region<T>> bifurcate_second(const T& x) const = 0;
 
-	virtual Region<T> singleton(const T& x) const = 0;
+	virtual std::unique_ptr<Region<T>> singleton(const T& x) const = 0;
 
 	//' @description
 	//' Return a logical value indicating whether this region is bifurcatable.
@@ -83,20 +82,11 @@ public:
 	virtual void print() const = 0;
 
 	/*
-	bool operator<(const Region<T>& x) const {
-		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
-	}
+	virtual bool operator<(const Region<T>& x) const = 0;
 
-	bool operator==(const Region<T>& x) const {
-		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
-	}
+	virtual bool operator==(const Region<T>& x) const = 0;
 
-	Region<T> operator=(const Region<T>& x) {
-		static_assert(false, "Specialized implementation for template is needed");
-		return NULL;
-	}
+	virtual const Region<T>& operator=(const Region<T>& x) = 0;
 	*/
 };
 

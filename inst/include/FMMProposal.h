@@ -31,14 +31,14 @@ namespace vws {
 //' }
 //'
 //' @export
-template <class T>
+template <class T, class R>
 class FMMProposal
 {
 public:
 	//' @description
 	//' Constructor for FMMProposal.
 	//' @param regions A list of objects whose class derives from \code{Region}.
-	FMMProposal(std::vector<Region<T>> regions);
+	FMMProposal(const std::vector<R>& regions);
 
 	//' @description
 	//' Access the vector \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
@@ -56,7 +56,7 @@ public:
 
 	//' @description
 	//' Access the vector \code{regions}.
-	typename std::set<Region<T>>::const_iterator get_regions() const;
+	typename std::set<R>::const_iterator get_regions() const;
 
 	//' @description
 	//' Upper bound for rejection probability.
@@ -111,15 +111,15 @@ public:
 	//' @param n Number of regions to print.
 	void print(unsigned int n = 5) const;
 
-	void bifurcate(const Region<T>& r);
+	void bifurcate(const R& r);
 
 	void adapt(unsigned int N);
 
 private:
 	void recache();
 
-	std::set<Region<T>> _regions;
-	std::vector<Region<T>> _regions_vec;
+	std::set<R> _regions;
+	std::vector<R> _regions_vec;
 	std::vector<double> _log_xi_upper;
 	std::vector<double> _log_xi_lower;
 	std::vector<bool> _bifurcatable;
@@ -128,8 +128,8 @@ private:
 // Recall that region volumes reflect where there mixture is further
 // from the target: it takes into account both the weight difference
 // and the probability of being in that region.
-template <typename T>
-void FMMProposal<T>::adapt(unsigned int N)
+template <typename T, typename R>
+void FMMProposal<T,R>::adapt(unsigned int N)
 {
 	for (unsigned int j = 0; j < N; j++) {
 		unsigned int L = _regions.size();
@@ -156,39 +156,40 @@ void FMMProposal<T>::adapt(unsigned int N)
 		unsigned int jdx = r_categ(1, log_volume, true);
 		auto itr = _regions.begin();
 		std::advance(itr, jdx);
-		const Region<T>& r = *itr;
+		const R& r = *itr;
 
 		// Split the target region and make another proposal with it
-		const std::pair<std::unique_ptr<Region<T>>,std::unique_ptr<Region<T>>>& bif_out = r.bifurcate();
-		typename std::set<Region<T>>::const_iterator itr_rm = _regions.find(r);
+		const std::unique_ptr<R>& bif_first = r.bifurcate_first();
+		const std::unique_ptr<R>& bif_second = r.bifurcate_second();
+		typename std::set<R>::const_iterator itr_rm = _regions.find(r);
 		_regions.erase(itr_rm);
-		_regions.insert(*bif_out.left);
-		_regions.insert(*bif_out.right);
+		_regions.insert(*bif_first);
+		_regions.insert(*bif_second);
 		recache();
 	}
 }
 
-template <class T>
-FMMProposal<T>::FMMProposal(std::vector<Region<T>> regions)
+template <class T, typename R>
+FMMProposal<T,R>::FMMProposal(const std::vector<R>& regions)
 	: _regions(), _regions_vec(), _log_xi_upper(), _log_xi_lower(), _bifurcatable()
 {
 	_regions.insert(regions.begin(), regions.end());
 	recache();
 }
 
-template <class T>
-void FMMProposal<T>::recache()
+template <class T, typename R>
+void FMMProposal<T,R>::recache()
 {
 	// TBD: This might be a good place to check for no overlaps, and perhaps to
 	// make sure there are no gaps?
 
-	_regions_vec.resize(_regions.size());
-	_log_xi_upper.resize(_regions.size());
-	_log_xi_lower.resize(_regions.size());
-	_bifurcatable.resize(_regions.size());
+	_regions_vec.clear();
+	_log_xi_upper.clear();
+	_log_xi_lower.clear();
+	_bifurcatable.clear();
 
 	unsigned int j = 0;
-	typename std::set<Region<T>>::const_iterator itr = _regions.begin();
+	typename std::set<R>::const_iterator itr = _regions.begin();
 	for (; itr != _regions.end(); ++itr) {
 		_regions_vec[j] = *itr;
 		_log_xi_upper[j] = itr->get_xi_upper(true);
@@ -199,32 +200,32 @@ void FMMProposal<T>::recache()
 }
 
 
-template <class T>
-std::vector<double>::const_iterator FMMProposal<T>::get_log_xi_upper() const
+template <class T, typename R>
+std::vector<double>::const_iterator FMMProposal<T,R>::get_log_xi_upper() const
 {
 	return _log_xi_upper.begin();
 }
 
-template <class T>
-std::vector<double>::const_iterator FMMProposal<T>::get_log_xi_lower() const
+template <class T, typename R>
+std::vector<double>::const_iterator FMMProposal<T,R>::get_log_xi_lower() const
 {
 	return _log_xi_lower.begin();
 }
 
-template <class T>
-std::vector<bool>::const_iterator FMMProposal<T>::get_bifurcatable() const
+template <class T, typename R>
+std::vector<bool>::const_iterator FMMProposal<T,R>::get_bifurcatable() const
 {
 	return _bifurcatable.begin();
 }
 
-template <class T>
-typename std::set<Region<T>>::const_iterator FMMProposal<T>::get_regions() const
+template <class T, typename R>
+typename std::set<R>::const_iterator FMMProposal<T,R>::get_regions() const
 {
 	return _regions.begin();
 }
 
-template <class T>
-Rcpp::NumericVector FMMProposal<T>::rejection_bound(bool log) const
+template <class T, typename R>
+Rcpp::NumericVector FMMProposal<T,R>::rejection_bound(bool log) const
 {
 	// Each region's contribution to the rejection rate bound
 	Rcpp::NumericVector lxl(_log_xi_lower.begin(), _log_xi_lower.end());
@@ -236,8 +237,8 @@ Rcpp::NumericVector FMMProposal<T>::rejection_bound(bool log) const
 	if (log) { return out; } else { return exp(out); }
 }
 
-template <class T>
-Rcpp::NumericVector FMMProposal<T>::rejection_bound_regions(bool log) const
+template <class T, typename R>
+Rcpp::NumericVector FMMProposal<T,R>::rejection_bound_regions(bool log) const
 {
 	// Each region's contribution to the rejection rate bound
 	Rcpp::NumericVector lxl(_log_xi_lower.begin(), _log_xi_lower.end());
@@ -246,23 +247,23 @@ Rcpp::NumericVector FMMProposal<T>::rejection_bound_regions(bool log) const
 	if (log) { return out; } else { return exp(out); }
 }
 
-template <class T>
-double FMMProposal<T>::nc(bool log) const
+template <class T, typename R>
+double FMMProposal<T,R>::nc(bool log) const
 {
 	Rcpp::NumericVector lxu(_log_xi_upper.begin(), _log_xi_upper.end());
 	double out = vws::log_sum_exp(lxu);
 	return log ? out : exp(out);
 }
 
-template <class T>
-typename std::vector<T> FMMProposal<T>::r(unsigned int n) const
+template <class T, typename R>
+typename std::vector<T> FMMProposal<T,R>::r(unsigned int n) const
 {
 	return r_ext(n).first;
 }
 
-template <class T>
+template <class T, typename R>
 typename std::pair<std::vector<T>, std::vector<unsigned int>>
-FMMProposal<T>::r_ext(unsigned int n) const
+FMMProposal<T,R>::r_ext(unsigned int n) const
 {
 	unsigned int N = _regions.size();
 
@@ -282,8 +283,8 @@ FMMProposal<T>::r_ext(unsigned int n) const
 	return std::make_pair(x, Rcpp::as<std::vector<unsigned int>>(idx));
 }
 
-template <class T>
-double FMMProposal<T>::d(const T& x, bool normalize, bool log) const
+template <class T, typename R>
+double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 {
 	double log_nc = 0;
 	if (normalize) {
@@ -300,8 +301,8 @@ double FMMProposal<T>::d(const T& x, bool normalize, bool log) const
 	// 3. Make sure r contains x.
 	//
 	// Construct a singleton region with x to find which partition contains x.
-	const Region<T>& x_rej = _regions.begin()->singleton(x);
-	typename std::set<Region<T>>::const_iterator itr_lower = _regions.lower_bound(x_rej);
+	std::unique_ptr<R> x_rej = _regions.begin()->singleton(x);
+	typename std::set<R>::const_iterator itr_lower = _regions.lower_bound(*x_rej);
 	if (!itr_lower->s(x)) {
 		Rcpp::stop("!itr_lower->s(x)");
 	}
@@ -313,7 +314,7 @@ double FMMProposal<T>::d(const T& x, bool normalize, bool log) const
 	// search.
 	/*
 	for (unsigned int j = 0; j < N; j++) {
-		const Region<T>& reg = _regions[j];
+		const R& reg = _regions[j];
 		if (reg.s(x)) {
 			out = reg.w_major(x, true) + reg.d_base(x, true) - log_nc;
 		}
@@ -323,16 +324,16 @@ double FMMProposal<T>::d(const T& x, bool normalize, bool log) const
 	return log ? out : exp(out);
 }
 
-template <class T>
-double FMMProposal<T>::d_target_unnorm(const T& x, bool log) const
+template <class T, typename R>
+double FMMProposal<T,R>::d_target_unnorm(const T& x, bool log) const
 {
-	const Region<T>& reg = *_regions.begin();
+	const R& reg = *_regions.begin();
 	double out = reg.w(x, true) + reg.d_base(x, true);
 	return log ? out : exp(out);
 }
 
-template <class T>
-Rcpp::DataFrame FMMProposal<T>::summary() const
+template <class T, typename R>
+Rcpp::DataFrame FMMProposal<T,R>::summary() const
 {
 	/*
 	tbl = data.frame(
@@ -345,8 +346,8 @@ Rcpp::DataFrame FMMProposal<T>::summary() const
 	return Rcpp::DataFrame();
 }
 
-template <class T>
-void FMMProposal<T>::print(unsigned int n) const
+template <class T, typename R>
+void FMMProposal<T,R>::print(unsigned int n) const
 {
 	unsigned int N = _regions.size();
 	printf("FMM Proposal with %d regions (display is unsorted)\n", N);

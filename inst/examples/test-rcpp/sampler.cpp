@@ -25,7 +25,7 @@ public:
 		double out = x > 0 ? -std::log(x) - std::pow(std::log(x) - _mu, 2.0) / (2*_sigma2) + std::log(x > 0) : R_NegInf;
 		if (log) { return out; } else { return exp(out); }
 	}
-	MyHelper operator=(const MyHelper& x) {
+	const MyHelper& operator=(const MyHelper& x) {
 		_mu = x._mu;
 		_sigma2 = x._sigma2;
 		_z = x._z;
@@ -50,15 +50,17 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	MyHelper helper(0.0, 1.0, -10, 5.0);
 	vws::UnivariateConstRegion supp(0, R_PosInf, helper);
 
-	std::vector<vws::Region<double>> regions;
+	std::vector<vws::UnivariateConstRegion> regions;
 	regions.push_back(supp);
 
-	vws::FMMProposal<double> h(regions);
+	vws::FMMProposal<double, vws::UnivariateConstRegion> h(regions);
 
 	const std::pair<std::vector<double>, Rcpp::IntegerVector> out = vws::rejection(h, n, control);
 
-	return Rcpp::List::create(
-		Rcpp::Named("draws") = out.first,
-		Rcpp::Named("rejections") = out.second
-	);
+//	return Rcpp::List::create(
+//		Rcpp::Named("draws") = out.first,
+//		Rcpp::Named("rejections") = out.second
+//	);
+
+	return Rcpp::List::create();
 }

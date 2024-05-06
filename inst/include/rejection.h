@@ -54,9 +54,9 @@ namespace vws {
 //'
 //' @name rejection
 //' @export
-template <typename T>
+template <typename T, typename R>
 std::pair<std::vector<T>, Rcpp::IntegerVector>
-rejection(const FMMProposal<T>& h, unsigned int n, const RejectionControl& control)
+rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& control)
 {
 	// TBD: Return a collection of saved T's. These may not be something Rcpp
 	// knows how to represent, but we will leave that up to the user.
