@@ -45,22 +45,22 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	double lambda2)
 {
 	vws::RejectionControl control;
+	printf("control.max_rejects = %d\n", control.get_max_rejects());
+	printf("control.report_period = %d\n", control.get_report_period());
 	printf("control.max_rejects_action = %d\n", control.get_max_rejects_action());
 
 	MyHelper helper(0.0, 1.0, -10, 5.0);
 	vws::UnivariateConstRegion supp(0, R_PosInf, helper);
 
-	std::vector<vws::UnivariateConstRegion> regions;
+	std::vector<vws::Region<double>> regions;
 	regions.push_back(supp);
 
-	vws::FMMProposal<double, vws::UnivariateConstRegion> h(regions);
+	vws::FMMProposal<double> h(regions);
 
 	const std::pair<std::vector<double>, Rcpp::IntegerVector> out = vws::rejection(h, n, control);
 
-//	return Rcpp::List::create(
-//		Rcpp::Named("draws") = out.first,
-//		Rcpp::Named("rejections") = out.second
-//	);
-
-	return Rcpp::List::create();
+	return Rcpp::List::create(
+		Rcpp::Named("draws") = out.first,
+		Rcpp::Named("rejections") = out.second
+	);
 }

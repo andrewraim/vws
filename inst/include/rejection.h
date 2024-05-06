@@ -54,9 +54,9 @@ namespace vws {
 //'
 //' @name rejection
 //' @export
-template <typename T, typename R>
+template <typename T>
 std::pair<std::vector<T>, Rcpp::IntegerVector>
-rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& control)
+rejection(const FMMProposal<T>& h, unsigned int n, const RejectionControl& control)
 {
 	// TBD: Return a collection of saved T's. These may not be something Rcpp
 	// knows how to represent, but we will leave that up to the user.
@@ -76,8 +76,8 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 	for (unsigned int i = 0; i < n; i++) {
 		accept = false;
 		while (!accept && N_rejects < max_rejects) {
-			double v = R::runif(0, 1);
-			const std::vector<T>& draws = h.r(n = 1);
+			double v = ::R::runif(0, 1);
+			const std::vector<T>& draws = h.r(1);
 			const T& x = draws[0];
 			double log_fx = h.d_target_unnorm(x);
 			double log_hx = h.d(x, false, false);
@@ -103,11 +103,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 	}
 
 	if (N_rejects >= max_rejects) {
-
-		// TBD: load this from a control object
-		MaxRejectsAction action_incomplete = stop;
-
-		switch(action_incomplete) {
+		switch(max_rejects_action) {
 			case MaxRejectsAction::stop:
 		    	Rcpp::stop("Reached maximum number of rejects: %d\n", max_rejects);
 		    	break;

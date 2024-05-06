@@ -252,23 +252,17 @@ std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_second() const
 
 std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_first(const double& x) const
 {
-	return std::make_unique<UnivariateConstRegion>(_a, x, *_helper);
-	// std::unique_ptr<Region<double>> p(dynamic_cast<Region<double>*>(new UnivariateConstRegion(_a, x, *_helper)));
-	// return p;
+	return std::make_unique<Region<double>>(_a, x, *_helper);
 }
 
 std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_second(const double& x) const
 {
-	return std::make_unique<UnivariateConstRegion>(x, _b, *_helper);
-	// std::unique_ptr<Region<double>> p(dynamic_cast<Region<double>*>(new UnivariateConstRegion(x, _b, *_helper)));
-	// return p;
+	return std::make_unique<Region<double>>(x, _b, *_helper);
 }
 
 std::unique_ptr<Region<double>> UnivariateConstRegion::singleton(const double& x) const
 {
-	return std::make_unique<UnivariateConstRegion>(x, x, *_helper);
-	// std::unique_ptr<Region<double>> p(dynamic_cast<Region<double>*>(new UnivariateConstRegion(x, x, *_helper)));
-	// return p;
+	return std::make_unique<Region<double>>(x, x, *_helper);
 }
 
 bool UnivariateConstRegion::is_bifurcatable() const
