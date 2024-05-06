@@ -49,15 +49,27 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	printf("control.report_period = %d\n", control.get_report_period());
 	printf("control.max_rejects_action = %d\n", control.get_max_rejects_action());
 
-	MyHelper helper(0.0, 1.0, -10, 5.0);
-	vws::UnivariateConstRegion supp(0, R_PosInf, helper);
+	printf("About to build helper\n");
 
-	std::vector<vws::Region<double>> regions;
+	MyHelper helper(0.0, 1.0, -10, 5.0);
+	vws::UnivariateConstRegion supp(0.0, R_PosInf, helper);
+
+	printf("About to construct supp\n");
+
+	std::vector<vws::UnivariateConstRegion> regions;
 	regions.push_back(supp);
 
-	vws::FMMProposal<double> h(regions);
+	printf("About to make proposal\n");
 
-	const std::pair<std::vector<double>, Rcpp::IntegerVector> out = vws::rejection(h, n, control);
+	vws::FMMProposal<double, vws::UnivariateConstRegion> h(regions);
+
+	printf("About to adapt\n");
+	h.adapt(99);
+
+	printf("About to call rejection\n");
+
+	const std::pair<std::vector<double>, std::vector<unsigned int>>& out =
+		vws::rejection(h, n, control);
 
 	return Rcpp::List::create(
 		Rcpp::Named("draws") = out.first,

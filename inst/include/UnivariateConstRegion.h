@@ -80,21 +80,17 @@ public:
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.
 	double w_major(const double& x, bool log = true) const;
 
-	// std::pair<std::unique_ptr<Region<double>>,std::unique_ptr<Region<double>>>
-	// std::pair<Region<double>,Region<double>> bifurcate() const;
-	std::unique_ptr<Region<double>> bifurcate_first() const;
-	std::unique_ptr<Region<double>> bifurcate_second() const;
+	UnivariateConstRegion bifurcate_first() const;
+	UnivariateConstRegion bifurcate_second() const;
 
 	//' @description
 	//' Bifurcate this region into two regions. Use \code{x} as the bifurcation
 	//' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
 	//' @param x An optional bifurcation point.
-	// std::pair<std::unique_ptr<Region<double>>,std::unique_ptr<Region<double>>>
-	// std::pair<Region<double>,Region<double>> bifurcate(const double& x) const;
-	std::unique_ptr<Region<double>> bifurcate_first(const double& x) const;
-	std::unique_ptr<Region<double>> bifurcate_second(const double& x) const;
+	UnivariateConstRegion bifurcate_first(const double& x) const;
+	UnivariateConstRegion bifurcate_second(const double& x) const;
 
-	std::unique_ptr<Region<double>> singleton(const double& x) const;
+	UnivariateConstRegion singleton(const double& x) const;
 
 	//' @description
 	//' Return a logical value indicating whether this region is bifurcatable.
@@ -210,7 +206,7 @@ double UnivariateConstRegion::w_major(const double& x, bool log) const
 	return log ? out : exp(out);
 }
 
-std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_first() const
+UnivariateConstRegion UnivariateConstRegion::bifurcate_first() const
 {
 	double x;
 
@@ -222,7 +218,7 @@ std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_first() const
 		x = _b - abs(_b) - 1;
 	} else if (std::isinf(_b) && _b > 0) {
 		// Right endpoint is Inf. Split based on left endpoint.
-		x = _a + fabs(_a) + 1;
+		x = _a + std::fabs(_a) + 1;
 	} else {
 		x = (_a + _b) / 2;
 	}
@@ -230,7 +226,7 @@ std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_first() const
 	return bifurcate_first(x);
 }
 
-std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_second() const
+UnivariateConstRegion UnivariateConstRegion::bifurcate_second() const
 {
 	double x;
 
@@ -239,7 +235,7 @@ std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_second() const
 		x = 0;
 	} else if (std::isinf(_a) && _a < 0) {
 		// Left endpoint is -Inf. Split based on right endpoint.
-		x = _b - abs(_b) - 1;
+		x = _b - std::fabs(_b) - 1;
 	} else if (std::isinf(_b) && _b > 0) {
 		// Right endpoint is Inf. Split based on left endpoint.
 		x = _a + fabs(_a) + 1;
@@ -250,19 +246,19 @@ std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_second() const
 	return bifurcate_second(x);
 }
 
-std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_first(const double& x) const
+UnivariateConstRegion UnivariateConstRegion::bifurcate_first(const double& x) const
 {
-	return std::make_unique<Region<double>>(_a, x, *_helper);
+	return UnivariateConstRegion(_a, x, *_helper);
 }
 
-std::unique_ptr<Region<double>> UnivariateConstRegion::bifurcate_second(const double& x) const
+UnivariateConstRegion UnivariateConstRegion::bifurcate_second(const double& x) const
 {
-	return std::make_unique<Region<double>>(x, _b, *_helper);
+	return UnivariateConstRegion(x, _b, *_helper);
 }
 
-std::unique_ptr<Region<double>> UnivariateConstRegion::singleton(const double& x) const
+UnivariateConstRegion UnivariateConstRegion::singleton(const double& x) const
 {
-	return std::make_unique<Region<double>>(x, x, *_helper);
+	return UnivariateConstRegion(x, x, *_helper);
 }
 
 bool UnivariateConstRegion::is_bifurcatable() const

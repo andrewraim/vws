@@ -6,10 +6,9 @@
 
 namespace vws {
 
-double r_categ(unsigned int n, const Rcpp::NumericVector& p, bool log = false)
+unsigned int r_categ(const Rcpp::NumericVector& p, bool log = false)
 {
 	unsigned int k = p.length();
-	// const Rcpp::NumericVector& lp = log ? p : Rcpp::log(p);
 	Rcpp::NumericVector lp;
 	if (log) {
 		lp = p;
@@ -19,6 +18,17 @@ double r_categ(unsigned int n, const Rcpp::NumericVector& p, bool log = false)
 
 	const Rcpp::NumericVector& z = r_gumbel(k);
 	return Rcpp::which_max(z + lp);		// TBD: are these zero-based indices?
+}
+
+Rcpp::IntegerVector r_categ(unsigned int n, const Rcpp::NumericVector& p, bool log = false)
+{
+	Rcpp::IntegerVector out(n);
+
+	for (unsigned int i = 0; i < n; i++) {
+		out(i) = r_categ(p, log);
+	}
+
+	return out;
 }
 
 }

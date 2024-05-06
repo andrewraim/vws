@@ -46,18 +46,13 @@ public:
 	//' Bifurcate this region into two regions. Use \code{x} as the bifurcation
 	//' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
 	//' @param x An optional bifurcation point.
-	// virtual std::pair<std::unique_ptr<Region<T>>,std::unique_ptr<Region<T>>> bifurcate() const = 0;
-	// virtual std::pair<Region<T>,Region<T>> bifurcate() const = 0;
-	virtual std::unique_ptr<Region<T>> bifurcate_first() const = 0;
-	virtual std::unique_ptr<Region<T>> bifurcate_second() const = 0;
+	// virtual std::unique_ptr<Region<T>> bifurcate_first() const = 0;
+	// virtual std::unique_ptr<Region<T>> bifurcate_second() const = 0;
 
-	// virtual std::pair<std::unique_ptr<Region<T>>,std::unique_ptr<Region<T>>> bifurcate(const T& x) const = 0;
-	// virtual std::pair<Region<T>,Region<T>> bifurcate(const T& x) const = 0;
-	// virtual std::pair<Region<T>,Region<T>> bifurcate(const T& x) const = 0;
-	virtual std::unique_ptr<Region<T>> bifurcate_first(const T& x) const = 0;
-	virtual std::unique_ptr<Region<T>> bifurcate_second(const T& x) const = 0;
+	// virtual std::unique_ptr<Region<T>> bifurcate_first(const T& x) const = 0;
+	// virtual std::unique_ptr<Region<T>> bifurcate_second(const T& x) const = 0;
 
-	virtual std::unique_ptr<Region<T>> singleton(const T& x) const = 0;
+	// virtual std::unique_ptr<Region<T>> singleton(const T& x) const = 0;
 
 	//' @description
 	//' Return a logical value indicating whether this region is bifurcatable.
