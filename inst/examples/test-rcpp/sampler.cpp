@@ -66,6 +66,8 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	printf("About to adapt\n");
 	h.adapt(99);
 
+	h.print();
+
 	printf("About to call rejection\n");
 
 	const std::pair<std::vector<double>, std::vector<unsigned int>>& out =

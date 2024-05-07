@@ -48,9 +48,12 @@ double log_add2_exp(double x, double y)
 
 double log_sub2_exp(double x, double y)
 {
+	if (std::isinf(x) && std::isinf(y) && x < 0 && y < 0) {
+		return R_NegInf;
+	}
+
 	return x + std::log1p(-exp(y - x));
 }
-
 
 std::vector<double> log_add2_exp(const std::vector<double>& x, const std::vector<double>& y)
 {
@@ -84,14 +87,20 @@ std::vector<double> log_sub2_exp(const std::vector<double>& x, const std::vector
 
 Rcpp::NumericVector log_add2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y)
 {
-	const Rcpp::NumericVector& s = Rcpp::pmin(x,y);
-	const Rcpp::NumericVector& t = Rcpp::pmax(x,y);
-	return  t + Rcpp::log1p(exp(s - t));
+	const std::vector<double>& x_vec = Rcpp::as<std::vector<double>>(x);
+	const std::vector<double>& y_vec = Rcpp::as<std::vector<double>>(y);
+	const std::vector<double>& out_vec = log_add2_exp(x_vec, y_vec);
+	Rcpp::NumericVector out(out_vec.begin(), out_vec.end());
+	return out;
 }
 
 Rcpp::NumericVector log_sub2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y)
 {
-	return x + Rcpp::log1p(-exp(y - x));
+	const std::vector<double>& x_vec = Rcpp::as<std::vector<double>>(x);
+	const std::vector<double>& y_vec = Rcpp::as<std::vector<double>>(y);
+	const std::vector<double>& out_vec = log_sub2_exp(x_vec, y_vec);
+	Rcpp::NumericVector out(out_vec.begin(), out_vec.end());
+	return out;
 }
 
 }

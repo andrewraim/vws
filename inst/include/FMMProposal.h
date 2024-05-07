@@ -139,11 +139,11 @@ void FMMProposal<T,R>::adapt(unsigned int N)
 
 		unsigned int n_bif = 0;
 		for (unsigned int l = 0; l < L; l++) {
-			Rprintf("pre: log_volume(%d) = %g\n", l, log_volume(l));
+			// Rprintf("pre:  log_volume(%d) = %g\n", l, log_volume(l));
 			// log_volume(l) *= std::pow(R_NegInf, _bifurcatable[l]);
 			log_volume(l) = _bifurcatable[l] ? log_volume(l) : R_NegInf;
 			n_bif += _bifurcatable[l];
-			Rprintf("post: log_volume(%d) = %g\n", l, log_volume(l));
+			// Rprintf("post: log_volume(%d) = %g\n", l, log_volume(l));
 		}
 
 		if (n_bif == 0) {
@@ -152,7 +152,7 @@ void FMMProposal<T,R>::adapt(unsigned int N)
 		}
 
 		unsigned int jdx = r_categ(log_volume, true);
-		Rprintf("jdx = %d", jdx);
+		// Rprintf("jdx = %d", jdx);
 		const R& r = _regions_vec[jdx];
 
 		// Split the target region and make another proposal with it
@@ -241,6 +241,11 @@ Rcpp::NumericVector FMMProposal<T,R>::rejection_bound_regions(bool log) const
 	Rcpp::NumericVector lxl(_log_xi_lower.begin(), _log_xi_lower.end());
 	Rcpp::NumericVector lxu(_log_xi_upper.begin(), _log_xi_upper.end());
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
+
+	// Rcpp::print(lxl);
+	// Rcpp::print(lxu);
+	// Rcpp::print(out);
+
 	if (log) { return out; } else { return exp(out); }
 }
 
@@ -272,6 +277,10 @@ FMMProposal<T,R>::r_ext(unsigned int n) const
 	// not normalized.
 	Rcpp::NumericVector lp(_log_xi_upper.begin(), _log_xi_upper.end());
 	const Rcpp::IntegerVector& idx = r_categ(n, lp, true);
+
+	Rcpp::print(lp);
+	Rcpp::print(idx);
+	Rcpp::stop("PAUSE!");
 
 	// Rprintf("r_ext: Checkpoint 3\n");
 
@@ -318,14 +327,14 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 	// get the target region.
 	const R& x_rej = _regions.begin()->singleton(x);
 	// Rprintf("d: Checkpoint 4, N = %d\n", N);
-	x_rej.print();
-	_regions.begin()->print();
+	// x_rej.print();
+	// _regions.begin()->print();
 	// Rprintf("*_regions.begin() < x_rej = %d\n", (*_regions.begin()) < x_rej);
 	typename std::set<R>::const_iterator itr_lower = _regions.upper_bound(x_rej);
 	--itr_lower;
 	// Rprintf("d: Checkpoint 5\n");
 	if (itr_lower == _regions.end()) {
-		itr_lower->print();
+		// itr_lower->print();
 		Rcpp::stop("Could not find region with point x");
 	}
 	// Rprintf("d: Checkpoint 5.1\n");

@@ -344,7 +344,7 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		out = R_NegInf;
 	} else {
 
-		Rprintf("Trace: About to attempt Nelder-Mead call\n");
+		// Rprintf("Trace: About to attempt Nelder-Mead call\n");
 
 		// Nelder-Mead algorithm from R.
 		// See https://cran.r-project.org/doc/manuals/R-exts.html#Optimization
@@ -376,7 +376,7 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 			100000     // In:  int maxit [maximum number of iterations]
 		);
 
-		Rprintf("Trace: Finished Nelder-Mead call\n");
+		// Rprintf("Trace: Finished Nelder-Mead call\n");
 
 		if (fail) {
 			Rcpp::warning("opt_out: convergence status was ", fail);
@@ -387,8 +387,8 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 			double x2 = std::ceil(par);
 			double f1 = f_opt(1L, &x1, &ex);
 			double f2 = f_opt(1L, &x2, &ex);
-			Rcpp::print(log_w_endpoints);
-			Rprintf("Trace: about to call std::max\n");
+			// Rcpp::print(log_w_endpoints);
+			// Rprintf("Trace: about to call std::max\n");
 
 			double max_lwe = Rcpp::max(log_w_endpoints);
 			out = std::max({f1, f2, max_lwe});
@@ -399,14 +399,14 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 			double x2 = std::ceil(par);
 			double f1 = f_opt(1L, &x1, &ex);
 			double f2 = f_opt(1L, &x2, &ex);
-			Rprintf("Trace: about to call std::min\n");
+			// Rprintf("Trace: about to call std::min\n");
 			double min_lwe = Rcpp::min(log_w_endpoints);
 			// out = std::min(f1, f2, Rcpp::max(log_w_endpoints));
 			out = std::min({f1, f2, min_lwe});
 		}
 	}
 
-	Rprintf("Trace: Result of optimize is out = %g\n", out);
+	// Rprintf("Trace: Result of optimize is out = %g\n", out);
 
 	return log ? out : exp(out);
 }

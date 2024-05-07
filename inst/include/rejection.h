@@ -58,59 +58,59 @@ template <typename T, typename R>
 std::pair<std::vector<T>, std::vector<unsigned int>>
 rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& control)
 {
-	Rprintf("Checkpoint 1\n");
+	// Rprintf("Checkpoint 1\n");
 
 	// TBD: Return a collection of saved T's. These may not be something Rcpp
 	// knows how to represent, but we will leave that up to the user.
 	std::vector<T> out;
 	std::vector<unsigned int> rejects(n, 0L);
 
-	Rprintf("Checkpoint 2\n");
+	// Rprintf("Checkpoint 2\n");
 
 	unsigned int N_rejects = 0;
 	bool accept = false;
 
-	Rprintf("Checkpoint 3\n");
+	// Rprintf("Checkpoint 3\n");
 
 	unsigned int max_rejects = control.get_max_rejects();
 	unsigned int report_period = control.get_report_period();
 	MaxRejectsAction max_rejects_action = control.get_max_rejects_action();
 
-	Rprintf("Checkpoint 4\n");
+	// Rprintf("Checkpoint 4\n");
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
 
-	Rprintf("Checkpoint 5\n");
+	// Rprintf("Checkpoint 5\n");
 
 	for (unsigned int i = 0; i < n; i++) {
 		accept = false;
 		while (!accept && N_rejects < max_rejects) {
-			Rprintf("Checkpoint 5.1\n");
+			// Rprintf("Checkpoint 5.1\n");
 
 			double v = ::R::runif(0, 1);
 
-			Rprintf("Checkpoint 5.2\n");
+			// Rprintf("Checkpoint 5.2\n");
 
 			const std::vector<T>& draws = h.r(1);
 
-			Rprintf("Checkpoint 5.3\n");
+			// Rprintf("Checkpoint 5.3\n");
 
 			const T& x = draws[0];
 
-			Rprintf("Checkpoint 5.4\n");
+			Rprintf("Checkpoint 5.4, proposed x: %g\n", x);
 
 			double log_fx = h.d_target_unnorm(x);
 
-			Rprintf("Checkpoint 5.5\n");
+			// Rprintf("Checkpoint 5.5\n");
 
 			double log_hx = h.d(x, false, false);
 
-			Rprintf("Checkpoint 5.6\n");
+			// Rprintf("Checkpoint 5.6\n");
 
 			double log_ratio = log_fx - log_hx - log_M;
 
-			Rprintf("Checkpoint 5.7\n");
+			// Rprintf("Checkpoint 5.7\n");
 
 			if (log(v) < log_ratio) {
 				// Accept x as a draw from f(x)
@@ -122,7 +122,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 				rejects[i]++;
 			}
 
-			Rprintf("Checkpoint 5.8\n");
+			// Rprintf("Checkpoint 5.8\n");
 
 			// Report progress after `report` candidates
 			unsigned int N_accepts = i + accept;
@@ -131,11 +131,11 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 					N_accepts + N_rejects, N_accepts, N_rejects);
 			}
 
-			Rprintf("Checkpoint 5.9\n");
+			// Rprintf("Checkpoint 5.9\n");
 		}
 	}
 
-	Rprintf("Checkpoint 6\n");
+	// Rprintf("Checkpoint 6\n");
 
 	if (N_rejects >= max_rejects) {
 		switch(max_rejects_action) {
@@ -151,7 +151,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 		}
 	}
 
-	Rprintf("Checkpoint 7\n");
+	// Rprintf("Checkpoint 7\n");
 
 	return std::make_pair(out, rejects);
 }
