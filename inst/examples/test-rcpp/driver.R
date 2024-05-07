@@ -9,7 +9,7 @@ sigma2 = 0.5
 lambda2 = 100
 
 N = 30
-n = 100000
+n = 10000
 
 set.seed(1234)
 y_true = rlnorm(1, mu, sqrt(sigma2))

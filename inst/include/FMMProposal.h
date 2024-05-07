@@ -43,16 +43,16 @@ public:
 	//' @description
 	//' Access the vector \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
 	//' @param log If \code{TRUE} compute result on log-scale.
-	std::vector<double>::const_iterator get_log_xi_upper() const;
+	Rcpp::NumericVector::const_iterator get_log_xi_upper() const;
 
 	//' @description
 	//' Access the vector \eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.
 	//' @param log If \code{TRUE} compute result on log-scale.
-	std::vector<double>::const_iterator get_log_xi_lower() const;
+	Rcpp::NumericVector::const_iterator get_log_xi_lower() const;
 
 	//' @description
 	//' Access the vector \code{bifurcatable}.
-	std::vector<bool>::const_iterator get_bifurcatable() const;
+	Rcpp::LogicalVector::const_iterator get_bifurcatable() const;
 
 	//' @description
 	//' Access the vector \code{regions}.
@@ -120,9 +120,9 @@ private:
 
 	std::set<R> _regions;
 	std::vector<R> _regions_vec;
-	std::vector<double> _log_xi_upper;
-	std::vector<double> _log_xi_lower;
-	std::vector<bool> _bifurcatable;
+	std::unique_ptr<Rcpp::NumericVector> _log_xi_upper;
+	std::unique_ptr<Rcpp::NumericVector> _log_xi_lower;
+	std::unique_ptr<Rcpp::LogicalVector> _bifurcatable;
 };
 
 // Recall that region volumes reflect where there mixture is further
@@ -141,8 +141,8 @@ void FMMProposal<T,R>::adapt(unsigned int N)
 		for (unsigned int l = 0; l < L; l++) {
 			// Rprintf("pre:  log_volume(%d) = %g\n", l, log_volume(l));
 			// log_volume(l) *= std::pow(R_NegInf, _bifurcatable[l]);
-			log_volume(l) = _bifurcatable[l] ? log_volume(l) : R_NegInf;
-			n_bif += _bifurcatable[l];
+			log_volume(l) = (*_bifurcatable)(l) ? log_volume(l) : R_NegInf;
+			n_bif += (*_bifurcatable)(l);
 			// Rprintf("post: log_volume(%d) = %g\n", l, log_volume(l));
 		}
 
@@ -170,7 +170,7 @@ void FMMProposal<T,R>::adapt(unsigned int N)
 
 template <class T, class R>
 FMMProposal<T,R>::FMMProposal(const std::vector<R>& regions)
-	: _regions(), _regions_vec(), _log_xi_upper(), _log_xi_lower(), _bifurcatable()
+	: _regions(), _regions_vec()
 {
 	_regions.insert(regions.begin(), regions.end());
 	recache();
@@ -182,36 +182,38 @@ void FMMProposal<T,R>::recache()
 	// TBD: This might be a good place to check for no overlaps, and perhaps to
 	// make sure there are no gaps?
 
+	unsigned int N = _regions.size();
 	_regions_vec.clear();
-	_log_xi_upper.clear();
-	_log_xi_lower.clear();
-	_bifurcatable.clear();
+	_log_xi_upper = std::make_unique<Rcpp::NumericVector>(_regions.size());
+	_log_xi_lower = std::make_unique<Rcpp::NumericVector>(_regions.size());
+	_bifurcatable = std::make_unique<Rcpp::LogicalVector>(_regions.size());
 
-	typename std::set<R>::const_iterator itr = _regions.begin();
-	for (; itr != _regions.end(); ++itr) {
+	unsigned int j = 0;
+	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
 		_regions_vec.push_back(*itr);
-		_log_xi_upper.push_back(itr->get_xi_upper(true));
-		_log_xi_lower.push_back(itr->get_xi_lower(true));
-		_bifurcatable.push_back(itr->is_bifurcatable());
+		(*_log_xi_upper)[j] = itr->get_xi_upper(true);
+		(*_log_xi_lower)[j] = itr->get_xi_lower(true);
+		(*_bifurcatable)[j] = itr->is_bifurcatable();
+		j++;
 	}
 }
 
 template <class T, class R>
-std::vector<double>::const_iterator FMMProposal<T,R>::get_log_xi_upper() const
+Rcpp::NumericVector::const_iterator FMMProposal<T,R>::get_log_xi_upper() const
 {
-	return _log_xi_upper.begin();
+	return _log_xi_upper->begin();
 }
 
 template <class T, class R>
-std::vector<double>::const_iterator FMMProposal<T,R>::get_log_xi_lower() const
+Rcpp::NumericVector::const_iterator FMMProposal<T,R>::get_log_xi_lower() const
 {
-	return _log_xi_lower.begin();
+	return _log_xi_lower->begin();
 }
 
 template <class T, class R>
-std::vector<bool>::const_iterator FMMProposal<T,R>::get_bifurcatable() const
+Rcpp::LogicalVector::const_iterator FMMProposal<T,R>::get_bifurcatable() const
 {
-	return _bifurcatable.begin();
+	return _bifurcatable->begin();
 }
 
 template <class T, class R>
@@ -224,35 +226,30 @@ template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::rejection_bound(bool log) const
 {
 	// Each region's contribution to the rejection rate bound
-	Rcpp::NumericVector lxl(_log_xi_lower.begin(), _log_xi_lower.end());
-	Rcpp::NumericVector lxu(_log_xi_upper.begin(), _log_xi_upper.end());
+	const Rcpp::NumericVector& lxl = *_log_xi_lower;
+	const Rcpp::NumericVector& lxu = *_log_xi_upper;
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
 
 	// Overall rejection rate bound
-	out = vws::log_sum_exp(out);
+	out = log_sum_exp(out);
 	if (log) { return out; } else { return exp(out); }
 }
 
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::rejection_bound_regions(bool log) const
 {
-	// Each region's contribution to the rejection rate bound
-	Rcpp::NumericVector lxl(_log_xi_lower.begin(), _log_xi_lower.end());
-	Rcpp::NumericVector lxu(_log_xi_upper.begin(), _log_xi_upper.end());
+	// Each region's contribution to the rejection rate bound.
+	const Rcpp::NumericVector& lxl = *_log_xi_lower;
+	const Rcpp::NumericVector& lxu = *_log_xi_upper;
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
-
-	// Rcpp::print(lxl);
-	// Rcpp::print(lxu);
-	// Rcpp::print(out);
-
 	if (log) { return out; } else { return exp(out); }
 }
 
 template <class T, class R>
 double FMMProposal<T,R>::nc(bool log) const
 {
-	Rcpp::NumericVector lxu(_log_xi_upper.begin(), _log_xi_upper.end());
-	double out = vws::log_sum_exp(lxu);
+	const Rcpp::NumericVector& lxu = *_log_xi_upper;
+	double out = log_sum_exp(lxu);
 	return log ? out : exp(out);
 }
 
@@ -274,8 +271,9 @@ FMMProposal<T,R>::r_ext(unsigned int n) const
 
 	// Draw from the mixing weights, which are given on the log scale and
 	// not normalized.
-	Rcpp::NumericVector lp(_log_xi_upper.begin(), _log_xi_upper.end());
-	const Rcpp::IntegerVector& idx = r_categ(n, lp, true);
+	// Rcpp::NumericVector lp(_log_xi_upper->begin(), _log_xi_upper->end());
+	const Rcpp::NumericVector& lxu = *_log_xi_upper;
+	const Rcpp::IntegerVector& idx = r_categ(n, lxu, true);
 
 	// Rcpp::print(lp);
 	// Rcpp::print(idx);

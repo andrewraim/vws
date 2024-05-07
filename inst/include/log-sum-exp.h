@@ -87,19 +87,31 @@ std::vector<double> log_sub2_exp(const std::vector<double>& x, const std::vector
 
 Rcpp::NumericVector log_add2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y)
 {
-	const std::vector<double>& x_vec = Rcpp::as<std::vector<double>>(x);
-	const std::vector<double>& y_vec = Rcpp::as<std::vector<double>>(y);
-	const std::vector<double>& out_vec = log_add2_exp(x_vec, y_vec);
-	Rcpp::NumericVector out(out_vec.begin(), out_vec.end());
+	unsigned int n = x.size();
+	if (n != y.size()) {
+		Rcpp::stop("Dimensions do not match");
+	}
+
+	Rcpp::NumericVector out(n);
+	for (unsigned int i = 0; i < n; i++) {
+		out(i) =  log_add2_exp(x(i), y(i));
+	}
+
 	return out;
 }
 
 Rcpp::NumericVector log_sub2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y)
 {
-	const std::vector<double>& x_vec = Rcpp::as<std::vector<double>>(x);
-	const std::vector<double>& y_vec = Rcpp::as<std::vector<double>>(y);
-	const std::vector<double>& out_vec = log_sub2_exp(x_vec, y_vec);
-	Rcpp::NumericVector out(out_vec.begin(), out_vec.end());
+	unsigned int n = x.size();
+	if (n != y.size()) {
+		Rcpp::stop("Dimensions do not match");
+	}
+
+	Rcpp::NumericVector out(n);
+	for (unsigned int i = 0; i < n; i++) {
+		out(i) =  log_sub2_exp(x(i), y(i));
+	}
+
 	return out;
 }
 
