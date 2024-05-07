@@ -321,6 +321,7 @@ double f_opt(int n, double *par, void *ex)
 	}
 
 	// Call the weight function
+	// Rprintf("Trace: f_opt, x = %g, x_tx = %g, w(x_tx, true) = %g\n", x, x_tx, helper->w(x_tx, true));
 	return fnscale * helper->w(x_tx, true);
 }
 
@@ -351,18 +352,21 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		// and https://stackoverflow.com/questions/12765304/calling-r-function-optim-from-c
 		int fail;
 		int fncount;
-		double Fmin;
+		double f_val;
 		double xin = 0;
 		double par;
 		double mach_eps = sqrt(std::numeric_limits<double>::epsilon());
+		double fnscale = maximize ? -1.0 : 1.0;
 
-		struct ext_data ex = { _a, _b, maximize ? -1.0 : 1.0, _helper };
+		struct ext_data ex = { _a, _b, fnscale, _helper };
+
+		// Rprintf("Trace: a = %f, b = %f, fnscale = %f\n", ex.a, ex.b, ex.fnscale);
 
 		nmmin(
 			1L,        // In:  int n [number of parameters]
 			&xin,      // In:  double *xin [initial value]
 			&par,      // Out: double *x [point at which optimum is found]
-			&Fmin,     // Out: double *Fmin [objective value at which optimum is found]
+			&f_val,    // Out: double *Fmin [objective value at which optimum is found]
 			f_opt,     // In:  optimfn fn [objective function]
 			&fail,     // Out: int *fail [true if the function failed]
 			R_NegInf,  // In:  double abstol [absolute tolerance]
@@ -382,6 +386,8 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 			Rcpp::warning("opt_out: convergence status was ", fail);
 		}
 
+		// In case the function is strictly increasing or decreasing, check the
+		// objective value at the endpoints.
 		if (maximize) {
 			double x1 = std::floor(par);
 			double x2 = std::ceil(par);
@@ -391,9 +397,11 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 			// Rprintf("Trace: about to call std::max\n");
 
 			double max_lwe = Rcpp::max(log_w_endpoints);
-			out = std::max({f1, f2, max_lwe});
+			out = -std::max({f_val, f1, f2, max_lwe});
 			// Rcpp::NumericVector el = concat
 			// out = std::max(f1, std::max(f2, Rcpp::max(log_w_endpoints)));
+			// Rprintf("Trace: Result of optimize is f_val = %g, f1 = %g, f2 = %g, max_lwe = %g, out = %g\n",
+			// 	f_val, f1, f2, max_lwe, out);
 		} else {
 			double x1 = std::floor(par);
 			double x2 = std::ceil(par);
@@ -402,11 +410,11 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 			// Rprintf("Trace: about to call std::min\n");
 			double min_lwe = Rcpp::min(log_w_endpoints);
 			// out = std::min(f1, f2, Rcpp::max(log_w_endpoints));
-			out = std::min({f1, f2, min_lwe});
+			out = std::min({f_val, f1, f2, min_lwe});
+			// Rprintf("Trace: Result of optimize is f_val = %g, f1 = %g, f2 = %g, min_lwe = %g, out = %g\n",
+			// 	f_val, f1, f2, min_lwe, out);
 		}
 	}
-
-	// Rprintf("Trace: Result of optimize is out = %g\n", out);
 
 	return log ? out : exp(out);
 }

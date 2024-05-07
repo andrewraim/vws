@@ -10,20 +10,23 @@ public:
 	}
 
 	double d(double x, bool log = false) const {
-		return R::dnorm(x, _z, sqrt(_lambda2), log);
+		return R::dnorm(x, _z, std::sqrt(_lambda2), log);
 	}
 	double p(double q, bool lower = true, bool log = false) const {
-		return R::pnorm(q, _z, sqrt(_lambda2), lower, log);
+		return R::pnorm(q, _z, std::sqrt(_lambda2), lower, log);
 	}
 	double q(double p, bool lower = true, bool log = false) const {
-		return R::qnorm(p, _z, sqrt(_lambda2), lower, log);
+		return R::qnorm(p, _z, std::sqrt(_lambda2), lower, log);
 	}
 	double s(double x) const {
 		return 1.0;
 	}
 	double w(double x, bool log = false) const {
-		double out = x > 0 ? -std::log(x) - std::pow(std::log(x) - _mu, 2.0) / (2*_sigma2) + std::log(x > 0) : R_NegInf;
-		if (log) { return out; } else { return exp(out); }
+		double out = R_NegInf;
+		if (x > 0) {
+			out = -std::log(x) - std::pow(std::log(x) - _mu, 2.0) / (2*_sigma2);
+		}
+		return log ? out : exp(out);
 	}
 	const MyHelper& operator=(const MyHelper& x) {
 		_mu = x._mu;
@@ -51,7 +54,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 
 	printf("About to build helper\n");
 
-	MyHelper helper(0.0, 1.0, -10, 5.0);
+	MyHelper helper(mu, sigma2, z, lambda2);
 	vws::UnivariateConstRegion supp(0.0, R_PosInf, helper);
 
 	printf("About to construct supp\n");
@@ -63,8 +66,8 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 
 	vws::FMMProposal<double, vws::UnivariateConstRegion> h(regions);
 
-	printf("About to adapt\n");
-	h.adapt(99);
+	// printf("About to adapt\n");
+	// h.adapt(9);
 
 	h.print();
 

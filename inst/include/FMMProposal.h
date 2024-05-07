@@ -278,9 +278,9 @@ FMMProposal<T,R>::r_ext(unsigned int n) const
 	Rcpp::NumericVector lp(_log_xi_upper.begin(), _log_xi_upper.end());
 	const Rcpp::IntegerVector& idx = r_categ(n, lp, true);
 
-	Rcpp::print(lp);
-	Rcpp::print(idx);
-	Rcpp::stop("PAUSE!");
+	// Rcpp::print(lp);
+	// Rcpp::print(idx);
+	// Rcpp::stop("PAUSE!");
 
 	// Rprintf("r_ext: Checkpoint 3\n");
 
