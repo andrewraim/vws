@@ -60,8 +60,6 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 {
 	// Rprintf("Checkpoint 1\n");
 
-	// TBD: Return a collection of saved T's. These may not be something Rcpp
-	// knows how to represent, but we will leave that up to the user.
 	std::vector<T> out;
 	std::vector<unsigned int> rejects(n, 0L);
 
@@ -98,19 +96,19 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 
 			const T& x = draws[0];
 
-			Rprintf("Checkpoint 5.4, proposed x: %g\n", x);
+			// Rprintf("Checkpoint 5.4, proposed x: %g\n", x);
 
 			double log_fx = h.d_target_unnorm(x);
 
-			// Rprintf("Checkpoint 5.5\n");
+			// Rprintf("Checkpoint 5.5, log_fx: %g\n", log_fx);
 
-			double log_hx = h.d(x, false, false);
+			double log_hx = h.d(x, false, true);
 
-			// Rprintf("Checkpoint 5.6\n");
+			// Rprintf("Checkpoint 5.6, log_hx = %g\n", log_hx);
 
 			double log_ratio = log_fx - log_hx - log_M;
 
-			// Rprintf("Checkpoint 5.7\n");
+			// Rprintf("Checkpoint 5.7, log_ratio = %g\n", log_ratio);
 
 			if (log(v) < log_ratio) {
 				// Accept x as a draw from f(x)

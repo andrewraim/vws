@@ -45,39 +45,27 @@ private:
 
 // [[Rcpp::export]]
 Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2,
-	double lambda2)
+	double lambda2, unsigned int N = 10, unsigned int max_rejects = 10000,
+	unsigned int report_period = 1000)
 {
-	vws::RejectionControl control;
-	printf("control.max_rejects = %d\n", control.get_max_rejects());
-	printf("control.report_period = %d\n", control.get_report_period());
-	printf("control.max_rejects_action = %d\n", control.get_max_rejects_action());
-
-	printf("About to build helper\n");
+	vws::RejectionControl control(max_rejects, report_period);
 
 	MyHelper helper(mu, sigma2, z, lambda2);
 	vws::UnivariateConstRegion supp(0.0, R_PosInf, helper);
 
-	printf("About to construct supp\n");
-
 	std::vector<vws::UnivariateConstRegion> regions;
 	regions.push_back(supp);
 
-	printf("About to make proposal\n");
-
 	vws::FMMProposal<double, vws::UnivariateConstRegion> h(regions);
 
-	// printf("About to adapt\n");
-	// h.adapt(9);
-
+	h.adapt(N - 1);
 	h.print();
-
-	printf("About to call rejection\n");
 
 	const std::pair<std::vector<double>, std::vector<unsigned int>>& out =
 		vws::rejection(h, n, control);
 
 	return Rcpp::List::create(
 		Rcpp::Named("draws") = out.first,
-		Rcpp::Named("rejections") = out.second
+		Rcpp::Named("rejects") = out.second
 	);
 }
