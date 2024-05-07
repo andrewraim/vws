@@ -117,6 +117,22 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 	return std::make_pair(out, rejects);
 }
 
+template <typename T, typename R>
+std::pair<std::vector<T>, std::vector<unsigned int>>
+rejection(const FMMProposal<T,R>& h, unsigned int n)
+{
+	// Set defaults for control object
+	// - Up to 1000 rejects per requested draw.
+	// - Do not report progress.
+	// - Halt if we reach max_rejects before accepting the requested n draws.
+	unsigned int max_rejects = 1000 * n;
+	unsigned int report_period = n + 1;
+	MaxRejectsAction max_rejects_action = MaxRejectsAction::stop;
+
+	vws::RejectionControl control(max_rejects, report_period, max_rejects_action);
+	return rejection(h, n, control);
+}
+
 }
 
 #endif

@@ -25,12 +25,11 @@ enum MaxRejectsAction { stop, warning, message, null };
 class RejectionControl
 {
 public:
-	RejectionControl(
-		unsigned int max_rejects = 1000,
-		unsigned int report_period = 100,
-		MaxRejectsAction max_rejects_action = stop)
-		: _max_rejects(max_rejects), _report_period(report_period),
-		_max_rejects_action(max_rejects_action)
+	RejectionControl(unsigned int max_rejects, unsigned int report_period,
+		MaxRejectsAction max_rejects_action)
+	: _max_rejects(max_rejects),
+	  _report_period(report_period),
+	  _max_rejects_action(max_rejects_action)
 	{
 	}
 

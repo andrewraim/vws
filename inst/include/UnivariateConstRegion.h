@@ -34,7 +34,7 @@ namespace vws {
 //' @export
 class UnivariateConstRegion : public Region<double>
 {
-private:
+protected:
 	double _a;
 	double _b;
 	const UnivariateHelper<double>* _helper;
@@ -75,22 +75,6 @@ public:
 	double w(const double& x, bool log = true) const;
 
 	//' @description
-	//' Majorized weight function \eqn{\overline{w}_j} for this region.
-	//' @param x Argument to weight function.
-	//' @param log logical; if \code{TRUE}, return result on the log-scale.
-	double w_major(const double& x, bool log = true) const;
-
-	std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate() const;
-
-	//' @description
-	//' Bifurcate this region into two regions. Use \code{x} as the bifurcation
-	//' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
-	//' @param x An optional bifurcation point.
-	std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate(const double& x) const;
-
-	UnivariateConstRegion singleton(const double& x) const;
-
-	//' @description
 	//' Return a logical value indicating whether this region is bifurcatable.
 	bool is_bifurcatable() const;
 
@@ -123,6 +107,22 @@ public:
 	//' Otherwise return optimized value of \eqn{w(x)}.
 	double optimize(bool maximize = true, bool log = true) const;
 
+	//' @description
+	//' Majorized weight function \eqn{\overline{w}_j} for this region.
+	//' @param x Argument to weight function.
+	//' @param log logical; if \code{TRUE}, return result on the log-scale.
+	double w_major(const double& x, bool log = true) const;
+
+	std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate() const;
+
+	//' @description
+	//' Bifurcate this region into two regions. Use \code{x} as the bifurcation
+	//' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
+	//' @param x An optional bifurcation point.
+	std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate(const double& x) const;
+
+	UnivariateConstRegion singleton(const double& x) const;
+
 	bool operator<(const UnivariateConstRegion& x) const {
 		return _a < x._a;
 	}
@@ -140,7 +140,6 @@ public:
 		_log_prob = x._log_prob;
 		return *this;
 	}
-
 };
 
 UnivariateConstRegion::UnivariateConstRegion(double a, double b, const UnivariateHelper<double>& helper)
