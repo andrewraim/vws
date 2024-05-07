@@ -45,14 +45,15 @@ sum(out1$rejects) / (sum(out1$rejects) + n)
 
 # ----- Sampler in C++ -----
 out2 = r_lognormal_normal(n = n, z = z, mu = mu, sigma2 = sigma2,
-	lambda2 = lambda2, max_rejects = 10000, report_period = 10000)
+	lambda2 = lambda2, N = 10, max_rejects = 10000, report_period = 10000)
 hist(out2$draws)
 
 sum(out2$rejects) / (sum(out2$rejects) + n)
 
-ggplot() +
+gg = ggplot() +
 	geom_density(data = data.frame(x = y), aes(x = x)) +
 	geom_density(data = data.frame(x = out2$draws), aes(x = x), col = "blue", lty = 2) +
 	xlab("x") +
 	ylab("Density") +
 	theme_linedraw()
+print(gg)

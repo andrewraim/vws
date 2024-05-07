@@ -159,12 +159,11 @@ void FMMProposal<T,R>::adapt(unsigned int N)
 		// TBD: we may not need to recache... perhaps we can insert into the
 		// end and zero out the removed entries? Especially for this function
 		// in particular, we may not need to recache each time through the loop.
-		const R& bif1 = r.bifurcate_first();
-		const R& bif2 = r.bifurcate_second();
+		const std::pair<R,R>& bif_out = r.bifurcate();
 		typename std::set<R>::iterator itr = _regions.find(r);
 		_regions.erase(itr);
-		_regions.insert(bif1);
-		_regions.insert(bif2);
+		_regions.insert(bif_out.first);
+		_regions.insert(bif_out.second);
 		recache();
 	}
 }
@@ -306,58 +305,30 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 {
 	double log_nc = normalize ? nc(true) : 0;
 
-	// Rprintf("d: Checkpoint 1\n");
+	/*
+	* Search for the region containing x using std::set. This should require
+	* something like O(log N) time, where N is the number of regions.
+	*
+	* 1. Create a singleton region `x_singleton` from the point x.
+	* 2. Find the region r in  _regions whose upper bound is x. This should be
+	*    one position past the region we want.
+	* 3. Rewind the iterator one step. This should yield the region with x.
+	* 4. Make sure this region contains x; otherwise, throw an error.
+	*/
+	const R& x_singleton = _regions.begin()->singleton(x);
 
-	double out = NA_REAL;
-
-	// Rprintf("d: Checkpoint 2\n");
-
-	unsigned int N = _regions.size();
-
-	// Rprintf("d: Checkpoint 3\n");
-
-	// An idea
-	// 1. Create a singleton region with x only.
-	// 2. Find the region in r _regions with lower bound x.
-	// 3. Make sure r contains x.
-	//
-	// Construct a singleton region with x to find which partition contains x.
-	// To do this, use the upper_bound function in the set class, which returns
-	// the region *after* the one we want. Then we rewind it one position to
-	// get the target region.
-	const R& x_rej = _regions.begin()->singleton(x);
-	// Rprintf("d: Checkpoint 4, N = %d\n", N);
-	// x_rej.print();
-	// _regions.begin()->print();
-	// Rprintf("*_regions.begin() < x_rej = %d\n", (*_regions.begin()) < x_rej);
-	typename std::set<R>::const_iterator itr_lower = _regions.upper_bound(x_rej);
+	typename std::set<R>::const_iterator itr_lower = _regions.upper_bound(x_singleton);
 	--itr_lower;
-	// Rprintf("d: Checkpoint 5\n");
+
 	if (itr_lower == _regions.end()) {
-		// itr_lower->print();
 		Rcpp::stop("Could not find region with point x");
 	}
-	// Rprintf("d: Checkpoint 5.1\n");
+
 	if (!itr_lower->s(x)) {
 		Rcpp::stop("!itr_lower->s(x)");
 	}
-	// Rprintf("d: Checkpoint 6\n");
-	out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - log_nc;
 
-	// Rprintf("d: Checkpoint 7\n");
-
-	// This search could be more efficient, but would need to be done in a
-	// way that can support any kind of region. For example, if we can
-	// define a "<" operator for region objects, we could consider a binary
-	// search.
-	/*
-	for (unsigned int j = 0; j < N; j++) {
-		const R& reg = _regions[j];
-		if (reg.s(x)) {
-			out = reg.w_major(x, true) + reg.d_base(x, true) - log_nc;
-		}
-	}
-	*/
+	double out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - log_nc;
 
 	return log ? out : exp(out);
 }
@@ -373,26 +344,49 @@ double FMMProposal<T,R>::d_target_unnorm(const T& x, bool log) const
 template <class T, class R>
 Rcpp::DataFrame FMMProposal<T,R>::summary() const
 {
-	/*
-	tbl = data.frame(
-		Region = Map(function(x) { x$description() }, _regions) |> unlist(),
-		log_xi_upper = Map(function(x) { x$xi_upper(log = TRUE) }, _regions) |> unlist(),
-		log_xi_lower = Map(function(x) { x$xi_lower(log = TRUE) }, _regions) |> unlist()
-	)
-	return tbl;
-	*/
-	return Rcpp::DataFrame();
+	unsigned int N = _regions.size();
+	Rcpp::StringVector v1(N);
+	Rcpp::NumericVector v2(N);
+	Rcpp::NumericVector v3(N);
+
+	unsigned int j = 0;
+
+	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
+		v1[j] = itr->description();
+		v2[j] = itr->get_xi_upper(true);
+		v3[j] = itr->get_xi_lower(true);
+		j++;
+	}
+
+	return Rcpp::DataFrame::create(
+		Rcpp::Named("Region") = v1,
+		Rcpp::Named("log_xi_upper") = v2,
+		Rcpp::Named("log_xi_lower") = v3
+	);
 }
 
 template <class T, class R>
 void FMMProposal<T,R>::print(unsigned int n) const
 {
-	unsigned int N = _regions.size();
-	printf("FMM Proposal with %d regions (display is unsorted)\n", N);
-
+	// unsigned int N = _regions.size();
 	const Rcpp::DataFrame& tbl = summary();
-	// Rcpp::print(Rcpp::head(tbl, n));
-	Rcpp::print(tbl);
+	unsigned int N = tbl.nrows();
+
+	const Rcpp::IntegerVector& idx = Rcpp::seq(0, std::min(n,N) - 1);
+
+	const Rcpp::StringVector& v1 = tbl["Region"];
+	const Rcpp::NumericVector& v2 = tbl["log_xi_upper"];
+	const Rcpp::NumericVector& v3 = tbl["log_xi_lower"];
+
+	const Rcpp::DataFrame& tbl_head = Rcpp::DataFrame::create(
+		Rcpp::Named("Region") = v1[idx],
+		Rcpp::Named("log_xi_upper") = v2[idx],
+		Rcpp::Named("log_xi_lower") = v3[idx]
+	);
+
+	printf("FMM Proposal with %d regions\n", N);
+
+	Rcpp::print(tbl_head);
 
 	if (N > n) {
 		printf("There are %d more regions not displayed\n", N - n);

@@ -53,13 +53,12 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	MyHelper helper(mu, sigma2, z, lambda2);
 	vws::UnivariateConstRegion supp(0.0, R_PosInf, helper);
 
-	std::vector<vws::UnivariateConstRegion> regions;
-	regions.push_back(supp);
+	const std::vector<vws::UnivariateConstRegion>& regions = { supp };
 
 	vws::FMMProposal<double, vws::UnivariateConstRegion> h(regions);
 
 	h.adapt(N - 1);
-	h.print();
+	h.print(5);
 
 	const std::pair<std::vector<double>, std::vector<unsigned int>>& out =
 		vws::rejection(h, n, control);

@@ -43,18 +43,6 @@ public:
 	virtual double w_major(const T& x, bool log = true) const = 0;
 
 	//' @description
-	//' Bifurcate this region into two regions. Use \code{x} as the bifurcation
-	//' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
-	//' @param x An optional bifurcation point.
-	// virtual std::unique_ptr<Region<T>> bifurcate_first() const = 0;
-	// virtual std::unique_ptr<Region<T>> bifurcate_second() const = 0;
-
-	// virtual std::unique_ptr<Region<T>> bifurcate_first(const T& x) const = 0;
-	// virtual std::unique_ptr<Region<T>> bifurcate_second(const T& x) const = 0;
-
-	// virtual std::unique_ptr<Region<T>> singleton(const T& x) const = 0;
-
-	//' @description
 	//' Return a logical value indicating whether this region is bifurcatable.
 	virtual bool is_bifurcatable() const = 0;
 
@@ -75,14 +63,6 @@ public:
 	//' @description
 	//' Print a description of the region.
 	virtual void print() const = 0;
-
-	/*
-	virtual bool operator<(const Region<T>& x) const = 0;
-
-	virtual bool operator==(const Region<T>& x) const = 0;
-
-	virtual const Region<T>& operator=(const Region<T>& x) = 0;
-	*/
 };
 
 }
