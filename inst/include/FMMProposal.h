@@ -139,11 +139,8 @@ void FMMProposal<T,R>::adapt(unsigned int N)
 
 		unsigned int n_bif = 0;
 		for (unsigned int l = 0; l < L; l++) {
-			// Rprintf("pre:  log_volume(%d) = %g\n", l, log_volume(l));
-			// log_volume(l) *= std::pow(R_NegInf, _bifurcatable[l]);
 			log_volume(l) = (*_bifurcatable)(l) ? log_volume(l) : R_NegInf;
 			n_bif += (*_bifurcatable)(l);
-			// Rprintf("post: log_volume(%d) = %g\n", l, log_volume(l));
 		}
 
 		if (n_bif == 0) {
@@ -152,13 +149,12 @@ void FMMProposal<T,R>::adapt(unsigned int N)
 		}
 
 		unsigned int jdx = r_categ(log_volume, true);
-		// Rprintf("jdx = %d", jdx);
 		const R& r = _regions_vec[jdx];
 
-		// Split the target region and make another proposal with it
-		// TBD: we may not need to recache... perhaps we can insert into the
-		// end and zero out the removed entries? Especially for this function
-		// in particular, we may not need to recache each time through the loop.
+		// Split the target region and make another proposal with it.
+		//
+		// TBD: we may not need to recache each time through the loop.
+		// Perhaps we can insert into the end and zero out the removed entries?
 		const std::pair<R,R>& bif_out = r.bifurcate();
 		typename std::set<R>::iterator itr = _regions.find(r);
 		_regions.erase(itr);
@@ -263,37 +259,19 @@ template <class T, class R>
 typename std::pair<std::vector<T>, std::vector<unsigned int>>
 FMMProposal<T,R>::r_ext(unsigned int n) const
 {
-	// Rprintf("r_ext: Checkpoint 1\n");
-
 	unsigned int N = _regions.size();
-
-	// Rprintf("r_ext: Checkpoint 2\n");
 
 	// Draw from the mixing weights, which are given on the log scale and
 	// not normalized.
-	// Rcpp::NumericVector lp(_log_xi_upper->begin(), _log_xi_upper->end());
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
 	const Rcpp::IntegerVector& idx = r_categ(n, lxu, true);
-
-	// Rcpp::print(lp);
-	// Rcpp::print(idx);
-	// Rcpp::stop("PAUSE!");
-
-	// Rprintf("r_ext: Checkpoint 3\n");
 
 	// Draw the values from the respective mixture components.
 	std::vector<T> x;
 	for (unsigned int i = 0; i < n; i++) {
-		// Rprintf("r_ext: Checkpoint 3.1\n");
-		unsigned int j = idx(i);
-		// Rprintf("r_ext: Checkpoint 3.2, j = %d\n", j);
-		const std::vector<T>& draws = _regions_vec[j].r(1);
-		// Rprintf("r_ext: Checkpoint 3.3\n");
+		const std::vector<T>& draws = _regions_vec[idx(i)].r(1);
 		x.push_back(draws[0]);
-		// Rprintf("r_ext: Checkpoint 3.4\n");
 	}
-
-	// Rprintf("r_ext: Checkpoint 4\n");
 
 	return std::make_pair(x, Rcpp::as<std::vector<unsigned int>>(idx));
 }
