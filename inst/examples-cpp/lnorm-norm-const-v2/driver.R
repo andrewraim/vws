@@ -42,7 +42,6 @@ hist(y)
 
 sum(out1$rejects) / (sum(out1$rejects) + n)
 
-
 # ----- Sampler in C++ -----
 out2 = r_lognormal_normal(n = n, z = z, mu = mu, sigma2 = sigma2,
 	lambda2 = lambda2, N = 10, max_rejects = 10000, report_period = 1000)

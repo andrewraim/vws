@@ -2,6 +2,7 @@
 #ifndef CUSTOM_LINEAR_REGION_H
 #define CUSTOM_LINEAR_REGION_H
 
+#include <Rcpp.h>
 #include "vws.h"
 #include "normal_truncated.h"
 
@@ -20,10 +21,10 @@ private:
 	double _beta1_max;
 
 public:
-	CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
+	CustomLinearRegion(double a, double b, double mu,
 		double sigma2, double z, double lambda2);
 
-	double mgf(double s, bool log = false, double tol = 1e-6);
+	double mgf(double s, bool log = false, double tol = 1e-6) const;
 
 	// First derivative of log w(x)
 	double d_log_w(double x) {
@@ -44,9 +45,10 @@ public:
 	}
 
 	std::vector<double> r(unsigned int n) const {
-		double mean = _z + _beta1_max * _lambda2
-		double sd = std::sqrt(_lambda2)
-		r_norm_trunc(n, mean, sd, _a, _b);
+		double mean = _z + _beta1_max * _lambda2;
+		double sd = std::sqrt(_lambda2);
+		const Rcpp::NumericVector& out = r_norm_trunc(n, mean, sd, _a, _b);
+		return Rcpp::as<std::vector<double>>(out);
 	}
 
 	double d(const double& x, bool log = false) const {
@@ -75,15 +77,17 @@ public:
 	double xi_lower(bool log = true, double tol = 1e-6) const;
 
 	std::pair<CustomLinearRegion,CustomLinearRegion> bifurcate() const {
+		double x;
+
 		if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
 			// Here we have an interval (-Inf, Inf). Make a split at zero.
 			x = 0;
 		} else if (std::isinf(_a) && _a < 0) {
 			// Left endpoint is -Inf. Split based on right endpoint.
-			x = b - abs(b) - 1;
+			x = _b - abs(_b) - 1;
 		} else if (std::isinf(_b) && _b > 0) {
 			// Right endpoint is Inf. Split based on left endpoint.
-			x = a + abs(_a) + 1;
+			x = _a + abs(_a) + 1;
 		} else {
 			x = (_a + _b) / 2;
 		}
@@ -98,7 +102,7 @@ public:
 	}
 
 	std::string description() const {
-		charbuf[32];
+		char buf[32];
 		sprintf(buf, "(%g, %g]", _a, _b);
 		return buf;
 	}
@@ -120,22 +124,22 @@ public:
 	}
 
 	const CustomLinearRegion& operator=(const CustomLinearRegion& x) {
-		_a = a;
-		_b = b;
-		_mu = mu;
-		_sigma2 = sigma2;
-		_z = z;
-		_lambda2 = lambda2;
-		_beta0_min = beta0_min;
-		_beta1_min = beta1_min;
-		_beta0_max = beta0_max;
-		_beta1_max = beta1_max;
+		_a = x._a;
+		_b = x._b;
+		_mu = x._mu;
+		_sigma2 = x._sigma2;
+		_z = x._z;
+		_lambda2 = x._lambda2;
+		_beta0_min = x._beta0_min;
+		_beta1_min = x._beta1_min;
+		_beta0_max = x._beta0_max;
+		_beta1_max = x._beta1_max;
 		return *this;
 	}
 };
 
 // MGF the truncated and reweighted g
-double CustomLinearRegion::mgf(double s, bool log = false, double tol)
+double CustomLinearRegion::mgf(double s, bool log, double tol) const
 {
 	// If we are truncating way into the upper tail of a distribution, working
 	// with the complement of the CDF helps to retain precision. Otherwise,
@@ -241,7 +245,7 @@ double CustomLinearRegion::xi_upper(bool log = true, double tol) const
 	return log ? out : exp(out);
 }
 
-double xi_lower(bool log = true, double tol) const
+double CustomLinearRegion::xi_lower(bool log = true, double tol) const
 {
 	double lp_a = R::pnorm(_a, _z + _beta1_min*_lambda2, sqrt(_lambda2), true, true);
 	if (lp_a > std::log1p(-tol)) {
@@ -260,7 +264,7 @@ double xi_lower(bool log = true, double tol) const
 
 	// If we hopelessly run out of precision and the result is larger than
 	// xi_upper, set xi_lower to xi_upper.
-	out = std::min(out, xi_upper(true, tol));
+	double out = std::min(out, xi_upper(true, tol));
 	return log ? out : exp(out);
 }
 

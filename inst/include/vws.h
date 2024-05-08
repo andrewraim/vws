@@ -11,5 +11,6 @@
 #include "FMMProposal.h"
 #include "RejectionControl.h"
 #include "rejection.h"
+#include "nelder-mead.h"
 
 #endif

@@ -6,6 +6,8 @@
 #include <memory>
 #include "Region.h"
 #include "UnivariateHelper.h"
+#include "nelder-mead.h"
+#include "UnivariateConstRegionFunctional.h"
 
 namespace vws {
 
@@ -113,6 +115,8 @@ public:
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.
 	double w_major(const double& x, bool log = true) const;
 
+	double midpoint() const;
+
 	std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate() const;
 
 	//' @description
@@ -203,25 +207,30 @@ double UnivariateConstRegion::w_major(const double& x, bool log) const
 	return log ? out : exp(out);
 }
 
-std::pair<UnivariateConstRegion,UnivariateConstRegion>
-UnivariateConstRegion::bifurcate() const
+double UnivariateConstRegion::midpoint() const
 {
-	double x;
+	double out;
 
 	if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
 		// In this case, we have an interval (-Inf, Inf). Make a split at zero.
-		x = 0;
+		out = 0;
 	} else if (std::isinf(_a) && _a < 0) {
 		// Left endpoint is -Inf. Split based on right endpoint.
-		x = _b - abs(_b) - 1;
+		out = _b - abs(_b) - 1;
 	} else if (std::isinf(_b) && _b > 0) {
 		// Right endpoint is Inf. Split based on left endpoint.
-		x = _a + std::fabs(_a) + 1;
+		out = _a + std::fabs(_a) + 1;
 	} else {
-		x = (_a + _b) / 2;
+		out = (_a + _b) / 2;
 	}
 
-	return bifurcate(x);
+	return out;
+}
+
+std::pair<UnivariateConstRegion,UnivariateConstRegion>
+UnivariateConstRegion::bifurcate() const
+{
+	return bifurcate(midpoint());
 }
 
 std::pair<UnivariateConstRegion,UnivariateConstRegion>
@@ -266,44 +275,8 @@ void UnivariateConstRegion::print() const
 	printf("Region<double> (%g, %g]\n", _a, _b);
 }
 
-struct ext_data
-{
-	double a;
-	double b;
-	double fnscale;
-	const UnivariateHelper<double>* helper;
-};
-
-double f_opt(int n, double *par, void *ex)
-{
-	ext_data* exd = (ext_data*) ex;
-
-	double a = exd->a;
-	double b = exd->b;
-	double fnscale = exd->fnscale;
-	const UnivariateHelper<double>* helper = exd->helper;
-	double x = par[0];
-	double x_tx;
-
-	// Transform to the interval (a,b]
-	if (std::isinf(a) && std::isinf(b) && a < 0 && b > 0) {
-		x_tx = x;
-	} else if (std::isinf(a) && a < 0) {
-		x_tx = b*R::plogis(x, 0, 1, true, false);
-	} else if (std::isinf(b) && b > 0) {
-		x_tx = std::exp(x) + a;
-	} else {
-		x_tx = (b-a) * R::plogis(x, 0, 1, true, false) + a;
-	}
-
-	// Call the weight function
-	return fnscale * helper->w(x_tx, true);
-}
-
 double UnivariateConstRegion::optimize(bool maximize, bool log) const
 {
-	// control = list(maxit = 100000, warn.1d.NelderMead = false);
-
 	Rcpp::NumericVector log_w_endpoints = Rcpp::NumericVector::create(
 		_helper->w(_a, true),
 		_helper->w(_b, true)
@@ -319,60 +292,30 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 	} else if (!maximize && endpoint_neg_inf) {
 		out = R_NegInf;
 	} else {
-		// Nelder-Mead algorithm from R.
-		// See https://cran.r-project.org/doc/manuals/R-exts.html#Optimization
-		// and https://stackoverflow.com/questions/12765304/calling-r-function-optim-from-c
-		int fail;
-		int fncount;
-		double f_val;
-		double xin = 0;
-		double par;
-		double mach_eps = sqrt(std::numeric_limits<double>::epsilon());
+
+		NelderMeadControl control;
+		control.maxit = 100000;
+
 		double fnscale = maximize ? -1.0 : 1.0;
+		UnivariateConstRegionFunctional f(_a, _b, *_helper, fnscale);
 
-		struct ext_data ex = { _a, _b, fnscale, _helper };
+		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(midpoint());
+		const NelderMeadResult& nm_out = nelder_mead(init, f, control);
 
-		nmmin(
-			1L,        // In:  int n [number of parameters]
-			&xin,      // In:  double *xin [initial value]
-			&par,      // Out: double *x [point at which optimum is found]
-			&f_val,    // Out: double *Fmin [objective value at which optimum is found]
-			f_opt,     // In:  optimfn fn [objective function]
-			&fail,     // Out: int *fail [true if the function failed]
-			R_NegInf,  // In:  double abstol [absolute tolerance]
-			mach_eps,  // In:  double intol [user-initialized conversion tolerance]
-			&ex,       // In:  void *ex [external data to pass to the objective function]
-			1.0,       // In:  double alpha [reflection factor]
-			0.5,       // In:  double beta [contraction and reduction factor]
-			2.0,       // In:  double gamma [extension factor]
-			0,         // In:  int trace [if positive, print progress info]
-			&fncount,  // Out: int *fncount [number of times the objective function was called]
-			100000     // In:  int maxit [maximum number of iterations]
-		);
-
-		if (fail) {
-			Rcpp::warning("opt_out: convergence status was ", fail);
+		if (nm_out.fail) {
+			Rcpp::warning("Nelder-Mead: convergence status was ", nm_out.fail);
 		}
 
 		// In case the function is strictly increasing or decreasing, check the
 		// objective value at the endpoints.
 		if (maximize) {
-			double x1 = std::floor(par);
-			double x2 = std::ceil(par);
-			double f1 = f_opt(1L, &x1, &ex);
-			double f2 = f_opt(1L, &x2, &ex);
 			double max_lwe = Rcpp::max(log_w_endpoints);
-			out = -std::max({f_val, f1, f2, max_lwe});
+			out = -std::max({nm_out.value, max_lwe});
 		} else {
-			double x1 = std::floor(par);
-			double x2 = std::ceil(par);
-			double f1 = f_opt(1L, &x1, &ex);
-			double f2 = f_opt(1L, &x2, &ex);
 			double min_lwe = Rcpp::min(log_w_endpoints);
-			out = std::min({f_val, f1, f2, min_lwe});
-			// Rprintf("Trace: Result of optimize is f_val = %g, f1 = %g, f2 = %g, min_lwe = %g, out = %g\n",
-			// 	f_val, f1, f2, min_lwe, out);
+			out = std::min({nm_out.value, min_lwe});
 		}
+
 	}
 
 	return log ? out : exp(out);

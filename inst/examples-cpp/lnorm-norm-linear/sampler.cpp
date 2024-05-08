@@ -1,14 +1,13 @@
 // [[Rcpp::depends(vws)]]
 #include "vws.h"
-//#include "CustomLinearRegion.h"
-#include "normal_truncated.h"
+#include "normal-truncated.h"
+#include "CustomLinearRegion.h"
 
 // [[Rcpp::export]]
 Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2,
 	double lambda2, unsigned int N = 10, unsigned int max_rejects = 10000,
 	unsigned int report_period = 1000)
 {
-	/*
 	MyHelper helper(mu, sigma2, z, lambda2);
 	CustomLinearRegion supp(0.0, R_PosInf, mu, sigma2, z, lambda2);
 
@@ -27,7 +26,6 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 		Rcpp::Named("draws") = out.first,
 		Rcpp::Named("rejects") = out.second
 	);
-	*/
 
 	return Rcpp::List::create();
 }
