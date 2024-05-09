@@ -6,22 +6,35 @@
 
 namespace vws {
 
+typedef std::function<double(const Rcpp::NumericVector&)> mv_function;
+
 class NelderMeadFunctional
 {
 protected:
+	const mv_function& _f;
 	double _fnscale;
 
 public:
-	NelderMeadFunctional(double fnscale)
-	: _fnscale(fnscale)
+	NelderMeadFunctional(const mv_function& f, double fnscale)
+		: _f(f), _fnscale(fnscale)
 	{
 	}
 
 	double get_fnscale() const { return _fnscale; }
+	const mv_function& get_f() const { return _f; }
 
 	// User should override this with their objective function
-	virtual double operator()(const Rcpp::NumericVector& x) const = 0;
+	static double eval(int n, double* par, void* ex) {
+		const NelderMeadFunctional* p = static_cast<const NelderMeadFunctional*>(ex);
+		Rcpp::NumericVector x(par, par + n);
+		const mv_function& f = p->get_f();
+		return p->get_fnscale() * f(x);
+	}
 };
+
+// Template Result and Control??!!
+// Put fnscale and std::function into ex?
+// Put fnscale into Control?
 
 struct NelderMeadResult
 {
@@ -40,14 +53,8 @@ struct NelderMeadControl
 	double abstol = R_NegInf;
 	double intol = sqrt(std::numeric_limits<double>::epsilon());
 	unsigned int maxit = 500;
+	double fnscale = 1.0;
 };
-
-double nmmin_objective(int n, double* par, void* ex)
-{
-	const NelderMeadFunctional* p = (NelderMeadFunctional*) ex;
-	Rcpp::NumericVector x(par, par + n);
-	return p->get_fnscale() * (*p)(x);
-}
 
 /*
 * Nelder-Mead algorithm from R.
@@ -55,12 +62,11 @@ double nmmin_objective(int n, double* par, void* ex)
 * and <https://stackoverflow.com/questions/12765304/calling-r-function-optim-from-c>
 */
 NelderMeadResult nelder_mead(const Rcpp::NumericVector& init,
-	NelderMeadFunctional& f, const NelderMeadControl& control)
+	mv_function f,
+	const NelderMeadControl& control)
 {
 	NelderMeadResult out;
 	unsigned int n = init.length();
-	// const double* xin = init.begin();
-	void* ex = &f;
 
 	double xin[n];
 	for (unsigned int i = 0; i < n; i++) {
@@ -69,16 +75,18 @@ NelderMeadResult nelder_mead(const Rcpp::NumericVector& init,
 
 	double xout[n];
 
+	NelderMeadFunctional nmf(f, control.fnscale);
+
 	nmmin(
 		n,               // In:  int n [number of parameters]
 		xin,             // In:  double *xin [initial value]
 		xout,            // Out: double *x [point at which optimum is found]
 		&out.value,      // Out: double *Fmin [objective value at which optimum is found]
-		nmmin_objective, // In:  optimfn fn [objective function]
+		NelderMeadFunctional::eval, // In:  optimfn fn [objective function]
 		&out.fail,       // Out: int *fail [true if the function failed]
 		R_NegInf,        // In:  double abstol [absolute tolerance]
 		control.intol,   // In:  double intol [user-initialized conversion tolerance]
-		ex,              // In:  void *ex [external data to pass to the objective function]
+		&nmf,            // In:  void *ex [external data to pass to the objective function]
 		control.alpha,   // In:  double alpha [reflection factor]
 		control.beta,    // In:  double beta [contraction and reduction factor]
 		control.gamma,   // In:  double gamma [extension factor]

@@ -4,7 +4,8 @@
 
 #include <Rcpp.h>
 #include "vws.h"
-#include "normal_truncated.h"
+#include "normal-truncated.h"
+#include "nelder-mead.h"
 
 class CustomLinearRegion : public vws::Region<double>
 {
@@ -24,19 +25,15 @@ public:
 	CustomLinearRegion(double a, double b, double mu,
 		double sigma2, double z, double lambda2);
 
-	double mgf(double s, bool log = false, double tol = 1e-6) const;
-
-	// First derivative of log w(x)
-	double d_log_w(double x) {
-		return -1/x * (1 + (std::log(x) - _mu) / _sigma2);
-	}
+	double mgf(double s, bool log = true) const;
+	double midpoint() const;
 
 	double d_base(const double& x, bool log = false) const
 	{
-		return dnorm(x, _z, std::sqrt(_lambda2), log);
+		return R::dnorm(x, _z, std::sqrt(_lambda2), log);
 	}
 
-	double w(const double& x, bool log = false) const {
+	double w(const double& x, bool log = true) const {
 		double out = R_NegInf;
 		if (x > 0) {
 			out = -std::log(x) - std::pow(std::log(x) - _mu, 2.0) / (2*_sigma2);
@@ -73,31 +70,18 @@ public:
 		return log ? out : exp(out);
 	}
 
-	double xi_upper(bool log = true, double tol = 1e-6) const;
-	double xi_lower(bool log = true, double tol = 1e-6) const;
+	double get_xi_upper(bool log = true) const;
+	double get_xi_lower(bool log = true) const;
 
 	std::pair<CustomLinearRegion,CustomLinearRegion> bifurcate() const {
-		double x;
-
-		if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
-			// Here we have an interval (-Inf, Inf). Make a split at zero.
-			x = 0;
-		} else if (std::isinf(_a) && _a < 0) {
-			// Left endpoint is -Inf. Split based on right endpoint.
-			x = _b - abs(_b) - 1;
-		} else if (std::isinf(_b) && _b > 0) {
-			// Right endpoint is Inf. Split based on left endpoint.
-			x = _a + abs(_a) + 1;
-		} else {
-			x = (_a + _b) / 2;
-		}
-
-		return bifurcate(x);
+		return bifurcate(midpoint());
 	}
 
 	std::pair<CustomLinearRegion,CustomLinearRegion> bifurcate(const double& x) const {
+		// printf("About to begin bifurcate at %g\n", x);
 		CustomLinearRegion r1(_a, x, _mu, _sigma2, _z, _lambda2);
 		CustomLinearRegion r2(x, _b, _mu, _sigma2, _z, _lambda2);
+		// printf("About to return from bifurcate at %g\n", x);
 		return std::make_pair(r1, r2);
 	}
 
@@ -138,9 +122,13 @@ public:
 	}
 };
 
-// MGF the truncated and reweighted g
-double CustomLinearRegion::mgf(double s, bool log, double tol) const
+// MGF of the truncated and reweighted g
+double CustomLinearRegion::mgf(double s, bool log) const
 {
+	if (_a >= _b) {
+		return NAN;
+	}
+
 	// If we are truncating way into the upper tail of a distribution, working
 	// with the complement of the CDF helps to retain precision. Otherwise,
 	// work with the CDF function.
@@ -149,16 +137,51 @@ double CustomLinearRegion::mgf(double s, bool log, double tol) const
 	double lp_num_b = R::pnorm(_b, _z + s*_lambda2, std::sqrt(_lambda2), true, true);
 	double clp_num_a = R::pnorm(_a, _z + s*_lambda2, std::sqrt(_lambda2), false, true);
 	double clp_num_b = R::pnorm(_b, _z + s*_lambda2, std::sqrt(_lambda2), false, true);
-	double lp_num = lp_num_a > log1p(-tol) ? vws::log_sub2_exp(clp_num_a, clp_num_b) : vws::log_sub2_exp(lp_num_b, lp_num_a);
+	double lp_num = std::max(
+		vws::log_sub2_exp(clp_num_a, clp_num_b),
+		vws::log_sub2_exp(lp_num_b, lp_num_a)
+	);
 
 	double lp_den_a = R::pnorm(_a, _z, std::sqrt(_lambda2), true, true);
 	double lp_den_b = R::pnorm(_b, _z, std::sqrt(_lambda2), true, true);
 	double clp_den_a = R::pnorm(_a, _z, std::sqrt(_lambda2), false, true);
 	double clp_den_b = R::pnorm(_b, _z, std::sqrt(_lambda2), false, true);
-	double lp_den = lp_den_a > log1p(-tol) ? vws::log_sub2_exp(clp_den_a, clp_den_b) : vws::log_sub2_exp(lp_den_b, lp_den_a);
+	double lp_den = std::max(
+		vws::log_sub2_exp(clp_den_a, clp_den_b),
+		vws::log_sub2_exp(lp_den_b, lp_den_a)
+	);
+
+	// printf("In mgf\n");
+	// printf("lp_num: %g\n", lp_num);
+	// printf("lp_den: %g\n", lp_den);
+	// printf("s: %g\n", s);
+	// printf("_z: %g\n", _z);
+	// printf("_a: %g\n", _a);
+	// printf("_b: %g\n", _b);
+	// printf("_lambda2: %g\n", _lambda2);
 
 	double out = lp_num - lp_den + s*_z + pow(s, 2.0) * _lambda2 / 2;
 	return log ? out : exp(out);
+}
+
+double CustomLinearRegion::midpoint() const
+{
+	double out;
+
+	if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
+		// In this case, we have an interval (-Inf, Inf). Make a split at zero.
+		out = 0;
+	} else if (std::isinf(_a) && _a < 0) {
+		// Left endpoint is -Inf. Split based on right endpoint.
+		out = _b - std::fabs(_b) - 1;
+	} else if (std::isinf(_b) && _b > 0) {
+		// Right endpoint is Inf. Split based on left endpoint.
+		out = _a + std::fabs(_a) + 1;
+	} else {
+		out = (_a + _b) / 2;
+	}
+
+	return out;
 }
 
 CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
@@ -170,50 +193,83 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		Rcpp::stop("a > b");
 	}
 
-	obj_line = function(x) {
-		double gr = d_log_w(x);
-		return w(x, true) - x * gr + mgf(gr, true);
+	if (a == b) {
+		// Special handling for singleton sets, since truncated MGF is not
+		// defined for these.
+		_beta0_min = NAN;
+		_beta1_min = NAN;
+		_beta0_max = NAN;
+		_beta1_max = NAN;
+		return;
 	}
 
-	bool l_concave = log(a) < mu - sigma2 + 1;
-	bool r_convex = log(b) > mu - sigma2 + 1;
+	// printf("Begin constructor for CustomLinearRegion\n");
+
+    std::function<double(double)> d_log_w = [&](double x) {
+		return -1.0/x * (1.0 + (std::log(x) - _mu) / _sigma2);
+   	};
+
+    const std::function<double(double)>& tx = [&](double x) {
+		// Transform to the interval (a,b]
+		if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
+			return x;
+		} else if (std::isinf(_a) && _a < 0) {
+			return _b*R::plogis(x, 0, 1, true, false);
+		} else if (std::isinf(_b) && _b > 0) {
+			return std::exp(x) + _a;
+		} else {
+			return (_b - _a) * R::plogis(x, 0, 1, true, false) + _a;
+		}
+    };
+
+	vws::mv_function f = [&](const Rcpp::NumericVector& x) {
+		double x_tx = tx(x(0));
+		double gr = d_log_w(x_tx);
+		return w(x_tx, true) - x_tx * gr + mgf(gr, true);
+	};
+
+	bool l_concave = std::log(_a) < _mu - _sigma2 + 1;
+	bool r_convex = std::log(_b) > _mu - _sigma2 + 1;
 	if (l_concave && r_convex) {
-		Rcpp::stop("Partition your region so that %g is not in the interior\n", exp(mu - sigma2 + 1));
+		Rcpp::stop("Partition your region so that %g is not in the interior\n", exp(_mu - _sigma2 + 1));
 	}
 
-	is_concave = l_concave;
-	is_convex = r_convex;
+	bool is_concave = l_concave;
+	bool is_convex = r_convex;
 
 	if (is_concave) {
 		// log w(x) is concave
 
 		// For the minorizer
-		optim_out = optimize(f = obj_line, interval = c(a, b), maximum = FALSE);
-		c_star = optim_out$minimum;
-		_beta0_max = w(c_star) - c_star*d_log_w(c_star);
+		vws::NelderMeadControl control;
+		control.maxit = 100000;
+		control.fnscale = 1.0;
+		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
+		const vws::NelderMeadResult& nm_out = vws::nelder_mead(init, f, control);
+		double c_star = tx(nm_out.par(0));
+		_beta0_max = w(c_star) - c_star * d_log_w(c_star);
 		_beta1_max = d_log_w(c_star);
 
 		// For the majorizer
-		A = matrix(c(1,1,a,b), 2, 2);
-		c = c(w(a), w(b));
-		x = solve(A, c);
-		_beta0_min = x[0];
-		_beta1_min = x[1];
+		_beta1_min = (w(b) - w(a)) / (b - a);
+		_beta0_min = w(a) - a*_beta1_min;
+
 	} else if (is_convex) {
 		// log w(x) is convex
 
 		// For the minorizer
-		optim_out = optimize(f = obj_line, interval = c(a, b), maximum = FALSE);
-		c_star = optim_out$minimum;
+		vws::NelderMeadControl control;
+		control.maxit = 100000;
+		control.fnscale = 1.0;
+		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
+		const vws::NelderMeadResult& nm_out = vws::nelder_mead(init, f, control);
+		double c_star = tx(nm_out.par(0));
 		_beta0_min = w(c_star) - c_star*d_log_w(c_star);
 		_beta1_min = d_log_w(c_star);
 
 		// For the majorizer
-		A = matrix(c(1,1,a,b), 2, 2);
-		c = c(w(a), w(b));
-		x = solve(A, c);
-		_beta0_max = x[0];
-		_beta1_max = x[1];
+		_beta1_max = (w(b) - w(a)) / (b - a);
+		_beta0_max = w(a) - a*_beta1_max;
 	} else {
 		// log w(x) is constant
 		_beta0_min = 0;
@@ -221,50 +277,70 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		_beta0_max = 0;
 		_beta1_max = 0;
 	}
-}
 
-double CustomLinearRegion::xi_upper(bool log = true, double tol) const
-{
-	double out;
-
-	double lp_a = R::pnorm(_a, _z + _beta1_max*_lambda2, sqrt(_lambda2), true, true);
-	if (lp_a > std::log1p(-tol)) {
-		// If we are truncating way into the upper tail of a distribution, working
-		// with the complement of the CDF helps to retain precision.
-		double clp_a = pnorm(_a, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), false, true);
-		double clp_b = pnorm(_b, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), false, true);
-		out = _beta0_max + _beta1_max * _z + _beta1_max^2 * _lambda2 / 2 +
-			vws::log_sub2_exp(clp_a, clp_b)
-	} else {
-		// Otherwise, work with the CDF function.
-		double lp_b = pnorm(_b, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), true, true)
-		out = _beta0_max + _beta1_max * _z + _beta1_max^2 * _lambda2 / 2 +
-			vws::log_sub2_exp(lp_b, lp_a)
+	if (std::isnan(_beta1_max)) {
+		printf("is_convex = %d\n", is_convex);
+		printf("_a = %g\n", _a);
+		printf("_b = %g\n", _b);
+		printf("w(_a) = %g\n", w(_a));
+		printf("w(_b) = %g\n", w(_b));
+		printf("_beta0_min = %g\n", _beta0_min);
+		printf("_beta1_min = %g\n", _beta1_min);
+		printf("_beta0_max = %g\n", _beta0_max);
+		printf("_beta1_max = %g\n", _beta1_max);
+		Rcpp::stop("PAUSE!");
 	}
 
+	// printf("End constructor for CustomLinearRegion\n");
+}
+
+double CustomLinearRegion::get_xi_upper(bool log) const
+{
+	// printf("Begin get_xi_upper\n");
+	// printf("_a = %g, _b = %g, _z = %g, _lambda2 = %g\n", _a, _b, _z, _lambda2);
+	// printf("_beta0_max = %g, _beta1_max = %g\n", _beta0_max, _beta1_max);
+
+	double lp_a = R::pnorm(_a, _z + _beta1_max*_lambda2, sqrt(_lambda2), true, true);
+	double lp_b = R::pnorm(_b, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), true, true);
+	double lp1_diff = vws::log_sub2_exp(lp_b, lp_a);
+
+	double clp_a = R::pnorm(_a, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), false, true);
+	double clp_b = R::pnorm(_b, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), false, true);
+	double lp2_diff = vws::log_sub2_exp(clp_a, clp_b);
+
+	// printf("lp_a = %g, lp_b = %g, lp1_diff = %g\n", lp_a, lp_b, lp1_diff);
+	// printf("clp_a = %g, clp_b = %g, lp2_diff = %g\n", clp_a, clp_b, lp2_diff);
+
+	// If we are truncating way into the upper tail of a distribution, working
+	// with the complement of the CDF helps to retain precision.
+	double lp_diff = std::max(lp1_diff, lp2_diff);
+	// printf("lp_diff = %g\n", lp_diff);
+	double out = _beta0_max + _beta1_max * _z + std::pow(_beta1_max, 2.0) * _lambda2 / 2 + lp_diff;
+
+	// printf("End get_xi_upper with (log) out = %g\n", out);
 	return log ? out : exp(out);
 }
 
-double CustomLinearRegion::xi_lower(bool log = true, double tol) const
+double CustomLinearRegion::get_xi_lower(bool log) const
 {
 	double lp_a = R::pnorm(_a, _z + _beta1_min*_lambda2, sqrt(_lambda2), true, true);
-	if (lp_a > std::log1p(-tol)) {
-		// If we are truncating way into the upper tail of a distribution, working
-		// with the complement of the CDF helps to retain precision.
-		double clp_a = pnorm(_a, _z + _beta1_min*_lambda2, std::sqrt(_lambda2), false, true);
-		double clp_b = pnorm(_b, _z + _beta1_min*_lambda2, std::sqrt(_lambda2), false, true);
-		double out = _beta0_min + _beta1_min * _z + _beta1_min^2 * _lambda2 / 2 +
-			vws::log_sub2_exp(clp_a, clp_b);
-	} else {
-		// Otherwise, work with the CDF function.
-		double lp_b = pnorm(_b, _z + _beta1_min*_lambda2, std::sqrt(_lambda2), true, true);
-		double out = _beta0_min + _beta1_min * _z + _beta1_min^2 * _lambda2 / 2 +
-			vws::log_sub2_exp(lp_b, lp_a);
-	}
+	double lp_b = R::pnorm(_b, _z + _beta1_min*_lambda2, std::sqrt(_lambda2), true, true);
+	double lp1_diff = vws::log_sub2_exp(lp_b, lp_a);
+
+	double clp_a = R::pnorm(_a, _z + _beta1_min*_lambda2, std::sqrt(_lambda2), false, true);
+	double clp_b = R::pnorm(_b, _z + _beta1_min*_lambda2, std::sqrt(_lambda2), false, true);
+	double lp2_diff = vws::log_sub2_exp(clp_a, clp_b);
+
+	double lp_diff = std::max(lp1_diff, lp2_diff);
+
+	// If we are truncating way into the upper tail of a distribution, working
+	// with the complement of the CDF helps to retain precision.
+	double out = _beta0_min + _beta1_min * _z + std::pow(_beta1_min, 2.0) * _lambda2 / 2 + lp_diff;
 
 	// If we hopelessly run out of precision and the result is larger than
 	// xi_upper, set xi_lower to xi_upper.
-	double out = std::min(out, xi_upper(true, tol));
+	out = std::min(out, get_xi_upper(true));
+	// printf("End get_xi_lower with (log) out = %g\n", out);
 	return log ? out : exp(out);
 }
 

@@ -3,6 +3,12 @@
 #include "MyHelper.h"
 #include "CustomConstRegion.h"
 
+double callFunction(const std::function<double(const Rcpp::NumericVector&)>& f)
+{
+	const Rcpp::NumericVector& x = Rcpp::NumericVector::create(1, 2, 3);
+    return f(x);
+}
+
 // [[Rcpp::export]]
 Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2,
 	double lambda2, unsigned int N = 10, unsigned int max_rejects = 10000,
@@ -17,8 +23,6 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 
 	printf("Checkpoint: Creating proposal\n");
 	vws::FMMProposal<double, CustomConstRegion> h(regions);
-
-	// return Rcpp::List::create();
 
 	printf("Checkpoint: Adapting proposal\n");
 	h.adapt(N - 1);

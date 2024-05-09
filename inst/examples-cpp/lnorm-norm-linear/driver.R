@@ -38,7 +38,7 @@ print(h, n = N - 1)
 ctrl = rejection_control(report = 5000, extra_outputs = TRUE, max_rejects = 1000)
 out1 = rejection(h, n = n, control = ctrl)
 y = unlist(out1$draws)
-hist(y)
+# hist(y)
 
 sum(out1$rejects) / (sum(out1$rejects) + n)
 

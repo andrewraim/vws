@@ -137,6 +137,9 @@ void FMMProposal<T,R>::adapt(unsigned int N)
 		// Each region's contribution to the rejection rate
 		Rcpp::NumericVector log_volume = rejection_bound_regions(true);
 
+		// printf("Checkpoint: log_volume before transform\n");
+		// Rcpp::print(log_volume);
+
 		unsigned int n_bif = 0;
 		for (unsigned int l = 0; l < L; l++) {
 			log_volume(l) = (*_bifurcatable)(l) ? log_volume(l) : R_NegInf;
@@ -148,25 +151,37 @@ void FMMProposal<T,R>::adapt(unsigned int N)
 			break;
 		}
 
+		// printf("Checkpoint: log_volume after transform\n");
+		// Rcpp::print(log_volume);
+
 		unsigned int jdx = r_categ(log_volume, true);
+		// printf("Checkpoint: jdx = %d\n", jdx);
 		const R& r = _regions_vec[jdx];
 
 		// Split the target region and make another proposal with it.
 		//
 		// TBD: we may not need to recache each time through the loop.
 		// Perhaps we can insert into the end and zero out the removed entries?
+		// printf("Checkpoint: begin split\n");
 		const std::pair<R,R>& bif_out = r.bifurcate();
+		// printf("Checkpoint: bifurcate\n");
 		typename std::set<R>::iterator itr = _regions.find(r);
+		// printf("Checkpoint: erase\n");
 		_regions.erase(itr);
+		// printf("Checkpoint: insert first\n");
 		_regions.insert(bif_out.first);
+		// printf("Checkpoint: insert second\n");
 		_regions.insert(bif_out.second);
+		// printf("Checkpoint: recache\n");
 		recache();
+
+		// printf("Checkpoint: end split\n");
 	}
 }
 
 template <class T, class R>
 FMMProposal<T,R>::FMMProposal(const std::vector<R>& regions)
-	: _regions(), _regions_vec()
+: _regions(), _regions_vec()
 {
 	_regions.insert(regions.begin(), regions.end());
 	recache();

@@ -7,6 +7,7 @@
 
 namespace vws {
 
+/*
 class UnivariateConstRegionFunctional : public NelderMeadFunctional
 {
 protected:
@@ -39,6 +40,7 @@ public:
 		return _helper.w(x_tx, true);
 	}
 };
+*/
 
 }
 

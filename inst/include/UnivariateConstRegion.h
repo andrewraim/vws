@@ -295,11 +295,28 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 
 		NelderMeadControl control;
 		control.maxit = 100000;
+		control.fnscale = maximize ? -1.0 : 1.0;
 
-		double fnscale = maximize ? -1.0 : 1.0;
-		UnivariateConstRegionFunctional f(_a, _b, *_helper, fnscale);
+	    std::function<double(const Rcpp::NumericVector&)> f =
+    	[&](const Rcpp::NumericVector& x) {
+			double x_tx;
 
-		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(midpoint());
+			// Transform to the interval (a,b]
+			if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
+				x_tx = x(0);
+			} else if (std::isinf(_a) && _a < 0) {
+				x_tx = _b*R::plogis(x(0), 0, 1, true, false);
+			} else if (std::isinf(_b) && _b > 0) {
+				x_tx = std::exp(x(0)) + _a;
+			} else {
+				x_tx = (_b - _a) * R::plogis(x(0), 0, 1, true, false) + _a;
+			}
+
+			// Call the weight function
+			return _helper->w(x_tx, true);
+		};
+
+   		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
 		const NelderMeadResult& nm_out = nelder_mead(init, f, control);
 
 		if (nm_out.fail) {
