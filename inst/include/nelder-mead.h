@@ -8,6 +8,7 @@ namespace vws {
 
 typedef std::function<double(const Rcpp::NumericVector&)> mv_function;
 
+// This is for internal use only
 class NelderMeadFunctional
 {
 protected:
@@ -32,9 +33,9 @@ public:
 	}
 };
 
-// Template Result and Control??!!
-// Put fnscale and std::function into ex?
-// Put fnscale into Control?
+// Does it make sense to turn Result and Control into Template classes? If we
+// add more interfaces, this might be way to avoid having a bunch of classes
+// with similar purposes and names which are otherwise not connected.
 
 struct NelderMeadResult
 {
