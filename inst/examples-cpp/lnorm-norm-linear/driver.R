@@ -35,7 +35,7 @@ print(h, n = N - 1)
 
 # bdd = tail(exp(adapt_out$log_bdd_hist), 1)
 
-ctrl = rejection_control(report = 5000, extra_outputs = TRUE, max_rejects = 1000)
+ctrl = rejection_control(report = n / 10, extra_outputs = TRUE, max_rejects = n * 10)
 out1 = rejection(h, n = n, control = ctrl)
 y = unlist(out1$draws)
 # hist(y)
@@ -45,7 +45,7 @@ sum(out1$rejects) / (sum(out1$rejects) + n)
 
 # ----- Sampler in C++ -----
 out2 = r_lognormal_normal(n = n, z = z, mu = mu, sigma2 = sigma2,
-	lambda2 = lambda2, N = 10, max_rejects = 10000, report_period = 1000)
+	lambda2 = lambda2, N = 10, max_rejects = n* 10, report_period = n / 10)
 hist(out2$draws)
 
 sum(out2$rejects) / (sum(out2$rejects) + n)
