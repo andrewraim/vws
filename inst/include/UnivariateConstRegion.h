@@ -1,9 +1,9 @@
-#ifndef UNIVARIATE_CONST_REGION_H
-#define UNIVARIATE_CONST_REGION_H
+#ifndef VWS_UNIVARIATE_CONST_REGION_H
+#define VWS_UNIVARIATE_CONST_REGION_H
 
 #include <Rcpp.h>
 #include <memory>
-#include <RcppFunctionalUtilities.h>
+#include "RcppFunctionalUtilities.h"
 #include "Region.h"
 #include "UnivariateHelper.h"
 
@@ -37,6 +37,7 @@ class UnivariateConstRegion : public Region<double>
 protected:
 	double _a;
 	double _b;
+	const weight_function* _w;
 	const UnivariateHelper<double>* _helper;
 	double _log_w_max;
 	double _log_w_min;
@@ -47,7 +48,9 @@ public:
 	//' @param b Upper limit of interval.
 	//' @param w Weight function for the target distribution.
 	//' @param g An object created by \code{univariate_helper}.
-	UnivariateConstRegion(double a, double b, const UnivariateHelper<double>& helper);
+	UnivariateConstRegion(double a, double b,
+		const weight_function& w,
+		const UnivariateHelper<double>& helper);
 
 	//' @description
 	//' Density function \eqn{g} for the base distribution.
@@ -136,6 +139,7 @@ public:
 	const UnivariateConstRegion& operator=(const UnivariateConstRegion& x) {
 		_a = x._a;
 		_b = x._b;
+		_w = x._w;
 		_helper = x._helper;
 		_log_w_max = x._log_w_max;
 		_log_w_min = x._log_w_min;
@@ -144,8 +148,9 @@ public:
 	}
 };
 
-UnivariateConstRegion::UnivariateConstRegion(double a, double b, const UnivariateHelper<double>& helper)
-: _a(a), _b(b), _helper(&helper)
+UnivariateConstRegion::UnivariateConstRegion(double a, double b,
+	const weight_function& w, const UnivariateHelper<double>& helper)
+: _a(a), _b(b), _w(&w), _helper(&helper)
 {
 	if (a > b) {
 		Rcpp::stop("a > b");
@@ -196,7 +201,7 @@ bool UnivariateConstRegion::s(const double& x) const
 
 double UnivariateConstRegion::w(const double& x, bool log) const
 {
-	return _helper->w(x, log);
+	return (*_w)(x, log);
 }
 
 double UnivariateConstRegion::w_major(const double& x, bool log) const
@@ -234,14 +239,14 @@ UnivariateConstRegion::bifurcate() const
 std::pair<UnivariateConstRegion,UnivariateConstRegion>
 UnivariateConstRegion::bifurcate(const double& x) const
 {
-	UnivariateConstRegion r1(_a, x, *_helper);
-	UnivariateConstRegion r2(x, _b, *_helper);
+	UnivariateConstRegion r1(_a, x, *_w, *_helper);
+	UnivariateConstRegion r2(x, _b, *_w, *_helper);
 	return std::make_pair(r1, r2);
 }
 
 UnivariateConstRegion UnivariateConstRegion::singleton(const double& x) const
 {
-	return UnivariateConstRegion(x, x, *_helper);
+	return UnivariateConstRegion(x, x, *_w, *_helper);
 }
 
 bool UnivariateConstRegion::is_bifurcatable() const
@@ -276,8 +281,8 @@ void UnivariateConstRegion::print() const
 double UnivariateConstRegion::optimize(bool maximize, bool log) const
 {
 	Rcpp::NumericVector log_w_endpoints = Rcpp::NumericVector::create(
-		_helper->w(_a, true),
-		_helper->w(_b, true)
+		(*_w)(_a, true),
+		(*_w)(_b, true)
 	);
 	log_w_endpoints = log_w_endpoints[!Rcpp::is_na(log_w_endpoints)];
 	bool endpoint_pos_inf = Rcpp::is_true(Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints > 0));
@@ -290,28 +295,28 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 	} else if (!maximize && endpoint_neg_inf) {
 		out = R_NegInf;
 	} else {
-
 		RcppFunctionalUtilities::NelderMeadControl control;
 		control.maxit = 100000;
 		control.fnscale = maximize ? -1.0 : 1.0;
 
+		// Transform to the interval (a,b]
+		const RcppFunctionalUtilities::uv_function& tx =
+		[&](double x) {
+			if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
+				return x;
+			} else if (std::isinf(_a) && _a < 0) {
+				return _b*R::plogis(x, 0, 1, true, false);
+			} else if (std::isinf(_b) && _b > 0) {
+				return std::exp(x) + _a;
+			} else {
+				return (_b - _a) * R::plogis(x, 0, 1, true, false) + _a;
+			}
+		};
+
+		// Call the weight function
 	    const RcppFunctionalUtilities::mv_function& f =
     	[&](const Rcpp::NumericVector& x) {
-			double x_tx;
-
-			// Transform to the interval (a,b]
-			if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
-				x_tx = x(0);
-			} else if (std::isinf(_a) && _a < 0) {
-				x_tx = _b*R::plogis(x(0), 0, 1, true, false);
-			} else if (std::isinf(_b) && _b > 0) {
-				x_tx = std::exp(x(0)) + _a;
-			} else {
-				x_tx = (_b - _a) * R::plogis(x(0), 0, 1, true, false) + _a;
-			}
-
-			// Call the weight function
-			return _helper->w(x_tx, true);
+			return (*_w)(tx(x(0)), true);
 		};
 
    		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
@@ -331,7 +336,6 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 			double min_lwe = Rcpp::min(log_w_endpoints);
 			out = std::min({nm_out.value, min_lwe});
 		}
-
 	}
 
 	return log ? out : exp(out);

@@ -1,5 +1,5 @@
-#ifndef REJECTION_H
-#define REJECTION_H
+#ifndef VWS_REJECTION_H
+#define VWS_REJECTION_H
 
 #include <Rcpp.h>
 #include "logger.h"

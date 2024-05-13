@@ -15,8 +15,18 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	unsigned int report_period = 1000)
 {
 	printf("Checkpoint: Creating helper and supp\n");
-	MyHelper helper(mu, sigma2, z, lambda2);
-	CustomConstRegion supp(0.0, R_PosInf, mu, sigma2, helper);
+	MyHelper helper(z, lambda2);
+
+	const vws::weight_function& w =
+    [&](double x, bool log = true) {
+		double out = R_NegInf;
+		if (x > 0) {
+			out = -std::log(x) - std::pow(std::log(x) - mu, 2.0) / (2*sigma2);
+		}
+		return log ? out : exp(out);
+	};
+
+    CustomConstRegion supp(0.0, R_PosInf, mu, sigma2, w, helper);
 
 	printf("Checkpoint: Creating regions\n");
 	const std::vector<CustomConstRegion>& regions = { supp };

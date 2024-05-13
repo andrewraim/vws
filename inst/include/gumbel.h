@@ -1,5 +1,5 @@
-#ifndef GUMBEL_H
-#define GUMBEL_H
+#ifndef VWS_GUMBEL_H
+#define VWS_GUMBEL_H
 
 #include <Rcpp.h>
 

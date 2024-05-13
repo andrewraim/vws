@@ -12,32 +12,36 @@ private:
 
 public:
 	CustomConstRegion(double a, double b, double mu, double sigma2,
-		const vws::UnivariateHelper<double>& helper)
-	: vws::UnivariateConstRegion(a, b, helper), _mu(mu), _sigma2(sigma2)
+		const vws::weight_function& w, const vws::UnivariateHelper<double>& helper)
+	: vws::UnivariateConstRegion(a, b, w, helper), _mu(mu), _sigma2(sigma2)
 	{
 	}
 
-	double optimize(bool maximize = true, bool log = true) const {
+	double optimize(bool maximize = true, bool log = true) const
+	{
 		double y_star = exp(_mu - _sigma2);
 		double out;
 
 		if (maximize) {
 			if (y_star > _b) {
-				out = _helper->w(_b, true);
+				out = (*_w)(_b, true);
 			} else if (y_star < _a) {
-				out = _helper->w(_a, true);
+				out = (*_w)(_a, true);
 			} else {
-				out = _helper->w(y_star, true);
+				out = (*_w)(y_star, true);
 			}
 		} else {
-			out = std::min(_helper->w(_a, true), _helper->w(_b, true));
+			double lwa = (*_w)(_a, true);
+			double lwb = (*_w)(_b, true);
+			out = std::min(lwa, lwb);
 		}
 
 		return log ? out : exp(out);
 	}
 
 	// TBD: Maybe change this into a function that just finds the midpoint?
-	std::pair<CustomConstRegion,CustomConstRegion> bifurcate() const {
+	std::pair<CustomConstRegion,CustomConstRegion> bifurcate() const
+	{
 		double x;
 
 		if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
@@ -56,14 +60,15 @@ public:
 		return bifurcate(x);
 	}
 
-	std::pair<CustomConstRegion,CustomConstRegion> bifurcate(const double& x) const {
-		CustomConstRegion r1(_a, x, _mu, _sigma2, *_helper);
-		CustomConstRegion r2(x, _b, _mu, _sigma2, *_helper);
+	std::pair<CustomConstRegion,CustomConstRegion> bifurcate(const double& x) const
+	{
+		CustomConstRegion r1(_a, x, _mu, _sigma2, *_w, *_helper);
+		CustomConstRegion r2(x, _b, _mu, _sigma2, *_w, *_helper);
 		return std::make_pair(r1, r2);
 	}
 
 	CustomConstRegion singleton(const double& x) const {
-		return CustomConstRegion(x, x, _mu, _sigma2, *_helper);
+		return CustomConstRegion(x, x, _mu, _sigma2, *_w, *_helper);
 	}
 
 	bool operator<(const CustomConstRegion& x) const {
@@ -74,7 +79,8 @@ public:
 		return UnivariateConstRegion::operator==(x);
 	}
 
-	const CustomConstRegion& operator=(const CustomConstRegion& x) {
+	const CustomConstRegion& operator=(const CustomConstRegion& x)
+	{
 		UnivariateConstRegion::operator=(x);
 		_mu = x._mu;
 		_sigma2 = x._sigma2;

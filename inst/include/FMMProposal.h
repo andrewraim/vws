@@ -1,5 +1,5 @@
-#ifndef FMM_PROPOSAL_H
-#define FMM_PROPOSAL_H
+#ifndef VWS_FMM_PROPOSAL_H
+#define VWS_FMM_PROPOSAL_H
 
 #include <Rcpp.h>
 #include "log-sum-exp.h"

@@ -1,9 +1,7 @@
-#ifndef REJECTION_CONTROL_H
-#define REJECTION_CONTROL_H
+#ifndef VWS_REJECTION_CONTROL_H
+#define VWS_REJECTION_CONTROL_H
 
 namespace vws {
-
-enum class ErrorAction { STOP, WARNING, MESSAGE, NONE };
 
 //' Rejection Control
 //'

@@ -1,6 +1,7 @@
 #ifndef VWS_H
 #define VWS_H
 
+#include "typedefs.h"
 #include "logger.h"
 #include "gumbel.h"
 #include "categ.h"

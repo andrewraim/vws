@@ -1,8 +1,5 @@
-// [[Rcpp::depends(vws)]]
 #ifndef MY_HELPER_H
 #define MY_HELPER_H
-
-#include "vws.h"
 
 class MyHelper : public vws::UnivariateHelper<double>
 {

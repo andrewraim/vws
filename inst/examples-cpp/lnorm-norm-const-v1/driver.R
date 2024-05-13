@@ -1,6 +1,6 @@
 library(vws)
 library(tidyverse)
-Rcpp::sourceCpp("sampler.cpp", rebuild = TRUE)
+Rcpp::sourceCpp("sampler.cpp")
 
 # ----- Generate data -----
 z = 1

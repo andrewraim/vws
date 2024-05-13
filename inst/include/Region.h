@@ -1,5 +1,5 @@
-#ifndef REGION_H
-#define REGION_H
+#ifndef VWS_REGION_H
+#define VWS_REGION_H
 
 #include <Rcpp.h>
 #include <memory>

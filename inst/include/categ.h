@@ -1,5 +1,5 @@
-#ifndef CATEG_H
-#define CATEG_H
+#ifndef VWS_CATEG_H
+#define VWS_CATEG_H
 
 #include <Rcpp.h>
 #include "gumbel.h"

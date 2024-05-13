@@ -1,5 +1,5 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#ifndef VWS_LOGGER_H
+#define VWS_LOGGER_H
 
 #include <Rcpp.h>
 

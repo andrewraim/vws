@@ -1,5 +1,5 @@
-#ifndef WHICH_H
-#define WHICH_H
+#ifndef VWS_WHICH_H
+#define VWS_WHICH_H
 
 #include <Rcpp.h>
 

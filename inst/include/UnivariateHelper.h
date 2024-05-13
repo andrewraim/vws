@@ -1,5 +1,5 @@
-#ifndef UNIVARIATE_HELPER_H
-#define UNIVARIATE_HELPER_H
+#ifndef VWS_UNIVARIATE_HELPER_H
+#define VWS_UNIVARIATE_HELPER_H
 
 #include <Rcpp.h>
 
@@ -60,8 +60,7 @@ public:
 	virtual double d(T x, bool log = false) const = 0;
 	virtual double p(T q, bool lower = true, bool log = false) const = 0;
 	virtual double q(T p, bool lower = true, bool log = false) const = 0;
-	virtual double s(T x) const = 0;
-	virtual double w(T x, bool log = false) const = 0;
+	virtual bool s(T x) const = 0;
 };
 
 }
