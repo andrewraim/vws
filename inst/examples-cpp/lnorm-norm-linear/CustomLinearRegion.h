@@ -222,7 +222,7 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		}
     };
 
-	vws::mv_function f = [&](const Rcpp::NumericVector& x) {
+	RcppFunctionalUtilities::mv_function f = [&](const Rcpp::NumericVector& x) {
 		double x_tx = tx(x(0));
 		double gr = d_log_w(x_tx);
 		return w(x_tx, true) - x_tx * gr + mgf(gr, true);
@@ -241,11 +241,11 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		// log w(x) is concave
 
 		// For the minorizer
-		vws::NelderMeadControl control;
+		RcppFunctionalUtilities::NelderMeadControl control;
 		control.maxit = 100000;
 		control.fnscale = 1.0;
 		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
-		const vws::NelderMeadResult& nm_out = vws::nelder_mead(init, f, control);
+		const RcppFunctionalUtilities::NelderMeadResult& nm_out = RcppFunctionalUtilities::nelder_mead(init, f, control);
 		double c_star = tx(nm_out.par(0));
 		_beta0_max = w(c_star) - c_star * d_log_w(c_star);
 		_beta1_max = d_log_w(c_star);
@@ -258,11 +258,11 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		// log w(x) is convex
 
 		// For the minorizer
-		vws::NelderMeadControl control;
+		RcppFunctionalUtilities::NelderMeadControl control;
 		control.maxit = 100000;
 		control.fnscale = 1.0;
 		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
-		const vws::NelderMeadResult& nm_out = vws::nelder_mead(init, f, control);
+		const RcppFunctionalUtilities::NelderMeadResult& nm_out = RcppFunctionalUtilities::nelder_mead(init, f, control);
 		double c_star = tx(nm_out.par(0));
 		_beta0_min = w(c_star) - c_star*d_log_w(c_star);
 		_beta1_min = d_log_w(c_star);

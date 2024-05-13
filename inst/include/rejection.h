@@ -66,7 +66,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 
 	unsigned int max_rejects = control.get_max_rejects();
 	unsigned int report_period = control.get_report_period();
-	MaxRejectsAction max_rejects_action = control.get_max_rejects_action();
+	ErrorAction max_rejects_action = control.get_max_rejects_action();
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
@@ -102,13 +102,13 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 
 	if (N_rejects >= max_rejects) {
 		switch(max_rejects_action) {
-			case MaxRejectsAction::stop:
+			case ErrorAction::STOP:
 		    	Rcpp::stop("Reached maximum number of rejects: %d\n", max_rejects);
 		    	break;
-		    case MaxRejectsAction::warning:
+		    case ErrorAction::WARNING:
 		    	Rcpp::warning("Reached maximum number of rejects: %d\n", max_rejects);
 		    	break;
-		    case MaxRejectsAction::message:
+		    case ErrorAction::MESSAGE:
 		    	Rprintf("Reached maximum number of rejects: %d\n", max_rejects);
 		    	break;
 		}
@@ -127,7 +127,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n)
 	// - Halt if we reach max_rejects before accepting the requested n draws.
 	unsigned int max_rejects = 1000 * n;
 	unsigned int report_period = n + 1;
-	MaxRejectsAction max_rejects_action = MaxRejectsAction::stop;
+	ErrorAction max_rejects_action = ErrorAction::STOP;
 
 	vws::RejectionControl control(max_rejects, report_period, max_rejects_action);
 	return rejection(h, n, control);

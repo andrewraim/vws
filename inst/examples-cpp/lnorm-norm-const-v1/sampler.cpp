@@ -1,4 +1,4 @@
-// [[Rcpp::depends(vws)]]
+// [[Rcpp::depends(vws, RcppFunctionalUtilities)]]
 #include "vws.h"
 
 class MyHelper : public vws::UnivariateHelper<double>
@@ -48,7 +48,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	double lambda2, unsigned int N = 10, unsigned int max_rejects = 10000,
 	unsigned int report_period = 1000)
 {
-	vws::RejectionControl control(max_rejects, report_period);
+	vws::RejectionControl control(max_rejects, report_period, vws::ErrorAction::STOP);
 
 	MyHelper helper(mu, sigma2, z, lambda2);
 	vws::UnivariateConstRegion supp(0.0, R_PosInf, helper);

@@ -3,7 +3,7 @@
 
 namespace vws {
 
-enum MaxRejectsAction { stop, warning, message, null };
+enum class ErrorAction { STOP, WARNING, MESSAGE, NONE };
 
 //' Rejection Control
 //'
@@ -26,7 +26,7 @@ class RejectionControl
 {
 public:
 	RejectionControl(unsigned int max_rejects, unsigned int report_period,
-		MaxRejectsAction max_rejects_action)
+		ErrorAction max_rejects_action)
 	: _max_rejects(max_rejects),
 	  _report_period(report_period),
 	  _max_rejects_action(max_rejects_action)
@@ -35,12 +35,12 @@ public:
 
 	unsigned int get_max_rejects() const { return _max_rejects; }
 	unsigned int get_report_period() const { return _report_period; }
-	MaxRejectsAction get_max_rejects_action() const { return _max_rejects_action; }
+	ErrorAction get_max_rejects_action() const { return _max_rejects_action; }
 
 private:
 	unsigned int _max_rejects;
 	unsigned int _report_period;
-	MaxRejectsAction _max_rejects_action;
+	ErrorAction _max_rejects_action;
 };
 
 }

@@ -1,4 +1,4 @@
-// [[Rcpp::depends(vws)]]
+// [[Rcpp::depends(vws, RcppFunctionalUtilities)]]
 #include "vws.h"
 #include "MyHelper.h"
 #include "CustomConstRegion.h"
@@ -29,7 +29,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	h.print(5);
 
 	printf("Checkpoint: running sampler\n");
-	vws::RejectionControl control(max_rejects, report_period, vws::MaxRejectsAction::stop);
+	vws::RejectionControl control(max_rejects, report_period, vws::ErrorAction::STOP);
 	const std::pair<std::vector<double>, std::vector<unsigned int>>& out =
 		vws::rejection(h, n, control);
 

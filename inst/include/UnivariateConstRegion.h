@@ -2,12 +2,10 @@
 #define UNIVARIATE_CONST_REGION_H
 
 #include <Rcpp.h>
-#include <R_ext/Applic.h>
 #include <memory>
+#include <RcppFunctionalUtilities.h>
 #include "Region.h"
 #include "UnivariateHelper.h"
-#include "nelder-mead.h"
-#include "UnivariateConstRegionFunctional.h"
 
 namespace vws {
 
@@ -293,11 +291,11 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		out = R_NegInf;
 	} else {
 
-		NelderMeadControl control;
+		RcppFunctionalUtilities::NelderMeadControl control;
 		control.maxit = 100000;
 		control.fnscale = maximize ? -1.0 : 1.0;
 
-	    std::function<double(const Rcpp::NumericVector&)> f =
+	    const RcppFunctionalUtilities::mv_function& f =
     	[&](const Rcpp::NumericVector& x) {
 			double x_tx;
 
@@ -317,7 +315,8 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		};
 
    		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
-		const NelderMeadResult& nm_out = nelder_mead(init, f, control);
+		const RcppFunctionalUtilities::NelderMeadResult& nm_out =
+			RcppFunctionalUtilities::nelder_mead(init, f, control);
 
 		if (nm_out.fail) {
 			Rcpp::warning("Nelder-Mead: convergence status was ", nm_out.fail);
