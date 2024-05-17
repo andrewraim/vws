@@ -7,6 +7,8 @@
 #include "Region.h"
 #include "UnivariateHelper.h"
 
+namespace fctl = RcppFunctionalUtilities;
+
 namespace vws {
 
 //' Univariate Region with Constant Majorizer
@@ -295,12 +297,12 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 	} else if (!maximize && endpoint_neg_inf) {
 		out = R_NegInf;
 	} else {
-		RcppFunctionalUtilities::NelderMeadControl control;
+		fctl::NelderMeadControl control;
 		control.maxit = 100000;
 		control.fnscale = maximize ? -1.0 : 1.0;
 
 		// Transform to the interval (a,b]
-		const RcppFunctionalUtilities::uv_function& tx =
+		const fctl::uv_function& tx =
 		[&](double x) {
 			if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
 				return x;
@@ -314,14 +316,14 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		};
 
 		// Call the weight function
-	    const RcppFunctionalUtilities::mv_function& f =
+	    const fctl::mv_function& f =
     	[&](const Rcpp::NumericVector& x) {
 			return (*_w)(tx(x(0)), true);
 		};
 
    		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
-		const RcppFunctionalUtilities::NelderMeadResult& nm_out =
-			RcppFunctionalUtilities::nelder_mead(init, f, control);
+		const fctl::NelderMeadResult& nm_out =
+			fctl::nelder_mead(init, f, control);
 
 		if (nm_out.fail) {
 			Rcpp::warning("Nelder-Mead: convergence status was ", nm_out.fail);

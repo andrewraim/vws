@@ -395,7 +395,7 @@ If the bound can be reduced to a sufficiently small probability, the user can be
 
 ## Univariate Regions with Constant Majorizer {#sec-UnivariateConstRegion}
 
-`UnivariateConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Fuethermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
+`UnivariateConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Furthermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
 $g_j(x) = g(x) \ind(x \in \mathcal{D}_j) / \Prob(T \in \mathcal{D}_j)$
 along with the quantities
 $\overline{\xi}_j = \overline{w}_j \Prob(T \in \mathcal{D}_j)$ and
@@ -657,6 +657,8 @@ Jointly draw values $Y$ and $Z$ from the model; $Z$ is considered observed while
 set.seed(1234)
 y_true = rlnorm(1, mu, sqrt(sigma2))
 z = rnorm(1, y_true, sqrt(lambda2))
+print(y_true)
+print(z)
 ```
 
 ### Constant Majorizer with Numerical Optimization {#sec-ln-norm-const}
@@ -853,7 +855,7 @@ We have first derivative
 \right),
 \end{align*}
 <!-- -->
-for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(y)$ is positive when $y < y^*$, negative when $y > y^*$, and takes value zero at $y = y'$. Then $y^*$ maximizes $\zeta(y)$ with maximum value $\zeta(y^*) = \sigma^2 / 2 - \mu$. Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
+for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(y)$ is positive when $y < y^*$, negative when $y > y^*$, and takes value zero at $y = y^*$. Then $y^*$ maximizes $\zeta(y)$ with maximum value $\zeta(y^*) = \sigma^2 / 2 - \mu$. Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
 
 Here is a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
 
@@ -1059,7 +1061,7 @@ Using [@rem-normal-mgf-kernel], we have
 \overline{\beta}_{0j} + z \overline{\beta}_{1j} + \overline{\beta}_{1j}^2 \lambda^2 / 2
 \right\}
 \left\{ 
-\Phi(\alpha_j \mid z + \overline{\beta}_{1j} \lambda^2, \sigma^2)
+\Phi(\alpha_j \mid z + \overline{\beta}_{1j} \lambda^2, \lambda^2)
 - \Phi(\alpha_{j-1} \mid z + \overline{\beta}_{1j} \lambda^2, \lambda^2)
 \right\}
 \label{eqn:ln-norm-xi-upper}
@@ -1077,7 +1079,7 @@ and
 \underline{\beta}_{0j} + z \underline{\beta}_{1j} + \underline{\beta}_{1j}^2 \lambda^2 / 2
 \right\}
 \left\{ 
-\Phi(\alpha_j \mid z + \underline{\beta}_{1j} \lambda^2, \sigma^2)
+\Phi(\alpha_j \mid z + \underline{\beta}_{1j} \lambda^2, \lambda^2)
 - \Phi(\alpha_{j-1} \mid z + \underline{\beta}_{1j} \lambda^2, \lambda^2)
 \right\}.
 \label{eqn:ln-norm-xi-lower}

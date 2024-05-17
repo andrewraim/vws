@@ -7,6 +7,8 @@
 #include "normal-truncated.h"
 #include "nelder-mead.h"
 
+namespace fctl = RcppFunctionalUtilities;
+
 class CustomLinearRegion : public vws::Region<double>
 {
 private:
@@ -222,7 +224,7 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		}
     };
 
-	RcppFunctionalUtilities::mv_function f = [&](const Rcpp::NumericVector& x) {
+	fctl::mv_function f = [&](const Rcpp::NumericVector& x) {
 		double x_tx = tx(x(0));
 		double gr = d_log_w(x_tx);
 		return w(x_tx, true) - x_tx * gr + mgf(gr, true);
@@ -241,11 +243,11 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		// log w(x) is concave
 
 		// For the minorizer
-		RcppFunctionalUtilities::NelderMeadControl control;
+		fctl::NelderMeadControl control;
 		control.maxit = 100000;
 		control.fnscale = 1.0;
 		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
-		const RcppFunctionalUtilities::NelderMeadResult& nm_out = RcppFunctionalUtilities::nelder_mead(init, f, control);
+		const fctl::NelderMeadResult& nm_out = fctl::nelder_mead(init, f, control);
 		double c_star = tx(nm_out.par(0));
 		_beta0_max = w(c_star) - c_star * d_log_w(c_star);
 		_beta1_max = d_log_w(c_star);
@@ -258,11 +260,11 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		// log w(x) is convex
 
 		// For the minorizer
-		RcppFunctionalUtilities::NelderMeadControl control;
+		fctl::NelderMeadControl control;
 		control.maxit = 100000;
 		control.fnscale = 1.0;
 		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
-		const RcppFunctionalUtilities::NelderMeadResult& nm_out = RcppFunctionalUtilities::nelder_mead(init, f, control);
+		const fctl::NelderMeadResult& nm_out = fctl::nelder_mead(init, f, control);
 		double c_star = tx(nm_out.par(0));
 		_beta0_min = w(c_star) - c_star*d_log_w(c_star);
 		_beta1_min = d_log_w(c_star);
@@ -300,7 +302,7 @@ double CustomLinearRegion::get_xi_upper(bool log) const
 	// printf("_a = %g, _b = %g, _z = %g, _lambda2 = %g\n", _a, _b, _z, _lambda2);
 	// printf("_beta0_max = %g, _beta1_max = %g\n", _beta0_max, _beta1_max);
 
-	double lp_a = R::pnorm(_a, _z + _beta1_max*_lambda2, sqrt(_lambda2), true, true);
+	double lp_a = R::pnorm(_a, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), true, true);
 	double lp_b = R::pnorm(_b, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), true, true);
 	double lp1_diff = vws::log_sub2_exp(lp_b, lp_a);
 
