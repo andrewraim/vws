@@ -64,7 +64,7 @@ public:
 	//' total.
 	//' @param log If \code{TRUE} compute result on log-scale.
 	//' @return A vector of size \code{N} or a single scalar.
-	Rcpp::NumericVector rejection_bound(bool log = false) const;
+	double rejection_bound(bool log = false) const;
 
 	Rcpp::NumericVector rejection_bound_regions(bool log = false) const;
 
@@ -234,15 +234,15 @@ typename std::set<R>::const_iterator FMMProposal<T,R>::get_regions() const
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::rejection_bound(bool log) const
+double FMMProposal<T,R>::rejection_bound(bool log) const
 {
 	// Each region's contribution to the rejection rate bound
 	const Rcpp::NumericVector& lxl = *_log_xi_lower;
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
-	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
+	const Rcpp::NumericVector& log_bound = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
 
 	// Overall rejection rate bound
-	out = log_sum_exp(out);
+	double out = log_sum_exp(log_bound);
 	if (log) { return out; } else { return exp(out); }
 }
 
