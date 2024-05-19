@@ -8,7 +8,7 @@ get_target_density = function(mu, sigma2, z, lambda2)
 		out[y == 0] = -Inf
 		if (log) { return(out) } else { return(exp(out)) }
 	}
-	helper = normal_univariate_helper(mean = z, sd = sqrt(lambda2))
+	helper = normal_helper(mean = z, sd = sqrt(lambda2))
 	q = function(x, log = FALSE) {
 		tx = z - sqrt(2 * lambda2) * x
 		out = log(tx > 0) - log(tx) - (log(tx) - mu)^2 / (2*sigma2) - 1/2 * log(pi)

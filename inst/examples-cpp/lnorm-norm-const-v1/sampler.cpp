@@ -20,16 +20,13 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 
 	NormalHelper helper(z, lambda2);
 	vws::UnivariateConstRegion supp(0.0, R_PosInf, w, helper);
-
-	const std::vector<vws::UnivariateConstRegion>& regions = { supp };
-
-	vws::FMMProposal<double, vws::UnivariateConstRegion> h(regions);
+	vws::FMMProposal<double, vws::UnivariateConstRegion> h({ supp });
 
 	h.adapt(N - 1);
 	h.print(5);
 
-	const std::pair<std::vector<double>, std::vector<unsigned int>>& out =
-		vws::rejection(h, n, control);
+	// const std::pair<std::vector<double>, std::vector<unsigned int>>& out =
+	const auto& out = vws::rejection(h, n, control);
 
 	return Rcpp::List::create(
 		Rcpp::Named("draws") = out.first,
