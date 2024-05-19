@@ -448,7 +448,7 @@ Because the $\text{N}(\mu, \sigma^2)$ distribution is used as a
 provided as a shortcut to return the same structure as the call above.
 
 ```{r}
-g = normal_univariate_helper(mu, sigma)
+g = normal_helper(mu, sigma)
 ```
 
 For a similar setting with an integer-valued support, the subclass
@@ -460,7 +460,7 @@ should be a `univariate_helper` based on an integer-valued distribution.
 ```{r}
 #| eval: false
 #| prompt: true
-g = poisson_univariate_helper(lambda = 10)  ## A predefined helper for Poisson(lambda)
+g = poisson_helper(lambda = 10)  ## A predefined helper for Poisson(lambda)
 region = IntUnivariateConstRegion$new(a, b, w, g)
 ```
 
@@ -673,10 +673,10 @@ w = function(y, log = TRUE) {
 }
 ```
 
-Recall from [@sec-UnivariateConstRegion] that a `univariate_helper` structure is used to construct an object of class `UnivariateConstRegion` to provide necessary functions of the base distribution $g$. The `vws` package contains a built-in variant of `univariate_helper` named `normal_univariate_helper` for the normal distribution with mean and standard deviation parameters, which is appropriate for use in this problem.
+Recall from [@sec-UnivariateConstRegion] that a `univariate_helper` structure is used to construct an object of class `UnivariateConstRegion` to provide necessary functions of the base distribution $g$. The `vws` package contains a built-in variant of `univariate_helper` named `normal_helper` for the normal distribution with mean and standard deviation parameters, which is appropriate for use in this problem.
 
 ```{r}
-helper = normal_univariate_helper(mean = z, sd = sqrt(lambda2))
+helper = normal_helper(mean = z, sd = sqrt(lambda2))
 ```
 
 Before proceeding with the sampler, let us code the target density to assist in evaluating the distribution of the draws. To compute the normalizing constant, we will use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
@@ -748,7 +748,6 @@ The following plot shows the rate of decrease in bound \eqref{eqn:bound} over `N
 #|   Rate of adaptation improvement for Lognormal-Normal example with
 #|   constant majorizer.
 #| label: fig-ln-norm-adapt
-
 data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
@@ -791,7 +790,7 @@ density to ensure we have generated from the correct distribution.
 #|   with constant majorizer.
 #| label: fig-ln-norm-constant-draws
 
-g = data.frame(y = y) %>%
+gg = data.frame(y = y) %>%
 	ggplot() +
 	geom_histogram(aes(x = y, y = after_stat(density)), col = "black",
 		fill = NA, bins = 25) +
@@ -799,7 +798,7 @@ g = data.frame(y = y) %>%
 	xlab("y") +
 	ylab("Density") +
 	theme_minimal()
-print(g)
+print(gg)
 ```
 
 Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
@@ -815,7 +814,7 @@ Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $
 
 interval_lo = quantile(y, probs = 0.025)
 interval_hi = quantile(y, probs = 0.975)
-g + annotate("rect", xmin = interval_lo, xmax = interval_hi, ymin = 0,
+gg + annotate("rect", xmin = interval_lo, xmax = interval_hi, ymin = 0,
 		ymax = Inf, alpha = 0.1, fill = "blue") +
 	geom_vline(xintercept = z, col = "blue", lwd = 1.05) +
 	geom_vline(xintercept = y_true, col = "red", lwd = 1.05)
@@ -1100,7 +1099,7 @@ source("../inst/examples/lnorm-norm/CustomLinearRegion.R")
 -------------------------------------------------------------------------------
 Method            Description
 -----             -----
-`w`               $w(x) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2}
+`w`               $w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2}
                   (\log y - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(y)$.
 
 `w_major`         $\overline{w}_j(y) = \exp\{
@@ -1116,7 +1115,7 @@ Method            Description
                   $\text{N}(z + \lambda^2 \overline{\beta}_{1j},
                   \lambda^2)$ truncated to $(\alpha_{j-1}, \alpha_j]$.
 
-`s`               $\mathbb{1}_{\alpha_{j-1}, \alpha_j}(x)$.
+`s`               $\mathbb{1}_{\alpha_{j-1}, \alpha_j}(y)$.
 
 `xi_upper`        Compute $\overline{\xi}_j$ via \eqref{eqn:ln-norm-xi-upper}.
 
@@ -1132,7 +1131,7 @@ Let us proceed with a demonstration of the VWS sampler based on `CustomLinearReg
 ```{r}
 y_star = exp(mu - sigma2 + 1)
 region1 = CustomLinearRegion$new(a = 1e-6, b = y_star, mu, sigma2, z, lambda2)
-region2 = CustomLinearRegion$new(a = y_star, b = 1e3, mu, sigma2, z, lambda2)
+region2 = CustomLinearRegion$new(a = y_star, b = 1e6, mu, sigma2, z, lambda2)
 regions = list(region1, region2)
 ```
 
@@ -1312,7 +1311,7 @@ why it was of special interest to Devroye.
 nu = -0.5
 lambda = 10
 
-helper = poisson_univariate_helper(lambda^2 / 4)
+helper = poisson_helper(lambda^2 / 4)
 
 w = function(x, log = TRUE) {
 	out = -lgamma(x + nu + 1) + lambda^2 / 4 + nu * log(lambda / 2)

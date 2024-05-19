@@ -1,10 +1,10 @@
-#ifndef MY_HELPER_H
-#define MY_HELPER_H
+#ifndef NORMAL_HELPER_H
+#define NORMAL_HELPER_H
 
-class MyHelper : public vws::UnivariateHelper<double>
+class NormalHelper : public vws::UnivariateHelper<double>
 {
 public:
-	MyHelper(double z, double lambda2)
+	NormalHelper(double z, double lambda2)
 	: _z(z), _lambda2(lambda2)
 	{
 	}
@@ -21,7 +21,7 @@ public:
 	bool s(double x) const {
 		return true;
 	}
-	const MyHelper& operator=(const MyHelper& x) {
+	const NormalHelper& operator=(const NormalHelper& x) {
 		_z = x._z;
 		_lambda2 = x._lambda2;
 		return *this;

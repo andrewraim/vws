@@ -14,7 +14,7 @@ weight function. This version is for integer supports.
 }
 \examples{
 # Define base distribution and weight function
-g = poisson_univariate_helper(lambda = 5)
+g = poisson_helper(lambda = 5)
 w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 
 reg = IntUnivariateConstRegion$new(-Inf, 10, w, g)

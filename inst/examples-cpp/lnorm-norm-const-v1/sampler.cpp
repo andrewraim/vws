@@ -1,6 +1,6 @@
 // [[Rcpp::depends(vws, RcppFunctionalUtilities)]]
 #include "vws.h"
-#include "MyHelper.h"
+#include "NormalHelper.h"
 
 // [[Rcpp::export]]
 Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2,
@@ -18,7 +18,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 		return log ? out : exp(out);
 	};
 
-	MyHelper helper(z, lambda2);
+	NormalHelper helper(z, lambda2);
 	vws::UnivariateConstRegion supp(0.0, R_PosInf, w, helper);
 
 	const std::vector<vws::UnivariateConstRegion>& regions = { supp };

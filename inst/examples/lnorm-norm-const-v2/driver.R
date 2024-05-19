@@ -1,0 +1,68 @@
+library(vws)
+
+source(system.file("examples/lnorm-norm-const-v1/functions.R", package = "vws"))
+source(system.file("examples/lnorm-norm-const-v2/CustomConstRegion.R", package = "vws"))
+
+# ----- Generate data -----
+mu = 5
+sigma2 = 0.5
+lambda2 = 100
+
+set.seed(1234)
+y_true = rlnorm(1, mu, sqrt(sigma2))
+z = rnorm(1, y_true, sqrt(lambda2))
+print(y_true)
+print(z)
+
+# ----- Construct proposal -----
+w = function(y, log = TRUE) {
+        out = -log(y) - (log(y) - mu)^2 / (2*sigma2) + log(y > 0)
+        out[y == 0] = -Inf
+        if (log) { return(out) } else { return(exp(out)) }
+}
+
+helper = normal_univariate_helper(mean = z, sd = sqrt(lambda2))
+
+support = CustomConstRegion$new(a = 0, b = Inf, w = w, g = helper)
+regions = list(support)
+
+# ----- Adapt proposal -----
+h_init = FMMProposal$new(regions)
+adapt_out = adapt(h_init, N = 30)
+h = adapt_out$h
+
+# ----- Rejection sampling -----
+ctrl = rejection_control(report = 5000)
+out = rejection(h, n = 10000, control = ctrl)
+y = unlist(out)
+
+cat("Percent of proposed draws which were rejected:",
+	sum(out$rejects) / (length(y) + sum(out$rejects)) * 100)
+
+# ----- Plot draws vs. target density -----
+gg = data.frame(y = y) %>%
+	ggplot() +
+	geom_histogram(aes(x = y, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
+	xlab("y") +
+	ylab("Density") +
+	theme_minimal()
+print(gg)
+
+# ----- Plot log f(x) vs. log h(x) -----
+log_h = function(y) { h$d(as.list(y), log = TRUE) }
+log_f = function(y) { d_target(y, log = TRUE) }
+
+xlim = range(y)
+ggplot() +
+	geom_function(fun = log_f, col = "orange", lty = 1) +
+	geom_function(fun = log_h, col = "black", lty = 2) +
+	scale_x_continuous(limits = xlim) +
+	xlab("y") +
+	ylab("Density") +
+	theme_minimal()
+
+
+
+

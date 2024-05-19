@@ -1,8 +1,8 @@
 library(vws)
 library(tidyverse)
 
-source("functions.R")
-Rcpp::sourceCpp("sampler.cpp")
+source(system.file("examples-cpp/lnorm-norm-const-v1/functions.R", package = "vws"))
+Rcpp::sourceCpp(system.file("examples-cpp/lnorm-norm-const-v1/sampler.cpp", package = "vws"))
 
 set.seed(1234)
 
@@ -24,7 +24,6 @@ out = r_lognormal_normal(n = n, z = z, mu = mu, sigma2 = sigma2,
 	lambda2 = lambda2, N = 10, max_rejects = n * 10, report_period = n / 10)
 vws::printf("Empirical rejection rate: %g%%",
 	100 * sum(out$rejects) / (sum(out$rejects) + n))
-
 
 # ----- Compare distribution of the draws to the target density -----
 gg = ggplot() +

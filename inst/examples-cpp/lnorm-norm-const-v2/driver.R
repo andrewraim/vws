@@ -1,8 +1,8 @@
 library(vws)
 library(tidyverse)
 
-source("../lnorm-norm-const-v1/functions.R")
-Rcpp::sourceCpp("sampler.cpp")
+source(system.file("examples-cpp/lnorm-norm-const-v1/functions.R", package = "vws"))
+Rcpp::sourceCpp(system.file("examples-cpp/lnorm-norm-const-v2/sampler.cpp", package = "vws"))
 
 set.seed(1234)
 

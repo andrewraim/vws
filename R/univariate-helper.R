@@ -66,14 +66,14 @@ univariate_helper = function(d, p, q, s)
 #' @param sd Standard deviation parameter \eqn{\sigma}.
 #'
 #' @examples
-#' helper = normal_univariate_helper(mean = 0, sd = 1)
+#' helper = normal_helper(mean = 0, sd = 1)
 #' helper$d(0)
 #' helper$p(1.96)
 #' helper$q(0.025)
 #'
-#' @name normal_univariate_helper
+#' @name normal_helper
 #' @export
-normal_univariate_helper = function(mean, sd)
+normal_helper = function(mean, sd)
 {
 	univariate_helper(
 		d = function(x, log = FALSE) {
@@ -96,14 +96,14 @@ normal_univariate_helper = function(mean, sd)
 #' @param lambda Rate parameter \eqn{\mu}.
 #'
 #' @examples
-#' helper = poisson_univariate_helper(lambda = 10)
+#' helper = poisson_helper(lambda = 10)
 #' helper$d(5)
 #' helper$p(10)
 #' helper$q(0.025)
 #'
-#' @name poisson_univariate_helper
+#' @name poisson_helper
 #' @export
-poisson_univariate_helper = function(lambda)
+poisson_helper = function(lambda)
 {
 	univariate_helper(
 		d = function(x, log = FALSE) {
