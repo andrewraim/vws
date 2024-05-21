@@ -65,9 +65,7 @@ CustomLinearRegion$set("public", "initialize", function(a, b, mu, sigma2, z, lam
 
 	obj_line = function(x) {
 		gr = d_log_w(x)
-		out = w(x, log = TRUE) - x * gr + mgf(gr, log = TRUE)
-		if (any(is.na(out))) { browser() }
-		return(out)
+		w(x, log = TRUE) - x * gr + mgf(gr, log = TRUE)
 	}
 
 	l_concave = log(a) < mu - sigma2 + 1
@@ -83,36 +81,47 @@ CustomLinearRegion$set("public", "initialize", function(a, b, mu, sigma2, z, lam
 	is_concave = l_concave
 	is_convex = r_convex
 
+	optim_out = optimize(f = obj_line, interval = c(a, b), maximum = FALSE)
+	c_star = optim_out$minimum
+
 	if (is_concave) {
 		# log w(x) is concave
 
-		# For the minorizer
-		optim_out = optimize(f = obj_line, interval = c(a, b), maximum = FALSE)
-		c_star = optim_out$minimum
+		# For the majorizer
 		beta0_max = w(c_star) - c_star*d_log_w(c_star)
 		beta1_max = d_log_w(c_star)
 
-		# For the majorizer
-		A = matrix(c(1,1,a,b), 2, 2)
+		# For the minorizer
 		c = c(w(a), w(b))
-		x = solve(A, c)
-		beta0_min = x[1]
-		beta1_min = x[2]
+		if (all(is.finite(c))) {
+			A = matrix(c(1,1,a,b), 2, 2)
+			x = solve(A, c)
+			beta0_min = x[1]
+			beta1_min = x[2]
+		} else {
+			# Special handling when log w(x) is not finite at one of the endpoints.
+			beta0_min = -Inf
+			beta1_min = 0
+		}
 	} else if (is_convex) {
 		# log w(x) is convex
 
-		# For the minorizer
-		optim_out = optimize(f = obj_line, interval = c(a, b), maximum = FALSE)
-		c_star = optim_out$minimum
+		# For the majorizer
 		beta0_min = w(c_star) - c_star*d_log_w(c_star)
 		beta1_min = d_log_w(c_star)
 
 		# For the majorizer
-		A = matrix(c(1,1,a,b), 2, 2)
 		c = c(w(a), w(b))
-		x = solve(A, c)
-		beta0_max = x[1]
-		beta1_max = x[2]
+		if (all(is.finite(c))) {
+			A = matrix(c(1,1,a,b), 2, 2)
+			x = solve(A, c)
+			beta0_max = x[1]
+			beta1_max = x[2]
+		} else {
+			# Special handling when log w(x) is not finite at one of the endpoints.
+			beta0_max = max(c)
+			beta1_max = 0
+		}
 	} else {
 		# log w(x) is constant
 		beta0_min = 0
@@ -122,11 +131,17 @@ CustomLinearRegion$set("public", "initialize", function(a, b, mu, sigma2, z, lam
 	}
 
 	if (FALSE) {
-		# Debugging
+		# Plot on log-scale
 		curve(w(x, log = TRUE), xlim = c(a,b))
 		abline(coef = c(beta0_max, beta1_max), lty = 2, col = "blue")
 		abline(coef = c(beta0_min, beta1_min), lty = 2, col = "red")
-		browser()
+
+		# Plot on original scale
+		w_maj = function(x) { exp(beta0_max + beta1_max * x) }
+		w_min = function(x) { exp(beta0_min + beta1_min * x) }
+		curve(w(x, log = FALSE), xlim = c(a, 2*a))
+		curve(w_maj, add = TRUE, lty = 2)
+		curve(w_min, add = TRUE, lty = 2)
 	}
 
 	private$beta0_max = beta0_max
@@ -196,6 +211,27 @@ CustomLinearRegion$set("public", "is_bifurcatable", function()
 	return(TRUE)
 })
 
+CustomLinearRegion$set("public", "midpoint", function()
+{
+	a = private$a
+	b = private$b
+
+	if (is.infinite(a) && is.infinite(a) && a < 0 && b > 0) {
+		# Here we have an interval (-Inf, Inf). Make a split at zero.
+		x = 0
+	} else if (is.infinite(a) && a < 0) {
+		# Left endpoint is -Inf. Split based on right endpoint.
+		x = b - abs(b) - 1
+	} else if (is.infinite(b) && b > 0) {
+		# Right endpoint is Inf. Split based on left endpoint.
+		x = a + abs(a) + 1
+	} else {
+		x = (a + b) / 2
+	}
+
+	return(x)
+})
+
 CustomLinearRegion$set("public", "bifurcate", function(x = NULL, ...)
 {
 	a = private$a
@@ -206,18 +242,7 @@ CustomLinearRegion$set("public", "bifurcate", function(x = NULL, ...)
 	lambda2 = private$lambda2
 
 	if (is.null(x)) {
-		if (is.infinite(a) && is.infinite(a) && a < 0 && b > 0) {
-			# Here we have an interval (-Inf, Inf). Make a split at zero.
-			x = 0
-		} else if (is.infinite(a) && a < 0) {
-			# Left endpoint is -Inf. Split based on right endpoint.
-			x = b - abs(b) - 1
-		} else if (is.infinite(b) && b > 0) {
-			# Right endpoint is Inf. Split based on left endpoint.
-			x = a + abs(a) + 1
-		} else {
-			x = (a + b) / 2
-		}
+		x = self$midpoint()
 	}
 
 	s1 = CustomLinearRegion$new(a, x, mu, sigma2, z, lambda2)
@@ -286,6 +311,20 @@ CustomLinearRegion$set("public", "xi_lower", function(log = TRUE, tol = 1e-6)
 	out = min(out, self$xi_upper(log = TRUE))
 
 	if (log) { return(out) } else { return(exp(out)) }
+})
+
+#' @description
+#' The upper limit \eqn{\alpha_j} for this region.
+CustomLinearRegion$set("public", "upper", function()
+{
+	private$b
+})
+
+#' @description
+#' The upper limit \eqn{\alpha_j} for this region.
+CustomLinearRegion$set("public", "lower", function()
+{
+	private$a
 })
 
 ## Print Method

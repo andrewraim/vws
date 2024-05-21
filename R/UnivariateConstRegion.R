@@ -119,6 +119,27 @@ w_major = function(x, log = TRUE)
 	if (log) { return(out) } else { return(exp(out)) }
 },
 
+midpoint = function()
+{
+	a = private$a
+	b = private$b
+
+	if (is.infinite(a) && is.infinite(a) && a < 0 && b > 0) {
+		# Here we have an interval (-Inf, Inf). Make a split at zero.
+		x = 0
+	} else if (is.infinite(a) && a < 0) {
+		# Left endpoint is -Inf. Split based on right endpoint.
+		x = b - abs(b) - 1
+	} else if (is.infinite(b) && b > 0) {
+		# Right endpoint is Inf. Split based on left endpoint.
+		x = a + abs(a) + 1
+	} else {
+		x = (a + b) / 2
+	}
+
+	return(x)
+},
+
 #' @description
 #' Bifurcate this region into two regions. Use \code{x} as the bifurcation
 #' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
@@ -129,18 +150,7 @@ bifurcate = function(x = NULL)
 	b = private$b
 
 	if (is.null(x)) {
-		if (is.infinite(a) && is.infinite(b) && a < 0 && b > 0) {
-			# In this case, we have an interval (-Inf, Inf). Make a split at zero.
-			x = 0
-		} else if (is.infinite(a) && a < 0) {
-			# Left endpoint is -Inf. Split based on right endpoint.
-			x = b - abs(b) - 1
-		} else if (is.infinite(b) && b > 0) {
-			# Right endpoint is Inf. Split based on left endpoint.
-			x = a + abs(a) + 1
-		} else {
-			x = (a + b) / 2
-		}
+		x = self$midpoint()
 	}
 
 	s1 = UnivariateConstRegion$new(a = a, b = x, w = self$w, g = private$g)
@@ -171,6 +181,20 @@ xi_lower = function(log = TRUE)
 {
 	log_xi_lower = private$log_w_min + private$log_prob
 	ifelse(log, log_xi_lower, exp(log_xi_lower))
+},
+
+#' @description
+#' The upper limit \eqn{\alpha_j} for this region.
+upper = function()
+{
+	private$b
+},
+
+#' @description
+#' The lowerupper limit \eqn{\alpha_{j-1}} for this region.
+lower = function()
+{
+	private$a
 },
 
 #' @description
@@ -205,22 +229,9 @@ optimize = function(maximize = TRUE, log = TRUE)
 	method = "Nelder-Mead"
 	control = list(maxit = 100000, warn.1d.NelderMead = FALSE)
 
-	# Transformation to bounded interval, if necessary
-	tx = function(x) {
-		if (is.infinite(a) && is.infinite(b) && a < 0 && b > 0) {
-			out = x
-		} else if (is.infinite(a) && a < 0) {
-			out = b*plogis(x)
-		} else if (is.infinite(b) && b > 0) {
-			out = exp(x) + a
-		} else {
-			out = (b-a) * plogis(x) + a
-		}
-		return(out)
-	}
-
+	# Transform to bounded interval, if necessary
 	f_opt = function(x) {
-		w(tx(x), log = TRUE)
+		w(vws::inv_rect(x, a, b), log = TRUE)
 	}
 
 	init = 0

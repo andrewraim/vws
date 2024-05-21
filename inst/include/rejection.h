@@ -4,9 +4,39 @@
 #include <Rcpp.h>
 #include "logger.h"
 #include "Region.h"
-#include "RejectionControl.h"
 
 namespace vws {
+
+template <typename T>
+struct RejectionResult
+{
+	std::vector<T> draws;
+	std::vector<unsigned int> rejects;
+};
+
+//' Rejection Control
+//'
+//' Control object for rejection sampler.
+//'
+//' @param max_rejects Maximum number of rejections to tolerate before bailing out.
+//' @param report Report progress each time this many candidates are proposed.
+//' @param extra_outputs If \code{TRUE}, return a list with extended output
+//' in addition to the accepted draws. Otherwise only return accepted draws.
+//' @param action_incomplete What should happen if sampler halts with
+//' \code{max_rejects} rejections: ne of \code{"stop"},  \code{"warning"}, or
+//' \code{"message"}.
+//'
+//' @return
+//' A control object to be passed to the \code{rejection} function.
+//'
+//' @name rejection_control
+//' @export
+struct RejectionControl
+{
+	unsigned int max_rejects = std::numeric_limits<unsigned int>::max();
+	unsigned int report_period = std::numeric_limits<unsigned int>::max();
+	ErrorAction max_rejects_action = ErrorAction::STOP;
+};
 
 //' Vertical Weighted Strips Rejection Sampler
 //'
@@ -55,18 +85,18 @@ namespace vws {
 //' @name rejection
 //' @export
 template <typename T, typename R>
-std::pair<std::vector<T>, std::vector<unsigned int>>
+RejectionResult<T>
 rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& control)
 {
-	std::vector<T> out;
+	std::vector<T> draws;
 	std::vector<unsigned int> rejects(n, 0L);
 
 	unsigned int N_rejects = 0;
 	bool accept = false;
 
-	unsigned int max_rejects = control.get_max_rejects();
-	unsigned int report_period = control.get_report_period();
-	ErrorAction max_rejects_action = control.get_max_rejects_action();
+	unsigned int max_rejects = control.max_rejects;
+	unsigned int report_period = control.report_period;
+	ErrorAction max_rejects_action = control.max_rejects_action;
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
@@ -75,15 +105,15 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 		accept = false;
 		while (!accept && N_rejects < max_rejects) {
 			double v = ::R::runif(0, 1);
-			const std::vector<T>& draws = h.r(1);
-			const T& x = draws[0];
+			const std::vector<T>& draws_new = h.r(1);
+			const T& x = draws_new[0];
 			double log_fx = h.d_target_unnorm(x);
 			double log_hx = h.d(x, false, true);
 			double log_ratio = log_fx - log_hx - log_M;
 
 			if (log(v) < log_ratio) {
 				// Accept x as a draw from f(x)
-				out.push_back(x);
+				draws.push_back(x);
 				accept = true;
 			} else {
 				// Reject x and adapt the proposal
@@ -114,23 +144,17 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 		}
 	}
 
-	return std::make_pair(out, rejects);
+	RejectionResult<T> out;
+	out.draws = draws;
+	out.rejects = rejects;
+	return out;
 }
 
 template <typename T, typename R>
-std::pair<std::vector<T>, std::vector<unsigned int>>
-rejection(const FMMProposal<T,R>& h, unsigned int n)
+RejectionResult<T> rejection(const FMMProposal<T,R>& h, unsigned int n)
 {
-	// Set defaults for control object
-	// - Up to 1000 rejects per requested draw.
-	// - Do not report progress.
-	// - Halt if we reach max_rejects before accepting the requested n draws.
-	unsigned int max_rejects = 1000 * n;
-	unsigned int report_period = n + 1;
-	ErrorAction max_rejects_action = ErrorAction::STOP;
-
-	vws::RejectionControl control(max_rejects, report_period, max_rejects_action);
-	return rejection(h, n, control);
+	RejectionControl ctrl;
+	return rejection(h, n, ctrl);
 }
 
 }

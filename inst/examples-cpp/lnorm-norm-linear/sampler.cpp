@@ -8,44 +8,25 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	double lambda2, unsigned int N = 10, unsigned int max_rejects = 10000,
 	unsigned int report_period = 1000)
 {
-	// printf("Create regions\n");
+	vws::RejectionControl ctrl;
+	ctrl.max_rejects = max_rejects;
+	ctrl.report_period = report_period;
+	ctrl.max_rejects_action = vws::ErrorAction::STOP;
 
 	double x = exp(mu - sigma2 + 1);
-
-	// printf("x = %g\n", x);
-
-	CustomLinearRegion r1(1e-3, x, mu, sigma2, z, lambda2);
+	CustomLinearRegion r1(1e-6, x, mu, sigma2, z, lambda2);
 	CustomLinearRegion r2(x, 1e6, mu, sigma2, z, lambda2);
-
 	const std::vector<CustomLinearRegion>& regions = { r1, r2 };
 
-	// printf("Create proposal\n");
-
 	vws::FMMProposal<double, CustomLinearRegion> h(regions);
-
-	// printf("Adapt proposal\n");
 
 	h.adapt(N - 1);
 	h.print(100);
 
-	// printf("Take a sample\n");
-
-	// const std::vector<double>& draws = h.r(100);
-	// Rcpp::NumericVector draws2(draws.begin(), draws.end());
-	// Rcpp::print(draws2);
-
-	// printf("Create proposal\n");
-
-	vws::RejectionControl control(max_rejects, report_period, vws::ErrorAction::STOP);
-	const std::pair<std::vector<double>, std::vector<unsigned int>>& out =
-		vws::rejection(h, n, control);
-
-	// printf("Packing up results\n");
+	const vws::RejectionResult<double>& out = vws::rejection(h, n, ctrl);
 
 	return Rcpp::List::create(
-		Rcpp::Named("draws") = out.first,
-		Rcpp::Named("rejects") = out.second
+		Rcpp::Named("draws") = out.draws,
+		Rcpp::Named("rejects") = out.rejects
 	);
-
-	return Rcpp::List::create();
 }

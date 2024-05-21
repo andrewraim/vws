@@ -8,6 +8,11 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	double lambda2, unsigned int N = 10, unsigned int max_rejects = 10000,
 	unsigned int report_period = 1000)
 {
+	vws::RejectionControl ctrl;
+	ctrl.max_rejects = max_rejects;
+	ctrl.report_period = report_period;
+	ctrl.max_rejects_action = vws::ErrorAction::STOP;
+
 	MyHelper helper(z, lambda2);
 
 	const vws::weight_function& w =
@@ -16,7 +21,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 		if (x > 0) {
 			out = -std::log(x) - std::pow(std::log(x) - mu, 2.0) / (2*sigma2);
 		}
-		return log ? out : exp(out);
+		return log ? out : std::exp(out);
 	};
 
     CustomConstRegion supp(0.0, R_PosInf, mu, sigma2, w, helper);
@@ -28,12 +33,10 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	h.adapt(N - 1);
 	h.print(5);
 
-	vws::RejectionControl control(max_rejects, report_period, vws::ErrorAction::STOP);
-	const std::pair<std::vector<double>, std::vector<unsigned int>>& out =
-		vws::rejection(h, n, control);
+	const RejectionResult& out = vws::rejection(h, n, ctrl);
 
 	return Rcpp::List::create(
-		Rcpp::Named("draws") = out.first,
-		Rcpp::Named("rejects") = out.second
+		Rcpp::Named("draws") = out.draws,
+		Rcpp::Named("rejects") = out.rejects
 	);
 }

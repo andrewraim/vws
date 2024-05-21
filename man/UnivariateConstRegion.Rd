@@ -44,10 +44,13 @@ default.}
 \item \href{#method-UnivariateConstRegion-d}{\code{UnivariateConstRegion$d()}}
 \item \href{#method-UnivariateConstRegion-s}{\code{UnivariateConstRegion$s()}}
 \item \href{#method-UnivariateConstRegion-w_major}{\code{UnivariateConstRegion$w_major()}}
+\item \href{#method-UnivariateConstRegion-midpoint}{\code{UnivariateConstRegion$midpoint()}}
 \item \href{#method-UnivariateConstRegion-bifurcate}{\code{UnivariateConstRegion$bifurcate()}}
 \item \href{#method-UnivariateConstRegion-is_bifurcatable}{\code{UnivariateConstRegion$is_bifurcatable()}}
 \item \href{#method-UnivariateConstRegion-xi_upper}{\code{UnivariateConstRegion$xi_upper()}}
 \item \href{#method-UnivariateConstRegion-xi_lower}{\code{UnivariateConstRegion$xi_lower()}}
+\item \href{#method-UnivariateConstRegion-upper}{\code{UnivariateConstRegion$upper()}}
+\item \href{#method-UnivariateConstRegion-lower}{\code{UnivariateConstRegion$lower()}}
 \item \href{#method-UnivariateConstRegion-description}{\code{UnivariateConstRegion$description()}}
 \item \href{#method-UnivariateConstRegion-print}{\code{UnivariateConstRegion$print()}}
 \item \href{#method-UnivariateConstRegion-optimize}{\code{UnivariateConstRegion$optimize()}}
@@ -170,6 +173,15 @@ Majorized weight function \eqn{\overline{w}_j} for this region.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-UnivariateConstRegion-midpoint"></a>}}
+\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-midpoint}{}}}
+\subsection{Method \code{midpoint()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$midpoint()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-UnivariateConstRegion-bifurcate"></a>}}
 \if{latex}{\out{\hypertarget{method-UnivariateConstRegion-bifurcate}{}}}
 \subsection{Method \code{bifurcate()}}{
@@ -230,6 +242,26 @@ The quantity \eqn{\underline{\xi}_j} for this region.
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-UnivariateConstRegion-upper"></a>}}
+\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-upper}{}}}
+\subsection{Method \code{upper()}}{
+The upper limit \eqn{\alpha_j} for this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$upper()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-UnivariateConstRegion-lower"></a>}}
+\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-lower}{}}}
+\subsection{Method \code{lower()}}{
+The lowerupper limit \eqn{\alpha_{j-1}} for this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$lower()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-UnivariateConstRegion-description"></a>}}
