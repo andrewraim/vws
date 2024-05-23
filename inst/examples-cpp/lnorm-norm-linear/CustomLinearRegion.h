@@ -5,9 +5,7 @@
 #include <Rcpp.h>
 #include "vws.h"
 #include "normal-truncated.h"
-#include "nelder-mead.h"
-
-namespace fctl = RcppFunctionalUtilities;
+#include "fntl.h"
 
 class CustomLinearRegion : public vws::Region<double>
 {
@@ -208,7 +206,15 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 	// printf("Begin constructor for CustomLinearRegion\n");
 
     std::function<double(double)> d_log_w = [&](double x) {
-		return -1.0/x * (1.0 + (std::log(x) - _mu) / _sigma2);
+		double out;
+
+		if (std::isinf(x) && x > 0) {
+			out = 0;  // Limit is 0 as x -> Inf
+		} else {
+			out = -1/x * (1 + (std::log(x) - _mu) / _sigma2);
+		}
+
+		return out;
    	};
 
     const std::function<double(double)>& tx = [&](double x) {
@@ -224,7 +230,7 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		}
     };
 
-	fctl::mv_function f = [&](const Rcpp::NumericVector& x) {
+	fntl::mv_function f = [&](const Rcpp::NumericVector& x) {
 		double x_tx = tx(x(0));
 		double gr = d_log_w(x_tx);
 		return w(x_tx, true) - x_tx * gr + mgf(gr, true);
@@ -243,11 +249,11 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		// log w(x) is concave
 
 		// For the minorizer
-		fctl::NelderMeadControl control;
-		control.maxit = 100000;
-		control.fnscale = 1.0;
+		fntl::neldermead_args args;
+		args.maxit = 100000;
+		args.fnscale = 1.0;
 		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
-		const fctl::NelderMeadResult& nm_out = fctl::nelder_mead(init, f, control);
+		const fntl::neldermead_result& nm_out = fntl::neldermead(init, f, args);
 		double c_star = tx(nm_out.par(0));
 		_beta0_max = w(c_star) - c_star * d_log_w(c_star);
 		_beta1_max = d_log_w(c_star);
@@ -260,11 +266,11 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		// log w(x) is convex
 
 		// For the minorizer
-		fctl::NelderMeadControl control;
-		control.maxit = 100000;
-		control.fnscale = 1.0;
+		fntl::neldermead_args args;
+		args.maxit = 100000;
+		args.fnscale = 1.0;
 		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
-		const fctl::NelderMeadResult& nm_out = fctl::nelder_mead(init, f, control);
+		const fntl::neldermead_result& nm_out = fntl::neldermead(init, f, args);
 		double c_star = tx(nm_out.par(0));
 		_beta0_min = w(c_star) - c_star*d_log_w(c_star);
 		_beta1_min = d_log_w(c_star);

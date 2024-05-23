@@ -33,10 +33,14 @@ CustomLinearRegion$set("public", "initialize", function(a, b, mu, sigma2, z, lam
 	w = self$w
 
 	# First derivative of log w(x)
-	d_log_w = function(x) { -1/x * (1 + (log(x) - mu) / sigma2) }
+	d_log_w = function(x) {
+		out = -1/x * (1 + (log(x) - mu) / sigma2)
+		out[x > 0 && is.infinite(x)] = 0  # Limit is 0 as x -> Inf
+		return(out)
+	}
 
 	# MGF the truncated and reweighted g
-	mgf = function(s, log = FALSE, tol = 1e-6) {
+	mgf = function(s, log = FALSE) {
 		# If we are truncating way into the upper tail of a distribution, working
 		# with the complement of the CDF helps to retain precision. Otherwise,
 		# work with the CDF function.
@@ -45,16 +49,16 @@ CustomLinearRegion$set("public", "initialize", function(a, b, mu, sigma2, z, lam
 		lp_num_b = pnorm(b, mean = z + s*lambda2, sd = sqrt(lambda2), log.p = TRUE)
 		clp_num_a = pnorm(a, mean = z + s*lambda2, sd = sqrt(lambda2), log.p = TRUE, lower.tail = FALSE)
 		clp_num_b = pnorm(b, mean = z + s*lambda2, sd = sqrt(lambda2), log.p = TRUE, lower.tail = FALSE)
-		lp_num = ifelse(lp_num_a > log1p(-tol),
-			log_sub2_exp(clp_num_a, clp_num_b),
-			log_sub2_exp(lp_num_b, lp_num_a)
-		)
+		lp_num = max(
+        	log_sub2_exp(clp_num_a, clp_num_b),
+        	log_sub2_exp(lp_num_b, lp_num_a)
+    	)
 
 		lp_den_a = pnorm(a, mean = z, sd = sqrt(lambda2), log.p = TRUE)
 		lp_den_b = pnorm(b, mean = z, sd = sqrt(lambda2), log.p = TRUE)
 		clp_den_a = pnorm(a, mean = z, sd = sqrt(lambda2), log.p = TRUE, lower.tail = FALSE)
 		clp_den_b = pnorm(b, mean = z, sd = sqrt(lambda2), log.p = TRUE, lower.tail = FALSE)
-		lp_den = ifelse(lp_den_a > log1p(-tol),
+		lp_den = max(
 			log_sub2_exp(clp_den_a, clp_den_b),
 			log_sub2_exp(lp_den_b, lp_den_a)
 		)

@@ -3,11 +3,9 @@
 
 #include <Rcpp.h>
 #include <memory>
-#include "RcppFunctionalUtilities.h"
+#include "fntl.h"
 #include "Region.h"
 #include "UnivariateHelper.h"
-
-namespace fctl = RcppFunctionalUtilities;
 
 namespace vws {
 
@@ -297,12 +295,12 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 	} else if (!maximize && endpoint_neg_inf) {
 		out = R_NegInf;
 	} else {
-		fctl::NelderMeadControl control;
-		control.maxit = 100000;
-		control.fnscale = maximize ? -1.0 : 1.0;
+		fntl::neldermead_args args;
+		args.maxit = 100000;
+		args.fnscale = maximize ? -1.0 : 1.0;
 
 		// Transform to the interval (a,b]
-		const fctl::uv_function& tx =
+		const fntl::uv_function& tx =
 		[&](double x) {
 			if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
 				return x;
@@ -316,17 +314,17 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		};
 
 		// Call the weight function
-	    const fctl::mv_function& f =
+	    const fntl::mv_function& f =
     	[&](const Rcpp::NumericVector& x) {
 			return (*_w)(tx(x(0)), true);
 		};
 
    		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
-		const fctl::NelderMeadResult& nm_out =
-			fctl::nelder_mead(init, f, control);
+		const fntl::neldermead_result& nm_out = fntl::neldermead(init, f, args);
 
-		if (nm_out.fail) {
-			Rcpp::warning("Nelder-Mead: convergence status was ", nm_out.fail);
+		if (nm_out.status != fntl::neldermead_status::OK) {
+			Rcpp::warning("Nelder-Mead: convergence status was %d",
+				fntl::to_underlying(nm_out.status));
 		}
 
 		// In case the function is strictly increasing or decreasing, check the

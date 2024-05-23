@@ -8,7 +8,7 @@
 namespace vws {
 
 template <typename T>
-struct RejectionResult
+struct rejection_result
 {
 	std::vector<T> draws;
 	std::vector<unsigned int> rejects;
@@ -31,7 +31,7 @@ struct RejectionResult
 //'
 //' @name rejection_control
 //' @export
-struct RejectionControl
+struct rejection_args
 {
 	unsigned int max_rejects = std::numeric_limits<unsigned int>::max();
 	unsigned int report_period = std::numeric_limits<unsigned int>::max();
@@ -85,8 +85,8 @@ struct RejectionControl
 //' @name rejection
 //' @export
 template <typename T, typename R>
-RejectionResult<T>
-rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& control)
+rejection_result<T>
+rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 {
 	std::vector<T> draws;
 	std::vector<unsigned int> rejects(n, 0L);
@@ -94,9 +94,9 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 	unsigned int N_rejects = 0;
 	bool accept = false;
 
-	unsigned int max_rejects = control.max_rejects;
-	unsigned int report_period = control.report_period;
-	ErrorAction max_rejects_action = control.max_rejects_action;
+	unsigned int max_rejects = args.max_rejects;
+	unsigned int report_period = args.report_period;
+	ErrorAction max_rejects_action = args.max_rejects_action;
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
@@ -144,16 +144,16 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const RejectionControl& con
 		}
 	}
 
-	RejectionResult<T> out;
+	rejection_result<T> out;
 	out.draws = draws;
 	out.rejects = rejects;
 	return out;
 }
 
 template <typename T, typename R>
-RejectionResult<T> rejection(const FMMProposal<T,R>& h, unsigned int n)
+rejection_result<T> rejection(const FMMProposal<T,R>& h, unsigned int n)
 {
-	RejectionControl ctrl;
+	rejection_args ctrl;
 	return rejection(h, n, ctrl);
 }
 

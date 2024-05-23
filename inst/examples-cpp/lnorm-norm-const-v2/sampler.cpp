@@ -1,4 +1,4 @@
-// [[Rcpp::depends(vws, RcppFunctionalUtilities)]]
+// [[Rcpp::depends(vws, fntl)]]
 #include "vws.h"
 #include "MyHelper.h"
 #include "CustomConstRegion.h"
@@ -8,10 +8,10 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	double lambda2, unsigned int N = 10, unsigned int max_rejects = 10000,
 	unsigned int report_period = 1000)
 {
-	vws::RejectionControl ctrl;
-	ctrl.max_rejects = max_rejects;
-	ctrl.report_period = report_period;
-	ctrl.max_rejects_action = vws::ErrorAction::STOP;
+	vws::rejection_args args;
+	args.max_rejects = max_rejects;
+	args.report_period = report_period;
+	args.max_rejects_action = vws::ErrorAction::STOP;
 
 	MyHelper helper(z, lambda2);
 
@@ -33,7 +33,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	h.adapt(N - 1);
 	h.print(5);
 
-	const RejectionResult& out = vws::rejection(h, n, ctrl);
+	const vws::rejection_result<double>& out = vws::rejection(h, n, args);
 
 	return Rcpp::List::create(
 		Rcpp::Named("draws") = out.draws,
