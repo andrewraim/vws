@@ -11,7 +11,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	vws::rejection_args args;
 	args.max_rejects = max_rejects;
 	args.report_period = report_period;
-	args.max_rejects_action = vws::ErrorAction::STOP;
+	args.max_rejects_action = vws::error_action::STOP;
 
 	double x = exp(mu - sigma2 + 1);
 	CustomLinearRegion r1(1e-6, x, mu, sigma2, z, lambda2);
@@ -24,9 +24,5 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 	h.print(100);
 
 	const vws::rejection_result<double>& out = vws::rejection(h, n, args);
-
-	return Rcpp::List::create(
-		Rcpp::Named("draws") = out.draws,
-		Rcpp::Named("rejects") = out.rejects
-	);
+	return Rcpp::wrap(out);
 }

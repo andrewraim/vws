@@ -4,17 +4,12 @@
 #include <Rcpp.h>
 #include "logger.h"
 #include "Region.h"
+#include "result.h"
+#include "typedefs.h"
 
 namespace vws {
 
-template <typename T>
-struct rejection_result
-{
-	std::vector<T> draws;
-	std::vector<unsigned int> rejects;
-};
-
-//' Rejection Control
+//' Rejection Args
 //'
 //' Control object for rejection sampler.
 //'
@@ -23,7 +18,7 @@ struct rejection_result
 //' @param extra_outputs If \code{TRUE}, return a list with extended output
 //' in addition to the accepted draws. Otherwise only return accepted draws.
 //' @param action_incomplete What should happen if sampler halts with
-//' \code{max_rejects} rejections: ne of \code{"stop"},  \code{"warning"}, or
+//' \code{max_rejects} rejections: one of \code{"stop"},  \code{"warning"}, or
 //' \code{"message"}.
 //'
 //' @return
@@ -35,7 +30,7 @@ struct rejection_args
 {
 	unsigned int max_rejects = std::numeric_limits<unsigned int>::max();
 	unsigned int report_period = std::numeric_limits<unsigned int>::max();
-	ErrorAction max_rejects_action = ErrorAction::STOP;
+	error_action max_rejects_action = error_action::STOP;
 };
 
 //' Vertical Weighted Strips Rejection Sampler
@@ -96,7 +91,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 
 	unsigned int max_rejects = args.max_rejects;
 	unsigned int report_period = args.report_period;
-	ErrorAction max_rejects_action = args.max_rejects_action;
+	error_action max_rejects_action = args.max_rejects_action;
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
@@ -132,13 +127,13 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 
 	if (N_rejects >= max_rejects) {
 		switch(max_rejects_action) {
-			case ErrorAction::STOP:
+			case error_action::STOP:
 		    	Rcpp::stop("Reached maximum number of rejects: %d\n", max_rejects);
 		    	break;
-		    case ErrorAction::WARNING:
+		    case error_action::WARNING:
 		    	Rcpp::warning("Reached maximum number of rejects: %d\n", max_rejects);
 		    	break;
-		    case ErrorAction::MESSAGE:
+		    case error_action::MESSAGE:
 		    	Rprintf("Reached maximum number of rejects: %d\n", max_rejects);
 		    	break;
 		}

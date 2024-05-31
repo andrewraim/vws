@@ -6,7 +6,13 @@
 namespace vws {
 
 typedef std::function<double(double, bool)> weight_function;
-enum class ErrorAction { STOP, WARNING, MESSAGE, NONE };
+
+enum class error_action {
+	STOP,
+	WARNING,
+	MESSAGE,
+	NONE
+};
 
 }
 

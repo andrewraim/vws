@@ -1,15 +1,17 @@
 #ifndef VWS_H
 #define VWS_H
 
-#include "typedefs.h"
-#include "logger.h"
-#include "gumbel.h"
+#include "result.h"
+
 #include "categ.h"
-#include "log-sum-exp.h"
-#include "Region.h"
-#include "UnivariateHelper.h"
-#include "UnivariateConstRegion.h"
 #include "FMMProposal.h"
+#include "gumbel.h"
+#include "log-sum-exp.h"
+#include "logger.h"
+#include "Region.h"
 #include "rejection.h"
+#include "typedefs.h"
+#include "UnivariateConstRegion.h"
+#include "UnivariateHelper.h"
 
 #endif

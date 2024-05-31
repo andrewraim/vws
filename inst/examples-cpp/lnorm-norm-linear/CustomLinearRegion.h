@@ -254,7 +254,7 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		args.fnscale = 1.0;
 		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
 		const fntl::neldermead_result& nm_out = fntl::neldermead(init, f, args);
-		double c_star = tx(nm_out.par(0));
+		double c_star = tx(nm_out.par[0]);
 		_beta0_max = w(c_star) - c_star * d_log_w(c_star);
 		_beta1_max = d_log_w(c_star);
 
@@ -271,7 +271,7 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		args.fnscale = 1.0;
 		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
 		const fntl::neldermead_result& nm_out = fntl::neldermead(init, f, args);
-		double c_star = tx(nm_out.par(0));
+		double c_star = tx(nm_out.par[0]);
 		_beta0_min = w(c_star) - c_star*d_log_w(c_star);
 		_beta1_min = d_log_w(c_star);
 

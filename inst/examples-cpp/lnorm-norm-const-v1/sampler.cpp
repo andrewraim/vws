@@ -10,7 +10,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu,
 	vws::rejection_args args;
 	args.max_rejects = max_rejects;
 	args.report_period = report_period;
-	args.max_rejects_action = vws::ErrorAction::STOP;
+	args.max_rejects_action = vws::error_action::STOP;
 
 	const vws::weight_function& w =
     [&](double x, bool log = true) {
