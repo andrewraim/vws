@@ -300,8 +300,7 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		args.fnscale = maximize ? -1.0 : 1.0;
 
 		// Transform to the interval (a,b]
-		const fntl::uv_function& tx =
-		[&](double x) {
+		const fntl::dfd& tx = [&](double x) {
 			if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
 				return x;
 			} else if (std::isinf(_a) && _a < 0) {
@@ -314,8 +313,7 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		};
 
 		// Call the weight function
-	    const fntl::mv_function& f =
-    	[&](const Rcpp::NumericVector& x) {
+	    const fntl::dfv& f = [&](const Rcpp::NumericVector& x) {
 			return (*_w)(tx(x(0)), true);
 		};
 
@@ -331,7 +329,7 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		// objective value at the endpoints.
 		if (maximize) {
 			double max_lwe = Rcpp::max(log_w_endpoints);
-			out = -std::max({nm_out.value, max_lwe});
+			out = std::max({nm_out.value, max_lwe});
 		} else {
 			double min_lwe = Rcpp::min(log_w_endpoints);
 			out = std::min({nm_out.value, min_lwe});

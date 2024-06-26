@@ -1,27 +1,9 @@
 ---
 title: "Vertical Weighted Strips in R"
-date: now
-date-format: "[Last modified:] YYYY-MM-DD HH:mm"
-author:
-  - name: Andrew M. Raim^[Corresponding author <andrew.raim@gmail.com>.
-      Center for Statistical Research & Methodology,
-      U.S. Census Bureau,
-      Washington, DC, 20233, U.S.A.
-      **Disclaimer**`:` This document is released to inform interested parties
-      of ongoing research and to encourage discussion of work in progress. Any
-      views expressed are those of the authors and not those of the U.S. Census
-      Bureau.]
-    email: andrew.raim@gmail.com
-  - name: James A. Livsey
-  - name: Kyle M. Irimata
-affiliations:
-  - name: U.S. Census Bureau
-    department: Center for Statistical Research and Methodology
-    address: 4600 Silver Hill Road
-    city: Washington DC
-    country: U.S.A.
+author: Andrew M. Raim, James A. Livsey, and Kyle M. Irimata
 format:
   pdf:
+    fontsize: 12pt
     indent: false
     toc: true
     number-sections: true
@@ -33,10 +15,6 @@ format:
     include-in-header:
       text: |
         \usepackage{common}
-        \usepackage[noblocks]{authblk}
-        \renewcommand*{\Authsep}{, }
-        \renewcommand*{\Authand}{, }
-        \renewcommand*{\Authands}{, and }
 vignette: >
   %\VignetteIndexEntry{vws}
   %\VignetteEncoding{UTF-8}
@@ -46,6 +24,15 @@ editor_options:
   chunk_output_type: console
 abstract: |
   TBD abstract goes here.
+thanks: |
+  Center for Statistical Research & Methodology, U.S. Census Bureau,
+  Washington, DC, 20233, U.S.A.
+  **For correspondence**`:` <andrew.raim@gmail.com>.
+  **Disclaimer**`:` This document is released to inform interested parties
+  of ongoing research and to encourage discussion of work in progress. Any
+  views expressed are those of the authors and not those of the U.S. Census
+  Bureau.
+  Document was compiled `{r} format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")`.
 geometry:
   - left=0.5in
   - right=0.5in
@@ -56,6 +43,8 @@ execute:
 code-block-bg: true
 code-block-border-left: "#31BAE9"
 callout-icon: false
+mainfont: Latin Modern Roman
+sansfont: Latin Modern Roman
 ---
 
 ```{r}
@@ -541,7 +530,7 @@ own sampling problems. Several included functions help to avoid explicit
 exponentiation and may be helpful for this purpose; they are listed in
 [@tbl-log-sum-exp].
 
-: Functions for sums and differences on the log-scale. {#tbl-log-sum-exp tbl-colwidths="[20,80]"}
+: Functions for sums and differences on the log-scale. {#tbl-log-sum-exp tbl-colwidths="[25,75]"}
 
 -------------------------------------------------------------------------------
 Function             Description
@@ -561,7 +550,7 @@ We make use of the Gumbel trick [e.g., @MaddisonTarlowMinka2014] in several plac
 draw from a discrete distribution with values $1, \ldots, k$ and corresponding
 probabilities $p_1, \ldots, p_k$. This approach allows probabilities
 to be specified on the log-scale without the need to exponentiate them or
-normalize them to sum to one. The Gumbel trick generates a draw $x$
+normalize so that they sum to one. The Gumbel trick generates a draw $x$
 from the desired discrete distribution via
 <!-- -->
 \begin{align*}
@@ -1091,7 +1080,7 @@ in [@tbl-ln-norm-custom-region-methods] and the complete code may be found in
 the following file.
 
 ```{r}
-source("../inst/examples/lnorm-norm/CustomLinearRegion.R")
+source("../inst/examples/lnorm-norm-linear/CustomLinearRegion.R")
 ```
 
 : Methods of the `CustomLinearRegion` class. {#tbl-ln-norm-custom-region-methods tbl-colwidths="[20,80]"}

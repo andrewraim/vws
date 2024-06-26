@@ -21,7 +21,7 @@ d_target = get_target_density(mu, sigma2, z, lambda2)
 n = 10000
 out = r_lognormal_normal(n = n, z = z, mu = mu, sigma2 = sigma2,
 	lambda2 = lambda2, N = 10, max_rejects = n* 10, report_period = n / 10)
-vws::printf("Empirical rejection rate: %g%%",
+vws::printf("Empirical rejection rate: %g%%\n",
 	100 * sum(out$rejects) / (sum(out$rejects) + n))
 
 # ----- Compare distribution of the draws to the target density -----

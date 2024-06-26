@@ -205,7 +205,7 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 
 	// printf("Begin constructor for CustomLinearRegion\n");
 
-    std::function<double(double)> d_log_w = [&](double x) {
+    const fntl::dfd& d_log_w = [&](double x) {
 		double out;
 
 		if (std::isinf(x) && x > 0) {
@@ -217,7 +217,7 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		return out;
    	};
 
-    const std::function<double(double)>& tx = [&](double x) {
+    const fntl::dfd& tx = [&](double x) {
 		// Transform to the interval (a,b]
 		if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
 			return x;
@@ -230,7 +230,7 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		}
     };
 
-	fntl::mv_function f = [&](const Rcpp::NumericVector& x) {
+	const fntl::dfv& f = [&](const Rcpp::NumericVector& x) {
 		double x_tx = tx(x(0));
 		double gr = d_log_w(x_tx);
 		return w(x_tx, true) - x_tx * gr + mgf(gr, true);

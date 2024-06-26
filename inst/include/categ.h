@@ -17,7 +17,7 @@ unsigned int r_categ(const Rcpp::NumericVector& p, bool log = false)
 	}
 
 	const Rcpp::NumericVector& z = r_gumbel(k);
-	return Rcpp::which_max(z + lp);		// TBD: are these zero-based indices?
+	return Rcpp::which_max(z + lp);		// This is a zero-based index
 }
 
 Rcpp::IntegerVector r_categ(unsigned int n, const Rcpp::NumericVector& p, bool log = false)
