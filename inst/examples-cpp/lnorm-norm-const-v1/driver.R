@@ -7,7 +7,6 @@ Rcpp::sourceCpp(system.file("examples-cpp/lnorm-norm-const-v1/sampler.cpp", pack
 set.seed(1234)
 
 # ----- Generate data -----
-z = 1
 mu = 5
 sigma2 = 0.5
 lambda2 = 100

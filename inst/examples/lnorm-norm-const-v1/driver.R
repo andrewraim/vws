@@ -2,12 +2,13 @@ library(vws)
 
 source(system.file("examples/lnorm-norm-const-v1/functions.R", package = "vws"))
 
+set.seed(1234)
+
 # ----- Generate data -----
 mu = 5
 sigma2 = 0.5
 lambda2 = 100
 
-set.seed(1234)
 y_true = rlnorm(1, mu, sqrt(sigma2))
 z = rnorm(1, y_true, sqrt(lambda2))
 print(y_true)

@@ -44,6 +44,13 @@ protected:
 	double _log_prob;
 
 public:
+	//' @param a Lower and upper limit of interval.
+	//' @param w Weight function for the target distribution.
+	//' @param g An object created by \code{univariate_helper}.
+	UnivariateConstRegion(double a,
+		const weight_function& w,
+		const UnivariateHelper<double>& helper);
+
 	//' @param a Lower limit of interval.
 	//' @param b Upper limit of interval.
 	//' @param w Weight function for the target distribution.
@@ -148,6 +155,15 @@ public:
 	}
 };
 
+UnivariateConstRegion::UnivariateConstRegion(double a,
+	const weight_function& w, const UnivariateHelper<double>& helper)
+: _a(a), _b(a), _w(&w), _helper(&helper)
+{
+	_log_w_max = (*_w)(a, true);
+	_log_w_min = (*_w)(a, true);
+	_log_prob = R_NegInf;
+}
+
 UnivariateConstRegion::UnivariateConstRegion(double a, double b,
 	const weight_function& w, const UnivariateHelper<double>& helper)
 : _a(a), _b(b), _w(&w), _helper(&helper)
@@ -160,7 +176,7 @@ UnivariateConstRegion::UnivariateConstRegion(double a, double b,
 	_log_w_min = optimize(false);
 
 	// Compute g.p(b) - g.p(a) on the log scale
-	_log_prob = log_sub2_exp(_helper->p(_b, true), _helper->p(_a, true));
+	_log_prob = log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
 }
 
 double UnivariateConstRegion::d_base(const double& x, bool log) const
@@ -173,13 +189,14 @@ std::vector<double> UnivariateConstRegion::r(unsigned int n) const
 	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this region.
 	// Compute g$q((pb - pa) * u + pa) on the log scale
 	const Rcpp::NumericVector& u = Rcpp::runif(n);
-	double log_pa = _helper->p(_a, true);
+	double log_pa = _helper->p(_a, true, true);
 	const Rcpp::NumericVector& log_p = log_add2_exp(_log_prob + log(u), Rcpp::rep(log_pa, n));
 
 	std::vector<double> out;
 	for (unsigned int i = 0; i < n; i++) {
-		out.push_back(_helper->q(log_p(i), true));
+		out.push_back(_helper->q(log_p(i), true, true));
 	}
+
 	return out;
 }
 
@@ -189,7 +206,7 @@ double UnivariateConstRegion::d(const double& x, bool log) const
 	if (!s(x)) {
 		out = R_NegInf;
 	} else {
-		out = _helper->d(x, true) - log_sub2_exp(_helper->p(_b, true), _helper->p(_a, true));
+		out = _helper->d(x, true) - log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
 	}
 	return log ? out : exp(out);
 }
@@ -246,7 +263,7 @@ UnivariateConstRegion::bifurcate(const double& x) const
 
 UnivariateConstRegion UnivariateConstRegion::singleton(const double& x) const
 {
-	return UnivariateConstRegion(x, x, *_w, *_helper);
+	return UnivariateConstRegion(x, *_w, *_helper);
 }
 
 bool UnivariateConstRegion::is_bifurcatable() const
