@@ -177,6 +177,6 @@ invgamma_helper = function(a, b)
 		q = function(p, lower.tail = TRUE, log.p = FALSE) {
 			q_invgamma(p, a = a, b = b, lower.tail = lower.tail, log.p = log.p)
 		},
-		s = function(x) { x >= a & x <= b }
+		s = function(x) { x >= 0 }
 	)
 }

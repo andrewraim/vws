@@ -43,8 +43,6 @@ w = NULL,
 #' @param g An list of objects created by \code{univariate_helper}.
 initialize = function(a, b, w, g)
 {
-	warning("RectConstRegion is under development. Not recommended for routine use yet")
-
 	k = length(g)
 	stopifnot(all(a <= b))
 	stopifnot(all(unlist(Map(function(x) { "univariate_helper" %in% class(x) }, g))))
@@ -244,7 +242,7 @@ bifurcate = function(x = NULL)
 
 		# Sample a cut orientation randomly
 		cuts = self$midpoint()
-		idx = sample(1:k)
+		idx = sample(1:k, size = 1)
 		a1 = a
 		a2 = a
 		b1 = b
@@ -335,50 +333,70 @@ optimize = function(maximize = TRUE, log = TRUE)
 	w = self$w
 
 	method = "L-BFGS-B"
-	# method = "Nelder-Mead"
-	control = list(maxit = 100000, trace = 0)
-
 	f_opt = function(x) {
-		tx = inv_rect(x, a, b)
-		w(tx, log = TRUE)
+		w(x, log = TRUE)
 	}
 
-	init = numeric(k)
+	control = list(maxit = 100000, trace = 0)
+	control$fnscale = ifelse(maximize, -1, 1)
 
-	#init = self$midpoint()
-	#log_w_endpoints = c(w(a, log = TRUE), w(b, log = TRUE))
-	#log_w_endpoints = log_w_endpoints[!is.na(log_w_endpoints)]
-
-	# endpoint_pos_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints > 0)
-	# endpoint_neg_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints < 0)
-
-	# if (maximize && endpoint_pos_inf) {
-	#	out = Inf
-	# } else if (maximize) {
-
-	if (maximize) {
-		control$fnscale = -1
-		opt_out = optim(init, f_opt, method = method, control = control)
-		if (opt_out$convergence != 0) {
-			warning("opt_out: convergence status was ", opt_out$convergence)
-			browser()
-		}
-		# out = max(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
-		out = opt_out$value
+	init = self$midpoint()
+	opt_out = optim(init, f_opt, method = method, lower = a, upper = b, control = control)
+	if (opt_out$convergence != 0 && opt_out$convergence != 52) {
+		warning("opt_out: convergence status was ", opt_out$convergence)
+		browser()
 	}
+	# out = min(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
+	out = opt_out$value
 
-	# if (!maximize && endpoint_neg_inf) {
-	#	out = -Inf
-	# } else if (!maximize) {
-	if (!maximize) {
-		control$fnscale = 1
-		opt_out = optim(init, f_opt, method = method, control = control)
-		if (opt_out$convergence != 0) {
-			warning("opt_out: convergence status was ", opt_out$convergence)
-			browser()
+
+	if (FALSE) {
+		method = "L-BFGS-B"
+		# method = "Nelder-Mead"
+		control = list(maxit = 100000, trace = 0)
+
+		f_opt = function(x) {
+			tx = inv_rect(x, a, b)
+			w(tx, log = TRUE)
 		}
-		# out = min(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
-		out = opt_out$value
+
+		init = numeric(k)
+
+		#init = self$midpoint()
+		#log_w_endpoints = c(w(a, log = TRUE), w(b, log = TRUE))
+		#log_w_endpoints = log_w_endpoints[!is.na(log_w_endpoints)]
+
+		# endpoint_pos_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints > 0)
+		# endpoint_neg_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints < 0)
+
+		# if (maximize && endpoint_pos_inf) {
+		#	out = Inf
+		# } else if (maximize) {
+
+		if (maximize) {
+			control$fnscale = -1
+			opt_out = optim(init, f_opt, method = method, control = control)
+			if (opt_out$convergence != 0) {
+				warning("opt_out: convergence status was ", opt_out$convergence)
+				browser()
+			}
+			# out = max(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
+			out = opt_out$value
+		}
+
+		# if (!maximize && endpoint_neg_inf) {
+		#	out = -Inf
+		# } else if (!maximize) {
+		if (!maximize) {
+			control$fnscale = 1
+			opt_out = optim(init, f_opt, method = method, control = control)
+			if (opt_out$convergence != 0) {
+				warning("opt_out: convergence status was ", opt_out$convergence)
+				browser()
+			}
+			# out = min(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
+			out = opt_out$value
+		}
 	}
 
 	if (log) { return(out) } else { return(exp(out)) }
