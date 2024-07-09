@@ -87,11 +87,16 @@ r = function(n)
 #' @param x Density argument.
 d = function(x)
 {
-	n = length(x)
-	out = rep(-Inf, n)
-	idx = which(a < x & x <= b)
-	out[idx] = private$g$d(x[idx], log = TRUE) -
-		log_sub2_exp(private$g$p(private$b, log.p = TRUE), private$g$p(private$a, log.p = TRUE))
+	a = private$a
+	b = private$b
+	out = -Inf
+
+	if (a < x & x <= b & g$s(x)) {
+		lpx = private$g$d(x, log = TRUE)
+		lpa = private$g$p(a, log.p = TRUE)
+		lpb = private$g$p(b, log.p = TRUE)
+		out = lpx - log_sub2_exp(lpb, lpa)
+	}
 
 	if (log) { return(out) } else { return(exp(out)) }
 },
@@ -170,8 +175,8 @@ is_bifurcatable = function()
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 xi_upper = function(log = TRUE)
 {
-	log_xi_upper = private$log_w_max + private$log_prob
-	ifelse(log, log_xi_upper, exp(log_xi_upper))
+	out = private$log_w_max + private$log_prob
+	ifelse(log, out, exp(out))
 },
 
 #' @description
@@ -179,8 +184,8 @@ xi_upper = function(log = TRUE)
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 xi_lower = function(log = TRUE)
 {
-	log_xi_lower = private$log_w_min + private$log_prob
-	ifelse(log, log_xi_lower, exp(log_xi_lower))
+	out = private$log_w_min + private$log_prob
+	ifelse(log, out, exp(out))
 },
 
 #' @description

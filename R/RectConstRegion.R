@@ -43,11 +43,13 @@ w = NULL,
 #' @param g An list of objects created by \code{univariate_helper}.
 initialize = function(a, b, w, g)
 {
+	warning("RectConstRegion is under development. Not recommended for routine use yet")
+
 	k = length(g)
-	stopifnot(length(a) == length(b))
 	stopifnot(all(a <= b))
 	stopifnot(all(unlist(Map(function(x) { "univariate_helper" %in% class(x) }, g))))
 	stopifnot(k == length(a))
+	stopifnot(k == length(b))
 
 	private$a = a
 	private$b = b
@@ -57,10 +59,12 @@ initialize = function(a, b, w, g)
 	private$log_w_max = self$optimize(maximize = TRUE)
 	private$log_w_min = self$optimize(maximize = FALSE)
 
-	# Compute g$p(b) - g$p(a) on the log scale
+	# Compute Prob((a,b]) under dist g on the log scale
 	lp = numeric(k)
-	for (j in 1:k) {
-		lp[j] = log_sub2_exp(g[[j]]$p(b[j], log.p = TRUE), g[[j]]$p(a[j], log.p = TRUE))
+	for (l in 1:k) {
+		lpa = g[[l]]$p(a[l], log.p = TRUE)
+		lpb = g[[l]]$p(b[l], log.p = TRUE)
+		lp[l] = log_sub2_exp(lpb, lpa)
 	}
 	private$log_prob = sum(lp)
 },
@@ -71,13 +75,17 @@ initialize = function(a, b, w, g)
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 d_base = function(x, log = FALSE)
 {
-	k = length(private$g)
+	g = private$g
+	k = length(g)
 	stopifnot(length(x) == k)
 
-	out = numeric(k)
-	for (j in 1:k) {
-		out[j] = private$g[[j]]$d(x[j], log = log)
+	lp = numeric(k)
+	for (l in 1:k) {
+		lp[l] = g[[l]]$d(x[l], log = TRUE)
 	}
+
+	out = sum(lp)
+	if (log) { return(out) } else { return(exp(out)) }
 },
 
 #' @description
@@ -86,17 +94,22 @@ d_base = function(x, log = FALSE)
 #' @return A list of draws, with one draw per list element.
 r = function(n)
 {
-	k = length(private$g)
+	g = private$g
+	a = private$a
+	b = private$b
+	k = length(g)
 	x = matrix(NA, n, k)
 
-	for (j in 1:k) {
+	for (l in 1:k) {
 		u = runif(n)
-		log_pa = private$g[[j]]$p(private$a[j], log.p = TRUE)
-		log_p = log_add2_exp(private$log_prob + log(u), rep(log_pa, n))
-		x[,j] = private$g[[j]]$q(log_p, log.p = TRUE)
+		lpa = g[[l]]$p(a[l], log.p = TRUE)
+		lpb = g[[l]]$p(b[l], log.p = TRUE)
+		log_prob_l = log_sub2_exp(lpb, lpa)
+		log_p = log_add2_exp(log_prob_l + log(u), rep(lpa, n))
+		x[,l] = g[[l]]$q(log_p, log.p = TRUE)
 	}
 
-	out = lapply(seq_len(nrow(x)), function(i) x[i,])
+	out = lapply(seq_len(n), function(i) x[i,])
 	return(out)
 },
 
@@ -108,19 +121,23 @@ r = function(n)
 #' @param x Density argument.
 d = function(x)
 {
-	k = length(private$g)
-	n = length(x)
-	xx = matrix(unlist(x), n, k, byrow = TRUE)
-	lp = matrix(-Inf, n, k)
+	g = private$g
+	a = private$a
+	b = private$b
+	k = length(g)
+	stopifnot(k == length(x))
+	lp = rep(-Inf, k)
 
-	for (j in 1:k) {
-		idx = which(a[j] < xx[,j] & xx[,j] <= b[j])
-		lp[,j] = private$g[[j]]$d(x[idx], log = TRUE) -
-			log_sub2_exp(private$g[[j]]$p(private$b[j], log.p = TRUE),
-				private$g[[j]]$p(private$a[j], log.p = TRUE))
+	for (l in 1:k) {
+		if (a[l] < x[l] & x[l] <= b[l] & g[[l]]$s(x[l])) {
+			lpa = g[[l]]$p(a[l], log.p = TRUE)
+			lpb = g[[l]]$p(b[l], log.p = TRUE)
+			lpx = g[[l]]$d(x[l], log = TRUE)
+			lp[l] = lpx - log_sub2_exp(lpb, lpa)
+		}
 	}
 
-	out = apply(lp, 1, log_sum_exp)
+	out = sum(lp)
 	if (log) { return(out) } else { return(exp(out)) }
 },
 
@@ -130,17 +147,18 @@ d = function(x)
 #' @param x Density argument.
 s = function(x)
 {
-	k = length(private$g)
-	n = length(x)
-	xx = matrix(unlist(x), n, k, byrow = TRUE)
-	pp = matrix(-Inf, n, k)
+	g = private$g
+	k = length(g)
+	a = private$a
+	b = private$b
+	stopifnot(k == length(x))
+	pp = numeric(k)
 
-	for (j in 1:k) {
-		pp[,j] = private$a[j] < xx[,j] & xx[,j] <= private$b[j] & private$g[[j]]$s(xx[,j])
+	for (l in 1:k) {
+		pp[l] = (a[l] < x[l] & x[l] <= b[l]) & g[[l]]$s(x[l])
 	}
 
-	out = apply(pp, 1, prod)
-	if (log) { return(out) } else { return(exp(out)) }
+	return(prod(pp))
 },
 
 #' @description
@@ -149,7 +167,7 @@ s = function(x)
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 w_major = function(x, log = TRUE)
 {
-	if (!private$s(x)) {
+	if (!self$s(x)) {
 		out = ifelse(log, -Inf, 0)
 		return(out)
 	}
@@ -159,25 +177,24 @@ w_major = function(x, log = TRUE)
 
 midpoint = function()
 {
-	k = length(private$g)
 	a = private$a
 	b = private$b
-
-	k = length(private$g)
+	g = private$g
+	k = length(g)
 	x = numeric(k)
 
-	for (j in 1:k) {
-		if (is.infinite(a[j]) && is.infinite(a[j]) && a[j] < 0 && b[j] > 0) {
+	for (l in 1:k) {
+		if (is.infinite(a[l]) && is.infinite(a[l]) && a[l] < 0 && b[l] > 0) {
 			# Here we have an interval (-Inf, Inf). Make a split at zero.
-			x[j] = 0
-		} else if (is.infinite(a[j]) && a[j] < 0) {
+			x[l] = 0
+		} else if (is.infinite(a[l]) && a[l] < 0) {
 			# Left endpoint is -Inf. Split based on right endpoint.
-			x[j] = b[j] - abs(b[j]) - 1
-		} else if (is.infinite(b[j]) && b[j] > 0) {
+			x[l] = b[l] - abs(b[l]) - 1
+		} else if (is.infinite(b[l]) && b[l] > 0) {
 			# Right endpoint is Inf. Split based on left endpoint.
-			x[j] = a[j] + abs(a[j]) + 1
+			x[l] = a[l] + abs(a[l]) + 1
 		} else {
-			x[j] = (a[j] + b[j]) / 2
+			x[l] = (a[l] + b[l]) / 2
 		}
 	}
 
@@ -192,14 +209,58 @@ bifurcate = function(x = NULL)
 {
 	a = private$a
 	b = private$b
+	g = private$g
+	k = length(g)
 
 	if (is.null(x)) {
-		x = self$midpoint()
+		# cuts = self$midpoint()
+		# pairs_left = list()
+		# pairs_right = list()
+		# reduction = rep(NA, k)
+
+		# for (j in 1:k) {
+		# 	a1 = a
+		# 	a2 = a
+		# 	b1 = b
+		# 	b2 = b
+		# 	a2[j] = cuts[j]
+		# 	b1[j] = cuts[j]
+
+		# 	s1 = RectConstRegion$new(a = a1, b = b1, w = self$w, g = private$g)
+		# 	s2 = RectConstRegion$new(a = a2, b = b2, w = self$w, g = private$g)
+		# 	pairs_left[[j]] = s1
+		# 	pairs_right[[j]] = s2
+
+		# 	lp0 = log_sub2_exp(self$xi_upper(), self$xi_lower())
+		# 	lp1 = log_sub2_exp(s1$xi_upper(), s1$xi_lower())
+		# 	lp2 = log_sub2_exp(s2$xi_upper(), s2$xi_lower())
+		# 	reduction[j] = log_sub2_exp(lp0, log_add2_exp(lp1, lp2))
+		# }
+
+		# browser()
+		# idx = r_categ(n = 1, p = reduction, log_p = TRUE)
+		# out = list(pairs_left[[idx]], pairs_right[[idx]])
+		# return(out)
+
+		# Sample a cut orientation randomly
+		cuts = self$midpoint()
+		idx = sample(1:k)
+		a1 = a
+		a2 = a
+		b1 = b
+		b2 = b
+		a2[idx] = cuts[idx]
+		b1[idx] = cuts[idx]
+		s1 = RectConstRegion$new(a = a1, b = b1, w = self$w, g = g)
+		s2 = RectConstRegion$new(a = a2, b = b2, w = self$w, g = g)
+		out = list(s1, s2)
+	} else {
+		s1 = RectConstRegion$new(a = a, b = x, w = self$w, g = g)
+		s2 = RectConstRegion$new(a = x, b = b, w = self$w, g = g)
+		out = list(s1, s2)
 	}
 
-	s1 = RectConstRegion$new(a = a, b = x, w = self$w, g = private$g)
-	s2 = RectConstRegion$new(a = x, b = b, w = self$w, g = private$g)
-	list(s1, s2)
+	return(out)
 },
 
 #' @description
@@ -214,8 +275,8 @@ is_bifurcatable = function()
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 xi_upper = function(log = TRUE)
 {
-	log_xi_upper = private$log_w_max + private$log_prob
-	ifelse(log, log_xi_upper, exp(log_xi_upper))
+	out = private$log_w_max + private$log_prob
+	ifelse(log, out, exp(out))
 },
 
 #' @description
@@ -223,8 +284,8 @@ xi_upper = function(log = TRUE)
 #' @param log logical; if \code{TRUE}, return result on the log-scale.
 xi_lower = function(log = TRUE)
 {
-	log_xi_lower = private$log_w_min + private$log_prob
-	ifelse(log, log_xi_lower, exp(log_xi_lower))
+	out = private$log_w_min + private$log_prob
+	ifelse(log, out, exp(out))
 },
 
 #' @description
@@ -268,17 +329,23 @@ print = function()
 #' Otherwise return optimized value of \eqn{w(x)}.
 optimize = function(maximize = TRUE, log = TRUE)
 {
-	k = length(private$g)
 	a = private$a
 	b = private$b
+	k = length(a)
 	w = self$w
 
 	method = "L-BFGS-B"
-	control = list(maxit = 100000, trace = 6)
+	# method = "Nelder-Mead"
+	control = list(maxit = 100000, trace = 0)
 
-	f_opt = function(x) { w(x, log = TRUE) }
+	f_opt = function(x) {
+		tx = inv_rect(x, a, b)
+		w(tx, log = TRUE)
+	}
 
-	init = self$midpoint()
+	init = numeric(k)
+
+	#init = self$midpoint()
 	#log_w_endpoints = c(w(a, log = TRUE), w(b, log = TRUE))
 	#log_w_endpoints = log_w_endpoints[!is.na(log_w_endpoints)]
 
@@ -291,7 +358,7 @@ optimize = function(maximize = TRUE, log = TRUE)
 
 	if (maximize) {
 		control$fnscale = -1
-		opt_out = optim(init, f_opt, method = method, lower = a, upper = b, control = control)
+		opt_out = optim(init, f_opt, method = method, control = control)
 		if (opt_out$convergence != 0) {
 			warning("opt_out: convergence status was ", opt_out$convergence)
 			browser()
@@ -305,7 +372,7 @@ optimize = function(maximize = TRUE, log = TRUE)
 	# } else if (!maximize) {
 	if (!maximize) {
 		control$fnscale = 1
-		opt_out = optim(init, f_opt, method = method, lower = a, upper = b, control = control)
+		opt_out = optim(init, f_opt, method = method, control = control)
 		if (opt_out$convergence != 0) {
 			warning("opt_out: convergence status was ", opt_out$convergence)
 			browser()

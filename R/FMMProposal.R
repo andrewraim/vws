@@ -143,28 +143,23 @@ r = function(n = 1, indices = FALSE)
 #' @return A vector or scalar of density values corresponding to \code{x}.
 d = function(x, normalize = TRUE, log = FALSE)
 {
-	stopifnot(is.list(x))
-	n = length(x)
-
 	log_nc = 0
 	if (normalize) {
 		log_nc = self$nc(log = TRUE)
 	}
 
-	log_wg = rep(-Inf, n)
+	log_wg = -Inf
 
 	N = length(private$regions)
-	for (i in 1:n) {
-		# This search could be more efficient, but would need to be done in a
-		# way that can support any kind of region. For example, if we can
-		# define a "<" operator for region objects, we could consider a binary
-		# search.
-		for (j in 1:N) {
-			reg = private$regions[[j]]
-			if (reg$s(x[[i]])) {
-				log_wg[i] = reg$w_major(x[[i]], log = TRUE) +
-					reg$d_base(x[[i]], log = TRUE)
-			}
+
+	# This search could be more efficient, but would need to be done in a
+	# way that can support any kind of region. For example, if we can
+	# define a "<" operator for region objects, we could consider a binary
+	# search.
+	for (j in 1:N) {
+		reg = private$regions[[j]]
+		if (reg$s(x)) {
+			log_wg = reg$w_major(x, log = TRUE) + reg$d_base(x, log = TRUE)
 		}
 	}
 
@@ -180,9 +175,8 @@ d = function(x, normalize = TRUE, log = FALSE)
 #' @return A vector or scalar of density values corresponding to \code{x}.
 d_target_unnorm = function(x, log = TRUE)
 {
-	stopifnot(is.list(x))
 	reg = private$regions[[1]]
-	out = Map(function(z) { reg$w(z, log = TRUE) + reg$d_base(z, log = TRUE) }, x)
+	out = reg$w(x, log = TRUE) + reg$d_base(x, log = TRUE)
 	if (log) { return(unlist(out)) } else { return(exp(unlist(out))) }
 },
 

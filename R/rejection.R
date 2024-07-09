@@ -66,14 +66,14 @@ rejection = function(h, n = 1, control = rejection_control())
 		accept = FALSE
 		while (!accept && N_rejects < max_rejects) {
 			v = runif(1)
-			x = h$r(n = 1)
+			x = h$r(n = 1)[[1]]
 			log_fx = h$d_target_unnorm(x)
 			log_hx = h$d(x, normalize = FALSE, log = TRUE)
 			log_ratio = log_fx - log_hx - log_M
 
 			if (log(v) < log_ratio) {
 				# Accept x as a draw from f(x)
-				out[[i]] = x |> unlist()
+				out[[i]] = x
 				accept = TRUE
 			} else {
 				# Reject x and adapt the proposal

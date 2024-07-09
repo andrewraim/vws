@@ -118,3 +118,65 @@ poisson_helper = function(lambda)
 		s = function(x) { is.integer(x) & x >= 0 }
 	)
 }
+
+#' Uniform Distribution Helper
+#'
+#' A distribution helper based on \eqn{\text{Uniform}(a, b)}.
+#'
+#' @param a lower limit of support.
+#' @param b upper limit of support.
+#'
+#' @examples
+#' helper = uniform_helper(a = 0, b = 1)
+#' helper$d(1/2)
+#' helper$p(1/4)
+#' helper$q(0.025)
+#'
+#' @name uniform_helper
+#' @export
+uniform_helper = function(a, b)
+{
+	univariate_helper(
+		d = function(x, log = FALSE) {
+			dunif(x, min = a, max = b, log = log)
+		},
+		p = function(q, lower.tail = TRUE, log.p = FALSE) {
+			punif(q, min = a, max = b, lower.tail = lower.tail, log.p = log.p)
+		},
+		q = function(p, lower.tail = TRUE, log.p = FALSE) {
+			qunif(p, min = a, max = b, lower.tail = lower.tail, log.p = log.p)
+		},
+		s = function(x) { x >= a & x <= b }
+	)
+}
+
+#' Inverse Gamma Distribution Helper
+#'
+#' A distribution helper based on \eqn{\text{IG}(a,b)}.
+#'
+#' @param a Shape parameter.
+#' @param b Rate parameter.
+#'
+#' @examples
+#' helper = invgamma_helper(a = 10, b = 5)
+#' helper$d(1/2)
+#' helper$p(0.29266)
+#' helper$q(0.025)
+#'
+#' @name invgamma_helper
+#' @export
+invgamma_helper = function(a, b)
+{
+	univariate_helper(
+		d = function(x, log = FALSE) {
+			d_invgamma(x, a = a, b = b, log = log)
+		},
+		p = function(q, lower.tail = TRUE, log.p = FALSE) {
+			p_invgamma(q, a = a, b = b, lower.tail = lower.tail, log.p = log.p)
+		},
+		q = function(p, lower.tail = TRUE, log.p = FALSE) {
+			q_invgamma(p, a = a, b = b, lower.tail = lower.tail, log.p = log.p)
+		},
+		s = function(x) { x >= a & x <= b }
+	)
+}

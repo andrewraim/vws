@@ -57,7 +57,8 @@ gg = data.frame(y = y) %>%
 	ggplot() +
 	geom_histogram(aes(x = y, y = after_stat(density)), col = "black",
 		fill = NA, bins = 25) +
-	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
+	geom_function(fun = d_target, args = list(mu = mu, sigma2 = sigma2, z = z,
+		lambda2 = lambda2, log = FALSE), lty = 2) +
 	xlab("y") +
 	ylab("Density") +
 	theme_minimal()

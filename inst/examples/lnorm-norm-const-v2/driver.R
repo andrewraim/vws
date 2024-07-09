@@ -21,7 +21,7 @@ w = function(y, log = TRUE) {
         if (log) { return(out) } else { return(exp(out)) }
 }
 
-helper = normal_univariate_helper(mean = z, sd = sqrt(lambda2))
+helper = normal_helper(mean = z, sd = sqrt(lambda2))
 
 support = CustomConstRegion$new(a = 0, b = Inf, w = w, g = helper)
 regions = list(support)
@@ -32,9 +32,9 @@ adapt_out = adapt(h_init, N = 30)
 h = adapt_out$h
 
 # ----- Rejection sampling -----
-ctrl = rejection_control(report = 5000)
+ctrl = rejection_control(report = 5000, extra_outputs = TRUE)
 out = rejection(h, n = 10000, control = ctrl)
-y = unlist(out)
+y = unlist(out$draws)
 
 cat("Percent of proposed draws which were rejected:",
 	sum(out$rejects) / (length(y) + sum(out$rejects)) * 100)
@@ -44,7 +44,8 @@ gg = data.frame(y = y) %>%
 	ggplot() +
 	geom_histogram(aes(x = y, y = after_stat(density)), col = "black",
 		fill = NA, bins = 25) +
-	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
+	geom_function(fun = d_target, args = list(mu = mu, sigma2 = sigma2, z = z,
+		lambda2 = lambda2, log = FALSE), lty = 2) +
 	xlab("y") +
 	ylab("Density") +
 	theme_minimal()
@@ -62,7 +63,3 @@ ggplot() +
 	xlab("y") +
 	ylab("Density") +
 	theme_minimal()
-
-
-
-
