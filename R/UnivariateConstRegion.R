@@ -124,6 +124,10 @@ w_major = function(x, log = TRUE)
 	if (log) { return(out) } else { return(exp(out)) }
 },
 
+#' @description
+#' Compute a midpoint for the region. This is defined to be the standard
+#' midpoint for regions with finite limits; otherwise we select a point between
+#' the bounds.
 midpoint = function()
 {
 	a = private$a
@@ -146,17 +150,20 @@ midpoint = function()
 },
 
 #' @description
-#' Bifurcate this region into two regions. Use \code{x} as the bifurcation
-#' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
-#' @param x An optional bifurcation point.
-bifurcate = function(x = NULL)
+#' Bifurcate this region into two regions at the midpoint.
+bifurcate = function()
+{
+	x = self$midpoint()
+	self$bifurcate_at(x)
+},
+
+#' @description
+#' Bifurcate this region into two regions at \code{x}.
+#' @param x A scalar.
+bifurcate_at = function(x)
 {
 	a = private$a
 	b = private$b
-
-	if (is.null(x)) {
-		x = self$midpoint()
-	}
 
 	s1 = UnivariateConstRegion$new(a = a, b = x, w = self$w, g = private$g)
 	s2 = UnivariateConstRegion$new(a = x, b = b, w = self$w, g = private$g)

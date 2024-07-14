@@ -173,6 +173,10 @@ w_major = function(x, log = TRUE)
 	if (log) { return(out) } else { return(exp(out)) }
 },
 
+#' @description
+#' Compute a midpoint for the region. This is defined to be the standard
+#' midpoint for regions with finite limits; otherwise we select a point between
+#' the bounds.
 midpoint = function()
 {
 	a = private$a
@@ -200,47 +204,49 @@ midpoint = function()
 },
 
 #' @description
-#' Bifurcate this region into two regions. Use \code{x} as the bifurcation
-#' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
-#' @param x An optional bifurcation point.
-bifurcate = function(x = NULL)
+#' Bifurcate this region into two regions at the midpoint.
+bifurcate = function()
 {
 	a = private$a
 	b = private$b
 	g = private$g
 	k = length(g)
 
-	if (is.null(x)) {
-		# cuts = self$midpoint()
-		# pairs_left = list()
-		# pairs_right = list()
-		# reduction = rep(NA, k)
+	if (TRUE) {
+		cuts = self$midpoint()
+		pairs_left = list()
+		pairs_right = list()
+		reduction = rep(NA, k)
 
-		# for (j in 1:k) {
-		# 	a1 = a
-		# 	a2 = a
-		# 	b1 = b
-		# 	b2 = b
-		# 	a2[j] = cuts[j]
-		# 	b1[j] = cuts[j]
+		for (j in 1:k) {
+		 	a1 = a
+		 	a2 = a
+		 	b1 = b
+		 	b2 = b
+		 	a2[j] = cuts[j]
+		 	b1[j] = cuts[j]
 
-		# 	s1 = RectConstRegion$new(a = a1, b = b1, w = self$w, g = private$g)
-		# 	s2 = RectConstRegion$new(a = a2, b = b2, w = self$w, g = private$g)
-		# 	pairs_left[[j]] = s1
-		# 	pairs_right[[j]] = s2
+			s1 = RectConstRegion$new(a = a1, b = b1, w = self$w, g = private$g)
+			s2 = RectConstRegion$new(a = a2, b = b2, w = self$w, g = private$g)
+			pairs_left[[j]] = s1
+			pairs_right[[j]] = s2
 
-		# 	lp0 = log_sub2_exp(self$xi_upper(), self$xi_lower())
-		# 	lp1 = log_sub2_exp(s1$xi_upper(), s1$xi_lower())
-		# 	lp2 = log_sub2_exp(s2$xi_upper(), s2$xi_lower())
-		# 	reduction[j] = log_sub2_exp(lp0, log_add2_exp(lp1, lp2))
-		# }
+			lp0 = log_sub2_exp(self$xi_upper(), self$xi_lower())
+			lp1 = log_sub2_exp(s1$xi_upper(), s1$xi_lower())
+			lp2 = log_sub2_exp(s2$xi_upper(), s2$xi_lower())
+			if (lp0 > log_add2_exp(lp1, lp2)) {
+				reduction[j] = log_sub2_exp(lp0, log_add2_exp(lp1, lp2))
+			} else {
+				reduction[j] = -Inf
+			}
+		}
 
-		# browser()
-		# idx = r_categ(n = 1, p = reduction, log_p = TRUE)
-		# out = list(pairs_left[[idx]], pairs_right[[idx]])
-		# return(out)
+		idx = r_categ(n = 1, p = reduction, log_p = TRUE)
+		out = list(pairs_left[[idx]], pairs_right[[idx]])
+	}
 
-		# Sample a cut orientation randomly
+	# Sample a cut orientation randomly
+	if (FALSE) {
 		cuts = self$midpoint()
 		idx = sample(1:k, size = 1)
 		a1 = a
@@ -252,14 +258,32 @@ bifurcate = function(x = NULL)
 		s1 = RectConstRegion$new(a = a1, b = b1, w = self$w, g = g)
 		s2 = RectConstRegion$new(a = a2, b = b2, w = self$w, g = g)
 		out = list(s1, s2)
-	} else {
-		s1 = RectConstRegion$new(a = a, b = x, w = self$w, g = g)
-		s2 = RectConstRegion$new(a = x, b = b, w = self$w, g = g)
-		out = list(s1, s2)
 	}
 
 	return(out)
 },
+
+#' @description
+#' Bifurcate this region into two regions by splitting dimension \code{l} at
+#' point \code{x}.
+#' @param l An integer \eqn{l \in \{ 1, \ldots, k\} }; which dimension to split.
+#' @param x A scalar.
+bifurcate_at = function(l, x)
+{
+	a = private$a
+	b = private$b
+	a1 = a
+	a2 = a
+	b1 = b
+	b2 = b
+	a2[l] = x
+	b1[l] = x
+
+	s1 = RectConstRegion$new(a = a1, b = b1, w = self$w, g = private$g)
+	s2 = RectConstRegion$new(a = a2, b = b2, w = self$w, g = private$g)
+	list(s1, s2)
+},
+
 
 #' @description
 #' Return a logical value indicating whether this region is bifurcatable.
@@ -332,25 +356,24 @@ optimize = function(maximize = TRUE, log = TRUE)
 	k = length(a)
 	w = self$w
 
-	method = "L-BFGS-B"
-	f_opt = function(x) {
-		w(x, log = TRUE)
-	}
-
-	control = list(maxit = 100000, trace = 0)
-	control$fnscale = ifelse(maximize, -1, 1)
-
-	init = self$midpoint()
-	opt_out = optim(init, f_opt, method = method, lower = a, upper = b, control = control)
-	if (opt_out$convergence != 0 && opt_out$convergence != 52) {
-		warning("opt_out: convergence status was ", opt_out$convergence)
-		browser()
-	}
-	# out = min(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
-	out = opt_out$value
-
-
 	if (FALSE) {
+		method = "L-BFGS-B"
+		f_opt = function(x) {
+			w(x, log = TRUE)
+		}
+
+		control = list(maxit = 100000, trace = 0)
+		control$fnscale = ifelse(maximize, -1, 1)
+
+		init = self$midpoint()
+		opt_out = optim(init, f_opt, method = method, lower = a, upper = b, control = control)
+		if (opt_out$convergence != 0 && opt_out$convergence != 52) {
+			warning("opt_out: convergence status was ", opt_out$convergence)
+			browser()
+		}
+		# out = min(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
+		out = opt_out$value
+	} else {
 		method = "L-BFGS-B"
 		# method = "Nelder-Mead"
 		control = list(maxit = 100000, trace = 0)
@@ -376,7 +399,7 @@ optimize = function(maximize = TRUE, log = TRUE)
 		if (maximize) {
 			control$fnscale = -1
 			opt_out = optim(init, f_opt, method = method, control = control)
-			if (opt_out$convergence != 0) {
+			if (opt_out$convergence != 0 && opt_out$convergence != 52) {
 				warning("opt_out: convergence status was ", opt_out$convergence)
 				browser()
 			}
@@ -390,7 +413,7 @@ optimize = function(maximize = TRUE, log = TRUE)
 		if (!maximize) {
 			control$fnscale = 1
 			opt_out = optim(init, f_opt, method = method, control = control)
-			if (opt_out$convergence != 0) {
+			if (opt_out$convergence != 0 && opt_out$convergence != 52) {
 				warning("opt_out: convergence status was ", opt_out$convergence)
 				browser()
 			}

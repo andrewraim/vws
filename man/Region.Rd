@@ -17,6 +17,7 @@ This is an "abstract" R6 class that defines the interface for a Region.
 \item \href{#method-Region-s}{\code{Region$s()}}
 \item \href{#method-Region-w_major}{\code{Region$w_major()}}
 \item \href{#method-Region-bifurcate}{\code{Region$bifurcate()}}
+\item \href{#method-Region-bifurcate_at}{\code{Region$bifurcate_at()}}
 \item \href{#method-Region-is_bifurcatable}{\code{Region$is_bifurcatable()}}
 \item \href{#method-Region-xi_upper}{\code{Region$xi_upper()}}
 \item \href{#method-Region-xi_lower}{\code{Region$xi_lower()}}
@@ -141,16 +142,25 @@ Majorized weight function \eqn{\overline{w}_j} for this region.
 \if{html}{\out{<a id="method-Region-bifurcate"></a>}}
 \if{latex}{\out{\hypertarget{method-Region-bifurcate}{}}}
 \subsection{Method \code{bifurcate()}}{
-Bifurcate this region into two regions. Use \code{x} as the bifurcation
-point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
+Bifurcate this region into two regions at the midpoint.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Region$bifurcate(x = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Region$bifurcate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Region-bifurcate_at"></a>}}
+\if{latex}{\out{\hypertarget{method-Region-bifurcate_at}{}}}
+\subsection{Method \code{bifurcate_at()}}{
+Bifurcate this region into two regions at \code{x}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Region$bifurcate_at(x)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{An optional bifurcation point.}
+\item{\code{x}}{A scalar.}
 }
 \if{html}{\out{</div>}}
 }

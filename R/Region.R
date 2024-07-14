@@ -61,13 +61,20 @@ w_major = function(x, log = TRUE)
 },
 
 #' @description
-#' Bifurcate this region into two regions. Use \code{x} as the bifurcation
-#' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
-#' @param x An optional bifurcation point.
-bifurcate = function(x = NULL)
+#' Bifurcate this region into two regions at the midpoint.
+bifurcate = function()
 {
 	stop("bifurcate: abstract interface method")
 },
+
+#' @description
+#' Bifurcate this region into two regions at \code{x}.
+#' @param x A scalar.
+bifurcate_at = function(x)
+{
+	stop("bifurcate_at: abstract interface method")
+},
+
 
 #' @description
 #' Return a logical value indicating whether this region is bifurcatable.

@@ -5,6 +5,7 @@
 #include "log-sum-exp.h"
 #include "categ.h"
 #include "which.h"
+#include "logger.h"
 #include "Region.h"
 #include <iterator>
 
@@ -113,7 +114,7 @@ public:
 
 	void bifurcate(const R& r);
 
-	void adapt(unsigned int N);
+	void adapt(unsigned int N, unsigned int report = std::numeric_limits<unsigned int>::max);
 
 private:
 	void recache();
@@ -125,12 +126,15 @@ private:
 	std::unique_ptr<Rcpp::LogicalVector> _bifurcatable;
 };
 
-// Recall that region volumes reflect where there mixture is further
-// from the target: it takes into account both the weight difference
-// and the probability of being in that region.
+// Recall that region volumes reflect where there mixture is further from the
+// target: it takes into account both the weight difference and the probability
+// of being in that region.
 template <class T, class R>
-void FMMProposal<T,R>::adapt(unsigned int N)
+void FMMProposal<T,R>::adapt(unsigned int N, unsigned int report)
 {
+	Rcpp::NumericVector log_bdd_hist(N+1);
+	log_bdd_hist(0) = rejection_bound(true);
+
 	for (unsigned int j = 0; j < N; j++) {
 		unsigned int L = _regions.size();
 
@@ -175,7 +179,13 @@ void FMMProposal<T,R>::adapt(unsigned int N)
 		// printf("Checkpoint: recache\n");
 		recache();
 
+		log_bdd_hist(j+1) = rejection_bound(true);
+
 		// printf("Checkpoint: end split\n");
+		if (j % report == 0) {
+			logger("After %d steps log Pr{rejection} <= %g\n", j, log_bdd_hist(j+1));
+		}
+
 	}
 }
 

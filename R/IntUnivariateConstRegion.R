@@ -85,30 +85,44 @@ r = function(n)
 },
 
 #' @description
-#' Bifurcate this region into two regions. Use \code{x} as the bifurcation
-#' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
-#' @param x An optional bifurcation point.
-bifurcate = function(x = NULL)
+#' Compute a midpoint for the region. This is defined to be the standard
+#' midpoint for regions with finite limits; otherwise we select a point between
+#' the bounds.
+midpoint = function()
+{
+	if (is.infinite(a) && is.infinite(a) && a < 0 && b > 0) {
+		# In this case, we have an interval (-Inf, Inf). Make a split at zero.
+		x = 0
+	} else if (is.infinite(a) && a < 0) {
+		# Left endpoint is -Inf. Split based on right endpoint.
+		x = b - abs(b) - 1
+	} else if (is.infinite(b) && b > 0) {
+		# Right endpoint is Inf. Split based on left endpoint.
+		x = a + abs(a) + 1
+	} else {
+		# Both endpoints are finite. Take the midpoint.
+		# For discrete intervals, only bifurcate at integers
+		x = ceiling((a + b) / 2)
+	}
+
+	return(x)
+},
+
+#' @description
+#' Bifurcate this region into two regions at the midpoint.
+bifurcate = function()
+{
+	x = self$midpoint()
+	self$bifurcate_at(x)
+},
+
+#' @description
+#' Bifurcate this region into two regions at \code{x}.
+#' @param x A scalar.
+bifurcate_at = function(x)
 {
 	a = private$a
 	b = private$b
-
-	if (is.null(x)) {
-		if (is.infinite(a) && is.infinite(a) && a < 0 && b > 0) {
-			# In this case, we have an interval (-Inf, Inf). Make a split at zero.
-			x = 0
-		} else if (is.infinite(a) && a < 0) {
-			# Left endpoint is -Inf. Split based on right endpoint.
-			x = b - abs(b) - 1
-		} else if (is.infinite(b) && b > 0) {
-			# Right endpoint is Inf. Split based on left endpoint.
-			x = a + abs(a) + 1
-		} else {
-			# Both endpoints are finite. Take the midpoint.
-			# For discrete intervals, only bifurcate at integers
-			x = ceiling((a + b) / 2)
-		}
-	}
 
 	s1 = IntUnivariateConstRegion$new(a = a, b = x, w = self$w, g = private$g)
 	s2 = IntUnivariateConstRegion$new(a = x, b = b, w = self$w, g = private$g)

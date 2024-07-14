@@ -46,6 +46,7 @@ default.}
 \item \href{#method-RectConstRegion-w_major}{\code{RectConstRegion$w_major()}}
 \item \href{#method-RectConstRegion-midpoint}{\code{RectConstRegion$midpoint()}}
 \item \href{#method-RectConstRegion-bifurcate}{\code{RectConstRegion$bifurcate()}}
+\item \href{#method-RectConstRegion-bifurcate_at}{\code{RectConstRegion$bifurcate_at()}}
 \item \href{#method-RectConstRegion-is_bifurcatable}{\code{RectConstRegion$is_bifurcatable()}}
 \item \href{#method-RectConstRegion-xi_upper}{\code{RectConstRegion$xi_upper()}}
 \item \href{#method-RectConstRegion-xi_lower}{\code{RectConstRegion$xi_lower()}}
@@ -176,6 +177,9 @@ Majorized weight function \eqn{\overline{w}_j} for this region.
 \if{html}{\out{<a id="method-RectConstRegion-midpoint"></a>}}
 \if{latex}{\out{\hypertarget{method-RectConstRegion-midpoint}{}}}
 \subsection{Method \code{midpoint()}}{
+Compute a midpoint for the region. This is defined to be the standard
+midpoint for regions with finite limits; otherwise we select a point between
+the bounds.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{RectConstRegion$midpoint()}\if{html}{\out{</div>}}
 }
@@ -185,16 +189,28 @@ Majorized weight function \eqn{\overline{w}_j} for this region.
 \if{html}{\out{<a id="method-RectConstRegion-bifurcate"></a>}}
 \if{latex}{\out{\hypertarget{method-RectConstRegion-bifurcate}{}}}
 \subsection{Method \code{bifurcate()}}{
-Bifurcate this region into two regions. Use \code{x} as the bifurcation
-point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
+Bifurcate this region into two regions at the midpoint.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{RectConstRegion$bifurcate(x = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{RectConstRegion$bifurcate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-RectConstRegion-bifurcate_at"></a>}}
+\if{latex}{\out{\hypertarget{method-RectConstRegion-bifurcate_at}{}}}
+\subsection{Method \code{bifurcate_at()}}{
+Bifurcate this region into two regions by splitting dimension \code{l} at
+point \code{x}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{RectConstRegion$bifurcate_at(l, x)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{An optional bifurcation point.}
+\item{\code{l}}{An integer \eqn{l \in \{ 1, \ldots, k\} }; which dimension to split.}
+
+\item{\code{x}}{A scalar.}
 }
 \if{html}{\out{</div>}}
 }

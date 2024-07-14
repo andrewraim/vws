@@ -43,7 +43,9 @@ out[[2]]$r(100) |> as.numeric()
 \itemize{
 \item \href{#method-IntUnivariateConstRegion-new}{\code{IntUnivariateConstRegion$new()}}
 \item \href{#method-IntUnivariateConstRegion-r}{\code{IntUnivariateConstRegion$r()}}
+\item \href{#method-IntUnivariateConstRegion-midpoint}{\code{IntUnivariateConstRegion$midpoint()}}
 \item \href{#method-IntUnivariateConstRegion-bifurcate}{\code{IntUnivariateConstRegion$bifurcate()}}
+\item \href{#method-IntUnivariateConstRegion-bifurcate_at}{\code{IntUnivariateConstRegion$bifurcate_at()}}
 \item \href{#method-IntUnivariateConstRegion-is_bifurcatable}{\code{IntUnivariateConstRegion$is_bifurcatable()}}
 \item \href{#method-IntUnivariateConstRegion-print}{\code{IntUnivariateConstRegion$print()}}
 \item \href{#method-IntUnivariateConstRegion-optimize}{\code{IntUnivariateConstRegion$optimize()}}
@@ -57,7 +59,6 @@ out[[2]]$r(100) |> as.numeric()
 <li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="d_base"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-d_base'><code>vws::UnivariateConstRegion$d_base()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="description"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-description'><code>vws::UnivariateConstRegion$description()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="lower"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-lower'><code>vws::UnivariateConstRegion$lower()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="midpoint"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-midpoint'><code>vws::UnivariateConstRegion$midpoint()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="s"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-s'><code>vws::UnivariateConstRegion$s()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="upper"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-upper'><code>vws::UnivariateConstRegion$upper()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="w_major"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-w_major'><code>vws::UnivariateConstRegion$w_major()</code></a></span></li>
@@ -109,19 +110,40 @@ A list of draws, with one draw per list element.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-midpoint"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-midpoint}{}}}
+\subsection{Method \code{midpoint()}}{
+Compute a midpoint for the region. This is defined to be the standard
+midpoint for regions with finite limits; otherwise we select a point between
+the bounds.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$midpoint()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-IntUnivariateConstRegion-bifurcate"></a>}}
 \if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-bifurcate}{}}}
 \subsection{Method \code{bifurcate()}}{
-Bifurcate this region into two regions. Use \code{x} as the bifurcation
-point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
+Bifurcate this region into two regions at the midpoint.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$bifurcate(x = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$bifurcate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-bifurcate_at"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-bifurcate_at}{}}}
+\subsection{Method \code{bifurcate_at()}}{
+Bifurcate this region into two regions at \code{x}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$bifurcate_at(x)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{An optional bifurcation point.}
+\item{\code{x}}{A scalar.}
 }
 \if{html}{\out{</div>}}
 }

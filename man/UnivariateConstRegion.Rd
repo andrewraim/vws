@@ -46,6 +46,7 @@ default.}
 \item \href{#method-UnivariateConstRegion-w_major}{\code{UnivariateConstRegion$w_major()}}
 \item \href{#method-UnivariateConstRegion-midpoint}{\code{UnivariateConstRegion$midpoint()}}
 \item \href{#method-UnivariateConstRegion-bifurcate}{\code{UnivariateConstRegion$bifurcate()}}
+\item \href{#method-UnivariateConstRegion-bifurcate_at}{\code{UnivariateConstRegion$bifurcate_at()}}
 \item \href{#method-UnivariateConstRegion-is_bifurcatable}{\code{UnivariateConstRegion$is_bifurcatable()}}
 \item \href{#method-UnivariateConstRegion-xi_upper}{\code{UnivariateConstRegion$xi_upper()}}
 \item \href{#method-UnivariateConstRegion-xi_lower}{\code{UnivariateConstRegion$xi_lower()}}
@@ -176,6 +177,9 @@ Majorized weight function \eqn{\overline{w}_j} for this region.
 \if{html}{\out{<a id="method-UnivariateConstRegion-midpoint"></a>}}
 \if{latex}{\out{\hypertarget{method-UnivariateConstRegion-midpoint}{}}}
 \subsection{Method \code{midpoint()}}{
+Compute a midpoint for the region. This is defined to be the standard
+midpoint for regions with finite limits; otherwise we select a point between
+the bounds.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$midpoint()}\if{html}{\out{</div>}}
 }
@@ -185,16 +189,25 @@ Majorized weight function \eqn{\overline{w}_j} for this region.
 \if{html}{\out{<a id="method-UnivariateConstRegion-bifurcate"></a>}}
 \if{latex}{\out{\hypertarget{method-UnivariateConstRegion-bifurcate}{}}}
 \subsection{Method \code{bifurcate()}}{
-Bifurcate this region into two regions. Use \code{x} as the bifurcation
-point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
+Bifurcate this region into two regions at the midpoint.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$bifurcate(x = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$bifurcate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-UnivariateConstRegion-bifurcate_at"></a>}}
+\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-bifurcate_at}{}}}
+\subsection{Method \code{bifurcate_at()}}{
+Bifurcate this region into two regions at \code{x}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{UnivariateConstRegion$bifurcate_at(x)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{An optional bifurcation point.}
+\item{\code{x}}{A scalar.}
 }
 \if{html}{\out{</div>}}
 }
