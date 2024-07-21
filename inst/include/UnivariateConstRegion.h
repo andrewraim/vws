@@ -11,7 +11,7 @@ namespace vws {
 
 //' Univariate Region with Constant Majorizer
 //'
-//' An R6 class which represents a region based on univariate intervals with a
+//' A class which represents a region based on univariate intervals with a
 //' constant majorizer for the weight function. This version is for continuous
 //' supports.
 //'
@@ -37,7 +37,7 @@ class UnivariateConstRegion : public Region<double>
 protected:
 	double _a;
 	double _b;
-	const weight_function* _w;
+	const uv_weight_function* _w;
 	const UnivariateHelper<double>* _helper;
 	double _log_w_max;
 	double _log_w_min;
@@ -48,7 +48,7 @@ public:
 	//' @param w Weight function for the target distribution.
 	//' @param g An object created by \code{univariate_helper}.
 	UnivariateConstRegion(double a,
-		const weight_function& w,
+		const uv_weight_function& w,
 		const UnivariateHelper<double>& helper);
 
 	//' @param a Lower limit of interval.
@@ -56,7 +56,7 @@ public:
 	//' @param w Weight function for the target distribution.
 	//' @param g An object created by \code{univariate_helper}.
 	UnivariateConstRegion(double a, double b,
-		const weight_function& w,
+		const uv_weight_function& w,
 		const UnivariateHelper<double>& helper);
 
 	//' @description
@@ -156,7 +156,7 @@ public:
 };
 
 UnivariateConstRegion::UnivariateConstRegion(double a,
-	const weight_function& w, const UnivariateHelper<double>& helper)
+	const uv_weight_function& w, const UnivariateHelper<double>& helper)
 : _a(a), _b(a), _w(&w), _helper(&helper)
 {
 	_log_w_max = (*_w)(a, true);
@@ -165,7 +165,7 @@ UnivariateConstRegion::UnivariateConstRegion(double a,
 }
 
 UnivariateConstRegion::UnivariateConstRegion(double a, double b,
-	const weight_function& w, const UnivariateHelper<double>& helper)
+	const uv_weight_function& w, const UnivariateHelper<double>& helper)
 : _a(a), _b(b), _w(&w), _helper(&helper)
 {
 	if (a > b) {
@@ -213,7 +213,7 @@ double UnivariateConstRegion::d(const double& x, bool log) const
 
 bool UnivariateConstRegion::s(const double& x) const
 {
-	return (_a < x & x <= _b) && _helper->s(x);
+	return (_a < x && x <= _b) && _helper->s(x);
 }
 
 double UnivariateConstRegion::w(const double& x, bool log) const
@@ -302,8 +302,8 @@ double UnivariateConstRegion::optimize(bool maximize, bool log) const
 		(*_w)(_b, true)
 	);
 	log_w_endpoints = log_w_endpoints[!Rcpp::is_na(log_w_endpoints)];
-	bool endpoint_pos_inf = Rcpp::is_true(Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints > 0));
-	bool endpoint_neg_inf = Rcpp::is_true(Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & log_w_endpoints < 0));
+	bool endpoint_pos_inf = Rcpp::is_true(Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & (log_w_endpoints > 0)));
+	bool endpoint_neg_inf = Rcpp::is_true(Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & (log_w_endpoints < 0)));
 
 	double out;
 

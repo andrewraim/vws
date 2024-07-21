@@ -12,7 +12,7 @@ private:
 
 public:
 	CustomConstRegion(double a, double b, double mu, double sigma2,
-		const vws::weight_function& w, const vws::UnivariateHelper<double>& helper)
+		const vws::uv_weight_function& w, const vws::UnivariateHelper<double>& helper)
 	: vws::UnivariateConstRegion(a, b, w, helper), _mu(mu), _sigma2(sigma2)
 	{
 	}

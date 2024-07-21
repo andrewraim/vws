@@ -243,7 +243,7 @@ optimize = function(maximize = TRUE, log = TRUE)
 
 	# Transform to bounded interval, if necessary
 	f_opt = function(x) {
-		w(vws::inv_rect(x, a, b), log = TRUE)
+		w(inv_rect(x, a, b), log = TRUE)
 	}
 
 	init = 0

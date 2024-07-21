@@ -2,6 +2,7 @@
 #define VWS_FMM_PROPOSAL_H
 
 #include <Rcpp.h>
+#include "typedefs.h"
 #include "log-sum-exp.h"
 #include "categ.h"
 #include "which.h"
@@ -114,7 +115,7 @@ public:
 
 	void bifurcate(const R& r);
 
-	void adapt(unsigned int N, unsigned int report = std::numeric_limits<unsigned int>::max);
+	void adapt(unsigned int N, unsigned int report = uint_max);
 
 private:
 	void recache();
@@ -182,7 +183,7 @@ void FMMProposal<T,R>::adapt(unsigned int N, unsigned int report)
 		log_bdd_hist(j+1) = rejection_bound(true);
 
 		// printf("Checkpoint: end split\n");
-		if (j % report == 0) {
+		if (j % report == 0 && report < uint_max) {
 			logger("After %d steps log Pr{rejection} <= %g\n", j, log_bdd_hist(j+1));
 		}
 
@@ -326,6 +327,8 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 	}
 
 	if (!itr_lower->s(x)) {
+		x_singleton.print();
+		itr_lower->print();
 		Rcpp::stop("!itr_lower->s(x)");
 	}
 

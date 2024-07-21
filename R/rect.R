@@ -23,7 +23,7 @@
 NULL
 
 #' @name bounded
-#' @export
+# @export
 rect = function(z, a, b)
 {
 	n = length(x)
@@ -49,7 +49,7 @@ rect = function(z, a, b)
 }
 
 #' @name bounded
-#' @export
+# @export
 inv_rect = function(x, a, b)
 {
 	n = length(x)

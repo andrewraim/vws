@@ -28,8 +28,8 @@ r_invgamma = function(n, a, b)
 #' @export
 d_invgamma = function(x, a, b, log = FALSE)
 {
-	logf = dgamma(1/x, a, b, log = TRUE) - 2 * log(x)
-	if (log) { return(logf) } else { return(exp(logf))}
+	out = dgamma(1/x, a, b, log = TRUE) - 2 * log(x)
+	if (log) { return(out) } else { return(exp(out))}
 }
 
 #' @name InverseGamma
@@ -43,6 +43,22 @@ p_invgamma = function(q, a, b, lower.tail = TRUE, log.p = FALSE)
 #' @export
 q_invgamma = function(p, a, b, lower.tail = TRUE, log.p = FALSE)
 {
-	1 / qgamma(p, a, b, lower.tail = !lower.tail, log.p = log.p)
+	n = length(p)
+	if (!log.p) { p = log(p) }
+	if (length(a) == 1) { a = rep(a, n)}
+	if (length(b) == 1) { b = rep(b, n)}
+
+	out = numeric(n)
+	cp = log_sub2_exp(0, p)
+
+	for (i in 1:n) {
+		if (p[i] > log(1/2)) {
+			out[i] = 1 / qgamma(cp[i], a[i], b[i], lower.tail = lower.tail, log.p = TRUE)
+		} else {
+			out[i] = 1 / qgamma(p[i], a[i], b[i], lower.tail = !lower.tail, log.p = TRUE)
+		}
+	}
+
+	return(out)
 }
 
