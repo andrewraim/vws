@@ -2,8 +2,10 @@
 #'
 #' Adapt an FMM proposal using a midpoint rule-of-thumb.
 #'
-#' @param h An object of class \code{FMMProposal}.
+#' @param h An object of class `FMMProposal`.
 #' @param N Number of additional mixture components after adaptation.
+#' @param tol A scalar; adaptation halts if the log of the rejection bound is
+#' smaller than this value. The default value `-Inf` prevents early halting.
 #' @param report Report progress each time this many candidates are proposed.
 #'
 #' @examples
@@ -30,7 +32,7 @@
 #'
 #' @name adapt
 #' @export
-adapt = function(h, N, report = N+1)
+adapt = function(h, N, tol = -Inf, report = N+1)
 {
 	log_ub_hist = numeric(N+1)
 	log_lb_hist = numeric(N+1)
@@ -44,6 +46,17 @@ adapt = function(h, N, report = N+1)
 	}
 
 	for (j in seq_len(N)) {
+		# If we can beat the tolerance before we reach N steps, return now
+		if (log_bdd_hist[j] <= tol) {
+			out = list(
+				h = h,
+				log_ub_hist = log_ub_hist[1:j],
+				log_lb_hist = log_lb_hist[1:j],
+				log_bdd_hist = log_bdd_hist[1:j]
+			)
+			return(out)
+		}
+
 		# Recall that region volumes reflect where there mixture is further
 		# from the target: it takes into account both the weight difference
 		# and the probability of being in that region.

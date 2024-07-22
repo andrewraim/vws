@@ -28,7 +28,7 @@ regions = list(support)
 h_init = FMMProposal$new(regions)
 
 # ----- Adapt proposal -----
-adapt_out = adapt(h_init, N = 30, report = 10)
+adapt_out = adapt(h_init, N = 30, tol = log(1/10), report = 10)
 h = adapt_out$h
 
 gg = data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
