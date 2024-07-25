@@ -34,7 +34,7 @@ r_mvnorm = function(n, mu, Sigma)
 	stopifnot(k == nrow(Sigma) && k == ncol(Sigma))
 	Z = matrix(rnorm(n*k), k, n)
 	A = t(chol(Sigma))
-	A %*% Z + mu
+	A %*% Z + mu %x% matrix(1, 1, n)
 }
 
 #' @name MultivariateNormal
@@ -44,7 +44,7 @@ r_mvnorm_chol = function(n, mu, Sigma_chol)
 	k = length(mu)
 	stopifnot(k == nrow(Sigma_chol) && k == ncol(Sigma_chol))
 	Z = matrix(rnorm(n*k), k, n)
-	Sigma_chol %*% Z + mu
+	Sigma_chol %*% Z + mu %x% matrix(1, 1, n)
 }
 
 #' @name MultivariateNormal
@@ -55,7 +55,7 @@ r_mvnorm_prec = function(n, mu, Omega)
 	stopifnot(k == nrow(Omega) && k == ncol(Omega))
 	Z = matrix(rnorm(n*k), k, n)
 	A = chol(Omega)
-	solve(A, Z) + mu
+	solve(A, Z) + mu %x% matrix(1, 1, n)
 }
 
 #' @name MultivariateNormal
@@ -71,9 +71,9 @@ d_mvnorm = function(x, mu, Sigma, log = FALSE)
 	qr_out = qr(Sigma)
 	Omega_xc = solve(Sigma, t(xc))
 	logdetA = sum(log(abs(diag(qr.R(qr_out)))))
-	logf = -k/2*log(2*pi) - logdetA / 2 - rowSums(xc * t(Omega_xc)) / 2
+	out = -k/2*log(2*pi) - logdetA / 2 - rowSums(xc * t(Omega_xc)) / 2
 
-	if (log) { return(logf) } else { return(exp(logf))}
+	if (log) { return(out) } else { return(exp(out)) }
 }
 
 #' @name MultivariateNormal
@@ -87,8 +87,8 @@ d_mvnorm_prec = function(x, mu, Omega, log = FALSE)
 	xc = x - t(mu) %x% matrix(1,n,1)
 	Omega_xc = Omega %*% t(xc)
 	logdetA = -as.numeric(determinant(Omega)$modulus)
-	logf = -k/2*log(2*pi) - logdetA / 2 - rowSums(xc * t(Omega_xc)) / 2
+	out = -k/2*log(2*pi) - logdetA / 2 - rowSums(xc * t(Omega_xc)) / 2
 
-	if (log) { return(logf) } else { return(exp(logf))}
+	if (log) { return(out) } else { return(exp(out)) }
 }
 

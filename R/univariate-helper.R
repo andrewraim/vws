@@ -180,3 +180,35 @@ invgamma_helper = function(a, b)
 		s = function(x) { x >= 0 }
 	)
 }
+
+
+#' Gamma Distribution Helper
+#'
+#' A distribution helper based on \eqn{\text{Gamma}(a,b)}.
+#'
+#' @param a Shape parameter.
+#' @param b Rate parameter.
+#'
+#' @examples
+#' helper = gamma_helper(a = 10, b = 5)
+#' helper$d(1/2)
+#' helper$p(0.29266)
+#' helper$q(0.025)
+#'
+#' @name invgamma_helper
+#' @export
+gamma_helper = function(a, b)
+{
+	univariate_helper(
+		d = function(x, log = FALSE) {
+			dgamma(x, shape = a, rate = b, log = log)
+		},
+		p = function(q, lower.tail = TRUE, log.p = FALSE) {
+			pgamma(q, shape = a, rate = b, lower.tail = lower.tail, log.p = log.p)
+		},
+		q = function(p, lower.tail = TRUE, log.p = FALSE) {
+			qgamma(p, shape = a, rate = b, lower.tail = lower.tail, log.p = log.p)
+		},
+		s = function(x) { x >= 0 }
+	)
+}

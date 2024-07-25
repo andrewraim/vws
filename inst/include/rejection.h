@@ -100,13 +100,24 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 		accept = false;
 		while (!accept && N_rejects < max_rejects) {
 			double v = ::R::runif(0, 1);
+			// Rprintf("rejection: drew v = %g\n", v);
 			const std::vector<T>& draws_new = h.r(1);
 			const T& x = draws_new[0];
+			// Rprintf("rejection: drew x = %g\n", x);
 			double log_fx = h.d_target_unnorm(x);
+			// Rprintf("rejection: log_fx = %g\n", log_fx);
 			double log_hx = h.d(x, false, true);
+			// Rprintf("rejection: log_hx = %g\n", log_hx);
 			double log_ratio = log_fx - log_hx - log_M;
+			// Rprintf("rejection: log_ratio = %g\n", log_ratio);
 
-			if (log(v) < log_ratio) {
+			if (log_ratio > 1e-5) {
+				Rprintf("rejection: drew x = %g\n", x);
+				Rprintf("rejection: log_fx = %g\n", log_fx);
+				Rprintf("rejection: log_hx = %g\n", log_hx);
+				Rprintf("rejection: log_ratio = %g\n", log_ratio);
+				Rcpp::stop("log_ratio > 1e-5: this should not happen");
+			} else if (log(v) < log_ratio) {
 				// Accept x as a draw from f(x)
 				draws.push_back(x);
 				accept = true;

@@ -296,6 +296,10 @@ FMMProposal<T,R>::r_ext(unsigned int n) const
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
 	const Rcpp::IntegerVector& idx = r_categ(n, lxu, true);
 
+	// Warning: super verbose. Temporary only.
+	// Rcpp::print(lxu);
+	// Rcpp::print(idx);
+
 	// Draw the values from the respective mixture components.
 	std::vector<T> x;
 	for (unsigned int i = 0; i < n; i++) {
@@ -336,6 +340,12 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 		Rcpp::stop("!itr_lower->s(x)");
 	}
 
+	// Rprintf("FMMProposal: d(%g, %d)\n", x, log);
+	// itr_lower->print();
+	// Rprintf("itr_lower->w_major(x, true) = %g\n", itr_lower->w_major(x, true));
+	// Rprintf("itr_lower->d_base(x, true) = %g\n", itr_lower->d_base(x, true));
+	// Rprintf("log_nc = %g\n", log_nc);
+
 	double out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - log_nc;
 
 	return log ? out : exp(out);
@@ -344,8 +354,10 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 template <class T, class R>
 double FMMProposal<T,R>::d_target_unnorm(const T& x, bool log) const
 {
-	const R& r = *_regions.begin();
-	double out = r.w(x, true) + r.d_base(x, true);
+	// Rprintf("FMMProposal: d_target_unnorm(%g, %d)\n", x, log);
+	// Rprintf("_regions.begin()->w(x, true) = %g\n", _regions.begin()->w(x, true));
+	// Rprintf("_regions.begin()->d_base(x, true) = %g\n", _regions.begin()->d_base(x, true));
+	double out = _regions.begin()->w(x, true) + _regions.begin()->d_base(x, true);
 	return log ? out : exp(out);
 }
 

@@ -19,19 +19,24 @@ namespace vws {
 //' @param log If \code{TRUE}, return densities and probabilities on the log-scale.
 //'
 //' @return
-//' \code{dinvgamma} gives the density, \code{rinvgamma} generates random
+//' `dinvgamma` gives the density, `rinvgamma` generates random
 //' deviates.
+//'
+//' @details
+//' Note that `Rcpp::*gamma` and `R::*gamma` functions are both parameterized
+//' by a scale parameter, which is the inverse of the rate.
+//'
 //' @name InverseGamma
 Rcpp::NumericVector r_invgamma(unsigned int n, double a, double b)
 {
-	return 1 / Rcpp::rgamma(n, a, 1/b);
+	return 1 / Rcpp::rgamma(n, a, 1 / b);
 }
 
 //' @name InverseGamma
 //' @export
 double d_invgamma(double x, double a, double b, bool log = false)
 {
-	double out = R::dgamma(1/x, a, 1/b, true) - 2 * std::log(x);
+	double out = R::dgamma(1 / x, a, 1 / b, true) - 2 * std::log(x);
 	return log ? out : exp(out);
 }
 
@@ -39,7 +44,7 @@ double d_invgamma(double x, double a, double b, bool log = false)
 //' @export
 double p_invgamma(double q, double a, double b, bool lower = true, bool log = false)
 {
-	return R::pgamma(1 / q, a, 1/b, !lower, log);
+	return R::pgamma(1 / q, a, 1 / b, !lower, log);
 }
 
 //' @name InverseGamma
@@ -51,9 +56,9 @@ double q_invgamma(double p, double a, double b, bool lower = true, bool log = fa
 	double out;
 	if (p > std::log(1/2)) {
 		double cp = log_sub2_exp(0, p);
-		out = 1 / R::qgamma(cp, a, 1/b, lower, true);
+		out = 1 / R::qgamma(cp, a, 1 / b, lower, true);
 	} else {
-		out = 1 / R::qgamma(p, a, 1/b, !lower, true);
+		out = 1 / R::qgamma(p, a, 1 / b, !lower, true);
 	}
 
 	return out;

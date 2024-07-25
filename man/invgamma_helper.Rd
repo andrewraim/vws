@@ -2,9 +2,12 @@
 % Please edit documentation in R/univariate-helper.R
 \name{invgamma_helper}
 \alias{invgamma_helper}
+\alias{gamma_helper}
 \title{Inverse Gamma Distribution Helper}
 \usage{
 invgamma_helper(a, b)
+
+gamma_helper(a, b)
 }
 \arguments{
 \item{a}{Shape parameter.}
@@ -13,9 +16,16 @@ invgamma_helper(a, b)
 }
 \description{
 A distribution helper based on \eqn{\text{IG}(a,b)}.
+
+A distribution helper based on \eqn{\text{Gamma}(a,b)}.
 }
 \examples{
 helper = invgamma_helper(a = 10, b = 5)
+helper$d(1/2)
+helper$p(0.29266)
+helper$q(0.025)
+
+helper = gamma_helper(a = 10, b = 5)
 helper$d(1/2)
 helper$p(0.29266)
 helper$q(0.025)
