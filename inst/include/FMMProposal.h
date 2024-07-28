@@ -115,7 +115,7 @@ public:
 
 	void bifurcate(const R& r);
 
-	void adapt(unsigned int N, double tol = R_NegInf, unsigned int report = uint_max);
+	Rcpp::NumericVector adapt(unsigned int N, double tol = R_NegInf, unsigned int report = uint_max);
 
 private:
 	void recache();
@@ -131,7 +131,7 @@ private:
 // target: it takes into account both the weight difference and the probability
 // of being in that region.
 template <class T, class R>
-void FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned int report)
+Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned int report)
 {
 	Rcpp::NumericVector log_bdd_hist(N+1);
 	log_bdd_hist(0) = rejection_bound(true);
@@ -139,7 +139,7 @@ void FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned int report)
 	for (unsigned int j = 0; j < N; j++) {
 		// If we can beat the tolerance before we reach N steps, return now
 		if (log_bdd_hist(j) <= tol) {
-			return;
+			return log_bdd_hist;
 		}
 
 		unsigned int L = _regions.size();
@@ -192,6 +192,8 @@ void FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned int report)
 			logger("After %d steps log Pr{rejection} <= %g\n", j, log_bdd_hist(j+1));
 		}
 	}
+
+	return log_bdd_hist;
 }
 
 template <class T, class R>

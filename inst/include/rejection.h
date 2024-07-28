@@ -31,6 +31,7 @@ struct rejection_args
 	unsigned int max_rejects = std::numeric_limits<unsigned int>::max();
 	unsigned int report_period = std::numeric_limits<unsigned int>::max();
 	error_action max_rejects_action = error_action::STOP;
+	double log_ratio_ub = 1e-5;
 };
 
 //' Vertical Weighted Strips Rejection Sampler
@@ -92,6 +93,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 	unsigned int max_rejects = args.max_rejects;
 	unsigned int report_period = args.report_period;
 	error_action max_rejects_action = args.max_rejects_action;
+	double log_ratio_ub = args.log_ratio_ub;
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
@@ -111,7 +113,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 			double log_ratio = log_fx - log_hx - log_M;
 			// Rprintf("rejection: log_ratio = %g\n", log_ratio);
 
-			if (log_ratio > 1e-5) {
+			if (log_ratio > log_ratio_ub) {
 				Rprintf("rejection: drew x = %g\n", x);
 				Rprintf("rejection: log_fx = %g\n", log_fx);
 				Rprintf("rejection: log_hx = %g\n", log_hx);
