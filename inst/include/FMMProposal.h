@@ -133,13 +133,14 @@ private:
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned int report)
 {
-	Rcpp::NumericVector log_bdd_hist(N+1);
-	log_bdd_hist(0) = rejection_bound(true);
+	std::vector<double> log_bdd_hist;
+
+	log_bdd_hist.push_back(rejection_bound(true));
 
 	for (unsigned int j = 0; j < N; j++) {
 		// If we can beat the tolerance before we reach N steps, return now
-		if (log_bdd_hist(j) <= tol) {
-			return log_bdd_hist;
+		if (log_bdd_hist[j] <= tol) {
+			break;
 		}
 
 		unsigned int L = _regions.size();
@@ -185,15 +186,15 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned
 		// printf("Checkpoint: recache\n");
 		recache();
 
-		log_bdd_hist(j+1) = rejection_bound(true);
+		log_bdd_hist.push_back(rejection_bound(true));
 
 		// printf("Checkpoint: end split\n");
 		if (j % report == 0 && report < uint_max) {
-			logger("After %d steps log Pr{rejection} <= %g\n", j, log_bdd_hist(j+1));
+			logger("After %d steps log Pr{rejection} <= %g\n", j, log_bdd_hist[j+1]);
 		}
 	}
 
-	return log_bdd_hist;
+	return Rcpp::NumericVector(log_bdd_hist.begin(), log_bdd_hist.end());
 }
 
 template <class T, class R>
