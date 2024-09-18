@@ -5,9 +5,9 @@
 #'
 #' @param n Desired sample size.
 #' @param x Quantile or argument of density.
-#' @param log logical; if \code{TRUE}, probabilities \code{p} are given as
+#' @param log logical; if `TRUE`, probabilities `p` are given as
 #' \eqn{\log(p)}.
-#' @param log.p logical; if \code{TRUE}, probabilities \code{p} are given as
+#' @param log.p logical; if `TRUE`, probabilities `p` are given as
 #' \eqn{\log(p)}.
 #' @param p Probability.
 #' @param lo Lower limit.
@@ -18,7 +18,7 @@
 #' @param ... Additional arguments.
 #'
 #' @details
-#' This code was initially copied from the \code{rtruncated} function in the
+#' This code was initially copied from the `rtruncated` function in the
 #' LearnBayes package.
 #'
 #' @examples

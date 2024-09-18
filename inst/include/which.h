@@ -13,7 +13,7 @@ namespace vws {
 * true, indices are transformed to start at 1 (especially for use in R).
 * Otherwise, indices begin at 0.
 */
-Rcpp::IntegerVector which(const Rcpp::LogicalVector& x, bool one_based = false)
+inline Rcpp::IntegerVector which(const Rcpp::LogicalVector& x, bool one_based = false)
 {
 	std::vector<unsigned int> idx;
 

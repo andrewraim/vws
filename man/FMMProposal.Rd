@@ -12,7 +12,6 @@ FMMProposal
 An R6 class which represents a VWS proposal: a finite mixture that some
 specific certain operations.
 
-
 \itemize{
 \item The list \code{regions} represents
 (\eqn{\mathcal{D}_1, \ldots, \mathcal{D}_N}).

@@ -35,12 +35,14 @@ d_mvnorm_prec(x, mu, Omega, log = FALSE)
 \item{log}{If \code{TRUE}, return densities and probabilities on the log-scale.}
 }
 \value{
-\code{dmvnorm} gives the density using specified covariance matrix,
-\code{dmvnorm_prec} gives the density using specified precision matrix,
-\code{rmvnorm} generates random deviates using specified covariance matrix,
-\code{rmvnorm_prec} generates random deviates using specified precision matrix,
-\code{r_singular_mvnorm} generates random deviates using specified singular
-covariance matrix (and mean zero).
+\item{\code{dmvnorm}}{gives the density using specified covariance matrix,}
+\item{\code{dmvnorm_prec}}{gives the density using specified precision matrix,}
+\item{\code{rmvnorm}}{generates random deviates using specified covariance
+matrix,}
+\item{\code{rmvnorm_prec}}{generates random deviates using specified precision
+matrix,}
+\item{\code{r_singular_mvnorm}}{generates random deviates using specified singular
+covariance matrix (and mean zero).}
 }
 \description{
 k-dimensional Multivariate Normal distribution.

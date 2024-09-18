@@ -13,7 +13,6 @@
 //' @param a A vector \eqn{(a_1, \ldots, a_d)}, Elements may be \code{-Inf}.
 //' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be \code{Inf}.
 //'
-//' @name rect
 //' @examples
 //' x = seq(-1, 1, length.out = 3)
 //' a = rep(0, 3)
@@ -28,12 +27,26 @@
 //'
 //' @name rect
 //' @export
-Rcpp::NumericVector rect(const Rcpp::NumericVector& z,
+Rcpp::NumericVector rect_rcpp(const Rcpp::NumericVector& z,
 	const Rcpp::NumericVector& a, const Rcpp::NumericVector& b);
 
 //' @name rect
 //' @export
-Rcpp::NumericVector inv_rect(const Rcpp::NumericVector& x,
+Rcpp::NumericVector inv_rect_rcpp(const Rcpp::NumericVector& x,
 	const Rcpp::NumericVector& a, const Rcpp::NumericVector& b);
+
+//' Optimize Hybrid
+//'
+//' @param f TBD
+//' @param init TBD
+//' @param lower TBD
+//' @param upper TBD
+//' @param maximize TBD
+//' @param maxiter TBD
+//'
+//' @export
+// [[Rcpp::export(name = "optimize_hybrid")]]
+Rcpp::List optimize_hybrid_rcpp(const Rcpp::Function& f, double init, double lower,
+	double upper, bool maximize, unsigned maxiter = 100000);
 
 #endif

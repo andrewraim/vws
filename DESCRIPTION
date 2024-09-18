@@ -6,6 +6,7 @@ Author: Andrew M. Raim, James A. Livsey, Kyle M. Irimata
 Maintainer: Andrew M. Raim <andrew.raim@gmail.com>
 Description: A reference implementation of Vertical Weighted Strips method for
     rejection sampling in R <arxiv:2401.09696>.
+URL: https://github.com/andrewraim/vws
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -20,5 +21,8 @@ LinkingTo:
     fntl
 Suggests: 
     knitr,
-    rmarkdown
-VignetteBuilder: knitr, vws
+    rmarkdown,
+    quarto
+VignetteBuilder:
+    quarto
+Roxygen: list(markdown = TRUE)

@@ -41,7 +41,7 @@ w = NULL,
 
 #' @param a Lower limit of interval.
 #' @param b Upper limit of interval.
-#' @param g An object created by \code{univariate_helper}.
+#' @param g An object created by `univariate_helper`.
 #' @param w Weight function for the target distribution.
 initialize = function(a, b, w, g)
 {
@@ -90,6 +90,9 @@ r = function(n)
 #' the bounds.
 midpoint = function()
 {
+	a = private$a
+	b = private$b
+
 	if (is.infinite(a) && is.infinite(a) && a < 0 && b > 0) {
 		# In this case, we have an interval (-Inf, Inf). Make a split at zero.
 		x = 0
@@ -117,7 +120,7 @@ bifurcate = function()
 },
 
 #' @description
-#' Bifurcate this region into two regions at \code{x}.
+#' Bifurcate this region into two regions at `x`.
 #' @param x A scalar.
 bifurcate_at = function(x)
 {
@@ -155,13 +158,10 @@ print = function()
 },
 
 #' @description
-#' Maximize or minimize the function \eqn{w(x)} over this region. Optimization
-#' is carried out with \code{optim} using arguments
-#' \code{method = "Nelder-Mead"} and
-#' \code{control = list(maxit = 100000, warn.1d.NelderMead = FALSE)}.
-#' @param maximize logical; if \code{TRUE} do maximization. Otherwise do
+#' Maximize or minimize the function \eqn{w(x)} over this region.
+#' @param maximize logical; if `TRUE` do maximization. Otherwise do
 #' minimization.
-#' @param log logical; if \code{TRUE} return optimized value of \eqn{\log w(x)}.
+#' @param log logical; if `TRUE` return optimized value of \eqn{\log w(x)}.
 #' Otherwise return optimized value of \eqn{w(x)}.
 optimize = function(maximize = TRUE, log = TRUE)
 {

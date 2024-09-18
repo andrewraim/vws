@@ -303,10 +303,7 @@ Print a description of the region.
 \if{html}{\out{<a id="method-RectConstRegion-optimize"></a>}}
 \if{latex}{\out{\hypertarget{method-RectConstRegion-optimize}{}}}
 \subsection{Method \code{optimize()}}{
-Maximize or minimize the function \eqn{w(x)} over this region. Optimization
-is carried out with \code{optim} using arguments
-\code{method = "Nelder-Mead"} and
-\code{control = list(maxit = 100000, warn.1d.NelderMead = FALSE)}.
+Maximize or minimize the function \eqn{w(x)} over this region.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{RectConstRegion$optimize(maximize = TRUE, log = TRUE)}\if{html}{\out{</div>}}
 }

@@ -5,7 +5,7 @@
 #' supports.
 #'
 #' @field w Weight function for the target distribution. Its expected interface
-#' is \code{w(x, log = TRUE)} so that results are returned on the log-scale by
+#' is `w(x, log = TRUE)` so that results are returned on the log-scale by
 #' default.
 #'
 #' @examples
@@ -40,7 +40,7 @@ w = NULL,
 #' @param a Lower limits of intervals.
 #' @param b Upper limits of intervals.
 #' @param w Weight function for the target distribution.
-#' @param g An list of objects created by \code{univariate_helper}.
+#' @param g An list of objects created by `univariate_helper`.
 initialize = function(a, b, w, g)
 {
 	k = length(g)
@@ -70,7 +70,7 @@ initialize = function(a, b, w, g)
 #' @description
 #' Density function \eqn{g} for the base distribution.
 #' @param x Density argument.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 d_base = function(x, log = FALSE)
 {
 	g = private$g
@@ -140,7 +140,7 @@ d = function(x)
 },
 
 #' @description
-#' Test if given \code{x} is in the support for the \eqn{g_j} specific to this
+#' Test if given `x` is in the support for the \eqn{g_j} specific to this
 #' region.
 #' @param x Density argument.
 s = function(x)
@@ -162,7 +162,7 @@ s = function(x)
 #' @description
 #' Majorized weight function \eqn{\overline{w}_j} for this region.
 #' @param x Argument to weight function.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 w_major = function(x, log = TRUE)
 {
 	if (!self$s(x)) {
@@ -264,8 +264,8 @@ bifurcate = function()
 },
 
 #' @description
-#' Bifurcate this region into two regions by splitting dimension \code{l} at
-#' point \code{x}.
+#' Bifurcate this region into two regions by splitting dimension `l` at
+#' point `x`.
 #' @param l An integer \eqn{l \in \{ 1, \ldots, k\} }; which dimension to split.
 #' @param x A scalar.
 bifurcate_at = function(l, x)
@@ -294,7 +294,7 @@ is_bifurcatable = function()
 
 #' @description
 #' The quantity \eqn{\overline{\xi}_j} for this region.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 xi_upper = function(log = TRUE)
 {
 	out = private$log_w_max + private$log_prob
@@ -303,7 +303,7 @@ xi_upper = function(log = TRUE)
 
 #' @description
 #' The quantity \eqn{\underline{\xi}_j} for this region.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 xi_lower = function(log = TRUE)
 {
 	out = private$log_w_min + private$log_prob
@@ -341,13 +341,10 @@ print = function()
 },
 
 #' @description
-#' Maximize or minimize the function \eqn{w(x)} over this region. Optimization
-#' is carried out with \code{optim} using arguments
-#' \code{method = "Nelder-Mead"} and
-#' \code{control = list(maxit = 100000, warn.1d.NelderMead = FALSE)}.
-#' @param maximize logical; if \code{TRUE} do maximization. Otherwise do
+#' Maximize or minimize the function \eqn{w(x)} over this region.
+#' @param maximize logical; if `TRUE` do maximization. Otherwise do
 #' minimization.
-#' @param log logical; if \code{TRUE} return optimized value of \eqn{\log w(x)}.
+#' @param log logical; if `TRUE` return optimized value of \eqn{\log w(x)}.
 #' Otherwise return optimized value of \eqn{w(x)}.
 optimize = function(maximize = TRUE, log = TRUE)
 {

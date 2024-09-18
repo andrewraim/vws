@@ -18,7 +18,7 @@ format:
 vignette: >
   %\VignetteIndexEntry{vws}
   %\VignetteEncoding{UTF-8}
-  %\VignetteEngine{vws::quarto::pdf}
+  %\VignetteEngine{quarto::pdf}
 bibliography: references.bib
 editor_options: 
   chunk_output_type: console

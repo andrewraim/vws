@@ -1,6 +1,6 @@
 #' Log-Sum-Exp
 #'
-#' Compute \code{log(sum(exp(x)))} but in a more stable way.
+#' Compute `log(sum(exp(x)))` in a more stable way.
 #'
 #' @param x A numeric vector
 #' @param y A numeric vector
@@ -8,16 +8,16 @@
 #' @details Computed using the method described by user Ben in StackExchange
 #' thread \url{https://stats.stackexchange.com/questions/381936/vectorised-computation-of-logsumexp}.
 #'
-#' The function \code{log_sub2_exp} expects that each element of \code{x} is
-#' larger than or equal to its corresponding element in \code{y}. Otherwise,
-#' \code{NaN} will be returned with a warning.
+#' The function `log_sub2_exp` expects that each element of `x` is
+#' larger than or equal to its corresponding element in `y`. Otherwise,
+#' `NaN` will be returned with a warning.
 #'
-#' The function \code{log_sub2_exp_signed} can handle inputs where elements of
-#' \code{x} are smaller than corresponding elements of \code{y}. The return
-#' value \code{modulus} contains \code{log(abs(exp(x) - exp(y)))}, and
-#' \code{sign} contains the sign of \code{exp(x) - exp(y)}. Therefore, the
+#' The function `log_sub2_exp_signed` can handle inputs where elements of
+#' `x` are smaller than corresponding elements of `y`. The return
+#' value `modulus` contains `log(abs(exp(x) - exp(y)))`, and
+#' `sign` contains the sign of `exp(x) - exp(y)`. Therefore, the
 #' difference on the original scale can be reconstituted as
-#' \code{sign * exp(modulus)}.
+#' `sign * exp(modulus)`.
 #'
 #' @examples
 #' pi = 1:6 / sum(1:6)

@@ -37,8 +37,7 @@ q_invgamma(p, a, b, lower.tail = TRUE, log.p = FALSE)
 \item{p}{Vector of probabilities.}
 }
 \value{
-\code{dinvgamma} gives the density, \code{rinvgamma} generates random
-deviates.
+\code{dinvgamma} gives the density, \code{rinvgamma} generates random deviates.
 }
 \description{
 Inverse Gamma distribution

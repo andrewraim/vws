@@ -6,6 +6,7 @@
 #include "fntl.h"
 #include "Region.h"
 #include "UnivariateHelper.h"
+#include "optimize-hybrid.h"
 
 namespace vws {
 
@@ -155,7 +156,7 @@ public:
 	}
 };
 
-UnivariateConstRegion::UnivariateConstRegion(double a,
+inline UnivariateConstRegion::UnivariateConstRegion(double a,
 	const uv_weight_function& w, const UnivariateHelper<double>& helper)
 : _a(a), _b(a), _w(&w), _helper(&helper)
 {
@@ -164,7 +165,7 @@ UnivariateConstRegion::UnivariateConstRegion(double a,
 	_log_prob = R_NegInf;
 }
 
-UnivariateConstRegion::UnivariateConstRegion(double a, double b,
+inline UnivariateConstRegion::UnivariateConstRegion(double a, double b,
 	const uv_weight_function& w, const UnivariateHelper<double>& helper)
 : _a(a), _b(b), _w(&w), _helper(&helper)
 {
@@ -179,12 +180,12 @@ UnivariateConstRegion::UnivariateConstRegion(double a, double b,
 	_log_prob = log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
 }
 
-double UnivariateConstRegion::d_base(const double& x, bool log) const
+inline double UnivariateConstRegion::d_base(const double& x, bool log) const
 {
 	return _helper->d(x, log);
 }
 
-std::vector<double> UnivariateConstRegion::r(unsigned int n) const
+inline std::vector<double> UnivariateConstRegion::r(unsigned int n) const
 {
 	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this region.
 	// Compute g$q((pb - pa) * u + pa) on the log scale
@@ -200,7 +201,7 @@ std::vector<double> UnivariateConstRegion::r(unsigned int n) const
 	return out;
 }
 
-double UnivariateConstRegion::d(const double& x, bool log) const
+inline double UnivariateConstRegion::d(const double& x, bool log) const
 {
 	double out;
 	if (!s(x)) {
@@ -211,23 +212,23 @@ double UnivariateConstRegion::d(const double& x, bool log) const
 	return log ? out : exp(out);
 }
 
-bool UnivariateConstRegion::s(const double& x) const
+inline bool UnivariateConstRegion::s(const double& x) const
 {
 	return (_a < x && x <= _b) && _helper->s(x);
 }
 
-double UnivariateConstRegion::w(const double& x, bool log) const
+inline double UnivariateConstRegion::w(const double& x, bool log) const
 {
 	return (*_w)(x, log);
 }
 
-double UnivariateConstRegion::w_major(const double& x, bool log) const
+inline double UnivariateConstRegion::w_major(const double& x, bool log) const
 {
 	double out = _helper->s(x) ? _log_w_max : R_NegInf;
 	return log ? out : exp(out);
 }
 
-double UnivariateConstRegion::midpoint() const
+inline double UnivariateConstRegion::midpoint() const
 {
 	double out;
 
@@ -247,13 +248,13 @@ double UnivariateConstRegion::midpoint() const
 	return out;
 }
 
-std::pair<UnivariateConstRegion,UnivariateConstRegion>
+inline std::pair<UnivariateConstRegion,UnivariateConstRegion>
 UnivariateConstRegion::bifurcate() const
 {
 	return bifurcate(midpoint());
 }
 
-std::pair<UnivariateConstRegion,UnivariateConstRegion>
+inline std::pair<UnivariateConstRegion,UnivariateConstRegion>
 UnivariateConstRegion::bifurcate(const double& x) const
 {
 	UnivariateConstRegion r1(_a, x, *_w, *_helper);
@@ -261,99 +262,51 @@ UnivariateConstRegion::bifurcate(const double& x) const
 	return std::make_pair(r1, r2);
 }
 
-UnivariateConstRegion UnivariateConstRegion::singleton(const double& x) const
+inline UnivariateConstRegion UnivariateConstRegion::singleton(const double& x) const
 {
 	return UnivariateConstRegion(x, *_w, *_helper);
 }
 
-bool UnivariateConstRegion::is_bifurcatable() const
+inline bool UnivariateConstRegion::is_bifurcatable() const
 {
 	return true;
 }
 
-double UnivariateConstRegion::get_xi_upper(bool log) const
+inline double UnivariateConstRegion::get_xi_upper(bool log) const
 {
 	double log_xi_upper = _log_w_max + _log_prob;
 	return log ? log_xi_upper : exp(log_xi_upper);
 }
 
-double UnivariateConstRegion::get_xi_lower(bool log) const
+inline double UnivariateConstRegion::get_xi_lower(bool log) const
 {
 	double log_xi_lower = _log_w_min + _log_prob;
 	return log ? log_xi_lower : exp(log_xi_lower);
 }
 
-std::string UnivariateConstRegion::description() const
+inline std::string UnivariateConstRegion::description() const
 {
 	char buf[32];
 	sprintf(buf, "(%g, %g]", _a, _b);
 	return buf;
 }
 
-void UnivariateConstRegion::print() const
+inline void UnivariateConstRegion::print() const
 {
 	printf("Region<double> (%g, %g]\n", _a, _b);
 }
 
-double UnivariateConstRegion::optimize(bool maximize, bool log) const
+inline double UnivariateConstRegion::optimize(bool maximize, bool log) const
 {
-	Rcpp::NumericVector log_w_endpoints = Rcpp::NumericVector::create(
-		(*_w)(_a, true),
-		(*_w)(_b, true)
-	);
-	log_w_endpoints = log_w_endpoints[!Rcpp::is_na(log_w_endpoints)];
-	bool endpoint_pos_inf = Rcpp::is_true(Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & (log_w_endpoints > 0)));
-	bool endpoint_neg_inf = Rcpp::is_true(Rcpp::any(Rcpp::is_infinite(log_w_endpoints) & (log_w_endpoints < 0)));
+	// The log-weight function
+    const fntl::dfd& f = [&](double x) -> double { return (*_w)(x, true); };
+	const auto& out = optimize_hybrid(f, 0, _a, _b, maximize);
 
-	double out;
-
-	if (maximize && endpoint_pos_inf) {
-		out = R_PosInf;
-	} else if (!maximize && endpoint_neg_inf) {
-		out = R_NegInf;
-	} else {
-		fntl::neldermead_args args;
-		args.maxit = 100000;
-		args.fnscale = maximize ? -1.0 : 1.0;
-
-		// Transform to the interval (a,b]
-		const fntl::dfd& tx = [&](double x) {
-			if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
-				return x;
-			} else if (std::isinf(_a) && _a < 0) {
-				return _b*R::plogis(x, 0, 1, true, false);
-			} else if (std::isinf(_b) && _b > 0) {
-				return std::exp(x) + _a;
-			} else {
-				return (_b - _a) * R::plogis(x, 0, 1, true, false) + _a;
-			}
-		};
-
-		// Call the weight function
-	    const fntl::dfv& f = [&](const Rcpp::NumericVector& x) {
-			return (*_w)(tx(x(0)), true);
-		};
-
-   		const Rcpp::NumericVector& init = Rcpp::NumericVector::create(0);
-		const fntl::neldermead_result& nm_out = fntl::neldermead(init, f, args);
-
-		if (nm_out.status != fntl::neldermead_status::OK) {
-			Rcpp::warning("Nelder-Mead: convergence status was %d",
-				fntl::to_underlying(nm_out.status));
-		}
-
-		// In case the function is strictly increasing or decreasing, check the
-		// objective value at the endpoints.
-		if (maximize) {
-			double max_lwe = Rcpp::max(log_w_endpoints);
-			out = std::max({nm_out.value, max_lwe});
-		} else {
-			double min_lwe = Rcpp::min(log_w_endpoints);
-			out = std::min({nm_out.value, min_lwe});
-		}
+	if ( (out.value > 0) && std::isinf(out.value) ) {
+		Rcpp::stop("Infinite value found in optimize. Cannot be used with UnivariateConstRegion");
 	}
 
-	return log ? out : exp(out);
+	return log ? out.value : exp(out.value);
 }
 
 }

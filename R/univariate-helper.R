@@ -5,26 +5,26 @@
 #' @param d Density function.
 #' @param p Cumulative distribution function.
 #' @param q Quantile function.
-#' @param s Indicator function that returns \code{TRUE} when the
+#' @param s Indicator function that returns `TRUE` when the
 #' argument is in the support of the distribution; otherwise returns
-#' \code{FALSE}.
+#' `FALSE`.
 #'
 #' @details
 #' The specified functions must support the following interfaces.
 #' \describe{
-#' \item{\code{d(x, log = FALSE)}}{}
-#' \item{\code{p(q, lower.tail = TRUE, log.p = FALSE)}}{}
-#' \item{\code{q(p, lower.tail = TRUE, log.p = FALSE)}}{}
-#' \item{\code{s(x)}}{}
+#' \item{`d(x, log = FALSE)`}{}
+#' \item{`p(q, lower.tail = TRUE, log.p = FALSE)`}{}
+#' \item{`q(p, lower.tail = TRUE, log.p = FALSE)`}{}
+#' \item{`s(x)`}{}
 #' }
 #'
-#' Arguments to these functions are interpreted as usual for the \code{stats}
+#' Arguments to these functions are interpreted as usual for the `stats`
 #' package. (Other arguments will be ignored if present).
 #' \describe{
-#' \item{\code{x}, \code{q}}{vector of quantiles.}{}
-#' \item{\code{log}, \code{log.p}}{logical; if \code{TRUE}, probabilities
-#' \code{p} are given as \eqn{\log(p)}.}{}
-#' \item{\code{lower.tail}}{logical; if \code{TRUE}, probabilities are
+#' \item{`x`, `q`}{vector of quantiles.}{}
+#' \item{`log`, `log.p`}{logical; if `TRUE`, probabilities
+#' `p` are given as \eqn{\log(p)}.}{}
+#' \item{`lower.tail`}{logical; if `TRUE`, probabilities are
 #' \eqn{\text{P}(X \leq x)}; otherwise \eqn{\text{P}(X > x)}}{}
 #' }
 #'

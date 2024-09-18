@@ -10,7 +10,7 @@ public = list(
 #' @description
 #' Density function \eqn{g} for the base distribution.
 #' @param x Density argument.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 d_base = function(x, log = FALSE)
 {
 	stop("d_base: abstract interface method")
@@ -19,7 +19,7 @@ d_base = function(x, log = FALSE)
 #' @description
 #' Weight function \eqn{w}.
 #' @param x Argument to weight function.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 w = function(x, log = TRUE)
 {
 	stop("w: abstract interface method")
@@ -43,7 +43,7 @@ d = function(x)
 },
 
 #' @description
-#' Test if given \code{x} is in the support for the \eqn{g_j} specific to this
+#' Test if given `x` is in the support for the \eqn{g_j} specific to this
 #' region.
 #' @param x Density argument.
 s = function(x)
@@ -54,7 +54,7 @@ s = function(x)
 #' @description
 #' Majorized weight function \eqn{\overline{w}_j} for this region.
 #' @param x Argument to weight function.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 w_major = function(x, log = TRUE)
 {
 	stop("w_major: abstract interface method")
@@ -68,7 +68,7 @@ bifurcate = function()
 },
 
 #' @description
-#' Bifurcate this region into two regions at \code{x}.
+#' Bifurcate this region into two regions at `x`.
 #' @param x A scalar.
 bifurcate_at = function(x)
 {
@@ -85,7 +85,7 @@ is_bifurcatable = function()
 
 #' @description
 #' The quantity \eqn{\overline{\xi}_j} for this region.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 xi_upper = function(log = TRUE)
 {
 	stop("xi_upper: abstract interface method")
@@ -93,7 +93,7 @@ xi_upper = function(log = TRUE)
 
 #' @description
 #' The quantity \eqn{\underline{\xi}_j} for this region.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 xi_lower = function(log = TRUE)
 {
 	stop("xi_lower: abstract interface method")

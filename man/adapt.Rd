@@ -7,12 +7,12 @@
 adapt(h, N, tol = -Inf, report = N + 1)
 }
 \arguments{
-\item{h}{An object of class `FMMProposal`.}
+\item{h}{An object of class \code{FMMProposal}.}
 
 \item{N}{Number of additional mixture components after adaptation.}
 
 \item{tol}{A scalar; adaptation halts if the log of the rejection bound is
-smaller than this value. The default value `-Inf` prevents early halting.}
+smaller than this value. The default value \code{-Inf} prevents early halting.}
 
 \item{report}{Report progress each time this many candidates are proposed.}
 }

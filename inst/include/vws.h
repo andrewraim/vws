@@ -10,6 +10,7 @@
 #include "log-sum-exp.h"
 #include "logger.h"
 #include "logit.h"
+#include "optimize-hybrid.h"
 #include "Region.h"
 #include "rect.h"
 #include "rejection.h"

@@ -20,7 +20,7 @@ rejection_control(
 in addition to the accepted draws. Otherwise only return accepted draws.}
 
 \item{action_incomplete}{What should happen if sampler halts with
-\code{max_rejects} rejections: ne of \code{"stop"},  \code{"warning"}, or
+\code{max_rejects} rejections: one of \code{"stop"},  \code{"warning"}, or
 \code{"message"}.}
 }
 \value{

@@ -8,12 +8,12 @@
 #' @param b Rate parameter.
 #' @param lower.tail logical; if TRUE (default), probabilities are
 #' \eqn{P(X \leq x)}; otherwise, \eqn{P(X > x)}.
-#' @param log If \code{TRUE}, return densities and probabilities on the log-scale.
-#' @param log.p If \code{TRUE}, input and output probabilities on the log-scale.
+#' @param log If `TRUE`, return densities and probabilities on the log-scale.
+#' @param log.p If `TRUE`, input and output probabilities on the log-scale.
 #'
 #' @return
-#' \code{dinvgamma} gives the density, \code{rinvgamma} generates random
-#' deviates.
+#' `dinvgamma` gives the density, `rinvgamma` generates random deviates.
+#'
 #' @name InverseGamma
 NULL
 

@@ -4,7 +4,7 @@
 #'
 #' @param n Number of desired draws
 #' @param p A \eqn{k}-dimensional vector of probabilities
-#' @param log_p If \code{TRUE}, interpret given probabilities as having been
+#' @param log_p If `TRUE`, interpret given probabilities as having been
 #' supplied on the log-scale. Otherwise, interpret them on the original scale.
 #'
 #' @returns a vector of category indices whose elements are in
@@ -12,8 +12,8 @@
 #'
 #' @details
 #' We make use of the Gumbel trick to draw from probabilities given on the
-#' log-scale without having to normalize. Note that \code{r_categ} can be slow
-#' with large \code{n} because it runs in a loop in plain R.
+#' log-scale without having to normalize. Note that `r_categ` can be slow
+#' with large `n` because it runs in a loop in plain R.
 #'
 #' @name categ
 NULL

@@ -8,20 +8,22 @@
 #' @param Sigma Covariance matrix parameter.
 #' @param Sigma_chol Cholesky factor of covariance matrix parameter.
 #' @param Omega Precision matrix parameter.
-#' @param log If \code{TRUE}, return densities and probabilities on the log-scale.
+#' @param log If `TRUE`, return densities and probabilities on the log-scale.
 #'
 #' @return
-#' \code{dmvnorm} gives the density using specified covariance matrix,
-#' \code{dmvnorm_prec} gives the density using specified precision matrix,
-#' \code{rmvnorm} generates random deviates using specified covariance matrix,
-#' \code{rmvnorm_prec} generates random deviates using specified precision matrix,
-#' \code{r_singular_mvnorm} generates random deviates using specified singular
-#' covariance matrix (and mean zero).
+#' \item{`dmvnorm`}{gives the density using specified covariance matrix,}
+#' \item{`dmvnorm_prec`}{gives the density using specified precision matrix,}
+#' \item{`rmvnorm`}{generates random deviates using specified covariance
+#' matrix,}
+#' \item{`rmvnorm_prec`}{generates random deviates using specified precision
+#' matrix,}
+#' \item{`r_singular_mvnorm`}{generates random deviates using specified singular
+#' covariance matrix (and mean zero).}
 #'
 #' @details
-#' A use case for the function \code{r_singular_mvnorm} would be to start with
-#' a singular precision matrix \code{Q}, and use something like
-#' \code{Sigma = ginverse(Q)} as the covariance matrix.
+#' A use case for the function `r_singular_mvnorm` would be to start with
+#' a singular precision matrix `Q`, and use something like
+#' `Sigma = ginverse(Q)` as the covariance matrix.
 #'
 #' @name MultivariateNormal
 NULL

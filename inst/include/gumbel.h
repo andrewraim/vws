@@ -22,7 +22,7 @@ namespace vws {
 //' @return A vector of draws
 //'
 //' @name Gumbel
-Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
+inline Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
 	double sigma = 1, bool lower = true, bool log = false)
 {
 	// const Rcpp::NumericVector& lp0 = log ? p : Rcpp::log(p);
@@ -39,7 +39,7 @@ Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
 
 //' @name Gumbel
 //' @export
-Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1)
+inline Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1)
 {
 	const Rcpp::NumericVector& u = Rcpp::runif(n);
 	return q_gumbel(u, mu, sigma);
@@ -47,7 +47,7 @@ Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1)
 
 //' @name Gumbel
 //' @export
-Rcpp::NumericVector d_gumbel(const Rcpp::NumericVector& x, double mu = 0,
+inline Rcpp::NumericVector d_gumbel(const Rcpp::NumericVector& x, double mu = 0,
 	double sigma = 1, bool log = false)
 {
 	const Rcpp::NumericVector& z = (x - mu) / sigma;
@@ -61,7 +61,7 @@ Rcpp::NumericVector d_gumbel(const Rcpp::NumericVector& x, double mu = 0,
 
 //' @name Gumbel
 //' @export
-Rcpp::NumericVector p_gumbel(const Rcpp::NumericVector& q, double mu = 0,
+inline Rcpp::NumericVector p_gumbel(const Rcpp::NumericVector& q, double mu = 0,
 	double sigma = 1, bool lower = true, bool log = false)
 {
 	const Rcpp::NumericVector& z = (q - mu) / sigma;

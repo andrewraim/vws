@@ -2,23 +2,23 @@
 #'
 #' Accept-reject algorithm using our proposal for weighted distributions.
 #'
-#' @param h An \code{fmm_proposal} object
+#' @param h An `fmm_proposal` object
 #' @param n Number of desired draws
-#' @param control A control object from \code{rejection_control}
+#' @param control A control object from `rejection_control`
 #'
 #' @return
 #' A list whose structure depends on
-#' \code{extra_outputs}. If \code{extra_outputs = FALSE}, the list is of length
-#' \code{n} where each element represents one draw. If
-#' \code{extra_outputs = TRUE}, the list contains the following named elements:
+#' `extra_outputs`. If `extra_outputs = FALSE`, the list is of length
+#' `n` where each element represents one draw. If
+#' `extra_outputs = TRUE`, the list contains the following named elements:
 #'
-#' \item{draws}{is list is of length \code{n} where each element represents one
+#' \item{draws}{is list is of length `n` where each element represents one
 #' draw.}
 #' \item{rejects}{is a vector of counts. The \eqn{i}th element is the number of
 #' rejections before the \eqn{i}th successful draw.}
-#' \item{h}{returns the \code{h} that was input to the sampler.}
+#' \item{h}{returns the `h` that was input to the sampler.}
 #'
-#' Note that \code{h} was originally intended to show adaptation during
+#' Note that `h` was originally intended to show adaptation during
 #' sampling, but that is currently not done.
 #'
 #' @examples

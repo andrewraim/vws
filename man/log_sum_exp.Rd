@@ -21,7 +21,7 @@ log_sub2_exp_signed(x, y)
 \item{y}{A numeric vector}
 }
 \description{
-Compute \code{log(sum(exp(x)))} but in a more stable way.
+Compute \code{log(sum(exp(x)))} in a more stable way.
 }
 \details{
 Computed using the method described by user Ben in StackExchange

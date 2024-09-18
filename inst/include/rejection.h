@@ -81,7 +81,7 @@ struct rejection_args
 //' @name rejection
 //' @export
 template <typename T, typename R>
-rejection_result<T>
+inline rejection_result<T>
 rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 {
 	std::vector<T> draws;
@@ -159,7 +159,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 }
 
 template <typename T, typename R>
-rejection_result<T> rejection(const FMMProposal<T,R>& h, unsigned int n)
+inline rejection_result<T> rejection(const FMMProposal<T,R>& h, unsigned int n)
 {
 	rejection_args ctrl;
 	return rejection(h, n, ctrl);

@@ -5,10 +5,16 @@
 #'
 #' @param x A point in \eqn{\mathbb{R}^{d}}.
 #' @param z A point in the rectangle \eqn{[a_1,b_1] \times \cdots \times [a_d,b_d]}.
-#' @param a A vector \eqn{(a_1, \ldots, a_d)}, Elements may be \code{-Inf}.
-#' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be \code{Inf}.
+#' @param a A vector \eqn{(a_1, \ldots, a_d)}, Elements may be `-Inf`.
+#' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be `Inf`.
 #'
-#' @name bounded
+#' @details
+#' The function `rect` transforms from rectangle
+#' \eqn{[a_1,b_1] \times \cdots \times [a_d,b_d]} to Euclidean
+#' \eqn{\mathbb{R}^{d}}. The function `inv_rect` is an inverse tranformation.
+#'
+#'
+#' @name rect
 #' @examples
 #' x = seq(-1, 1, length.out = 3)
 #' a = rep(0, 3)
@@ -22,8 +28,8 @@
 #' rect(z, a, b)
 NULL
 
-#' @name bounded
-# @export
+#' @name rect
+#' @export
 rect = function(z, a, b)
 {
 	n = length(x)
@@ -43,13 +49,13 @@ rect = function(z, a, b)
 	x[idx] = log(z[idx] - a[idx])
 
 	idx = which(is.finite(a) & is.finite(b))
-	x[idx] = qlogis(z[idx] / (b[idx] - a[idx]) - a[idx])
+	x[idx] = qlogis( (z[idx] - a[idx]) / (b[idx] - a[idx]) )
 
 	return(x)
 }
 
-#' @name bounded
-# @export
+#' @name rect
+#' @export
 inv_rect = function(x, a, b)
 {
 	n = length(x)

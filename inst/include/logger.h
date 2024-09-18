@@ -10,7 +10,7 @@ namespace vws {
 * general function, but initial attempts to do this seem to be messing up the
 * variable argument construct.
 */
-int logger(const char* fmt, ...)
+inline int logger(const char* fmt, ...)
 {
 	// Print time and separator
 	time_t timer;

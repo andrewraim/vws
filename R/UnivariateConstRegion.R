@@ -5,7 +5,7 @@
 #' supports.
 #'
 #' @field w Weight function for the target distribution. Its expected interface
-#' is \code{w(x, log = TRUE)} so that results are returned on the log-scale by
+#' is `w(x, log = TRUE)` so that results are returned on the log-scale by
 #' default.
 #'
 #' @examples
@@ -40,7 +40,7 @@ w = NULL,
 #' @param a Lower limit of interval.
 #' @param b Upper limit of interval.
 #' @param w Weight function for the target distribution.
-#' @param g An object created by \code{univariate_helper}.
+#' @param g An object created by `univariate_helper`.
 initialize = function(a, b, w, g)
 {
 	stopifnot(a <= b)
@@ -61,7 +61,7 @@ initialize = function(a, b, w, g)
 #' @description
 #' Density function \eqn{g} for the base distribution.
 #' @param x Density argument.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 d_base = function(x, log = FALSE)
 {
 	private$g$d(x, log = log)
@@ -102,7 +102,7 @@ d = function(x)
 },
 
 #' @description
-#' Test if given \code{x} is in the support for the \eqn{g_j} specific to this
+#' Test if given `x` is in the support for the \eqn{g_j} specific to this
 #' region.
 #' @param x Density argument.
 s = function(x)
@@ -113,7 +113,7 @@ s = function(x)
 #' @description
 #' Majorized weight function \eqn{\overline{w}_j} for this region.
 #' @param x Argument to weight function.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 w_major = function(x, log = TRUE)
 {
 	if (!private$g$s(x)) {
@@ -158,7 +158,7 @@ bifurcate = function()
 },
 
 #' @description
-#' Bifurcate this region into two regions at \code{x}.
+#' Bifurcate this region into two regions at `x`.
 #' @param x A scalar.
 bifurcate_at = function(x)
 {
@@ -179,7 +179,7 @@ is_bifurcatable = function()
 
 #' @description
 #' The quantity \eqn{\overline{\xi}_j} for this region.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 xi_upper = function(log = TRUE)
 {
 	out = private$log_w_max + private$log_prob
@@ -188,7 +188,7 @@ xi_upper = function(log = TRUE)
 
 #' @description
 #' The quantity \eqn{\underline{\xi}_j} for this region.
-#' @param log logical; if \code{TRUE}, return result on the log-scale.
+#' @param log logical; if `TRUE`, return result on the log-scale.
 xi_lower = function(log = TRUE)
 {
 	out = private$log_w_min + private$log_prob
@@ -224,13 +224,10 @@ print = function()
 },
 
 #' @description
-#' Maximize or minimize the function \eqn{w(x)} over this region. Optimization
-#' is carried out with \code{optim} using arguments
-#' \code{method = "Nelder-Mead"} and
-#' \code{control = list(maxit = 100000, warn.1d.NelderMead = FALSE)}.
-#' @param maximize logical; if \code{TRUE} do maximization. Otherwise do
+#' Maximize or minimize the function \eqn{w(x)} over this region.
+#' @param maximize logical; if `TRUE` do maximization. Otherwise do
 #' minimization.
-#' @param log logical; if \code{TRUE} return optimized value of \eqn{\log w(x)}.
+#' @param log logical; if `TRUE` return optimized value of \eqn{\log w(x)}.
 #' Otherwise return optimized value of \eqn{w(x)}.
 optimize = function(maximize = TRUE, log = TRUE)
 {
@@ -238,46 +235,20 @@ optimize = function(maximize = TRUE, log = TRUE)
 	b = private$b
 	w = self$w
 
-	method = "Nelder-Mead"
-	control = list(maxit = 100000, warn.1d.NelderMead = FALSE)
+	# The log-weight function
+    f = function(x) { w(x, log = TRUE) }
 
-	# Transform to bounded interval, if necessary
-	f_opt = function(x) {
-		w(inv_rect(x, a, b), log = TRUE)
+    tryCatch({
+		out = optimize_hybrid(f, init = 0, lower = a, upper = b, maximize = maximize)
+    }, error = function(e) {
+    	browser()
+    })
+
+	if ( (out$value > 0) && is.infinite(out$value) ) {
+		stop("Infinite value found in optimize. Cannot be used with UnivariateConstRegion")
 	}
 
-	init = 0
-	log_w_endpoints = c(w(a, log = TRUE), w(b, log = TRUE))
-	log_w_endpoints = log_w_endpoints[!is.na(log_w_endpoints)]
-
-	endpoint_pos_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints > 0)
-	endpoint_neg_inf = any(is.infinite(log_w_endpoints) & log_w_endpoints < 0)
-
-	if (maximize && endpoint_pos_inf) {
-		out = Inf
-	} else if (maximize) {
-		control$fnscale = -1
-		opt_out = optim(init, f_opt, method = method, control = control)
-		if (opt_out$convergence != 0) {
-			warning("opt_out: convergence status was ", opt_out$convergence)
-			browser()
-		}
-		out = max(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
-	}
-
-	if (!maximize && endpoint_neg_inf) {
-		out = -Inf
-	} else if (!maximize) {
-		control$fnscale = 1
-		opt_out = optim(init, f_opt, method = method, control = control)
-		if (opt_out$convergence != 0) {
-			warning("opt_out: convergence status was ", opt_out$convergence)
-			browser()
-		}
-		out = min(f_opt(floor(opt_out$par)), f_opt(ceiling(opt_out$par)), log_w_endpoints)
-	}
-
-	if (log) { return(out) } else { return(exp(out)) }
+	if (log) { return(out$value) } else { return(exp(out$value)) }
 }
 
 ) # Close public

@@ -8,3 +8,10 @@
 \description{
 Package documentation
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/andrewraim/vws}
+}
+
+}

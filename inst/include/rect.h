@@ -6,7 +6,7 @@
 
 namespace vws {
 
-Rcpp::NumericVector rect(const Rcpp::NumericVector& z,
+inline Rcpp::NumericVector rect(const Rcpp::NumericVector& z,
 	const Rcpp::NumericVector& a, const Rcpp::NumericVector& b)
 {
 	unsigned int n = z.size();
@@ -39,7 +39,7 @@ Rcpp::NumericVector rect(const Rcpp::NumericVector& z,
 	return x;
 }
 
-Rcpp::NumericVector inv_rect(const Rcpp::NumericVector& x,
+inline Rcpp::NumericVector inv_rect(const Rcpp::NumericVector& x,
 	const Rcpp::NumericVector& a, const Rcpp::NumericVector& b)
 {
 	unsigned int n = x.size();

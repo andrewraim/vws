@@ -1,5 +1,5 @@
-#ifndef INVGAMMA_H
-#define INVGAMMA_H
+#ifndef VWS_INVGAMMA_H
+#define VWS_INVGAMMA_H
 
 #include <Rcpp.h>
 #include "log-sum-exp.h"
@@ -27,14 +27,14 @@ namespace vws {
 //' by a scale parameter, which is the inverse of the rate.
 //'
 //' @name InverseGamma
-Rcpp::NumericVector r_invgamma(unsigned int n, double a, double b)
+inline Rcpp::NumericVector r_invgamma(unsigned int n, double a, double b)
 {
 	return 1 / Rcpp::rgamma(n, a, 1 / b);
 }
 
 //' @name InverseGamma
 //' @export
-double d_invgamma(double x, double a, double b, bool log = false)
+inline double d_invgamma(double x, double a, double b, bool log = false)
 {
 	double out = R::dgamma(1 / x, a, 1 / b, true) - 2 * std::log(x);
 	return log ? out : exp(out);
@@ -42,14 +42,14 @@ double d_invgamma(double x, double a, double b, bool log = false)
 
 //' @name InverseGamma
 //' @export
-double p_invgamma(double q, double a, double b, bool lower = true, bool log = false)
+inline double p_invgamma(double q, double a, double b, bool lower = true, bool log = false)
 {
 	return R::pgamma(1 / q, a, 1 / b, !lower, log);
 }
 
 //' @name InverseGamma
 //' @export
-double q_invgamma(double p, double a, double b, bool lower = true, bool log = false)
+inline double q_invgamma(double p, double a, double b, bool lower = true, bool log = false)
 {
 	if (!log) { p = std::log(p); }
 

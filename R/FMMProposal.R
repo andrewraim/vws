@@ -5,16 +5,16 @@
 #'
 #' @details
 #' \itemize{
-#' \item The list \code{regions} represents
+#' \item The list `regions` represents
 #' (\eqn{\mathcal{D}_1, \ldots, \mathcal{D}_N}).
-#' Each entry should be an object based on an R6  subclass of \code{Region}.
-#' \item The numeric vectors \code{log_xi_upper} and \code{log_xi_lower}
+#' Each entry should be an object based on an R6  subclass of `Region`.
+#' \item The numeric vectors `log_xi_upper` and `log_xi_lower`
 #' represent
 #' \eqn{(\log \overline{\xi}_1, \ldots, \log \overline{\xi}_N)}
 #' and
 #' \eqn{(\log \underline{\xi}_1, \ldots, \log \underline{\xi}_N)},
 #' respectively.
-#' \item The logical vector \code{bifurcatable} indicates whether each
+#' \item The logical vector `bifurcatable` indicates whether each
 #' region can be bifurcated or not.
 #' }
 #'
@@ -34,7 +34,7 @@ public = list(
 
 #' @description
 #' Constructor for FMMProposal.
-#' @param regions A list of objects whose class derives from \code{Region}.
+#' @param regions A list of objects whose class derives from `Region`.
 initialize = function(regions)
 {
 	private$regions = regions
@@ -45,7 +45,7 @@ initialize = function(regions)
 
 #' @description
 #' Access the vector \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
-#' @param log If \code{TRUE} compute result on log-scale.
+#' @param log If `TRUE` compute result on log-scale.
 get_xi_upper = function(log = FALSE)
 {
 	out = private$log_xi_upper
@@ -54,7 +54,7 @@ get_xi_upper = function(log = FALSE)
 
 #' @description
 #' Access the vector \eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.
-#' @param log If \code{TRUE} compute result on log-scale.
+#' @param log If `TRUE` compute result on log-scale.
 get_xi_lower = function(log = FALSE)
 {
 	out = private$log_xi_lower
@@ -62,14 +62,14 @@ get_xi_lower = function(log = FALSE)
 },
 
 #' @description
-#' Access the vector \code{bifurcatable}.
+#' Access the vector `bifurcatable`.
 get_bifurcatable = function()
 {
 	private$bifurcatable
 },
 
 #' @description
-#' Access the vector \code{regions}.
+#' Access the vector `regions`.
 get_regions = function()
 {
 	private$regions
@@ -77,10 +77,10 @@ get_regions = function()
 
 #' @description
 #' Upper bound for rejection probability.
-#' @param byregion If \code{TRUE}, compute bound by region. Otherwise compute
+#' @param byregion If `TRUE`, compute bound by region. Otherwise compute
 #' total.
-#' @param log If \code{TRUE} compute result on log-scale.
-#' @return A vector of size \code{N} or a single scalar.
+#' @param log If `TRUE` compute result on log-scale.
+#' @return A vector of size `N` or a single scalar.
 rejection_bound = function(byregion = FALSE, log = FALSE)
 {
 	# Each region's contribution to the rejection rate bound
@@ -97,7 +97,7 @@ rejection_bound = function(byregion = FALSE, log = FALSE)
 
 #' @description
 #' Normalizing constant for proposal distribution.
-#' @param log If \code{TRUE} compute result on log-scale
+#' @param log If `TRUE` compute result on log-scale
 nc = function(log = FALSE)
 {
 	out = vws::log_sum_exp(private$log_xi_upper)
@@ -107,7 +107,7 @@ nc = function(log = FALSE)
 #' @description
 #' Generate draws from proposal distribution.
 #' @param n Number of draws to generate.
-#' @param indices If \code{TRUE}, return indices of mixture components selected
+#' @param indices If `TRUE`, return indices of mixture components selected
 #' during draws.
 #' @return A list which each element is a saved draw.
 r = function(n = 1, indices = FALSE)
@@ -137,10 +137,10 @@ r = function(n = 1, indices = FALSE)
 #' @description
 #' Compute density of proposal distribution.
 #' @param x A list where each element is a density value to evaluate.
-#' @param normalize If \code{TRUE}, apply the normalizing constant; otherwise
+#' @param normalize If `TRUE`, apply the normalizing constant; otherwise
 #' do not.
-#' @param log If \code{TRUE}, return density results on the log-scale.
-#' @return A vector or scalar of density values corresponding to \code{x}.
+#' @param log If `TRUE`, return density results on the log-scale.
+#' @return A vector or scalar of density values corresponding to `x`.
 d = function(x, normalize = TRUE, log = FALSE)
 {
 	log_nc = 0
@@ -168,11 +168,11 @@ d = function(x, normalize = TRUE, log = FALSE)
 },
 
 #' @description
-#' Compute \eqn{f_0(x) = w(x) g(x)} for each element of the given \code{x}
+#' Compute \eqn{f_0(x) = w(x) g(x)} for each element of the given `x`
 #' which is a list whose elements are density values.
 #' @param x a list where each element represents one argument.
-#' @param log If \code{TRUE}, return density results on the log-scale.
-#' @return A vector or scalar of density values corresponding to \code{x}.
+#' @param log If `TRUE`, return density results on the log-scale.
+#' @return A vector or scalar of density values corresponding to `x`.
 d_target_unnorm = function(x, log = TRUE)
 {
 	reg = private$regions[[1]]
@@ -195,7 +195,7 @@ summary = function()
 
 #' @description
 #' Display summary table of regions which compose the proposal distribution.
-#' Limit the display to \code{n} regions.
+#' Limit the display to `n` regions.
 #' @param n Number of regions to print.
 print = function(n = 5)
 {
