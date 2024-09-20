@@ -28,8 +28,11 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP _rcpp_module_boot_VWSModule();
+
 static const R_CallMethodDef CallEntries[] = {
     {"_vws_optimize_hybrid_rcpp", (DL_FUNC) &_vws_optimize_hybrid_rcpp, 6},
+    {"_rcpp_module_boot_VWSModule", (DL_FUNC) &_rcpp_module_boot_VWSModule, 0},
     {NULL, NULL, 0}
 };
 

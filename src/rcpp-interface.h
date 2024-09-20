@@ -2,6 +2,7 @@
 #define RCPP_INTERFACE_H
 
 #include <Rcpp.h>
+#include "vws.h"
 
 //' Rectangular transformation
 //'

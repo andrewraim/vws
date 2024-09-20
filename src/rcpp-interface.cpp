@@ -30,3 +30,4 @@ Rcpp::List optimize_hybrid_rcpp(const Rcpp::Function& f, double init, double low
 		Rcpp::Named("method") = out.method
 	);
 }
+

@@ -2,6 +2,7 @@
 
 export(FMMProposal)
 export(IntUnivariateConstRegion)
+export(RUnivariateHelper)
 export(RectConstRegion)
 export(Region)
 export(UnivariateConstRegion)
