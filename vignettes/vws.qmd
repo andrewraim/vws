@@ -10,8 +10,8 @@ format:
     colorlinks: true
     link-citations: true
     prompt: false
-    template-partials: 
-      - title.tex
+    # template-partials: 
+    #  - title.tex
     include-in-header:
       text: |
         \usepackage{common}
@@ -43,8 +43,6 @@ execute:
 code-block-bg: true
 code-block-border-left: "#31BAE9"
 callout-icon: false
-mainfont: Latin Modern Roman
-sansfont: Latin Modern Roman
 ---
 
 ```{r}
@@ -284,7 +282,8 @@ names(Region$public_methods)
 #| include: false
 # If the interface has changed, catch it and bail out
 actual = names(Region$public_methods)
-expected = c("d_base", "w", "r", "d", "s", "w_major", "bifurcate", "is_bifurcatable",
+expected = c("d_base", "w", "r", "d", "s", "w_major", "bifurcate",
+	"is_bifurcatable", "bifurcate_at",
 	"xi_upper", "xi_lower", "description", "print", "clone")
 setequal(actual, expected) |> stopifnot()
 ```
@@ -818,7 +817,7 @@ Plotting the proposal $h$ versus the target $f$ on the log-scale, the two distri
 #|   constant majorizer.
 #| label: fig-ln-norm-const-proposal
 
-log_h = function(y) { h$d(as.list(y), log = TRUE) }
+log_h = function(y) { sapply(y, h$d, log = TRUE) }
 log_f = function(y) { d_target(y, log = TRUE) }
 
 xlim = range(y)
@@ -1194,7 +1193,7 @@ Finally, comparing the unnormalized proposal $h$ and target density $f$ on the l
 #|   linear majorizer.
 #| label: fig-ln-norm-proposal
 
-log_h = function(y) { h$d(as.list(y), log = TRUE) }
+log_h = function(y) { sapply(y, h$d, log = TRUE) }
 log_f = function(y) { d_target(y, log = TRUE) }
 
 xlim = range(y)
@@ -1356,7 +1355,7 @@ Plot proposal versus the target on the log-scale.
 #| fig-cap: Proposal versus target on the log-scale for Bessel example.
 #| label: fig-bessel-proposal
 
-log_h = function(x) { h$d(as.list(x), log = TRUE) }
+log_h = function(x) { sapply(x, h$d, log = TRUE) }
 log_f = function(x) { d_bessel(x, a = lambda, nu = nu, log = TRUE) }
 
 df = data.frame(x = x_vals) %>%
@@ -1521,7 +1520,7 @@ data.frame(x = x) %>%
 #|   majorizer.
 #| label: fig-vmf-const-proposal
 
-log_h = function(x) { h$d(as.list(x), log = TRUE) }
+log_h = function(x) { sapply(x, h$d, log = TRUE) }
 log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
 
 ggplot() +
@@ -1619,7 +1618,7 @@ Plot proposal versus the target on the log-scale.
 #|   majorizer.
 #| label: fig-vmf-linear-proposal
 
-log_h = function(x) { h$d(as.list(x), log = TRUE) }
+log_h = function(x) { sapply(x, h$d, log = TRUE) }
 log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
 
 ggplot() +
