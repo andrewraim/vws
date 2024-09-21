@@ -9,36 +9,6 @@
 
 namespace vws {
 
-inline double log_sum_exp(const Rcpp::NumericVector& x)
-{
-    unsigned int k = x.size();
-
-    Rcpp::NumericVector v = Rcpp::clone(x);
-    std::sort(v.begin(), v.end(), std::greater<double>());
-
-    double s = v(0);
-
-    for (unsigned int j = 1; j < k; j++) {
-        double ind = s > R_NegInf;
-        double dd = v(j) - std::pow(s, ind);
-        s = std::max(v(j), s) + std::log1p(std::exp(-std::fabs(dd)));
-    }
-
-    return s;
-}
-
-inline Rcpp::NumericVector log_sum_exp_mat(const Rcpp::NumericMatrix& x)
-{
-    unsigned int n = x.nrow();
-    Rcpp::NumericVector out(n);
-
-    for (unsigned int i = 0; i < n; i++) {
-        out(i) = log_sum_exp(x.row(i));
-    }
-
-    return out;
-}
-
 inline double log_add2_exp(double x, double y)
 {
 	double s = std::min(x,y);
@@ -83,6 +53,36 @@ inline std::vector<double> log_sub2_exp(const std::vector<double>& x, const std:
 	}
 
 	return out;
+}
+
+inline double log_sum_exp(const Rcpp::NumericVector& x)
+{
+    unsigned int k = x.size();
+
+    Rcpp::NumericVector v = Rcpp::clone(x);
+    std::sort(v.begin(), v.end(), std::greater<double>());
+
+    double s = v(0);
+
+    for (unsigned int j = 1; j < k; j++) {
+        double ind = s > R_NegInf;
+        double dd = v(j) - std::pow(s, ind);
+        s = std::max(v(j), s) + std::log1p(std::exp(-std::fabs(dd)));
+    }
+
+    return s;
+}
+
+inline Rcpp::NumericVector log_sum_exp_mat(const Rcpp::NumericMatrix& x)
+{
+    unsigned int n = x.nrow();
+    Rcpp::NumericVector out(n);
+
+    for (unsigned int i = 0; i < n; i++) {
+        out(i) = log_sum_exp(x.row(i));
+    }
+
+    return out;
 }
 
 inline Rcpp::NumericVector log_add2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y)

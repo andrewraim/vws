@@ -33,7 +33,7 @@
 #' # Create a finite mixture proposal
 #' h = FMMProposal$new(regions)
 #' h$rejection_bound()
-#' h$rejection_bound(byregion = TRUE)
+#' h$rejection_bound_regions()
 #'
 #' out = rejection(h, n = 1000)
 #' print(out |> unlist())

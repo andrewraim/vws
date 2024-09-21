@@ -61,4 +61,3 @@ ggplot(df) +
 	xlab("x") +
 	ylab("CDF") +
 	theme_minimal()
-

@@ -11,6 +11,180 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// r_categ_rcpp
+Rcpp::IntegerVector r_categ_rcpp(unsigned int n, const Rcpp::NumericVector& p, bool log, bool one_based);
+RcppExport SEXP _vws_r_categ_rcpp(SEXP nSEXP, SEXP pSEXP, SEXP logSEXP, SEXP one_basedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< unsigned int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    Rcpp::traits::input_parameter< bool >::type one_based(one_basedSEXP);
+    rcpp_result_gen = Rcpp::wrap(r_categ_rcpp(n, p, log, one_based));
+    return rcpp_result_gen;
+END_RCPP
+}
+// r_gumbel_rcpp
+Rcpp::NumericVector r_gumbel_rcpp(unsigned int n, double mu, double sigma);
+RcppExport SEXP _vws_r_gumbel_rcpp(SEXP nSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< unsigned int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(r_gumbel_rcpp(n, mu, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// d_gumbel_rcpp
+Rcpp::NumericVector d_gumbel_rcpp(const Rcpp::NumericVector& x, double mu, double sigma, bool log);
+RcppExport SEXP _vws_d_gumbel_rcpp(SEXP xSEXP, SEXP muSEXP, SEXP sigmaSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(d_gumbel_rcpp(x, mu, sigma, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// p_gumbel_rcpp
+Rcpp::NumericVector p_gumbel_rcpp(const Rcpp::NumericVector& q, double mu, double sigma, bool lower, bool log);
+RcppExport SEXP _vws_p_gumbel_rcpp(SEXP qSEXP, SEXP muSEXP, SEXP sigmaSEXP, SEXP lowerSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type q(qSEXP);
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(p_gumbel_rcpp(q, mu, sigma, lower, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// q_gumbel_rcpp
+Rcpp::NumericVector q_gumbel_rcpp(const Rcpp::NumericVector& p, double mu, double sigma, bool lower, bool log);
+RcppExport SEXP _vws_q_gumbel_rcpp(SEXP pSEXP, SEXP muSEXP, SEXP sigmaSEXP, SEXP lowerSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(q_gumbel_rcpp(p, mu, sigma, lower, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// r_invgamma_rcpp
+Rcpp::NumericVector r_invgamma_rcpp(unsigned int n, double a, double b);
+RcppExport SEXP _vws_r_invgamma_rcpp(SEXP nSEXP, SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< unsigned int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(r_invgamma_rcpp(n, a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// d_invgamma_rcpp
+Rcpp::NumericVector d_invgamma_rcpp(const Rcpp::NumericVector& x, double a, double b, bool log);
+RcppExport SEXP _vws_d_invgamma_rcpp(SEXP xSEXP, SEXP aSEXP, SEXP bSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(d_invgamma_rcpp(x, a, b, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// p_invgamma_rcpp
+Rcpp::NumericVector p_invgamma_rcpp(const Rcpp::NumericVector& q, double a, double b, bool lower, bool log);
+RcppExport SEXP _vws_p_invgamma_rcpp(SEXP qSEXP, SEXP aSEXP, SEXP bSEXP, SEXP lowerSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type q(qSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(p_invgamma_rcpp(q, a, b, lower, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// q_invgamma_rcpp
+Rcpp::NumericVector q_invgamma_rcpp(const Rcpp::NumericVector& p, double a, double b, bool lower, bool log);
+RcppExport SEXP _vws_q_invgamma_rcpp(SEXP pSEXP, SEXP aSEXP, SEXP bSEXP, SEXP lowerSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(q_invgamma_rcpp(p, a, b, lower, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// log_sum_exp_rcpp
+double log_sum_exp_rcpp(const Rcpp::NumericVector& x);
+RcppExport SEXP _vws_log_sum_exp_rcpp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_sum_exp_rcpp(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// log_sum_exp_mat_rcpp
+Rcpp::NumericVector log_sum_exp_mat_rcpp(const Rcpp::NumericMatrix& x);
+RcppExport SEXP _vws_log_sum_exp_mat_rcpp(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_sum_exp_mat_rcpp(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// log_add2_exp_rcpp
+Rcpp::NumericVector log_add2_exp_rcpp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y);
+RcppExport SEXP _vws_log_add2_exp_rcpp(SEXP xSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(log_add2_exp_rcpp(x, y));
+    return rcpp_result_gen;
+END_RCPP
+}
+// log_sub2_exp_rcpp
+Rcpp::NumericVector log_sub2_exp_rcpp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y);
+RcppExport SEXP _vws_log_sub2_exp_rcpp(SEXP xSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(log_sub2_exp_rcpp(x, y));
+    return rcpp_result_gen;
+END_RCPP
+}
 // optimize_hybrid_rcpp
 Rcpp::List optimize_hybrid_rcpp(const Rcpp::Function& f, double init, double lower, double upper, bool maximize, unsigned maxiter);
 RcppExport SEXP _vws_optimize_hybrid_rcpp(SEXP fSEXP, SEXP initSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maximizeSEXP, SEXP maxiterSEXP) {
@@ -27,9 +201,50 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rect_rcpp
+Rcpp::NumericVector rect_rcpp(const Rcpp::NumericVector& z, const Rcpp::NumericVector& a, const Rcpp::NumericVector& b);
+RcppExport SEXP _vws_rect_rcpp(SEXP zSEXP, SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type z(zSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type a(aSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(rect_rcpp(z, a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// inv_rect_rcpp
+Rcpp::NumericVector inv_rect_rcpp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& a, const Rcpp::NumericVector& b);
+RcppExport SEXP _vws_inv_rect_rcpp(SEXP xSEXP, SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type a(aSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(inv_rect_rcpp(x, a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_vws_r_categ_rcpp", (DL_FUNC) &_vws_r_categ_rcpp, 4},
+    {"_vws_r_gumbel_rcpp", (DL_FUNC) &_vws_r_gumbel_rcpp, 3},
+    {"_vws_d_gumbel_rcpp", (DL_FUNC) &_vws_d_gumbel_rcpp, 4},
+    {"_vws_p_gumbel_rcpp", (DL_FUNC) &_vws_p_gumbel_rcpp, 5},
+    {"_vws_q_gumbel_rcpp", (DL_FUNC) &_vws_q_gumbel_rcpp, 5},
+    {"_vws_r_invgamma_rcpp", (DL_FUNC) &_vws_r_invgamma_rcpp, 3},
+    {"_vws_d_invgamma_rcpp", (DL_FUNC) &_vws_d_invgamma_rcpp, 4},
+    {"_vws_p_invgamma_rcpp", (DL_FUNC) &_vws_p_invgamma_rcpp, 5},
+    {"_vws_q_invgamma_rcpp", (DL_FUNC) &_vws_q_invgamma_rcpp, 5},
+    {"_vws_log_sum_exp_rcpp", (DL_FUNC) &_vws_log_sum_exp_rcpp, 1},
+    {"_vws_log_sum_exp_mat_rcpp", (DL_FUNC) &_vws_log_sum_exp_mat_rcpp, 1},
+    {"_vws_log_add2_exp_rcpp", (DL_FUNC) &_vws_log_add2_exp_rcpp, 2},
+    {"_vws_log_sub2_exp_rcpp", (DL_FUNC) &_vws_log_sub2_exp_rcpp, 2},
     {"_vws_optimize_hybrid_rcpp", (DL_FUNC) &_vws_optimize_hybrid_rcpp, 6},
+    {"_vws_rect_rcpp", (DL_FUNC) &_vws_rect_rcpp, 3},
+    {"_vws_inv_rect_rcpp", (DL_FUNC) &_vws_inv_rect_rcpp, 3},
     {NULL, NULL, 0}
 };
 

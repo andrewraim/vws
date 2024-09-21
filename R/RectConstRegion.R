@@ -241,7 +241,7 @@ bifurcate = function()
 			}
 		}
 
-		idx = r_categ(n = 1, p = reduction, log_p = TRUE)
+		idx = r_categ(n = 1, p = reduction, log = TRUE, one_based = TRUE)
 		out = list(pairs_left[[idx]], pairs_right[[idx]])
 	}
 

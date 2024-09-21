@@ -6,6 +6,45 @@
 
 namespace vws {
 
+inline double rect(double z, double a, double b)
+{
+	double x;
+
+	if (std::isinf(a) && std::isinf(b) && a < 0 && b > 0) {
+		x = z;
+	} else if (std::isinf(a) && a < 0) {
+		x = logit(z / b);
+	} else if (std::isinf(b) && b > 0) {
+		x = log(z - a);
+	} else if (std::isfinite(a) && std::isfinite(b)) {
+		x = logit(z / (b - a) - a);
+	} else {
+		Rcpp::stop("Invalid endpoints");
+	}
+
+	return x;
+}
+
+
+inline double inv_rect(double x, double a, double b)
+{
+	double z;
+
+	if (std::isinf(a) && std::isinf(b) && a < 0 && b > 0) {
+		z = x;
+	} else if (std::isinf(a) && a < 0) {
+		z = b * inv_logit(x);
+	} else if (std::isinf(b) && b > 0) {
+		z = exp(x) + a;
+	} else if (std::isfinite(a) && std::isfinite(b)) {
+		z = (b - a) * inv_logit(x) + a;
+	} else {
+		Rcpp::stop("Invalid endpoints");
+	}
+
+	return z;
+}
+
 inline Rcpp::NumericVector rect(const Rcpp::NumericVector& z,
 	const Rcpp::NumericVector& a, const Rcpp::NumericVector& b)
 {

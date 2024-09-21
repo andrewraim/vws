@@ -77,21 +77,30 @@ get_regions = function()
 
 #' @description
 #' Upper bound for rejection probability.
-#' @param byregion If `TRUE`, compute bound by region. Otherwise compute
-#' total.
 #' @param log If `TRUE` compute result on log-scale.
-#' @return A vector of size `N` or a single scalar.
-rejection_bound = function(byregion = FALSE, log = FALSE)
+#' @return A single scalar.
+rejection_bound = function(log = FALSE)
 {
 	# Each region's contribution to the rejection rate bound
-	out = log_sub2_exp(private$log_xi_upper, private$log_xi_lower) -
-		log_sum_exp(private$log_xi_upper)
 
-	if (!byregion) {
-		# Overall rejection rate bound
-		out = vws::log_sum_exp(out)
-	}
+    lxl = private$log_xi_lower
+    lxu = private$log_xi_upper
+	log_bound = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu)
+    out = log_sum_exp(log_bound)
+	if (log) { return (out) } else { return(exp(out)) }
+},
 
+#' @description
+#' Upper bound for rejection probability; contribution per region.
+#' @param log If `TRUE` compute result on log-scale.
+#' @return A vector of size `N`.
+
+rejection_bound_regions = function(log = FALSE)
+{
+    # Each region's contribution to the rejection rate bound.
+    lxl = private$log_xi_lower
+    lxu = private$log_xi_upper
+    out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu)
 	if (log) { return (out) } else { return(exp(out)) }
 },
 
@@ -116,7 +125,7 @@ r = function(n = 1, indices = FALSE)
 
 	# Draw from the mixing weights, which are given on the log scale and not
 	# normalized.
-	idx = r_categ(n, p = private$log_xi_upper, log_p = TRUE)
+	idx = r_categ(n, p = private$log_xi_upper, log = TRUE,one_based = TRUE)
 
 	# Draw the values from the respective mixture components.
 	x = list()

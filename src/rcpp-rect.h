@@ -1,5 +1,5 @@
-#ifndef RCPP_INTERFACE_H
-#define RCPP_INTERFACE_H
+#ifndef RCPP_RECT_H
+#define RCPP_RECT_H
 
 #include <Rcpp.h>
 
@@ -10,8 +10,8 @@
 //'
 //' @param x A point in \eqn{\mathbb{R}^{d}}.
 //' @param z A point in the rectangle \eqn{[a_1,b_1] \times \cdots \times [a_d,b_d]}.
-//' @param a A vector \eqn{(a_1, \ldots, a_d)}, Elements may be \code{-Inf}.
-//' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be \code{Inf}.
+//' @param a A vector \eqn{(a_1, \ldots, a_d)}, Elements may be `-Inf`.
+//' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be `Inf`.
 //'
 //' @examples
 //' x = seq(-1, 1, length.out = 3)
@@ -27,26 +27,15 @@
 //'
 //' @name rect
 //' @export
+// [[Rcpp::export(name = "rect")]]
 Rcpp::NumericVector rect_rcpp(const Rcpp::NumericVector& z,
 	const Rcpp::NumericVector& a, const Rcpp::NumericVector& b);
 
 //' @name rect
 //' @export
+// [[Rcpp::export(name = "inv_rect")]]
 Rcpp::NumericVector inv_rect_rcpp(const Rcpp::NumericVector& x,
 	const Rcpp::NumericVector& a, const Rcpp::NumericVector& b);
 
-//' Optimize Hybrid
-//'
-//' @param f TBD
-//' @param init TBD
-//' @param lower TBD
-//' @param upper TBD
-//' @param maximize TBD
-//' @param maxiter TBD
-//'
-//' @export
-// [[Rcpp::export(name = "optimize_hybrid")]]
-Rcpp::List optimize_hybrid_rcpp(const Rcpp::Function& f, double init, double lower,
-	double upper, bool maximize, unsigned maxiter = 100000);
-
 #endif
+

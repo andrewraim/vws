@@ -21,7 +21,7 @@
 #'
 #' # Create a finite mixture proposal
 #' h$rejection_bound()
-#' h$rejection_bound(byregion = TRUE)
+#' h$rejection_bound_regions()
 #'
 #' out = rejection(h, n = 200)
 #' print(out |> unlist())
@@ -65,7 +65,7 @@ adapt = function(h, N, tol = -Inf, report = N+1)
 		log_xi_lower = h$get_xi_lower(log = TRUE)
 
 		# Each region's contribution to the rejection rate
-		log_volume = h$rejection_bound(byregion = TRUE, log = TRUE)
+		log_volume = h$rejection_bound_regions(log = TRUE)
 
 		idx = which(h$get_bifurcatable())
 		if (length(idx) == 0) {
@@ -73,7 +73,7 @@ adapt = function(h, N, tol = -Inf, report = N+1)
 			break
 		}
 
-		jdx = r_categ(n = 1, log_volume[idx], log_p = TRUE)
+		jdx = r_categ(n = 1, log_volume[idx], log = TRUE, one_based = TRUE)
 		reg = h$get_regions()[[idx[jdx]]]
 
 		# Split the target region and make another proposal with it

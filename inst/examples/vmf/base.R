@@ -16,12 +16,13 @@ p_base = function(x, kappa, lower.tail = TRUE, log.p = FALSE)
 	islower = rep(lower.tail, n)
 	lo = ifelse(islower, rep(-1, n), x)
 	hi = ifelse(!islower, rep(1, n), x)
+	ones = rep(1, n)
 	if (kappa < 0) {
-		log_p_lo = log_sub2_exp(-kappa, kappa*lo) - log_sub2_exp(-kappa, kappa)
-		log_p_hi = log_sub2_exp(-kappa, kappa*hi) - log_sub2_exp(-kappa, kappa)
+		log_p_lo = log_sub2_exp(-kappa*ones, kappa*lo) - log_sub2_exp(-kappa*ones, kappa*ones)
+		log_p_hi = log_sub2_exp(-kappa*ones, kappa*hi) - log_sub2_exp(-kappa*ones, kappa*ones)
 	} else {
-		log_p_lo = log_sub2_exp(kappa*lo, -kappa) - log_sub2_exp(kappa, -kappa)
-		log_p_hi = log_sub2_exp(kappa*hi, -kappa) - log_sub2_exp(kappa, -kappa)
+		log_p_lo = log_sub2_exp(kappa*lo, -kappa*ones) - log_sub2_exp(kappa*ones, -kappa*ones)
+		log_p_hi = log_sub2_exp(kappa*hi, -kappa*ones) - log_sub2_exp(kappa*ones, -kappa*ones)
 	}
 	out = log_sub2_exp(log_p_hi, log_p_lo)
 	if (log.p) { return(out) } else { return(exp(out)) }
@@ -32,13 +33,14 @@ q_base = function(p, kappa, lower.tail = TRUE, log.p = FALSE)
 	n = length(p)
 	if (log.p) { lp = p } else { lp = log(p) }
 	if (!lower.tail) { lp = log_sub2_exp(rep(0, n), lp) }
+	ones = rep(1, n)
 
 	if (kappa < 0) {
-		out = 1/kappa * vws::log_sub2_exp(rep(-kappa,n), lp +
-			vws::log_sub2_exp(-kappa,kappa))
+		out = 1/kappa * vws::log_sub2_exp(-kappa*ones, lp +
+			vws::log_sub2_exp(-kappa*ones, kappa*ones))
 	} else {
-		out = 1/kappa * vws::log_add2_exp(rep(-kappa,n), lp +
-			vws::log_sub2_exp(kappa,-kappa))
+		out = 1/kappa * vws::log_add2_exp(-kappa*ones, lp +
+			vws::log_sub2_exp(kappa*ones, -kappa*ones))
 	}
 	return(out)
 }

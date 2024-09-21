@@ -5,73 +5,94 @@
 
 namespace vws {
 
-//' Gumbel Distribution
-//'
-//' Functions for the Gumbel distribution
-//'
-//' @param n Number of desired draws
-//' @param x Vector of quantiles
-//' @param p Vector of probabilities
-//' @param q Vector of quantiles
-//' @param mu Location parameter
-//' @param sigma Scale parameter
-//' @param lower Logical; if \code{TRUE} (default), probabilities are
-//' \eqn{P[X \leq x]} otherwise, \eqn{P[X > x]}.
-//' @param log Logical; if \code{TRUE}, probabilities p are given as \eqn{log(p)}
-//'
-//' @return A vector of draws
-//'
-//' @name Gumbel
-inline Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
-	double sigma = 1, bool lower = true, bool log = false)
-{
-	// const Rcpp::NumericVector& lp0 = log ? p : Rcpp::log(p);
-	Rcpp::NumericVector lp0;
-	if (log) {
-		lp0 = p;
-	} else {
-		lp0 = Rcpp::log(p);
-	}
+/*
+* Non-vectorized distribution functions.
+*/
 
-	const Rcpp::NumericVector& lp = lower ? lp0 : Rcpp::log1p(-Rcpp::exp(lp0));
-	return mu - sigma * Rcpp::log(-lp);
+inline double q_gumbel(double p, double mu = 0, double sigma = 1,
+	bool lower = true, bool log = false)
+{
+	double lp0 = log ? p : std::log(p);
+	double lp = lower ? lp0 : std::log1p(-std::exp(lp0));
+	return mu - sigma * std::log(-lp);
 }
 
-//' @name Gumbel
-//' @export
-inline Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1)
+inline double r_gumbel(double mu = 0, double sigma = 1)
 {
-	const Rcpp::NumericVector& u = Rcpp::runif(n);
+	double u = R::runif(0, 1);
 	return q_gumbel(u, mu, sigma);
 }
 
-//' @name Gumbel
-//' @export
+inline double d_gumbel(double x, double mu = 0,
+	double sigma = 1, bool log = false)
+{
+	double z = (x - mu) / sigma;
+	double out = -std::log(sigma) - (z + std::exp(-z));
+	return log ? out : std::exp(out);
+}
+
+inline double p_gumbel(double q, double mu = 0,
+	double sigma = 1, bool lower = true, bool log = false)
+{
+	double z = (q - mu) / sigma;
+	double out0 = -std::exp(-z);
+	double out = lower ? out0 : std::log1p(-std::exp(out0));
+	return log ? out : std::exp(out);
+}
+
+/*
+* Vectorized distribution functions.
+*/
+
+inline Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1)
+{
+	const Rcpp::NumericVector& u = Rcpp::runif(n);
+	Rcpp::NumericVector out(n);
+
+	for (unsigned int i = 0; i < n; i++) {
+		out(i) = q_gumbel(u(i), mu, sigma);
+	}
+
+	return out;
+}
+
 inline Rcpp::NumericVector d_gumbel(const Rcpp::NumericVector& x, double mu = 0,
 	double sigma = 1, bool log = false)
 {
-	const Rcpp::NumericVector& z = (x - mu) / sigma;
-	const Rcpp::NumericVector& out = -std::log(sigma) - (z + Rcpp::exp(-z));
-	if (log) {
-		return out;
-	} else {
-		return Rcpp::exp(out);
+	unsigned int n = x.size();
+	Rcpp::NumericVector out(n);
+
+	for (unsigned int i = 0; i < n; i++) {
+		out(i) = d_gumbel(x(i), mu, sigma, log);
 	}
+
+	return out;
 }
 
-//' @name Gumbel
-//' @export
 inline Rcpp::NumericVector p_gumbel(const Rcpp::NumericVector& q, double mu = 0,
 	double sigma = 1, bool lower = true, bool log = false)
 {
-	const Rcpp::NumericVector& z = (q - mu) / sigma;
-	const Rcpp::NumericVector& out0 = -exp(-z);
-	const Rcpp::NumericVector& out = lower ? out0 : Rcpp::log1p(-Rcpp::exp(out0));
-	if (log) {
-		return out;
-	} else {
-		return Rcpp::exp(out);
+	unsigned int n = q.size();
+	Rcpp::NumericVector out(n);
+
+	for (unsigned int i = 0; i < n; i++) {
+		out(i) = p_gumbel(q(i), mu, sigma, lower, log);
 	}
+
+	return out;
+}
+
+inline Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
+	double sigma = 1, bool lower = true, bool log = false)
+{
+	unsigned int n = p.size();
+	Rcpp::NumericVector out(n);
+
+	for (unsigned int i = 0; i < n; i++) {
+		out(i) = q_gumbel(p(i), mu, sigma, lower, log);
+	}
+
+	return out;
 }
 
 }

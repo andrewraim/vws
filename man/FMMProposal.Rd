@@ -35,6 +35,7 @@ region can be bifurcated or not.
 \item \href{#method-FMMProposal-get_bifurcatable}{\code{FMMProposal$get_bifurcatable()}}
 \item \href{#method-FMMProposal-get_regions}{\code{FMMProposal$get_regions()}}
 \item \href{#method-FMMProposal-rejection_bound}{\code{FMMProposal$rejection_bound()}}
+\item \href{#method-FMMProposal-rejection_bound_regions}{\code{FMMProposal$rejection_bound_regions()}}
 \item \href{#method-FMMProposal-nc}{\code{FMMProposal$nc()}}
 \item \href{#method-FMMProposal-r}{\code{FMMProposal$r()}}
 \item \href{#method-FMMProposal-d}{\code{FMMProposal$d()}}
@@ -121,21 +122,38 @@ Access the vector \code{regions}.
 \subsection{Method \code{rejection_bound()}}{
 Upper bound for rejection probability.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$rejection_bound(byregion = FALSE, log = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$rejection_bound(log = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{byregion}}{If \code{TRUE}, compute bound by region. Otherwise compute
-total.}
-
 \item{\code{log}}{If \code{TRUE} compute result on log-scale.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A vector of size \code{N} or a single scalar.
+A single scalar.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-rejection_bound_regions"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-rejection_bound_regions}{}}}
+\subsection{Method \code{rejection_bound_regions()}}{
+Upper bound for rejection probability; contribution per region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$rejection_bound_regions(log = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{log}}{If \code{TRUE} compute result on log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A vector of size \code{N}.
 }
 }
 \if{html}{\out{<hr>}}

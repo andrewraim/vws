@@ -32,7 +32,7 @@ h = adapt_out$h
 
 # Create a finite mixture proposal
 h$rejection_bound()
-h$rejection_bound(byregion = TRUE)
+h$rejection_bound_regions()
 
 out = rejection(h, n = 200)
 print(out |> unlist())

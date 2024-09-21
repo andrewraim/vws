@@ -52,8 +52,8 @@ gg = data.frame(y = y) %>%
 print(gg)
 
 # ----- Plot log f(x) vs. log h(x) -----
-log_h = function(y) { h$d(as.list(y), log = TRUE) }
-log_f = function(y) { d_target(y, log = TRUE) }
+log_h = function(y) { sapply(y, h$d, log = TRUE) }
+log_f = function(y) { d_target(y, mu, sigma2, z, lambda2, log = TRUE) }
 
 xlim = range(y)
 ggplot() +
