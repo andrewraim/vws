@@ -12,6 +12,8 @@ template <class T>
 class Region
 {
 public:
+	virtual ~Region() { };
+
 	//' Density function \eqn{g} for the base distribution.
 	//' @param x Density argument.
 	//' @param log logical; if \code{TRUE}, return result on the log-scale.

@@ -4,6 +4,8 @@
 #include <Rcpp.h>
 #include <memory>
 #include "fntl.h"
+#include "typedefs.h"
+#include "log-sum-exp.h"
 #include "Region.h"
 #include "UnivariateHelper.h"
 #include "optimize-hybrid.h"
@@ -38,11 +40,13 @@ class UnivariateConstRegion : public Region<double>
 protected:
 	double _a;
 	double _b;
-	const uv_weight_function* _w;
+	uv_weight_function _w;
 	const UnivariateHelper<double>* _helper;
 	double _log_w_max;
 	double _log_w_min;
 	double _log_prob;
+
+	void init();
 
 public:
 	//' @param a Lower and upper limit of interval.
@@ -59,6 +63,12 @@ public:
 	UnivariateConstRegion(double a, double b,
 		const uv_weight_function& w,
 		const UnivariateHelper<double>& helper);
+
+	UnivariateConstRegion(double a, double b,
+		const Rcpp::Function& w,
+		const Rcpp::Environment& e);
+
+	virtual ~UnivariateConstRegion() { };
 
 	//' @description
 	//' Density function \eqn{g} for the base distribution.
@@ -158,18 +168,38 @@ public:
 
 inline UnivariateConstRegion::UnivariateConstRegion(double a,
 	const uv_weight_function& w, const UnivariateHelper<double>& helper)
-: _a(a), _b(a), _w(&w), _helper(&helper)
+: Region<double>(), _a(a), _b(a), _w(w), _helper(&helper)
 {
-	_log_w_max = (*_w)(a, true);
-	_log_w_min = (*_w)(a, true);
+	_log_w_max = _w(a, true);
+	_log_w_min = _w(a, true);
 	_log_prob = R_NegInf;
 }
 
 inline UnivariateConstRegion::UnivariateConstRegion(double a, double b,
 	const uv_weight_function& w, const UnivariateHelper<double>& helper)
-: _a(a), _b(b), _w(&w), _helper(&helper)
+: Region<double>(), _a(a), _b(b), _w(w), _helper(&helper)
 {
-	if (a > b) {
+	init();
+}
+
+inline UnivariateConstRegion::UnivariateConstRegion(double a, double b,
+	const Rcpp::Function& w, const Rcpp::Environment& e)
+: Region<double>(), _a(a), _b(b), _w(NULL), _helper(NULL)
+{
+	_w = [&](double x, bool log) -> double {
+		Rcpp::NumericVector out = w(x, log);
+		return out(0);
+	};
+
+	SEXP op = e[".pointer"];
+	_helper = static_cast<const UnivariateHelper<double>*>(R_ExternalPtrAddr(op));
+
+	init();
+}
+
+inline void UnivariateConstRegion::init()
+{
+	if (_a > _b) {
 		Rcpp::stop("a > b");
 	}
 
@@ -177,12 +207,13 @@ inline UnivariateConstRegion::UnivariateConstRegion(double a, double b,
 	_log_w_min = optimize(false);
 
 	// Compute g.p(b) - g.p(a) on the log scale
-	_log_prob = log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
+	_log_prob = log_sub2_exp(_helper->cdf(_b, true, true), _helper->cdf(_a, true, true));
 }
+
 
 inline double UnivariateConstRegion::d_base(const double& x, bool log) const
 {
-	return _helper->d(x, log);
+	return _helper->pdf(x, log);
 }
 
 inline std::vector<double> UnivariateConstRegion::r(unsigned int n) const
@@ -190,12 +221,12 @@ inline std::vector<double> UnivariateConstRegion::r(unsigned int n) const
 	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this region.
 	// Compute g$q((pb - pa) * u + pa) on the log scale
 	const Rcpp::NumericVector& u = Rcpp::runif(n);
-	double log_pa = _helper->p(_a, true, true);
+	double log_pa = _helper->cdf(_a, true, true);
 	const Rcpp::NumericVector& log_p = log_add2_exp(_log_prob + log(u), Rcpp::rep(log_pa, n));
 
 	std::vector<double> out;
 	for (unsigned int i = 0; i < n; i++) {
-		out.push_back(_helper->q(log_p(i), true, true));
+		out.push_back(_helper->quantile(log_p(i), true, true));
 	}
 
 	return out;
@@ -207,24 +238,24 @@ inline double UnivariateConstRegion::d(const double& x, bool log) const
 	if (!s(x)) {
 		out = R_NegInf;
 	} else {
-		out = _helper->d(x, true) - log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
+		out = _helper->pdf(x, true) - log_sub2_exp(_helper->cdf(_b, true, true), _helper->cdf(_a, true, true));
 	}
 	return log ? out : exp(out);
 }
 
 inline bool UnivariateConstRegion::s(const double& x) const
 {
-	return (_a < x && x <= _b) && _helper->s(x);
+	return (_a < x && x <= _b) && _helper->supp(x);
 }
 
 inline double UnivariateConstRegion::w(const double& x, bool log) const
 {
-	return (*_w)(x, log);
+	return _w(x, log);
 }
 
 inline double UnivariateConstRegion::w_major(const double& x, bool log) const
 {
-	double out = _helper->s(x) ? _log_w_max : R_NegInf;
+	double out = _helper->supp(x) ? _log_w_max : R_NegInf;
 	return log ? out : exp(out);
 }
 
@@ -257,14 +288,14 @@ UnivariateConstRegion::bifurcate() const
 inline std::pair<UnivariateConstRegion,UnivariateConstRegion>
 UnivariateConstRegion::bifurcate(const double& x) const
 {
-	UnivariateConstRegion r1(_a, x, *_w, *_helper);
-	UnivariateConstRegion r2(x, _b, *_w, *_helper);
+	UnivariateConstRegion r1(_a, x, _w, *_helper);
+	UnivariateConstRegion r2(x, _b, _w, *_helper);
 	return std::make_pair(r1, r2);
 }
 
 inline UnivariateConstRegion UnivariateConstRegion::singleton(const double& x) const
 {
-	return UnivariateConstRegion(x, *_w, *_helper);
+	return UnivariateConstRegion(x, _w, *_helper);
 }
 
 inline bool UnivariateConstRegion::is_bifurcatable() const
@@ -299,7 +330,7 @@ inline void UnivariateConstRegion::print() const
 inline double UnivariateConstRegion::optimize(bool maximize, bool log) const
 {
 	// The log-weight function
-    const fntl::dfd& f = [&](double x) -> double { return (*_w)(x, true); };
+    const fntl::dfd& f = [&](double x) -> double { return _w(x, true); };
 	const auto& out = optimize_hybrid(f, 0, _a, _b, maximize);
 
 	if ( (out.value > 0) && std::isinf(out.value) ) {

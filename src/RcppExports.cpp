@@ -11,6 +11,17 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// my_test_function
+double my_test_function(const Rcpp::Environment& e);
+RcppExport SEXP _vws_my_test_function(SEXP eSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::Environment& >::type e(eSEXP);
+    rcpp_result_gen = Rcpp::wrap(my_test_function(e));
+    return rcpp_result_gen;
+END_RCPP
+}
 // optimize_hybrid_rcpp
 Rcpp::List optimize_hybrid_rcpp(const Rcpp::Function& f, double init, double lower, double upper, bool maximize, unsigned maxiter);
 RcppExport SEXP _vws_optimize_hybrid_rcpp(SEXP fSEXP, SEXP initSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maximizeSEXP, SEXP maxiterSEXP) {
@@ -31,6 +42,7 @@ END_RCPP
 RcppExport SEXP _rcpp_module_boot_VWSModule();
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_vws_my_test_function", (DL_FUNC) &_vws_my_test_function, 1},
     {"_vws_optimize_hybrid_rcpp", (DL_FUNC) &_vws_optimize_hybrid_rcpp, 6},
     {"_rcpp_module_boot_VWSModule", (DL_FUNC) &_rcpp_module_boot_VWSModule, 0},
     {NULL, NULL, 0}

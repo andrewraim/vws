@@ -6,21 +6,20 @@
 class RUnivariateHelper : public vws::UnivariateHelper<double>
 {
 public:
-	RUnivariateHelper();
-	RUnivariateHelper(const Rcpp::Function& d, const Rcpp::Function& p,
-		const Rcpp::Function& q, const Rcpp::Function& s);
+	RUnivariateHelper(const Rcpp::Function& pdf, const Rcpp::Function& cdf,
+	 	const Rcpp::Function& quantile, const Rcpp::Function& supp);
 	virtual ~RUnivariateHelper() { };
 
-	virtual double d(double x, bool log = false) const;
-	virtual double p(double q, bool lower = true, bool log = false) const;
-	virtual double q(double p, bool lower = true, bool log = false) const;
-	virtual bool s(double x) const;
+	virtual double pdf(double x, bool log = false) const;
+	virtual double cdf(double x, bool lower = true, bool log = false) const;
+	virtual double quantile(double x, bool lower = true, bool log = false) const;
+	virtual bool supp(double x) const;
 
 private:
-	Rcpp::Function _d;
-	Rcpp::Function _p;
-	Rcpp::Function _q;
-	Rcpp::Function _s;
+	Rcpp::Function _pdf;
+	Rcpp::Function _cdf;
+	Rcpp::Function _quantile;
+	Rcpp::Function _supp;
 };
 
 #endif

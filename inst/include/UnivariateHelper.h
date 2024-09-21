@@ -57,10 +57,10 @@ template <class T>
 class UnivariateHelper
 {
 public:
-	virtual double d(T x, bool log = false) const = 0;
-	virtual double p(T q, bool lower = true, bool log = false) const = 0;
-	virtual double q(T p, bool lower = true, bool log = false) const = 0;
-	virtual bool s(T x) const = 0;
+	virtual double pdf(T x, bool log = false) const = 0;
+	virtual double cdf(T q, bool lower = true, bool log = false) const = 0;
+	virtual double quantile(T p, bool lower = true, bool log = false) const = 0;
+	virtual bool supp(T x) const = 0;
 };
 
 }
