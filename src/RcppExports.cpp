@@ -227,6 +227,126 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// n_texp_rcpp
+double n_texp_rcpp(double kappa, double lo, double hi, bool log);
+RcppExport SEXP _vws_n_texp_rcpp(SEXP kappaSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
+    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(n_texp_rcpp(kappa, lo, hi, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// integrate_texp_rcpp
+double integrate_texp_rcpp(double a, double b, double kappa, double lo, double hi, bool log);
+RcppExport SEXP _vws_integrate_texp_rcpp(SEXP aSEXP, SEXP bSEXP, SEXP kappaSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< double >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
+    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(integrate_texp_rcpp(a, b, kappa, lo, hi, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// d_texp_rcpp
+Rcpp::NumericVector d_texp_rcpp(const Rcpp::NumericVector& x, double kappa, double lo, double hi, bool log);
+RcppExport SEXP _vws_d_texp_rcpp(SEXP xSEXP, SEXP kappaSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
+    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(d_texp_rcpp(x, kappa, lo, hi, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// p_texp_rcpp
+Rcpp::NumericVector p_texp_rcpp(const Rcpp::NumericVector& q, double kappa, double lo, double hi, bool lower, bool log);
+RcppExport SEXP _vws_p_texp_rcpp(SEXP qSEXP, SEXP kappaSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP lowerSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type q(qSEXP);
+    Rcpp::traits::input_parameter< double >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
+    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(p_texp_rcpp(q, kappa, lo, hi, lower, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// q_texp_rcpp
+Rcpp::NumericVector q_texp_rcpp(const Rcpp::NumericVector& p, double kappa, double lo, double hi, bool lower, bool log);
+RcppExport SEXP _vws_q_texp_rcpp(SEXP pSEXP, SEXP kappaSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP lowerSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
+    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(q_texp_rcpp(p, kappa, lo, hi, lower, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// r_texp_rcpp
+Rcpp::NumericVector r_texp_rcpp(unsigned int n, double kappa, double lo, double hi);
+RcppExport SEXP _vws_r_texp_rcpp(SEXP nSEXP, SEXP kappaSEXP, SEXP loSEXP, SEXP hiSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< unsigned int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
+    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
+    rcpp_result_gen = Rcpp::wrap(r_texp_rcpp(n, kappa, lo, hi));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mgf_texp_rcpp
+Rcpp::NumericVector mgf_texp_rcpp(const Rcpp::NumericVector& s, double kappa, double lo, double hi, bool log);
+RcppExport SEXP _vws_mgf_texp_rcpp(SEXP sSEXP, SEXP kappaSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type s(sSEXP);
+    Rcpp::traits::input_parameter< double >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
+    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(mgf_texp_rcpp(s, kappa, lo, hi, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mgf_unif_rcpp
+Rcpp::NumericVector mgf_unif_rcpp(const Rcpp::NumericVector& s, double lo, double hi, bool log);
+RcppExport SEXP _vws_mgf_unif_rcpp(SEXP sSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type s(sSEXP);
+    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
+    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(mgf_unif_rcpp(s, lo, hi, log));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_vws_r_categ_rcpp", (DL_FUNC) &_vws_r_categ_rcpp, 4},
@@ -245,6 +365,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_vws_optimize_hybrid_rcpp", (DL_FUNC) &_vws_optimize_hybrid_rcpp, 6},
     {"_vws_rect_rcpp", (DL_FUNC) &_vws_rect_rcpp, 3},
     {"_vws_inv_rect_rcpp", (DL_FUNC) &_vws_inv_rect_rcpp, 3},
+    {"_vws_n_texp_rcpp", (DL_FUNC) &_vws_n_texp_rcpp, 4},
+    {"_vws_integrate_texp_rcpp", (DL_FUNC) &_vws_integrate_texp_rcpp, 6},
+    {"_vws_d_texp_rcpp", (DL_FUNC) &_vws_d_texp_rcpp, 5},
+    {"_vws_p_texp_rcpp", (DL_FUNC) &_vws_p_texp_rcpp, 6},
+    {"_vws_q_texp_rcpp", (DL_FUNC) &_vws_q_texp_rcpp, 6},
+    {"_vws_r_texp_rcpp", (DL_FUNC) &_vws_r_texp_rcpp, 4},
+    {"_vws_mgf_texp_rcpp", (DL_FUNC) &_vws_mgf_texp_rcpp, 5},
+    {"_vws_mgf_unif_rcpp", (DL_FUNC) &_vws_mgf_unif_rcpp, 4},
     {NULL, NULL, 0}
 };
 

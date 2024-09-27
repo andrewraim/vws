@@ -7,6 +7,8 @@
 #include "Region.h"
 #include "UnivariateHelper.h"
 #include "optimize-hybrid.h"
+#include "log-sum-exp.h"
+#include "typedefs.h"
 
 namespace vws {
 
@@ -237,7 +239,7 @@ inline double UnivariateConstRegion::midpoint() const
 		out = 0;
 	} else if (std::isinf(_a) && _a < 0) {
 		// Left endpoint is -Inf. Split based on right endpoint.
-		out = _b - abs(_b) - 1;
+		out = _b - std::fabs(_b) - 1;
 	} else if (std::isinf(_b) && _b > 0) {
 		// Right endpoint is Inf. Split based on left endpoint.
 		out = _a + std::fabs(_a) + 1;

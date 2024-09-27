@@ -217,3 +217,55 @@ inv_rect <- function(x, a, b) {
     .Call(`_vws_inv_rect_rcpp`, x, a, b)
 }
 
+#' Truncated Exponential
+#'
+#' @name TExp
+#' @export
+n_texp <- function(kappa, lo, hi, log = FALSE) {
+    .Call(`_vws_n_texp_rcpp`, kappa, lo, hi, log)
+}
+
+#' @name TExp
+#' @export
+integrate_texp <- function(a, b, kappa, lo, hi, log = FALSE) {
+    .Call(`_vws_integrate_texp_rcpp`, a, b, kappa, lo, hi, log)
+}
+
+#' @name TExp
+#' @export
+d_texp <- function(x, kappa, lo, hi, log = FALSE) {
+    .Call(`_vws_d_texp_rcpp`, x, kappa, lo, hi, log)
+}
+
+#' @name TExp
+#' @export
+p_texp <- function(q, kappa, lo, hi, lower = TRUE, log = FALSE) {
+    .Call(`_vws_p_texp_rcpp`, q, kappa, lo, hi, lower, log)
+}
+
+#' @name TExp
+#' @export
+q_texp <- function(p, kappa, lo, hi, lower = TRUE, log = FALSE) {
+    .Call(`_vws_q_texp_rcpp`, p, kappa, lo, hi, lower, log)
+}
+
+#' @name TExp
+#' @export
+r_texp <- function(n, kappa, lo, hi) {
+    .Call(`_vws_r_texp_rcpp`, n, kappa, lo, hi)
+}
+
+#' @name TExp
+#' @export
+mgf_texp <- function(s, kappa, lo, hi, log = FALSE) {
+    .Call(`_vws_mgf_texp_rcpp`, s, kappa, lo, hi, log)
+}
+
+#' Uniform Distribution
+#'
+#' @name Uniform
+#' @export
+mgf_unif <- function(s, lo, hi, log = FALSE) {
+    .Call(`_vws_mgf_unif_rcpp`, s, lo, hi, log)
+}
+

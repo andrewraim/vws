@@ -14,8 +14,10 @@
 #include "Region.h"
 #include "rect.h"
 #include "rejection.h"
+#include "texp.h"
 #include "typedefs.h"
 #include "UnivariateConstRegion.h"
 #include "UnivariateHelper.h"
+#include "unif.h"
 
 #endif

@@ -45,20 +45,47 @@ public:
 	//' @description
 	//' Access the vector \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
 	//' @param log If \code{TRUE} compute result on log-scale.
-	Rcpp::NumericVector::const_iterator get_log_xi_upper() const;
+	Rcpp::NumericVector get_xi_upper(bool log = true) const;
 
 	//' @description
 	//' Access the vector \eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.
 	//' @param log If \code{TRUE} compute result on log-scale.
-	Rcpp::NumericVector::const_iterator get_log_xi_lower() const;
+	Rcpp::NumericVector get_xi_lower(bool log = true) const;
 
 	//' @description
 	//' Access the vector \code{bifurcatable}.
-	Rcpp::LogicalVector::const_iterator get_bifurcatable() const;
+	Rcpp::LogicalVector get_bifurcatable() const;
+
+	// Get mixing weights. They are specified in order so that they correspond
+	// to the set of regions.
+	Rcpp::NumericVector get_pi(bool log) const;
 
 	//' @description
 	//' Access the vector \code{regions}.
-	typename std::set<R>::const_iterator get_regions() const;
+	typename std::set<R>::const_iterator regions_begin() const {
+		return _regions.begin();
+	}
+	typename std::set<R>::const_iterator regions_end() const {
+		return _regions.end();
+	}
+	Rcpp::NumericVector::const_iterator log_xi_upper_begin() const {
+		return _log_xi_upper->begin();
+	}
+	Rcpp::NumericVector::const_iterator log_xi_upper_end() const {
+		return _log_xi_upper->end();
+	}
+	Rcpp::NumericVector::const_iterator log_xi_lower_begin() const {
+		return _log_xi_lower->begin();
+	}
+	Rcpp::NumericVector::const_iterator log_xi_lower_end() const {
+		return _log_xi_lower->end();
+	}
+	Rcpp::LogicalVector::const_iterator bifurcatable_begin() const {
+		return _bifurcatable->begin();
+	}
+	Rcpp::LogicalVector::const_iterator bifurcatable_end() const {
+		return _bifurcatable->end();
+	}
 
 	//' @description
 	//' Upper bound for rejection probability.
@@ -133,6 +160,8 @@ private:
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned int report)
 {
+	// Rprintf("FMMProposal::adapt Checkpoint 1\n");
+
 	std::vector<double> log_bdd_hist;
 
 	log_bdd_hist.push_back(rejection_bound(true));
@@ -143,10 +172,14 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned
 			break;
 		}
 
+		// Rprintf("FMMProposal::adapt Checkpoint 1.1 N = %d\n", N);
+
 		unsigned int L = _regions.size();
 
 		// Each region's contribution to the rejection rate
 		Rcpp::NumericVector log_volume = rejection_bound_regions(true);
+
+		// Rprintf("FMMProposal::adapt Checkpoint 1.2\n");
 
 		// printf("Checkpoint: log_volume before transform\n");
 		// Rcpp::print(log_volume);
@@ -156,6 +189,8 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned
 			log_volume(l) = (*_bifurcatable)(l) ? log_volume(l) : R_NegInf;
 			n_bif += (*_bifurcatable)(l);
 		}
+
+		// Rprintf("FMMProposal::adapt Checkpoint 1.3\n");
 
 		if (n_bif == 0) {
 			Rcpp::warning("No regions left to bifurcate");
@@ -168,6 +203,12 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned
 		unsigned int jdx = r_categ(log_volume, true);
 		// printf("Checkpoint: jdx = %d\n", jdx);
 		const R& r = _regions_vec[jdx];
+
+		// Rprintf("FMMProposal::adapt Checkpoint 1.4\n");
+
+		// Rcpp::print(log_volume);
+		// Rprintf("jdx = %d\n", jdx);
+		// r.print();
 
 		// Split the target region and make another proposal with it.
 		//
@@ -186,7 +227,11 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned
 		// printf("Checkpoint: recache\n");
 		recache();
 
+		// Rprintf("FMMProposal::adapt Checkpoint 1.5\n");
+
 		log_bdd_hist.push_back(rejection_bound(true));
+
+		// Rprintf("FMMProposal::adapt Checkpoint 1.6\n");
 
 		// printf("Checkpoint: end split\n");
 		if (j % report == 0 && report < uint_max) {
@@ -194,6 +239,7 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned
 		}
 	}
 
+	// Rprintf("FMMProposal::adapt Checkpoint K\n");
 	return Rcpp::NumericVector(log_bdd_hist.begin(), log_bdd_hist.end());
 }
 
@@ -228,28 +274,34 @@ void FMMProposal<T,R>::recache()
 }
 
 template <class T, class R>
-Rcpp::NumericVector::const_iterator FMMProposal<T,R>::get_log_xi_upper() const
+Rcpp::NumericVector FMMProposal<T,R>::get_xi_upper(bool log) const
 {
-	return _log_xi_upper->begin();
+	Rcpp::NumericVector out(_log_xi_upper->begin(), _log_xi_upper->end());
+	if (log) { return out; } else { return Rcpp::exp(out); }
 }
 
 template <class T, class R>
-Rcpp::NumericVector::const_iterator FMMProposal<T,R>::get_log_xi_lower() const
+Rcpp::NumericVector FMMProposal<T,R>::get_xi_lower(bool log) const
 {
-	return _log_xi_lower->begin();
+	Rcpp::NumericVector out(_log_xi_lower->begin(), _log_xi_lower->end());
+	if (log) { return out; } else { return Rcpp::exp(out); }
 }
 
 template <class T, class R>
-Rcpp::LogicalVector::const_iterator FMMProposal<T,R>::get_bifurcatable() const
+Rcpp::LogicalVector FMMProposal<T,R>::get_bifurcatable() const
 {
-	return _bifurcatable->begin();
+	Rcpp::LogicalVector out(_bifurcatable->begin(), _bifurcatable->end());
+	return out;
 }
 
 template <class T, class R>
-typename std::set<R>::const_iterator FMMProposal<T,R>::get_regions() const
+Rcpp::NumericVector FMMProposal<T,R>::get_pi(bool log) const
 {
-	return _regions.begin();
+	Rcpp::NumericVector lxu(_log_xi_upper->begin(), _log_xi_upper->end());
+	const Rcpp::NumericVector& out = lxu - vws::log_sum_exp(lxu);
+	if (log) { return out; } else { return Rcpp::exp(out); }
 }
+
 
 template <class T, class R>
 double FMMProposal<T,R>::rejection_bound(bool log) const
@@ -343,12 +395,6 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 		Rcpp::stop("!itr_lower->s(x)");
 	}
 
-	// Rprintf("FMMProposal: d(%g, %d)\n", x, log);
-	// itr_lower->print();
-	// Rprintf("itr_lower->w_major(x, true) = %g\n", itr_lower->w_major(x, true));
-	// Rprintf("itr_lower->d_base(x, true) = %g\n", itr_lower->d_base(x, true));
-	// Rprintf("log_nc = %g\n", log_nc);
-
 	double out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - log_nc;
 
 	return log ? out : exp(out);
@@ -357,9 +403,6 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 template <class T, class R>
 double FMMProposal<T,R>::d_target_unnorm(const T& x, bool log) const
 {
-	// Rprintf("FMMProposal: d_target_unnorm(%g, %d)\n", x, log);
-	// Rprintf("_regions.begin()->w(x, true) = %g\n", _regions.begin()->w(x, true));
-	// Rprintf("_regions.begin()->d_base(x, true) = %g\n", _regions.begin()->d_base(x, true));
 	double out = _regions.begin()->w(x, true) + _regions.begin()->d_base(x, true);
 	return log ? out : exp(out);
 }
