@@ -58,7 +58,7 @@ public:
 
 	// Get mixing weights. They are specified in order so that they correspond
 	// to the set of regions.
-	Rcpp::NumericVector get_pi(bool log) const;
+	Rcpp::NumericVector get_pi(bool log = false) const;
 
 	//' @description
 	//' Access the vector \code{regions}.
