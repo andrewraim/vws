@@ -12,6 +12,25 @@ Integer Univariate Region with Constant Majorizer
 A region based on univariate intervals with a constant majorizer for the
 weight function. This version is for integer supports.
 }
+\examples{
+# Define base distribution and weight function
+g = poisson_helper(lambda = 5)
+w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
+
+reg = IntUnivariateConstRegion$new(-Inf, 10, w, g)
+print(reg)
+
+out = reg$bifurcate(5)
+print(out[[1]])
+print(out[[2]])
+
+out[[1]]$r(100) |> as.numeric()
+out[[2]]$r(100) |> as.numeric()
+
+}
+\section{Super class}{
+\code{\link[vws:UnivariateConstRegion]{vws::UnivariateConstRegion}} -> \code{IntUnivariateConstRegion}
+}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
@@ -22,20 +41,38 @@ weight function. This version is for integer supports.
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-UnivariateConstRegion-new}{\code{IntUnivariateConstRegion$new()}}
-\item \href{#method-UnivariateConstRegion-r}{\code{IntUnivariateConstRegion$r()}}
-\item \href{#method-UnivariateConstRegion-bifurcate}{\code{IntUnivariateConstRegion$bifurcate()}}
-\item \href{#method-UnivariateConstRegion-is_bifurcatable}{\code{IntUnivariateConstRegion$is_bifurcatable()}}
-\item \href{#method-UnivariateConstRegion-print}{\code{IntUnivariateConstRegion$print()}}
-\item \href{#method-UnivariateConstRegion-clone}{\code{IntUnivariateConstRegion$clone()}}
+\item \href{#method-IntUnivariateConstRegion-new}{\code{IntUnivariateConstRegion$new()}}
+\item \href{#method-IntUnivariateConstRegion-r}{\code{IntUnivariateConstRegion$r()}}
+\item \href{#method-IntUnivariateConstRegion-midpoint}{\code{IntUnivariateConstRegion$midpoint()}}
+\item \href{#method-IntUnivariateConstRegion-bifurcate}{\code{IntUnivariateConstRegion$bifurcate()}}
+\item \href{#method-IntUnivariateConstRegion-bifurcate_at}{\code{IntUnivariateConstRegion$bifurcate_at()}}
+\item \href{#method-IntUnivariateConstRegion-is_bifurcatable}{\code{IntUnivariateConstRegion$is_bifurcatable()}}
+\item \href{#method-IntUnivariateConstRegion-print}{\code{IntUnivariateConstRegion$print()}}
+\item \href{#method-IntUnivariateConstRegion-optimize}{\code{IntUnivariateConstRegion$optimize()}}
+\item \href{#method-IntUnivariateConstRegion-clone}{\code{IntUnivariateConstRegion$clone()}}
 }
 }
+\if{html}{\out{
+<details><summary>Inherited methods</summary>
+<ul>
+<li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="d"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-d'><code>vws::UnivariateConstRegion$d()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="d_base"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-d_base'><code>vws::UnivariateConstRegion$d_base()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="description"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-description'><code>vws::UnivariateConstRegion$description()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="lower"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-lower'><code>vws::UnivariateConstRegion$lower()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="s"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-s'><code>vws::UnivariateConstRegion$s()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="upper"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-upper'><code>vws::UnivariateConstRegion$upper()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="w_major"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-w_major'><code>vws::UnivariateConstRegion$w_major()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="xi_lower"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-xi_lower'><code>vws::UnivariateConstRegion$xi_lower()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="vws" data-topic="UnivariateConstRegion" data-id="xi_upper"><a href='../../vws/html/UnivariateConstRegion.html#method-UnivariateConstRegion-xi_upper'><code>vws::UnivariateConstRegion$xi_upper()</code></a></span></li>
+</ul>
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-UnivariateConstRegion-new"></a>}}
-\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-new}{}}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-new"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$new(a, b, w, g, log_w_max, log_w_min)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$new(a, b, w, g)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -48,19 +85,13 @@ weight function. This version is for integer supports.
 \item{\code{w}}{Weight function for the target distribution.}
 
 \item{\code{g}}{An object created by \code{univariate_helper}.}
-
-\item{\code{log_w_max}}{The value \eqn{\max_{x \in (a,b]}\log w(x)}.}
-
-\item{\code{log_w_min}}{The value \eqn{\min_{x \in (a,b]}\log w(x)}.}
-
-\item{\code{log_prob}}{The value \eqn{\log \text{P}(a < T \leq b)} for \eqn{T \sim g}.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-UnivariateConstRegion-r"></a>}}
-\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-r}{}}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-r"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-r}{}}}
 \subsection{Method \code{r()}}{
 Generate a draw from \eqn{g_j} specific to this region.
 \subsection{Usage}{
@@ -79,26 +110,47 @@ A list of draws, with one draw per list element.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-UnivariateConstRegion-bifurcate"></a>}}
-\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-bifurcate}{}}}
-\subsection{Method \code{bifurcate()}}{
-Bifurcate this region into two regions. Use \code{x} as the bifurcation
-point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-midpoint"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-midpoint}{}}}
+\subsection{Method \code{midpoint()}}{
+Compute a midpoint for the region. This is defined to be the standard
+midpoint for regions with finite limits; otherwise we select a point between
+the bounds.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$bifurcate(x = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$midpoint()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-bifurcate"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-bifurcate}{}}}
+\subsection{Method \code{bifurcate()}}{
+Bifurcate this region into two regions at the midpoint.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$bifurcate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-bifurcate_at"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-bifurcate_at}{}}}
+\subsection{Method \code{bifurcate_at()}}{
+Bifurcate this region into two regions at \code{x}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$bifurcate_at(x)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{An optional bifurcation point.}
+\item{\code{x}}{A scalar.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-UnivariateConstRegion-is_bifurcatable"></a>}}
-\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-is_bifurcatable}{}}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-is_bifurcatable"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-is_bifurcatable}{}}}
 \subsection{Method \code{is_bifurcatable()}}{
 Return a logical value indicating whether this region is bifurcatable.
 \subsection{Usage}{
@@ -107,8 +159,8 @@ Return a logical value indicating whether this region is bifurcatable.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-UnivariateConstRegion-print"></a>}}
-\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-print}{}}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-print"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-print}{}}}
 \subsection{Method \code{print()}}{
 Print a description of the region.
 \subsection{Usage}{
@@ -117,8 +169,29 @@ Print a description of the region.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-UnivariateConstRegion-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-UnivariateConstRegion-clone}{}}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-optimize"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-optimize}{}}}
+\subsection{Method \code{optimize()}}{
+Maximize or minimize the function \eqn{w(x)} over this region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{IntUnivariateConstRegion$optimize(maximize = TRUE, log = TRUE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{maximize}}{logical; if \code{TRUE} do maximization. Otherwise do
+minimization.}
+
+\item{\code{log}}{logical; if \code{TRUE} return optimized value of \eqn{\log w(x)}.
+Otherwise return optimized value of \eqn{w(x)}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-IntUnivariateConstRegion-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-IntUnivariateConstRegion-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

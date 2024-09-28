@@ -8,7 +8,7 @@
 #' \eqn{\mathbb{S}^d = \{ \bm{z} \in \mathbb{R}^d: \bm{z}^\top \bm{z} = 1 \}}.
 #'
 #' @details
-#' The \code{inv_polar} transformation \code{z = inv_polar(u)}, from
+#' The `inv_polar` transformation `z = inv_polar(u)`, from
 #' \eqn{[0,1]^{d-1}} to \eqn{\mathbb{S}^d}, can be described as a
 #' composition of two transformations. The result
 #' \deqn{
@@ -27,8 +27,8 @@
 #' \end{cases}
 #' }
 #'
-#' The \code{polar} transformation \code{u = polar(z)}, from \eqn{\mathbb{S}^d}
-#' to \eqn{[0,1]^{d-1}}, is the inverse of \code{inv_polar}:
+#' The `polar` transformation `u = polar(z)`, from \eqn{\mathbb{S}^d}
+#' to \eqn{[0,1]^{d-1}}, is the inverse of `inv_polar`:
 #' \deqn{
 #' u_j =
 #' \begin{cases}

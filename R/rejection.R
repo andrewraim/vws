@@ -2,23 +2,23 @@
 #'
 #' Accept-reject algorithm using our proposal for weighted distributions.
 #'
-#' @param h An \code{fmm_proposal} object
+#' @param h An `fmm_proposal` object
 #' @param n Number of desired draws
-#' @param control A control object from \code{rejection_control}
+#' @param control A control object from `rejection_control`
 #'
 #' @return
 #' A list whose structure depends on
-#' \code{extra_outputs}. If \code{extra_outputs = FALSE}, the list is of length
-#' \code{n} where each element represents one draw. If
-#' \code{extra_outputs = TRUE}, the list contains the following named elements:
+#' `extra_outputs`. If `extra_outputs = FALSE`, the list is of length
+#' `n` where each element represents one draw. If
+#' `extra_outputs = TRUE`, the list contains the following named elements:
 #'
-#' \item{draws}{is list is of length \code{n} where each element represents one
+#' \item{draws}{is list is of length `n` where each element represents one
 #' draw.}
 #' \item{rejects}{is a vector of counts. The \eqn{i}th element is the number of
 #' rejections before the \eqn{i}th successful draw.}
-#' \item{h}{returns the \code{h} that was input to the sampler.}
+#' \item{h}{returns the `h` that was input to the sampler.}
 #'
-#' Note that \code{h} was originally intended to show adaptation during
+#' Note that `h` was originally intended to show adaptation during
 #' sampling, but that is currently not done.
 #'
 #' @examples
@@ -27,13 +27,13 @@
 #' w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 #'
 #' # Set up support
-#' support = univariate_const_region(-Inf, 10, w, g)
+#' support = UnivariateConstRegion$new(-Inf, 10, w, g)
 #' regions = support$bifurcate()
 #'
 #' # Create a finite mixture proposal
-#' h = fmm_proposal(regions)
+#' h = FMMProposal$new(regions)
 #' h$rejection_bound()
-#' h$rejection_bound(byregion = TRUE)
+#' h$rejection_bound_regions()
 #'
 #' out = rejection(h, n = 1000)
 #' print(out |> unlist())
@@ -66,14 +66,14 @@ rejection = function(h, n = 1, control = rejection_control())
 		accept = FALSE
 		while (!accept && N_rejects < max_rejects) {
 			v = runif(1)
-			x = h$r(n = 1)
-			log_fx = h$log_target_pdf_unnorm(x)
+			x = h$r(n = 1)[[1]]
+			log_fx = h$d_target_unnorm(x)
 			log_hx = h$d(x, normalize = FALSE, log = TRUE)
 			log_ratio = log_fx - log_hx - log_M
 
 			if (log(v) < log_ratio) {
 				# Accept x as a draw from f(x)
-				out[[i]] = x |> unlist()
+				out[[i]] = x
 				accept = TRUE
 			} else {
 				# Reject x and adapt the proposal
@@ -96,7 +96,7 @@ rejection = function(h, n = 1, control = rejection_control())
 	}
 
 	if (extra_outputs) {
-		res = list(draws = out, rejects = rejects, h = h)
+		res = list(draws = out, rejects = rejects)
 	} else {
 		res = out
 	}

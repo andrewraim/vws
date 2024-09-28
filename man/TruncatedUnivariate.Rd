@@ -8,11 +8,11 @@
 \alias{r_truncated}
 \title{Univariate Distributions Truncated to an Interval}
 \usage{
-d_truncated(x, lo, hi, df, pf, log = FALSE, ...)
+d_truncated(x, lo, hi, df, pf, log = FALSE, tol = 1e-06, ...)
 
-p_truncated(x, lo, hi, pf, log.p = FALSE, ...)
+p_truncated(x, lo, hi, pf, log.p = FALSE, tol = 1e-06, ...)
 
-q_truncated(p, lo, hi, pf, qf, log.p = FALSE, ...)
+q_truncated(p, lo, hi, pf, qf, log.p = FALSE, tol = 1e-06, ...)
 
 r_truncated(n, lo, hi, pf, qf, ...)
 }

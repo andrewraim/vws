@@ -37,13 +37,13 @@ g = normal_univariate_helper(0, 5)
 w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
 
 # Set up support
-support = univariate_const_region(-Inf, 10, w, g)
+support = UnivariateConstRegion$new(-Inf, 10, w, g)
 regions = support$bifurcate()
 
 # Create a finite mixture proposal
-h = fmm_proposal(regions)
+h = FMMProposal$new(regions)
 h$rejection_bound()
-h$rejection_bound(byregion = TRUE)
+h$rejection_bound_regions()
 
 out = rejection(h, n = 1000)
 print(out |> unlist())

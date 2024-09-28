@@ -12,7 +12,6 @@ FMMProposal
 An R6 class which represents a VWS proposal: a finite mixture that some
 specific certain operations.
 
-
 \itemize{
 \item The list \code{regions} represents
 (\eqn{\mathcal{D}_1, \ldots, \mathcal{D}_N}).
@@ -36,10 +35,11 @@ region can be bifurcated or not.
 \item \href{#method-FMMProposal-get_bifurcatable}{\code{FMMProposal$get_bifurcatable()}}
 \item \href{#method-FMMProposal-get_regions}{\code{FMMProposal$get_regions()}}
 \item \href{#method-FMMProposal-rejection_bound}{\code{FMMProposal$rejection_bound()}}
+\item \href{#method-FMMProposal-rejection_bound_regions}{\code{FMMProposal$rejection_bound_regions()}}
 \item \href{#method-FMMProposal-nc}{\code{FMMProposal$nc()}}
 \item \href{#method-FMMProposal-r}{\code{FMMProposal$r()}}
 \item \href{#method-FMMProposal-d}{\code{FMMProposal$d()}}
-\item \href{#method-FMMProposal-log_target_pdf_unnorm}{\code{FMMProposal$log_target_pdf_unnorm()}}
+\item \href{#method-FMMProposal-d_target_unnorm}{\code{FMMProposal$d_target_unnorm()}}
 \item \href{#method-FMMProposal-summary}{\code{FMMProposal$summary()}}
 \item \href{#method-FMMProposal-print}{\code{FMMProposal$print()}}
 \item \href{#method-FMMProposal-clone}{\code{FMMProposal$clone()}}
@@ -57,7 +57,7 @@ Constructor for FMMProposal.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{regions}}{A list of \code{N} regions that form a partition of the support.}
+\item{\code{regions}}{A list of objects whose class derives from \code{Region}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -122,21 +122,38 @@ Access the vector \code{regions}.
 \subsection{Method \code{rejection_bound()}}{
 Upper bound for rejection probability.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$rejection_bound(byregion = FALSE, log = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$rejection_bound(log = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{byregion}}{If \code{TRUE}, compute bound by region. Otherwise compute
-total.}
-
 \item{\code{log}}{If \code{TRUE} compute result on log-scale.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-A vector of size \code{N} or a single scalar.
+A single scalar.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-FMMProposal-rejection_bound_regions"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-rejection_bound_regions}{}}}
+\subsection{Method \code{rejection_bound_regions()}}{
+Upper bound for rejection probability; contribution per region.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$rejection_bound_regions(log = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{log}}{If \code{TRUE} compute result on log-scale.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A vector of size \code{N}.
 }
 }
 \if{html}{\out{<hr>}}
@@ -205,19 +222,21 @@ A vector or scalar of density values corresponding to \code{x}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-FMMProposal-log_target_pdf_unnorm"></a>}}
-\if{latex}{\out{\hypertarget{method-FMMProposal-log_target_pdf_unnorm}{}}}
-\subsection{Method \code{log_target_pdf_unnorm()}}{
-Compute \eqn{\log w(x) + \log g(x)} for each element of the given \code{x}
+\if{html}{\out{<a id="method-FMMProposal-d_target_unnorm"></a>}}
+\if{latex}{\out{\hypertarget{method-FMMProposal-d_target_unnorm}{}}}
+\subsection{Method \code{d_target_unnorm()}}{
+Compute \eqn{f_0(x) = w(x) g(x)} for each element of the given \code{x}
 which is a list whose elements are density values.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$log_target_pdf_unnorm(x)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{FMMProposal$d_target_unnorm(x, log = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{x}}{a list where each element represents one argument.}
+
+\item{\code{log}}{If \code{TRUE}, return density results on the log-scale.}
 }
 \if{html}{\out{</div>}}
 }

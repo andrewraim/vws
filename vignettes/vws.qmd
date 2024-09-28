@@ -1,0 +1,1645 @@
+---
+title: "Vertical Weighted Strips in R"
+author: Andrew M. Raim, James A. Livsey, and Kyle M. Irimata
+format:
+  pdf:
+    fontsize: 12pt
+    indent: false
+    toc: true
+    number-sections: true
+    colorlinks: true
+    link-citations: true
+    prompt: false
+    # template-partials: 
+    #  - title.tex
+    include-in-header:
+      text: |
+        \usepackage{common}
+vignette: >
+  %\VignetteIndexEntry{vws}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{quarto::pdf}
+bibliography: references.bib
+editor_options: 
+  chunk_output_type: console
+abstract: |
+  TBD abstract goes here.
+thanks: |
+  Center for Statistical Research & Methodology, U.S. Census Bureau,
+  Washington, DC, 20233, U.S.A.
+  **For correspondence**`:` <andrew.raim@gmail.com>.
+  **Disclaimer**`:` This document is released to inform interested parties
+  of ongoing research and to encourage discussion of work in progress. Any
+  views expressed are those of the authors and not those of the U.S. Census
+  Bureau.
+  Document was compiled `{r} format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")`.
+geometry:
+  - left=0.5in
+  - right=0.5in
+  - top=0.75in
+  - bottom=1.00in
+execute:
+  eval: true
+code-block-bg: true
+code-block-border-left: "#31BAE9"
+callout-icon: false
+---
+
+```{r}
+#| include: false
+library(R6)
+library(vws)
+library(tidyverse)
+
+set.seed(1234)
+```
+
+::: {.callout-caution title="TBD"}
+- If plotting code gets too repetitive, consider making functions for plots.
+- `w_major` and other functions whose arguments are support points: should they
+  take a list of points to be consistent? They currently take a vector as input.
+:::
+
+# Introduction
+
+::: {.callout-caution title="TBD"}
+This section is heavily under construction.
+
+- Package is available from <https://github.com/andrewraim/vws> and possibly on
+  CRAN(?).
+- Some of the lengthier codes are not given in this document, but are
+  provided in external files. The paths are relative to 
+  <https://github.com/andrewraim/vws> (?, need to decide).
+- An `R>` prompt is shown in some code displays to emphasize interaction via
+  the console.
+- For the first example, we should explain things in a lot of detail. After
+  that, we can give less detail, except any new aspects.
+- Let $\mathbb{1}_{A}(x)$ be the indicator function for the event $[x \in A]$.
+  Make sure we're consistent about using either this notation or something else.
+- We will use `ggplot2`, `dplyr` and other packages of the tidyverse
+  [@Tidyverse2019] in the examples.
+- We use R6 in some places to promote more formal object-orientation.
+- Remark: We don't use Rcpp at the moment because interoperability between C++
+  classes and R becomes more complicated. It is possible with Rcpp Modules
+  though.
+:::
+
+To implement a rejection sampler with the `vws` package, the user must make use
+of an existing subclass of `Region` or implement a new one. Two such subclasses
+included in the package implement the univariate "constant VWS" method described
+by @VWS2024:
+
+- `UnivariateConstRegion`: constant VWS with a continuous support.
+- `IntUnivariateConstRegion`: constant VWS with an integer support.
+
+See the manual pages for each sampler for usage and examples. These two regions
+are somewhat flexible and can be adapted to a variety of problems. In this
+vignette, we will describe the process of coding a customized region. We will
+give one univariate example that makes use of the linear VWS method for
+improved efficiency, and one multivariate example where the regions go beyond
+intervals. To do this, we make use of the [R6](https://r6.r-lib.org) construct
+for object-orientation in R [@Chang2021].
+
+# A Brief Review of VWS
+
+The objective of VWS is to sample from a weighted density
+<!-- -->
+\begin{align}
+f(x) = f_0(x) / \psi, \quad
+f_0(x) = w(x) g(x), \quad
+\psi = \int_\Omega f_0(x) d\nu(x),
+\label{eqn:weighted-target}
+\end{align}
+<!-- -->
+where $\Omega$ is the support, $\nu$ is a dominating measure, $g$ is assumed to be a normalized density, $w(x)$ is a nonnegative weight function, and $\psi$ is a normalizing constant. We will construct a proposal of the form
+<!-- -->
+\begin{align*}
+h(x) = h_0(x) / \psi_N, \quad
+h_0(x) = \overline{w}(x) g(x), \quad
+\psi_N = \int_\Omega h_0(x) d\nu(x).
+\end{align*}
+<!-- -->
+The construction assumes that $\Omega$ is partitioned into regions $\mathcal{D}_1, \ldots, \mathcal{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathcal{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \mathbb{1}_{\mathcal{D}_j}(x)$, the unnormalized proposal becomes
+<!-- -->
+\begin{align*}
+h_0(x) = g(x) \sum_{j=1}^N \overline{w}_j(x) \mathbb{1}_{\mathcal{D}_j}(x).
+\end{align*}
+<!-- -->
+With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. The normalized $h$ can be obtained by defining $\overline{\xi}_j = \E[\overline{w}_j(T) \mathbb{1}_{\mathcal{D}_j}(T)]$ with $T \sim g$ and $\psi_N = \sum_{j=1}^N \overline{\xi}_j$, giving the finite mixture
+<!-- -->
+\begin{align}
+h(x)
+= h_0(x) / \psi_N
+= \sum_{j=1}^N \pi_j g_j(x),
+\label{eqn:fmm-proposal}
+\end{align}
+<!-- -->
+Equation \eqref{eqn:fmm-proposal} is seen to be a finite mixture with mixing weights $\pi_j = \overline{\xi}_j / \{ \sum_{\ell=1}^N \overline{\xi}_\ell \}$, and component densities
+<!-- -->
+\begin{align*}
+g_j(x) = 
+\overline{w}_j(x) g(x) \mathbb{1}_{\mathcal{D}_j}(x) / \overline{\xi}_j,
+\end{align*}
+<!-- -->
+which are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a minorizer of $w$ so that
+$0 \leq \underline{w}_j(x) \leq w(x)$ for all $x \in \mathcal{D}_j$,
+and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind(T \in \mathcal{D}_j)]$ with $T \sim g$. When $h$ is used as a proposal in rejection sampling, an upper bound for the probability of rejection is
+<!-- -->
+\begin{align}
+1 - \frac{\sum_{j=1}^N \underline{\xi}_j}{\sum_{j=1}^N \overline{\xi}_j}.
+\label{eqn:bound}
+\end{align}
+<!-- -->
+This bound can be used to quickly determine whether the proposal will be viable for rejection sampling. If the bound is seen to be large, the proposal may be refined by altering the partition or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2024 and will be reviewed in the present document. [@sec-UnivariateConstRegion] discusses the use of a constant function. A linear function is discussed in the context of specific examples in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
+
+# Usage
+
+::: {.callout-caution title="TBD"}
+Misc
+
+- How about the name `d_g` instead of `d_base`?
+- We'll want to show some examples where we override `optimize` and maybe the
+  bifurcate functions. Consider pointing to them somewhere in this section. We
+  may want to avoid reviewing R6 inheritance in a more general way.
+- Readers might want to check out one of the first / easiest examples (name
+  one) to see the basic usage pattern, then jump back up here to see the
+  components described in more detail. May want to say this before we start
+  going into any detail.
+:::
+
+The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples. Use of the package focuses on two `R6` classes. The `FMMProposal` class represents finite mixture \eqref{eqn:fmm-proposal} and encapsulates operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations that must be supported on it for VWS; i.e., all problem-specific logic is coded within a `Region`. An `FMMProposal` object is created from a list of one or more `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
+
+The `rejection` function takes an object `h` of class `FMMProposal` and carries out
+the rejection sampling algorithm to obtain `n` draws. The return value of `rejection` is a list where each element represents an accepted draw. Optional arguments may be passed
+through a `rejection_control` (S3) object, including: a count of rejections to be tolerated before halting, and whether to return additional information about rejections which occurred during sampling. The following display gives a typical workflow for sampling.
+
+```{R}
+#| eval: false
+#| prompt: true
+regions = list(region1, region2)
+h = FMMProposal$new(regions)
+ctrl = rejection_control(max_rejects = 5000)
+rejection(h, n = 1000, control = ctrl)
+```
+
+```{r}
+#| include: false
+# If the interface has changed, catch it and bail out
+actual = names(formals(rejection_control))
+expected = c("max_rejects", "report", "extra_outputs", "action_incomplete")
+base::setequal(actual, expected) |> stopifnot()
+```
+
+Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-Region], [-@sec-UnivariateConstRegion], and [-@sec-UserRegion].
+
+Before sampling, the `adapt` function can be used to refine a given
+`FMMProposal` object by partitioning a given set of regions into a finer set.
+The can make it a better approximation of the target distribution. Details are
+given in Section [-@sec-adapt].
+
+Figure \ref{fig:diagram} displays a diagram of the high-level design just described. Sections [-@sec-FMMProposal] through [-@sec-Remarks] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
+
+\begin{figure}
+\centering
+\includegraphics[trim={0 5.5in 4in 0},clip, width=0.8\textwidth]{diagram.pdf}
+\caption{An overview of the vws package.}
+\label{fig:diagram}
+\end{figure}
+
+## FMMProposal {#sec-FMMProposal}
+
+`FMMProposal` has the following public methods which are described in [@tbl-fmmproposal-methods].
+
+```{r}
+#| prompt: true
+names(FMMProposal$public_methods)
+```
+
+```{r}
+#| include: false
+# If the interface has changed, catch it and bail out
+actual = names(FMMProposal$public_methods)
+expected = c("initialize", "get_xi_upper", "get_xi_lower", "get_bifurcatable",
+	"get_regions", "rejection_bound", "nc", "r", "d", "d_target_unnorm",
+	"summary", "print", "clone")
+setequal(actual, expected) |> stopifnot()
+```
+
+: Methods of the `FMMProposal` class. {#tbl-fmmproposal-methods tbl-colwidths="[20,80]"}
+
+-------------------------------------------------------------------------------
+Method             Description
+-----              -----
+`initialize`       A standard `R6` constructor that allows objects to be
+                   created via `FMMProposal$new(...)`.
+
+`r`                Generate draws from finite mixture.
+ 
+`d`                Evaluates the finite mixture density.
+ 
+`nc`               Evaluate normalizing constant $\psi_N$ of the finite
+                   mixture density.
+
+`rejection_bound`  Returns either the bound \eqref{eqn:bound} or a vector
+                   \eqref{eqn:bound-components} which represents the
+                   contribution of each region to the bound.
+
+`print`            Provides a meaningful display for objects of the class when
+                   printed.
+
+`summary`          Supports the `print` method.
+
+`d_target_unnorm`  Computes the unnormalized log-density
+                   $\log h_0(x) = \log \overline{w}(x) + \log g(x)$ for
+                   $x \in \mathcal{D}_j$ which is used as an envelope in
+                   rejection sampling.
+
+`get_xi_upper`     Returns the vector $\overline{\xi}_1, \ldots, \overline{\xi}_N$
+                   from the underlying $\mathcal{D}_1, \ldots, \mathcal{D}_N$.
+
+`get_xi_lower`     Returns the vector $\underline{\xi}_1, \ldots, \underline{\xi}_N$
+                   from the underlying $\mathcal{D}_1, \ldots, \mathcal{D}_N$.
+
+`get_bifurcatable` Returns a vector of logical values indicating whether
+                   respective regions can be bifurcated (described in
+                   [@sec-adapt]).
+
+`get_regions`      Returns the list of `Region` objects based on the underlying                                  $\mathcal{D}_1, \ldots, \mathcal{D}_N$.
+
+`clone`            Make a copy of the object.
+-------------------------------------------------------------------------------
+
+## Region {#sec-Region}
+
+`Region` is an abstract base class whose interface represents all problem-specific logic that must be coded to implement VWS. The interface consists of the following methods.
+
+```{r}
+#| prompt: true
+names(Region$public_methods)
+```
+
+```{r}
+#| include: false
+# If the interface has changed, catch it and bail out
+actual = names(Region$public_methods)
+expected = c("d_base", "w", "r", "d", "s", "w_major", "bifurcate",
+	"is_bifurcatable", "bifurcate_at",
+	"xi_upper", "xi_lower", "description", "print", "clone")
+setequal(actual, expected) |> stopifnot()
+```
+
+The methods are briefly described in [@tbl-region-methods]. Expressions with an index $j$ correspond to a $\mathcal{D}_j$ which is associated with the `Region` object.
+
+: Methods of the abstract `Region` class. {#tbl-region-methods tbl-colwidths="[20,80]"}
+
+-------------------------------------------------------------------------------
+Method            Description
+-----             -----
+`w`               The weight function $w(x)$
+
+`w_major`         The majorized weight function $\overline{w}_j(x)$.
+
+`d_base`          Compute the density function $g$ of the base distribution.
+
+`r`               Generate draws from truncated and reweighted distribution
+                  $g_j$.
+
+`d`               Compute the density of truncated and reweighted distribution
+                  $g_j$.
+
+`s`               Indicator of whether a given point is in the support of
+                  truncated and reweighted distribution $g_j$.
+
+`xi_upper`        Compute $\overline{\xi}_j$.
+
+`xi_lower`        Compute $\underline{\xi}_j$.
+
+`bifurcate`       Used with `adapt` discussed in Section [-@sec-adapt].
+                  Bifurcates region object into two new `Region` objects.
+
+`is_bifurcatable` Used with `adapt`. Indicator of whether the region is
+                  eligible to be bifurcated.
+
+`print`           Provides a meaningful display for objects of the class when
+                  printed.
+
+`description`     Produce a short label that describes the region.
+
+`clone`           Make a copy of the object.
+-------------------------------------------------------------------------------
+
+## Refining the Proposal {#sec-adapt}
+
+The `adapt` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain a new partition $\mathcal{D}_1^*, \ldots, \mathcal{D}_{N + N'}^*$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
+<!-- -->
+\begin{align}
+\rho_1 = \frac{
+\overline{\xi}_1 - \underline{\xi}_1
+}{
+\sum_{j=1}^N \overline{\xi}_j
+},
+\quad \ldots, \quad
+\rho_N = \frac{
+\overline{\xi}_N - \underline{\xi}_N
+}{
+\sum_{j=1}^N \overline{\xi}_j
+}
+\label{eqn:bound-components}
+\end{align}
+<!-- -->
+be the contribution of each region to \eqref{eqn:bound} when there are $N$ regions. We draw index $\ell$ from $(1, \ldots, N)$ with probabilities proportional to $\rho_1, \ldots, \rho_N$, then bifurcate region $\ell$ into regions $\mathcal{D}_\ell^{(1)}$ and $\mathcal{D}_\ell^{(2)}$. There may be a number of ways to define bifurcation when $\Omega$ is a multivariate set. For a given subclass of `Region`, the bifurcation approach is to be implemented in the `bifurcate` method. Additionally, each subclass of `Region` should implement the `is_bifurcatable` method which returns `FALSE` if a `Region` object should not be further bifurcated; otherwise it returns `TRUE`.
+
+In the following example, a proposal `h_init` is refined `N = 10` times
+to yield an improved proposal `h`.
+
+```{R}
+#| eval: false
+#| prompt: true
+h_init = FMMProposal$new(regions)
+out = adapt(h_init, N = 10)
+h = out$h
+```
+
+In addition to the element `h` in the return value which represents the adapted
+proposal, the element `log_bdd_hist` contains a vector with values
+<!-- -->
+\begin{align*}
+\log\left\{
+1 - \frac{\sum_{j=1}^{N+t} \underline{\xi}_j^{(t)}}{\sum_{j=1}^{N+t} \overline{\xi}_j^{(t)}}
+\right\}
+\end{align*}
+<!-- -->
+computed at steps $t = 0, 1, \ldots, N'$ of the refinement process. Here, $\overline{\xi}_j^{(t)}$ and $\underline{\xi}_j^{(t)}$ respectively represent $\overline{\xi}_j$ and $\underline{\xi}_j$ at step $t$. Effectiveness of a call to `adapt` can be evaluated by examining `log_bdd_hist`.
+
+```{r}
+#| eval: false
+#| prompt: true
+step = seq_along(out$log_bdd_hist) - 1  ## Make sequence 0, 1, ..., N'
+bdd = exp(out$log_bdd_hist)             ## Exponentiate to probability scale
+plot(step, bdd, type = "l")
+```
+
+If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `adapt` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
+
+## Univariate Regions with Constant Majorizer {#sec-UnivariateConstRegion}
+
+`UnivariateConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Furthermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
+$g_j(x) = g(x) \ind(x \in \mathcal{D}_j) / \Prob(T \in \mathcal{D}_j)$
+along with the quantities
+$\overline{\xi}_j = \overline{w}_j \Prob(T \in \mathcal{D}_j)$ and
+$\underline{\xi}_j = \underline{w}_j \Prob(T \in \mathcal{D}_j)$.
+
+Several components are needed to construct a object of class `UnivariateConstRegion`: scalars `a` and `b` define the support, a weight function `w`, and an object that provides the necessary operations for base distribution $g$. 
+
+```{r}
+#| eval: false
+#| prompt: true
+region = UnivariateConstRegion$new(a, b, w, g)
+```
+
+The argument `w` is a standard R function, but is expected to have two arguments: the first argument is the input to the function and the second argument `log` indicates whether the result should be returned on the log-scale (`log = TRUE`) or the original scale (`log = FALSE`).
+
+```{r}
+#| eval: false
+#| prompt: true
+w = function(x, log = TRUE) { ... }
+```
+
+For the argument `g`, the `vws` package provides a `univariate_helper` function that wraps these operations together in an `S3` object. Here is an example with $g$ as the $\text{N}(\mu, \sigma^2)$ distribution.
+
+```{r}
+mu = 0
+sigma = 1
+
+g = univariate_helper(
+	d = function(x, log = FALSE) {
+		# Density function with mean and sd fixed to mu and sigma
+		dnorm(x, mean = mu, sd = sigma, log = log)
+	},
+	p = function(q, lower.tail = TRUE, log.p = FALSE) {
+		# CDF function with mean and sd fixed to mu and sigma
+		pnorm(q, mean = mu, sd = sigma, lower.tail = lower.tail, log.p = log.p)
+	},
+	q = function(p, lower.tail = TRUE, log.p = FALSE) {
+		# Quantile function with mean and sd fixed to mu and sigma
+		qnorm(p, mean = mu, sd = sigma, lower.tail = lower.tail, log.p = log.p)
+	},
+	s = function(x) {
+		# Indicator of whether x is in the support of this distribution.
+		is.numeric(x)
+	}
+)
+```
+
+Because the $\text{N}(\mu, \sigma^2)$ distribution is used as a
+`univariate_helper` in `vws` package demonstrations, the following function is
+provided as a shortcut to return the same structure as the call above.
+
+```{r}
+g = normal_helper(mu, sigma)
+```
+
+For a similar setting with an integer-valued support, the subclass
+`IntUnivariateConstRegion` of `UnivariateConstRegion` may be considered. Usage
+of `IntUnivariateConstRegion` is similar to `UnivariateConstRegion`, with some
+implementation details customized to the integer case. In this setting, `g`
+should be a `univariate_helper` based on an integer-valued distribution.
+
+```{r}
+#| eval: false
+#| prompt: true
+g = poisson_helper(lambda = 10)  ## A predefined helper for Poisson(lambda)
+region = IntUnivariateConstRegion$new(a, b, w, g)
+```
+
+A natural choice to partition a univariate $\Omega = (a,b]$ is to break it into intervals defined by knots $\alpha_0 < \cdots < \alpha_N$, with $\alpha_0 \equiv a$ and $\alpha_N \equiv b$ fixed. For a univariate support and a constant majorizer, the baseline strategy of `bifurcate` in the `UnivariateConstRegion` class is to replace $\mathcal{D}_\ell = (\alpha_{\ell-1}, \alpha_{\ell}]$ with $\mathcal{D}_\ell^{(1)} = (\alpha_{\ell-1}, \alpha_{\ell^*}]$ and $\mathcal{D}_\ell^{(2)} = (\alpha_{\ell^*}, \alpha_\ell]$, where
+<!-- -->
+\begin{align*}
+\alpha_{\ell^*} =
+\begin{cases}
+0 & \text{if $\alpha_{\ell-1} = -\infty$ and $\alpha_\ell = \infty$}, \\
+\alpha_\ell - |\alpha_\ell| - 1 & \text{if $\alpha_{\ell-1} = -\infty$ and $\alpha_\ell < \infty$}, \\
+\alpha_{\ell-1} + |\alpha_{\ell-1}| + 1 & \text{if $\alpha_{\ell-1} > -\infty$ and $\alpha_\ell = \infty$}, \\
+(\alpha_{\ell-1} + \alpha_\ell) / 2 & \text{otherwise}.
+\end{cases}
+\end{align*}
+<!-- -->
+Here, `is_bifurcatable` is always taken to be `TRUE`. When the support is integer-valued, `UnivariateConstRegion` instead considers
+<!-- -->
+\begin{align*}
+\alpha_{\ell^*} =
+\begin{cases}
+0 & \text{if $\alpha_{\ell-1} = -\infty$ and $\alpha_\ell = \infty$}, \\
+\alpha_\ell - |\alpha_\ell| - 1 & \text{if $\alpha_{\ell-1} = -\infty$ and $\alpha_\ell < \infty$}, \\
+\alpha_{\ell-1} + |\alpha_{\ell-1}| + 1 & \text{if $\alpha_{\ell-1} > -\infty$ and $\alpha_\ell = \infty$}, \\
+\lceil (\alpha_{\ell-1} + \alpha_\ell) / 2 \rceil & \text{otherwise}.
+\end{cases}
+\end{align*}
+<!-- -->
+The function `is_bifurcatable` returns `FALSE` for regions which contain no integers.
+
+The `IntUnivariateConstRegion` and `UnivariateConstRegion` classes have an `optimize` method to compute the constants $\overline{w}_j$ and $\underline{w}_j$ numerically. 
+
+```{r}
+#| eval: false
+#| prompt: true
+region$optimize(maximize = TRUE, log = TRUE)
+```
+
+The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntUnivariateConstRegion` or `UnivariateConstRegion` and override the `optimize` method. An example of this is given in [@sec-ln-norm-const-cf].
+
+## User-Defined Regions {#sec-UserRegion}
+
+For targets where the support is not univariate, or where the desired majorizer is something other than a constant, the user may create a subclass `Region` to implement VWS. This new class must implement the methods in [@tbl-region-methods] using `R6`. Here is a skeleton of a such a subclass named `CustomRegion` to illustrate this process. Complete implementations of such subclasses are given in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
+
+```{r}
+#| eval: false
+CustomRegion = R6::R6Class(
+
+classname = "CustomRegion",
+private = list( ... ),
+public = list(
+
+initialize = function(...) { ... },
+d_base = function(x, log = FALSE) { ... },
+w = function(x, log = TRUE) { ... },
+r = function(n) { ... },
+d = function(x, log = FALSE) { ... },
+s = function(x) { ... },
+w_major = function(x, log = TRUE) { ... },
+is_bifurcatable = function() { ... },
+bifurcate = function(x = NULL, ...) { ... },
+xi_upper = function(log = TRUE) { ... },
+xi_lower = function(log = TRUE) { ... },
+description = function() { ... },
+print = function() { ... }
+
+) # Close public	
+) # Close class
+```
+
+## Remarks {#sec-Remarks}
+
+Several additional remarks about the design of `vws` are given in this section.
+
+Calculations in the package are carried out on the log-scale, where possible,
+to avoid issues from floating point numbers with very small or very large
+magnitudes. Users may want to follow this convention when customizing to their
+own sampling problems. Several included functions help to avoid explicit
+exponentiation and may be helpful for this purpose; they are listed in
+[@tbl-log-sum-exp].
+
+: Functions for sums and differences on the log-scale. {#tbl-log-sum-exp tbl-colwidths="[25,75]"}
+
+-------------------------------------------------------------------------------
+Function             Description
+-----                -----
+`log_sum_exp(x)`     Compute $\log\{ \sum_{i=1}^n \exp(x_i) \}$ based on a
+                     vector `x`.
+
+`log_add2_exp(x, y)` Compute $\log(e^x + e^y)$. If `x` and/or `y` is a vector,
+                     the function produces a vector of corresponding results.
+
+`log_sub2_exp(x, y)` Compute $\log(e^x - e^y)$; vectorized similar to
+                     `log_add2_exp`. Here, elements of `x` smaller than `y`
+                     result in `NaN` outputs.
+-------------------------------------------------------------------------------
+
+We make use of the Gumbel trick [e.g., @MaddisonTarlowMinka2014] in several places to
+draw from a discrete distribution with values $1, \ldots, k$ and corresponding
+probabilities $p_1, \ldots, p_k$. This approach allows probabilities
+to be specified on the log-scale without the need to exponentiate them or
+normalize so that they sum to one. The Gumbel trick generates a draw $x$
+from the desired discrete distribution via
+<!-- -->
+\begin{align*}
+X = \argmax \{ Z_1 + \log p_1, \ldots, Z_k + \log p_k \},
+\quad Z_1, \ldots, Z_k \iid \text{Gumbel}(0,1),
+\end{align*}
+<!-- -->
+where $\text{Gumbel}(0,1)$ is a standard Gumbel distribution with density
+$f(x) = e^{-(x + e^{x})}$. See the functions specified in [@tbl-gumbel].
+
+: Gumbel distribution and variate generation from discrete distribution  {#tbl-gumbel tbl-colwidths="[20,80]"}
+
+-------------------------------------------------------------------------------
+Function   Description
+-----      -----
+`r_categ`  Generate draws from discrete distribution with values $1, \ldots, k$
+           and corresponding probabilities (unnormalized and specified on the
+           log-scale) $p_1, \ldots, p_k$ via Gumbel trick.
+           
+`r_gumbel` Generate draws from Gumbel distribution.
+
+`d_gumbel` Compute density of Gumbel distribution.
+
+`p_gumbel` Compute CDF of Gumbel distribution.
+
+`q_gumbel` Compute quantiles of Gumbel distribution.
+-------------------------------------------------------------------------------
+
+# Examples {#sec-examples}
+
+The following subsections illustrate VWS samplers implemented using the `vws` package. The first example in [@sec-ln-norm] is described in the most explicit level of detail.
+
+## Lognormal-Normal Conditional Distribution {#sec-ln-norm}
+
+::: {.callout-caution title="TBD"}
+- [ ] Why are the first two samplers so slow to adapt? They seemed much faster
+  before. Did I break something in the code?
+:::
+
+The setting $Z = Y + \gamma$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021 and @DPSimulation2022 where sensitive data are released under a measure of privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondents' data collected by an official statistics agency and $\gamma$ is random noise added for privacy protection. The resulting $Z$ is considered protected and suitable for release. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe recent work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
+
+Suppose $Y$ and $\gamma$ are independently distributed with $Y \sim \text{Lognormal}(\mu, \sigma^2)$ and $\gamma \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ of the noise mechanism is often known and provided with the noisy data under differential privacy. We will also assume that $\mu$ and $\sigma^2$ are known, though in practice these would need to be learned from an observed sample $z_1, \ldots, z_n$.
+
+Suppose the target distribution is the conditional of $[Y \mid Z = z]$ which is given by
+<!-- -->
+\begin{align*}
+f(y \mid z)
+%
+&\propto \frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
+-\frac{1}{2\lambda^2} (z - y)^2
+\right\} \cdot
+\frac{1}{y\sigma \sqrt{2\pi}} \exp\left\{
+-\frac{1}{2\sigma^2} (\log y - \mu)^2
+\right\} \mathbb{1}_{(0,\infty)}(y) \\
+%
+&\propto
+\underbrace{\frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
+-\frac{1}{2\lambda^2} (z - y)^2
+\right\}}_{g(y)} \cdot
+\underbrace{\frac{1}{y} \exp\left\{
+-\frac{1}{2\sigma^2} (\log y - \mu)^2
+\right\} \mathbb{1}_{(0,\infty)}(y)}_{w(y)}.
+\end{align*}
+<!-- -->
+Here we have decomposed $f$ into weight function
+<!-- -->
+\begin{math}
+w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(y),
+\end{math}
+<!-- -->
+from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution $g$ as $\text{N}(z, \lambda^2)$. It will sometimes be more convenient or numerically stable to work with $w$ on the log-scale; therefore, define
+<!-- -->
+\begin{align}
+\zeta(y) = \log w(y)
+= -\log y - \frac{(\log y - \mu)^2}{2 \sigma^2} + \log \mathbb{1}_{(0,\infty)}(y).
+\label{eqn:ln-norm-log-weight-fn}
+\end{align}
+
+We will consider three variations of VWS sampler, which progresses from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. [@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
+
+Before proceeding, let us fix the following values for the parameters.
+
+```{r}
+#| prompt: true
+mu = 5
+sigma2 = 0.5
+lambda2 = 100
+```
+
+Jointly draw values $Y$ and $Z$ from the model; $Z$ is considered observed while $Y$ is latent and the objective for inference.
+
+```{r}
+set.seed(1234)
+y_true = rlnorm(1, mu, sqrt(sigma2))
+z = rnorm(1, y_true, sqrt(lambda2))
+print(y_true)
+print(z)
+```
+
+### Constant Majorizer with Numerical Optimization {#sec-ln-norm-const}
+
+To implement this version of the sampler, let us first code the weight function. Note that calculations are carried out on the log-scale, and only exponentiated if explicitly requested.
+
+```{r}
+w = function(y, log = TRUE) {
+	out = -log(y) - (log(y) - mu)^2 / (2*sigma2) + log(y > 0)
+	out[y == 0] = -Inf
+	if (log) { return(out) } else { return(exp(out)) }
+}
+```
+
+Recall from [@sec-UnivariateConstRegion] that a `univariate_helper` structure is used to construct an object of class `UnivariateConstRegion` to provide necessary functions of the base distribution $g$. The `vws` package contains a built-in variant of `univariate_helper` named `normal_helper` for the normal distribution with mean and standard deviation parameters, which is appropriate for use in this problem.
+
+```{r}
+helper = normal_helper(mean = z, sd = sqrt(lambda2))
+```
+
+Before proceeding with the sampler, let us code the target density to assist in evaluating the distribution of the draws. To compute the normalizing constant, we will use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
+<!-- -->
+\begin{align*}
+\psi &= \int_{-\infty}^\infty w(y) g(y) dy \\
+%
+&= \int_{-\infty}^\infty \ind(y > 0) \cdot \frac{1}{y}
+\exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
+\frac{1}{\lambda \sqrt{2\pi}} \exp\left\{ -\frac{1}{2\lambda^2} (z - y)^2 \right\} dy \\
+%
+&= \int_{-\infty}^\infty \ind\left( z > \sqrt{2} \lambda x \right)
+\cdot \frac{1}{z - \sqrt{2} \lambda x}
+\exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( z - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}
+\frac{1}{\sqrt{\pi}} e^{-x^2} dx,
+\end{align*}
+<!-- -->
+by the transformation $y = z - \sqrt{2} \lambda x$, so that
+<!-- -->
+\begin{align*}
+q(x) = \ind\left( z > \sqrt{2} \lambda x \right)
+\cdot \frac{1}{z - \sqrt{2} \lambda x}
+\exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( x - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}
+\frac{1}{\sqrt{\pi}}.
+\end{align*}
+<!-- -->
+Here is the associated code using `statmod` along with the normalized target density $f$.
+
+```{r}
+library(statmod)
+
+q = function(x, log = FALSE) {
+	tx = z - sqrt(2 * lambda2) * x
+	out = log(tx > 0) - log(tx) - (log(tx) - mu)^2 / (2*sigma2) - 1/2 * log(pi)
+	if (log) { return(out) } else { return(exp(out)) }
+}
+
+quad_out = gauss.quad(n = 10, kind = "hermite")
+ww = quad_out$weights
+xx = quad_out$nodes
+psi = sum(ww * q(xx))
+
+d_target = function(y, log = TRUE) {
+	out = w(y, log = TRUE) + helper$d(y, log = TRUE) - log(psi)
+	if (log) { return(out) } else { return(exp(out)) }
+}
+```
+
+Let us instantiate a single region that consists of the full support $\Omega$ and construct a proposal based on it.
+
+```{r}
+support = UnivariateConstRegion$new(a = 0, b = Inf, w = w, g = helper)
+regions = list(support)
+h_init = FMMProposal$new(regions)
+```
+
+We now refine the proposal using the `adapt` function.
+
+```{r}
+adapt_out = adapt(h_init, N = 30, report = 10)
+h = adapt_out$h
+```
+
+The following plot shows the rate of decrease in bound \eqref{eqn:bound} over `N` steps of the adapt call.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Rate of adaptation improvement for Lognormal-Normal example with
+#|   constant majorizer.
+#| label: fig-ln-norm-adapt
+data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = bdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Bound") +
+	theme_minimal()
+```
+
+Let us also print the final bound that was obtained.
+
+```{r}
+bdd = tail(exp(adapt_out$log_bdd_hist), 1)
+cat("Upper bound for percent of rejections:", 100 * bdd)
+```
+
+Now proceed with rejection sampling.
+
+```{r}
+ctrl = rejection_control(report = 5000, extra_outputs = TRUE)
+out = rejection(h, n = 10000, control = ctrl)
+y = unlist(out$draws)
+```
+
+Let us compute the actual rejection rate.
+
+```{r}
+cat("Percent of proposed draws which were rejected:", 
+	sum(out$rejects) / (length(y) + sum(out$rejects)) * 100)
+```
+
+Here is a plot comparing the empirical distribution of the sample to the target
+density to ensure we have generated from the correct distribution.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Empirical distribution of draws versus target for Lognormal-Normal example
+#|   with constant majorizer.
+#| label: fig-ln-norm-constant-draws
+
+gg = data.frame(y = y) %>%
+	ggplot() +
+	geom_histogram(aes(x = y, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
+	xlab("y") +
+	ylab("Density") +
+	theme_minimal()
+print(gg)
+```
+
+Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Empirical distribution of draws versus target for Lognormal-Normal example
+#|   with constant majorizer. Observed value of $z$ (blue line) and latent value
+#|   of $y$ (red line) are displayed along with a 95\% interval (blue ribbon)
+#|   based on draws from $[Y \mid Z = z]$.
+#| label: fig-ln-norm-interval
+
+interval_lo = quantile(y, probs = 0.025)
+interval_hi = quantile(y, probs = 0.975)
+gg + annotate("rect", xmin = interval_lo, xmax = interval_hi, ymin = 0,
+		ymax = Inf, alpha = 0.1, fill = "blue") +
+	geom_vline(xintercept = z, col = "blue", lwd = 1.05) +
+	geom_vline(xintercept = y_true, col = "red", lwd = 1.05)
+```
+
+Plotting the proposal $h$ versus the target $f$ on the log-scale, the two distributions are seen to be very similar.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Proposal versus target on the log-scale for Lognormal-Normal example with
+#|   constant majorizer.
+#| label: fig-ln-norm-const-proposal
+
+log_h = function(y) { sapply(y, h$d, log = TRUE) }
+log_f = function(y) { d_target(y, log = TRUE) }
+
+xlim = range(y)
+ggplot() +
+	geom_function(fun = log_f, col = "orange", lty = 1) +
+	geom_function(fun = log_h, col = "black", lty = 2) +
+	scale_x_continuous(limits = xlim) +
+	xlab("y") +
+	ylab("Density") +
+	theme_minimal()
+```
+
+### Constant Majorizer with Custom Optimization {#sec-ln-norm-const-cf}
+
+The log-weight function $\zeta$ from \eqref{eqn:ln-norm-log-weight-fn} can be both maximized and minimized in closed form. Coding it explicitly may reduce computational overhead and avoid possible convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `UnivariateConstRegion`.
+
+We have first derivative
+<!-- -->
+\begin{align*}
+&\zeta'(y) = -\frac{1}{y}\left(
+1 + \frac{\log y - \mu}{\sigma^2}
+\right),
+\end{align*}
+<!-- -->
+for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(y)$ is positive when $y < y^*$, negative when $y > y^*$, and takes value zero at $y = y^*$. Then $y^*$ maximizes $\zeta(y)$ with maximum value $\zeta(y^*) = \sigma^2 / 2 - \mu$. Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
+
+Here is a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Weight function for Lognormal-Normal example on the log-scale, with the
+#|   maximizer $x^* = exp(mu - sigma2)$ highlighted.
+#| label: fig-ln-norm-weight
+
+xlim = exp(mu - sigma2) + c(-10,10)
+ggplot() +
+	geom_function(fun = w, xlim = xlim) +
+	geom_vline(xintercept = exp(mu - sigma2), lty = 2) +
+	geom_hline(yintercept = sigma2 / 2 - mu, lty = 2) +
+	xlab("y") +
+	ylab(expression("log w(y)")) +
+	theme_minimal()
+```
+
+We now create a subclass `CustomConstRegion` of `UnivariateConstRegion` and specify an `optimize` method using the closed-form solution. Furthermore, we specify an `initialize` method which simply invokes `initialize` from the superclass `UnivariateConstRegion`. Otherwise, the behavior of `CustomConstRegion` is identical to `UnivariateConstRegion`.
+
+```{r}
+CustomConstRegion = R6::R6Class(
+
+classname = "CustomConstRegion",
+inherit = UnivariateConstRegion,
+
+public = list(
+
+initialize = function(a, b, w, g) {
+	super$initialize(a, b, w, g)
+},
+
+optimize = function(maximize = TRUE, log = TRUE) {
+	a = private$a
+	b = private$b
+	w = self$w
+
+	y_star = exp(mu - sigma2)
+
+	if (maximize) {
+		if (y_star > b) {
+			out = w(b, log = TRUE)
+		} else if (y_star < a) {
+			out = w(a, log = TRUE)
+		} else { 
+			out = w(y_star, log = TRUE)
+		}
+	} else {
+		out = min(w(a, log = TRUE), w(b, log = TRUE))
+	}
+
+	if (log) { return(out) } else { return(exp(out)) }
+}
+
+) # Close public
+) # Close class
+```
+
+From here, the code to construct, refine, and sample from a proposal using `CustomConstRegion` is identical to `UnivariateConstRegion`.
+
+```{r}
+support = CustomConstRegion$new(a = 0, b = Inf, w = w, g = helper)
+regions = list(support)
+
+h_init = FMMProposal$new(regions)
+adapt_out = adapt(h_init, N = 30)
+h = adapt_out$h
+
+ctrl = rejection_control(report = 5000)
+out = rejection(h, n = 10000, control = ctrl)
+y = unlist(out)
+```
+
+### Linear Majorizer {#sec-ln-norm-linear}
+
+::: {.callout-caution title="TBD"}
+We need to pick finite endpoints I think ...
+:::
+
+Sections [-@sec-ln-norm-const] and [-@sec-ln-norm-const-cf] utilized a constant 
+majorizer $\overline{w}_j = \max_{y \in \mathcal{D}_j} w(y)$ and minorizer $\underline{w}_j = \min_{y \in \mathcal{D}_j} w(y)$ for VWS sampling. Let us now consider a linear majorizer $\log \overline{w}_j(y) = \overline{\beta}_{0j} + \overline{\beta}_{1j} y$ and minorizer $\log \underline{w}_j(y) = \underline{\beta}_{0j} + \underline{\beta}_{1j} y$. This strategy is more involved to derive and implement, but often captures the weight function more effectively than a constant majorizer with fewer mixture components to yield more efficient proposals. We will find appropriate values of $\overline{\beta}_{0j}$, $\overline{\beta}_{1j}$, $\underline{\beta}_{0j}$, and $\underline{\beta}_{1j}$; compute $\overline{\xi}_j$ and $\underline{\xi}_j$ needed for the proposal mixture weights and the bound \eqref{eqn:bound}; and determine how to sample from the reweighted & truncated densities $g_1, \ldots, g_N$.
+
+We first note that with majorizer $\overline{w}_j(y) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}$, the truncated & reweighted density $g_j$ has the form
+<!-- -->
+\begin{align*}
+g_j(y)
+&\propto \overline{w}_j(y) g(y) \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y) \\
+%
+&= \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}
+\phi(y \mid z, \lambda^2) \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y) \\
+%
+&\propto \exp\{ \overline{\beta}_{1j} y\} \exp\left\{
+-\frac{1}{2 \lambda^2} (y^2 - 2yz)
+\right\} \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y) \\
+%
+&\propto \exp\left\{
+-\frac{1}{2 \lambda^2} \left[ y^2 - 2(z + \lambda^2 \overline{\beta}_{1j}) y \right]
+\right\} \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y).
+\end{align*}
+<!-- -->
+This can be recognized as the density of $T_j \sim \text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. Variates of $T_j$ can be generated using the CDF $\Phi(y \mid z + \lambda^2, \lambda^2)$ and its inverse $\Phi^{-1}(p \mid z + \lambda^2, \lambda^2)$ which can be accessed with `pnorm` and `qnorm` in R respectively. Next, it can be seen that $\zeta(y) = \log w(y)$ is either a convex or concave function, depending on the value of $y \in (0, \infty)$. The concavity or convexity of $\zeta$ on a region $\mathcal{D}_j$ can be used to determine a linear majorizing function. Proceeding from $\zeta'(y)$ given in [@sec-ln-norm-const-cf], the second derivative is seen to be
+<!-- -->
+\begin{align*}
+&\zeta''(y) = -\frac{1}{y^2}\left(
+\frac{\log y - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2}
+\right),
+\end{align*}
+<!-- -->
+with
+<!-- -->
+\begin{align*}
+\zeta''(y) < 0
+&\iff \frac{\log y - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2} > 0 \\
+&\iff y < \exp(\mu - \sigma^2 + 1).
+\end{align*}
+<!-- -->
+Therefore, $\zeta$ is concave when $y < \exp(\mu - \sigma^2 + 1)$ and convex when $y > \exp(\mu - \sigma^2 + 1)$. Let us assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will ensure so that all partitions considered thereafter will consist of regions on which $\zeta$ is entirely concave or convex.
+
+Before proceeding, the following integral is stated as a remark as it will be used several times.
+
+::: {.callout-note #rem-normal-mgf-kernel}
+Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the density and CDF of $X \sim \text{N}(\mu, \sigma^2)$, respectively. If $a < b$ are scalars (possibly infinite), then 
+<!-- -->
+\begin{align*}
+\int_a^b e^{tx} \phi(x \mid \mu, \sigma^2) dx
+= \exp(\mu t + t^2 \sigma^2 / 2) \left\{ 
+\Phi(b \mid \mu + t \sigma^2, \sigma^2) - \Phi(a \mid \mu + t \sigma^2, \sigma^2)
+\right\}.
+\end{align*}
+<!-- -->
+The special case $a = -\infty$ and $b = \infty$ yields the moment-generating function $M_X(t) = \exp(\mu t + t^2 \sigma^2 / 2)$ of $X$.
+:::
+
+The following construction assumes that $\zeta$ is finite and concave on the interval $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$. A majorizer is obtained from
+<!-- -->
+\begin{align}
+\zeta(y) &\leq \zeta(c) + (y - c) \nabla(c)
+= \overline{\beta}_{j0} + \overline{\beta}_{j1} y,
+\quad 
+\overline{\beta}_{j0} = \zeta(c) - c \cdot \zeta'(c), \quad
+\overline{\beta}_{j1} = \zeta'(c),
+\label{eqn:ln-norm-linear-majorizer}
+\end{align}
+<!-- -->
+where $c$ is a point in $\mathcal{D}_j$. In particular, let us consider the value of $c$ as
+<!-- -->
+\begin{align*}
+c^* &= \argmin_{c \in \mathcal{D}_j} \int_{\mathcal{D}_j} | h_0(y) - f_0(y) | dy
+\nonumber \\
+%
+&\equiv \argmin_{c \in \mathcal{D}_j} \Big\{ \log w(c) - c \nabla(c) + \log M_j(\nabla(c)) \Big\}.
+\end{align*}
+<!-- -->
+Here, $M_j(s)$ is the moment generating function of random variable $T \sim g$ with support truncated to $(\alpha_{j-1}, \alpha_j]$:
+<!-- -->
+\begin{align*}
+M_j(s)
+%
+&= \int_{\alpha_{j-1}}^{\alpha^j} e^{sy} \frac{
+\phi(y \mid z, \lambda^2)
+}{
+\Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
+} dy \\
+%
+&= \exp(z s + s^2 \lambda^2 / 2) 
+\frac{
+\Phi(\alpha_j \mid z + s \lambda^2, \lambda^2) - \Phi(\alpha_{j-1} \mid z + s \lambda^2, \lambda^2)
+}{
+\Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
+},
+\end{align*}
+<!-- -->
+using [@rem-normal-mgf-kernel]. A minorizer can be obtained by expressing $y = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$ for $\lambda \in [0,1]$ so that $\lambda = (y - \alpha_{j-1}) / (\alpha_j - \alpha_{j-1})$ and
+<!-- -->
+\begin{align}
+\zeta(y) &\geq (1-\lambda) \zeta(\alpha_{j-1}) + \lambda \zeta(\alpha_j) \nonumber \\
+&= \zeta(\alpha_{j-1}) + \frac{y - \alpha_{j-1}}{\alpha_j - \alpha_{j-1}} [ \zeta(\alpha_j) - \zeta(\alpha_{j-1})]
+= \underline{\beta}_{j0} + \underline{\beta}_{j1} y,
+\label{eqn:ln-norm-linear-minorizer}
+\end{align}
+<!-- -->
+with
+<!-- -->
+\begin{align*}
+\underline{\beta}_{j0} = \zeta(\alpha_{j-1}) - \alpha_{j-1} \underline{\beta}_{j1}
+\quad \text{and} \quad
+\underline{\beta}_{j1} = \frac{\zeta(\alpha_j) - \zeta(\alpha_{j-1}) }{ \alpha_j - \alpha_{j-1} }.
+\end{align*}
+<!-- -->
+If $\zeta$ is convex on $\mathcal{D}_j$ rather than concave, the roles of \eqref{eqn:ln-norm-linear-majorizer} and \eqref{eqn:ln-norm-linear-minorizer} are switched so that \eqref{eqn:ln-norm-linear-majorizer} is minorizer and \eqref{eqn:ln-norm-linear-minorizer} is majorizer.
+
+Using [@rem-normal-mgf-kernel], we have
+<!-- -->
+\begin{align}
+\overline{\xi}_j
+&= \int_{\alpha_{j-1}}^{\alpha_j}
+\exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y \}
+\phi(y \mid z, \lambda^2) dy
+\nonumber \\
+&= \exp\left\{
+\overline{\beta}_{0j} + z \overline{\beta}_{1j} + \overline{\beta}_{1j}^2 \lambda^2 / 2
+\right\}
+\left\{ 
+\Phi(\alpha_j \mid z + \overline{\beta}_{1j} \lambda^2, \lambda^2)
+- \Phi(\alpha_{j-1} \mid z + \overline{\beta}_{1j} \lambda^2, \lambda^2)
+\right\}
+\label{eqn:ln-norm-xi-upper}
+\end{align}
+<!-- -->
+and
+<!-- -->
+\begin{align}
+\underline{\xi}_j
+&= \int_{\alpha_{j-1}}^{\alpha_j}
+\exp\{ \underline{\beta}_{0j} + \underline{\beta}_{1j} y \}
+\phi(y \mid z, \lambda^2) dy
+\nonumber \\
+&= \exp\left\{
+\underline{\beta}_{0j} + z \underline{\beta}_{1j} + \underline{\beta}_{1j}^2 \lambda^2 / 2
+\right\}
+\left\{ 
+\Phi(\alpha_j \mid z + \underline{\beta}_{1j} \lambda^2, \lambda^2)
+- \Phi(\alpha_{j-1} \mid z + \underline{\beta}_{1j} \lambda^2, \lambda^2)
+\right\}.
+\label{eqn:ln-norm-xi-lower}
+\end{align}
+<!-- -->
+The results obtained thus far can be used to implement the necessary operations
+of a `Region` which are listed in [@tbl-region-methods]. We name the resulting
+class `CustomLinearRegion`. Operations for `CustomLinearRegion` are summarized
+in [@tbl-ln-norm-custom-region-methods] and the complete code may be found in
+the following file.
+
+```{r}
+source("../inst/examples/lnorm-norm-linear/CustomLinearRegion.R")
+```
+
+: Methods of the `CustomLinearRegion` class. {#tbl-ln-norm-custom-region-methods tbl-colwidths="[20,80]"}
+
+-------------------------------------------------------------------------------
+Method            Description
+-----             -----
+`w`               $w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2}
+                  (\log y - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(y)$.
+
+`w_major`         $\overline{w}_j(y) = \exp\{
+                  \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}$.
+
+`d_base`          Density of $\text{N}(z, \lambda^2)$.
+
+`r`               Generate draws from
+                  $\text{N}(z + \lambda^2 \overline{\beta}_{1j},
+                  \lambda^2)$ truncated to $(\alpha_{j-1}, \alpha_j]$.
+
+`d`               Compute the density of
+                  $\text{N}(z + \lambda^2 \overline{\beta}_{1j},
+                  \lambda^2)$ truncated to $(\alpha_{j-1}, \alpha_j]$.
+
+`s`               $\mathbb{1}_{\alpha_{j-1}, \alpha_j}(y)$.
+
+`xi_upper`        Compute $\overline{\xi}_j$ via \eqref{eqn:ln-norm-xi-upper}.
+
+`xi_lower`        Compute $\underline{\xi}_j$ via \eqref{eqn:ln-norm-xi-lower}.
+
+`bifurcate`       Midpoint rule from [@sec-UnivariateConstRegion].
+
+`is_bifurcatable` Return `TRUE`.
+-------------------------------------------------------------------------------
+
+Let us proceed with a demonstration of the VWS sampler based on `CustomLinearRegion`. First create two initial regions around the point $\exp(\mu - \sigma^2 + 1)$, where $w(y)$ switches from log-concave to log-convex.
+ 
+```{r}
+y_star = exp(mu - sigma2 + 1)
+region1 = CustomLinearRegion$new(a = 1e-6, b = y_star, mu, sigma2, z, lambda2)
+region2 = CustomLinearRegion$new(a = y_star, b = 1e6, mu, sigma2, z, lambda2)
+regions = list(region1, region2)
+```
+
+Construct the proposal and refine it.
+
+```{r}
+h_init = FMMProposal$new(regions)
+adapt_out = adapt(h_init, N = 30)
+h = adapt_out$h
+```
+
+Plot the rate of refinement during the adaptation process.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Rate of adaptation improvement on the log-scale for Lognormal-Normal
+#|   example with linear majorizer.
+#| label: fig-ln-norm-linear-adapt
+
+data.frame(bdd = adapt_out$log_bdd_hist) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = bdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Log of Bound") +
+	theme_minimal()
+```
+
+Proceed with rejection sampling using the resulting proposal.
+
+```{r}
+ctrl = rejection_control(report = 5000, extra_outputs = TRUE)
+out = rejection(h, n = 10000, control = ctrl)
+y = unlist(out$draws)
+```
+
+Print the actual rejection rate. Notice that it is substantially lower than the rate achieved in [@sec-ln-norm-const].
+
+```{r}
+cat("Percent of proposed draws rejected:",
+	sum(out$rejects) / (length(y) + sum(out$rejects)) * 100)
+```
+
+Plot the empirical distribution of the draws overlaid with the target density.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Empirical distribution of draws versus target for Lognormal-Normal example
+#|   with linear majorizer.
+#| label: fig-ln-norm-linear-draws
+
+data.frame(y = y) %>%
+	ggplot() +
+	geom_histogram(aes(x = y, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
+	ylab("y") +
+	ylab("Density") +
+	theme_minimal()
+```
+
+Finally, comparing the unnormalized proposal $h$ and target density $f$ on the log-scale, we notice that visually they are almost indistinguishable.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Proposal versus target on the log-scale for Lognormal-Normal example with
+#|   linear majorizer.
+#| label: fig-ln-norm-proposal
+
+log_h = function(y) { sapply(y, h$d, log = TRUE) }
+log_f = function(y) { d_target(y, log = TRUE) }
+
+xlim = range(y)
+ggplot() +
+	geom_function(fun = log_f, lty = 1, col = "orange", lwd = 1.2) +
+	geom_function(fun = log_h, lty = 2, col = "black", lwd = 1.2) +
+	scale_x_continuous(limits = xlim) +
+	xlab("y") +
+	ylab("Density") +
+	theme_minimal()
+```
+
+## Bessel Count Distribution
+
+::: {.callout-caution title="TBD"}
+Under construction. The example is working, but the writing needs to be fleshed
+out.
+:::
+
+TBD: this sampling problem comes up in @Devroye2002.
+
+```{r}
+#| prompt: true
+source("../inst/examples/bessel/functions.R")
+```
+
+In this example, we consider generating from the Bessel density described by
+@Devroye2002 as
+<!-- -->
+\begin{align*}
+f(x) = \frac{(a/2)^{2x+\nu}}{I_v(a) \cdot x! \cdot \Gamma(x + \nu + 1)}
+\cdot \mathbb{1}_{\mathbb{N}}(x), \quad
+\nu > -1, \quad
+a > 0,
+\end{align*}
+<!-- -->
+where we denote the positive integers as $\mathbb{N} = \{ 0, 1, 2, \ldots \}$
+and
+<!-- -->
+\begin{align*}
+I_v(a) = \sum_{x=0}^\infty \frac{(a/2)^{2x+\nu}}{x! \cdot \Gamma(x + \nu + 1)}
+\end{align*}
+<!-- -->
+is a modified Bessel function of the first kind.
+
+At the time the paper was written, @Devroye2002 considered it difficult to
+generate exact draws from this distribution. He develops what appears to be a
+customized accept-reject method after establishing properties of the
+distribution. We can draw from this distribution fairly easily without such an
+in-depth analysis.
+
+Our approach is to decompose the density into
+<!-- -->
+\begin{align*}
+f(x)
+&= \frac{(a/2)^{2x+\nu}}{I_v(a) \cdot x! \cdot \Gamma(x + \nu + 1)}
+\cdot \mathbb{1}_{\mathbb{N}}(x) \\
+%
+&\propto 
+\frac{e^{a^2/4} (a/2)^\nu}{\Gamma(x + \nu + 1)}
+\frac{(a/2)^{2x} e^{-a^2/4}}{x!} \mathbb{1}_{\mathbb{N}}(x) \\
+%
+&\propto w(x) g(x),
+\end{align*}
+<!-- -->
+where $g(x) = \frac{(a^2/4)^x e^{-a^2/4}}{x!} \mathbb{1}_{\mathbb{N}}(x)$
+represents a $\text{Poisson}(a^2/4)$ base distribution and weight function
+specified on the log scale as by $\log w(x) = -\log \Gamma(x + \nu + 1)$.
+Notice that we can disregard many of the normalizing constants with this
+sampler.
+
+We can explicitly describe computations involved in the sampler.
+
+- Make regions of the form $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$.
+- Compute $P(T \in \mathcal{D}_j)$.
+- Optimize $w(x)$ on $\mathcal{D}_j$ to obtain $\overline{w}_j$ and
+	  $\underline{w}_j$.
+- Draw from Poisson truncated to $\mathcal{D}_j$.
+- Adaptation algorithm that uses integer midpoint.
+
+We can also show some displays of how the sampler performs.
+
+- Volume and/or log volume as we increase $N$ with adaptation.
+- The exact density versus the proposal density for several values of $N$ along
+  the adaptation path.
+- The number of draws rejected in practice along the adaptation path (say, if
+  we request a large number such as $n = 10^7$).
+
+It looks like we can capture the distribution almost exactly by covering the
+entire support with a not-too-large choice of $N$, but this will depend on the
+parameters $a$ and $\nu$. When we have adapted to this point, it becomes
+extremely rare to reject any candidates.
+
+Consider giving background information about the Bessel distribution to show
+why it was of special interest to Devroye.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Rate of adaptation improvement on the log-scale for Bessel example.
+#| label: fig-bessel-adapt
+
+nu = -0.5
+lambda = 10
+
+helper = poisson_helper(lambda^2 / 4)
+
+w = function(x, log = TRUE) {
+	out = -lgamma(x + nu + 1) + lambda^2 / 4 + nu * log(lambda / 2)
+	if (log) { return(out) } else { return(exp(out)) }
+}
+
+support = IntUnivariateConstRegion$new(a = -1, b = Inf, w = w, g = helper)
+regions = list(support)
+
+h_init = FMMProposal$new(regions)
+adapt_out = adapt(h_init, N = 30, report = 10)
+h = adapt_out$h
+
+data.frame(logbdd = adapt_out$log_bdd_hist) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = logbdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Log of Bound") +
+	theme_minimal()
+
+ctrl = rejection_control(max_rejects = 10000, report = 5000)
+out = rejection(h, n = 10000, control = ctrl)
+x = unlist(out)
+```
+
+Plot the empirical distribution of the draws with the target density.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: Empirical distribution of draws versus target for Bessel example.
+#| label: fig-bessel-draws
+
+n = length(x)
+tab_out = factor(x, levels = seq(0, 11)) |> table()
+x_vals = tab_out |> names() |> as.integer()
+d_vals_emp = (tab_out / n) |> as.numeric()
+d_vals = d_bessel(x_vals, a = lambda, nu = nu)
+
+data.frame(x = x_vals, d_emp = d_vals_emp, d = d_vals) %>%
+	ggplot() +
+	geom_point(aes(x = x, y = d), pch = 1) +
+	geom_point(aes(x = x, y = d_emp), pch = 3) +
+	ylab("Probability") +
+	theme_minimal()
+```
+
+Plot proposal versus the target on the log-scale.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: Proposal versus target on the log-scale for Bessel example.
+#| label: fig-bessel-proposal
+
+log_h = function(x) { sapply(x, h$d, log = TRUE) }
+log_f = function(x) { d_bessel(x, a = lambda, nu = nu, log = TRUE) }
+
+df = data.frame(x = x_vals) %>%
+	mutate(log_h_vals = log_h(x)) %>%
+	mutate(log_f_vals = log_f(x))
+
+ggplot(df) +
+	geom_point(aes(x, log_h_vals), pch = 1) +
+	geom_point(aes(x, log_f_vals), pch = 3) +
+	xlab("x") +
+	ylab("Density") +
+	theme_minimal()
+```
+
+## Von Mises Fisher
+
+::: {.callout-caution title="TBD"}
+Under construction. Both versions of the sampler are implemented, but writing
+is needed.
+:::
+
+Suppose $X$ has density
+
+\begin{align}
+f(x) =
+\frac{
+(\kappa / 2)^{d/2 - 1} (1 - x^2)^{(d-3)/2} \exp(\kappa x)
+}{
+\sqrt{\pi} \cdot I_{d/2 - 1}(\kappa) \cdot \Gamma((d-1)/2)
+} \cdot \mathbb{1}_{(-1,1)}(x).
+\label{eqn:vmf-target}
+\end{align}
+
+Let us decompose $f$ into
+
+\begin{align*}
+f(x) \propto
+\underbrace{(1 - x^2)^{(d-3)/2}}_{w(x)}
+\underbrace{\exp(\kappa x) \cdot \mathbb{1}_{(-1,1)}(x)}_{g_0(x)},
+\end{align*}
+
+where $w$ is a nonnegative weight function and $g_0$ is proportional to density
+
+\begin{align*}
+g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \mathbb{1}_{(-1,1)}(x).
+\end{align*}
+
+The CDF corresponding to $g$ is
+
+\begin{align*}
+G(x) = \frac{e^{\kappa x} - e^{-\kappa x}}{e^\kappa - e^{-\kappa}} \cdot,
+\quad x \in (-1, 1)
+\end{align*}
+
+and the quantile function is
+
+\begin{align*}
+G^{-1}(\varphi) = \frac{1}{\kappa} \log\left[e^{\kappa a} + \varphi (e^{\kappa b} - e^{\kappa a}) \right], \quad \varphi \in [0,1].
+\end{align*}
+
+
+Check the manual entry for `Region` to see which methods need to be implemented.
+
+```{r}
+#| eval: false
+#| prompt: true
+?Region
+```
+
+The needed operations for the base and target distributions are defined in the
+following files.
+
+```{r}
+#| prompt: true
+source("../inst/examples/vmf/base.R")             # Functions for base dist'n
+source("../inst/examples/vmf/target.R")           # Functions for target dist'n
+source("../inst/examples/vmf/VMFLinearRegion.R")  # VMFLinearRegion class def'n
+```
+
+TBD: we have to truncate support to something within $[-1,1]$ when $d < 3$
+because $w$ is not finite at the endpoints.
+
+### Constant Majorizer
+
+Define base distribution and weight function.
+
+```{r}
+d = 2
+kappa = 0.2
+
+helper = vmf_base_helper(kappa)
+
+w = function(x, log = FALSE) {
+	out = (d - 3) / 2 * log(1 - x^2)
+	if (log) { return(out) } else { return(exp(out)) }
+}
+```
+
+```{r}
+support = UnivariateConstRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, w = w, g = helper)
+regions = list(support)
+```
+
+Adapt the proposal.
+
+```{r}
+h_init = FMMProposal$new(regions)
+adapt_out = adapt(h_init, N = 100, report = 20)
+h = adapt_out$h
+```
+
+Plot the rate of adaptation improvement. (TBD: consider making this an object
+that can quickly be plotted. But this might add a dependency if it's ggplot).
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Rate of adaptation improvement for VMF example with constant majorizer.
+#| label: fig-vmf-const-adapt
+
+data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = bdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Bound") +
+	theme_minimal()
+```
+
+Generate draws.
+
+```{r}
+ctrl = rejection_control(max_rejects = 10000, report = 5000)
+out = rejection(h, n = 10000, control = ctrl)
+x = unlist(out)
+```
+
+Plot the empirical distribution of the draws with the target density.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Empirical distribution of draws versus target for VMF example with
+#|   constant majorizer.
+#| label: fig-vmf-const-draws
+
+data.frame(x = x) %>%
+	ggplot() +
+	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(kappa = kappa, d = d),
+		lty = 2, xlim = c(1e-2 - 1, 1 - 1e-2)) +
+	ylab("Density") +
+	theme_minimal()
+```
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Proposal versus target on the log-scale for VMF example with constant
+#|   majorizer.
+#| label: fig-vmf-const-proposal
+
+log_h = function(x) { sapply(x, h$d, log = TRUE) }
+log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
+
+ggplot() +
+	geom_function(fun = log_f, col = "orange", lty = 1) +
+	geom_function(fun = log_h, col = "black", lty = 2) +
+	scale_x_continuous(limits = c(1e-2 - 1, 1 - 1e-2)) +
+	xlab("x") +
+	ylab("Density") +
+	theme_minimal()
+```
+
+
+### Linear Majorizer {#sec-vws-linear}
+
+For this region:
+
+- $w$ is assumed to be $w(x) = (1 - x^2)^{(d - 3)/2}$
+- $g$ is assumed to be proportional to $\exp(\kappa x)$
+- majorized $w$ is assumed to be of the form $\exp(\beta_0 + \beta_1 x)$
+
+Note that $\log(w(-1)) = \log(w(1)) = \infty$ with this choice when $d < 3$. A
+workaround is to exclude the endpoints from the support.
+
+```{r}
+d = 2
+kappa = 0.2
+```
+
+Create a single region of class `VMFLinearRegion`.
+
+```{r}
+support = VMFLinearRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, kappa = kappa, d = d)
+regions = list(support)
+```
+
+Adapt the proposal.
+
+```{r}
+h_init = FMMProposal$new(regions)
+adapt_out = adapt(h_init, N = 100, report = 20)
+h = adapt_out$h
+```
+
+Plot the rate of adaptation improvement. Plot on the log-scale; the log-scale helps to see improvement in later steps.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Rate of adaptation improvement on the log-scale for VMF example with
+#|   linear majorizer.
+#| label: fig-vmf-linear-adapt
+
+data.frame(logbdd = adapt_out$log_bdd_hist) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = logbdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Log of Bound") +
+	theme_minimal()
+```
+
+Generate draws.
+```{r}
+control = rejection_control(max_rejects = 100, report = 5000)
+out = rejection(h, n = 10000, control = control)
+x = unlist(out)
+```
+
+Plot the empirical distribution of the draws with the target density.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Empirical distribution of draws versus target for VMF example with linear
+#|   majorizer.
+#| label: fig-vmf-linear-draws
+
+data.frame(x = x) %>%
+	ggplot() +
+	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(kappa = kappa, d = d),
+		lty = 2, xlim = c(1e-2 - 1, 1 - 1e-2)) +
+	ylab("Density") +
+	theme_minimal()
+```
+
+Plot proposal versus the target on the log-scale.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Proposal versus target on the log-scale for VMF example with linear
+#|   majorizer.
+#| label: fig-vmf-linear-proposal
+
+log_h = function(x) { sapply(x, h$d, log = TRUE) }
+log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
+
+ggplot() +
+	geom_function(fun = log_f, col = "orange", lty = 1) +
+	geom_function(fun = log_h, col = "black", lty = 2) +
+	scale_x_continuous(limits = c(1e-2 - 1, 1 - 1e-2)) +
+	xlab("x") +
+	ylab("Density") +
+	theme_minimal()
+```
+
+# Conclusions
+
+::: {.callout-caution title="TBD"}
+Content needed
+:::
+
+# Acknowledgments {-}
+
+::: {.callout-caution title="TBD"}
+Content needed
+:::
+
+# References

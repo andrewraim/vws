@@ -5,9 +5,9 @@
 #'
 #' @param n Desired sample size.
 #' @param x Quantile or argument of density.
-#' @param log logical; if \code{TRUE}, probabilities \code{p} are given as
+#' @param log logical; if `TRUE`, probabilities `p` are given as
 #' \eqn{\log(p)}.
-#' @param log.p logical; if \code{TRUE}, probabilities \code{p} are given as
+#' @param log.p logical; if `TRUE`, probabilities `p` are given as
 #' \eqn{\log(p)}.
 #' @param p Probability.
 #' @param lo Lower limit.
@@ -18,7 +18,7 @@
 #' @param ... Additional arguments.
 #'
 #' @details
-#' This code was initially copied from the \code{rtruncated} function in the
+#' This code was initially copied from the `rtruncated` function in the
 #' LearnBayes package.
 #'
 #' @examples
@@ -45,41 +45,102 @@ NULL
 
 #' @name TruncatedUnivariate
 #' @export
-d_truncated = function(x, lo, hi, df, pf, log = FALSE, ...)
+d_truncated = function(x, lo, hi, df, pf, log = FALSE, tol = 1e-6, ...)
 {
+	n = length(x)
+	out = numeric(n)
+	if (length(lo) == 1) { lo = rep(lo, n) }
+	if (length(hi) == 1) { hi = rep(hi, n) }
+
 	log_p_lo = pf(lo, log.p = TRUE, ...)
-	log_p_hi = pf(hi, log.p = TRUE, ...)
-	out = df(x, log = TRUE, ...) + log(lo < x & x <= hi) - log_sub2_exp(log_p_hi, log_p_lo)
+	idx1 = which(log_p_lo > log1p(-tol))
+	idx2 = setdiff(1:n, idx1)
+
+	# If we are truncating way into the upper tail of a distribution, working
+	# with the complement of the CDF helps to retain precision.
+	log_cp_lo = pf(lo[idx1], log.p = TRUE, lower.tail = FALSE, ...)
+	log_cp_hi = pf(hi[idx1], log.p = TRUE, lower.tail = FALSE, ...)
+	out[idx1] = df(x[idx1], log = TRUE, ...) +
+		log(lo[idx1] < x[idx1] & x[idx1] <= hi[idx1]) -
+		log_sub2_exp(log_cp_lo, log_cp_hi)
+
+	# Otherwise, work with the CDF function.
+	log_p_hi = pf(hi[idx2], log.p = TRUE, ...)
+	out[idx2] = df(x[idx2], log = TRUE, ...) +
+		log(lo[idx2] < x[idx2] & x[idx2] <= hi[idx2]) -
+		log_sub2_exp(log_p_hi, log_p_lo[idx2])
+
 	if (log) { return(out) } else { return(exp(out)) }
 }
 
 #' @name TruncatedUnivariate
 #' @export
-p_truncated = function(x, lo, hi, pf, log.p = FALSE, ...)
+p_truncated = function(x, lo, hi, pf, log.p = FALSE, tol = 1e-6, ...)
 {
 	n = length(x)
-	log_p_lo = pf(lo, log.p = TRUE, ...)
-	log_p_hi = pf(hi, log.p = TRUE, ...)
-	idx0 = which(x <= lo)
-	idx1 = which(x > hi)
-	idx2 = setdiff(1:n, c(idx0, idx1))
 	out = numeric(n)
-	out[idx0] = -Inf
-	out[idx1] = 0
+	if (length(lo) == 1) { lo = rep(lo, n) }
+	if (length(hi) == 1) { hi = rep(hi, n) }
+
+	log_p_lo = pf(lo, log.p = TRUE, ...)
+	idx1 = which(log_p_lo > log1p(-tol))
+	idx2 = setdiff(1:n, idx1)
+
+	# If we are truncating way into the upper tail of a distribution, working
+	# with the complement of the CDF helps to retain precision.
+	log_cp_lo = pf(lo[idx1], log.p = TRUE, lower.tail = FALSE, ...)
+	log_cp_hi = pf(hi[idx1], log.p = TRUE, lower.tail = FALSE, ...)
+	log_cp_x = pf(x[idx1], log.p = TRUE, lower.tail = FALSE, ...)
+	out[idx1] = log_sub2_exp(log_cp_lo, log_cp_x) - log_sub2_exp(log_cp_lo, log_cp_hi)
+
+	# Otherwise, work with the CDF function.
+	log_p_hi = pf(hi[idx2], log.p = TRUE, ...)
 	log_p_x = pf(x[idx2], log.p = TRUE, ...)
-	out[idx2] = log_sub2_exp(log_p_x, log_p_lo) - log_sub2_exp(log_p_hi, log_p_lo)
+	out[idx2] = log_sub2_exp(log_p_x, log_p_lo[idx2]) - log_sub2_exp(log_p_hi, log_p_lo)
+
+	# n = length(x)
+	# log_p_lo = pf(lo, log.p = TRUE, ...)
+	# log_p_hi = pf(hi, log.p = TRUE, ...)
+	# idx0 = which(x <= lo)
+	# idx1 = which(x > hi)
+	# idx2 = setdiff(1:n, c(idx0, idx1))
+	# out = numeric(n)
+	# out[idx0] = -Inf
+	# out[idx1] = 0
+	# log_p_x = pf(x[idx2], log.p = TRUE, ...)
+	# out[idx2] = log_sub2_exp(log_p_x, log_p_lo) - log_sub2_exp(log_p_hi, log_p_lo)
+
 	if (log.p) { return(out) } else { return(exp(out)) }
 }
 
 #' @name TruncatedUnivariate
 #' @export
-q_truncated = function(p, lo, hi, pf, qf, log.p = FALSE, ...)
+q_truncated = function(p, lo, hi, pf, qf, log.p = FALSE, tol = 1e-6, ...)
 {
 	if (log.p) { lp = p } else { lp = log(p) }
+
+	n = length(p)
+	out = numeric(n)
+	if (length(lo) == 1) { lo = rep(lo, n) }
+	if (length(hi) == 1) { hi = rep(hi, n) }
+
 	log_p_lo = pf(lo, log.p = TRUE, ...)
-	log_p_hi = pf(hi, log.p = TRUE, ...)
-	log_p_adj = log_add2_exp(log_p_lo, lp + log_sub2_exp(log_p_hi, log_p_lo))
-	qf(log_p_adj, log.p = TRUE, ...)
+	idx1 = which(log_p_lo > log1p(-tol))
+	idx2 = setdiff(1:n, idx1)
+
+	# If we are truncating way into the upper tail of a distribution, working
+	# with the complement of the CDF helps to retain precision.
+	log_cp_lo = pf(lo[idx1], log.p = TRUE, lower.tail = FALSE, ...)
+	log_cp_hi = pf(hi[idx1], log.p = TRUE, lower.tail = FALSE, ...)
+	log_p_adj = log_sub2_exp(log_cp_lo, lp[idx1] + log_sub2_exp(log_cp_lo, log_cp_hi))
+	out[idx1] = qf(log_p_adj, log.p = TRUE, lower.tail = FALSE, ...)
+
+	# Otherwise, work with the CDF function.
+	log_p_hi = pf(hi[idx2], log.p = TRUE, ...)
+	log_p_adj = log_add2_exp(log_p_lo[idx2], lp[idx2] + log_sub2_exp(log_p_hi, log_p_lo[idx2]))
+	out[idx2] = qf(log_p_adj, log.p = TRUE, ...)
+
+	return(out)
 }
 
 #' @name TruncatedUnivariate

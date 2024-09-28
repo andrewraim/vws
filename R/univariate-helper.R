@@ -5,26 +5,26 @@
 #' @param d Density function.
 #' @param p Cumulative distribution function.
 #' @param q Quantile function.
-#' @param s Indicator function that returns \code{TRUE} when the
+#' @param s Indicator function that returns `TRUE` when the
 #' argument is in the support of the distribution; otherwise returns
-#' \code{FALSE}.
+#' `FALSE`.
 #'
 #' @details
 #' The specified functions must support the following interfaces.
 #' \describe{
-#' \item{\code{d(x, log = FALSE)}}{}
-#' \item{\code{p(q, lower.tail = TRUE, log.p = FALSE)}}{}
-#' \item{\code{q(p, lower.tail = TRUE, log.p = FALSE)}}{}
-#' \item{\code{s(x)}}{}
+#' \item{`d(x, log = FALSE)`}{}
+#' \item{`p(q, lower.tail = TRUE, log.p = FALSE)`}{}
+#' \item{`q(p, lower.tail = TRUE, log.p = FALSE)`}{}
+#' \item{`s(x)`}{}
 #' }
 #'
-#' Arguments to these functions are interpreted as usual for the \code{stats}
+#' Arguments to these functions are interpreted as usual for the `stats`
 #' package. (Other arguments will be ignored if present).
 #' \describe{
-#' \item{\code{x}, \code{q}}{vector of quantiles.}{}
-#' \item{\code{log}, \code{log.p}}{logical; if \code{TRUE}, probabilities
-#' \code{p} are given as \eqn{\log(p)}.}{}
-#' \item{\code{lower.tail}}{logical; if \code{TRUE}, probabilities are
+#' \item{`x`, `q`}{vector of quantiles.}{}
+#' \item{`log`, `log.p`}{logical; if `TRUE`, probabilities
+#' `p` are given as \eqn{\log(p)}.}{}
+#' \item{`lower.tail`}{logical; if `TRUE`, probabilities are
 #' \eqn{\text{P}(X \leq x)}; otherwise \eqn{\text{P}(X > x)}}{}
 #' }
 #'
@@ -66,14 +66,14 @@ univariate_helper = function(d, p, q, s)
 #' @param sd Standard deviation parameter \eqn{\sigma}.
 #'
 #' @examples
-#' helper = normal_univariate_helper(mean = 0, sd = 1)
+#' helper = normal_helper(mean = 0, sd = 1)
 #' helper$d(0)
 #' helper$p(1.96)
 #' helper$q(0.025)
 #'
-#' @name normal_univariate_helper
+#' @name normal_helper
 #' @export
-normal_univariate_helper = function(mean, sd)
+normal_helper = function(mean, sd)
 {
 	univariate_helper(
 		d = function(x, log = FALSE) {
@@ -96,14 +96,14 @@ normal_univariate_helper = function(mean, sd)
 #' @param lambda Rate parameter \eqn{\mu}.
 #'
 #' @examples
-#' helper = poisson_univariate_helper(lambda = 10)
+#' helper = poisson_helper(lambda = 10)
 #' helper$d(5)
 #' helper$p(10)
 #' helper$q(0.025)
 #'
-#' @name poisson_univariate_helper
+#' @name poisson_helper
 #' @export
-poisson_univariate_helper = function(lambda)
+poisson_helper = function(lambda)
 {
 	univariate_helper(
 		d = function(x, log = FALSE) {
@@ -116,5 +116,99 @@ poisson_univariate_helper = function(lambda)
 			qpois(p, lambda = lambda, lower.tail = lower.tail, log.p = log.p)
 		},
 		s = function(x) { is.integer(x) & x >= 0 }
+	)
+}
+
+#' Uniform Distribution Helper
+#'
+#' A distribution helper based on \eqn{\text{Uniform}(a, b)}.
+#'
+#' @param a lower limit of support.
+#' @param b upper limit of support.
+#'
+#' @examples
+#' helper = uniform_helper(a = 0, b = 1)
+#' helper$d(1/2)
+#' helper$p(1/4)
+#' helper$q(0.025)
+#'
+#' @name uniform_helper
+#' @export
+uniform_helper = function(a, b)
+{
+	univariate_helper(
+		d = function(x, log = FALSE) {
+			dunif(x, min = a, max = b, log = log)
+		},
+		p = function(q, lower.tail = TRUE, log.p = FALSE) {
+			punif(q, min = a, max = b, lower.tail = lower.tail, log.p = log.p)
+		},
+		q = function(p, lower.tail = TRUE, log.p = FALSE) {
+			qunif(p, min = a, max = b, lower.tail = lower.tail, log.p = log.p)
+		},
+		s = function(x) { x >= a & x <= b }
+	)
+}
+
+#' Inverse Gamma Distribution Helper
+#'
+#' A distribution helper based on \eqn{\text{IG}(a,b)}.
+#'
+#' @param a Shape parameter.
+#' @param b Rate parameter.
+#'
+#' @examples
+#' helper = invgamma_helper(a = 10, b = 5)
+#' helper$d(1/2)
+#' helper$p(0.29266)
+#' helper$q(0.025)
+#'
+#' @name invgamma_helper
+#' @export
+invgamma_helper = function(a, b)
+{
+	univariate_helper(
+		d = function(x, log = FALSE) {
+			d_invgamma(x, a = a, b = b, log = log)
+		},
+		p = function(q, lower.tail = TRUE, log.p = FALSE) {
+			p_invgamma(q, a = a, b = b, lower = lower.tail, log = log.p)
+		},
+		q = function(p, lower.tail = TRUE, log.p = FALSE) {
+			q_invgamma(p, a = a, b = b, lower = lower.tail, log = log.p)
+		},
+		s = function(x) { x >= 0 }
+	)
+}
+
+
+#' Gamma Distribution Helper
+#'
+#' A distribution helper based on \eqn{\text{Gamma}(a,b)}.
+#'
+#' @param a Shape parameter.
+#' @param b Rate parameter.
+#'
+#' @examples
+#' helper = gamma_helper(a = 10, b = 5)
+#' helper$d(1/2)
+#' helper$p(0.29266)
+#' helper$q(0.025)
+#'
+#' @name invgamma_helper
+#' @export
+gamma_helper = function(a, b)
+{
+	univariate_helper(
+		d = function(x, log = FALSE) {
+			dgamma(x, shape = a, rate = b, log = log)
+		},
+		p = function(q, lower.tail = TRUE, log.p = FALSE) {
+			pgamma(q, shape = a, rate = b, lower.tail = lower.tail, log.p = log.p)
+		},
+		q = function(p, lower.tail = TRUE, log.p = FALSE) {
+			qgamma(p, shape = a, rate = b, lower.tail = lower.tail, log.p = log.p)
+		},
+		s = function(x) { x >= 0 }
 	)
 }

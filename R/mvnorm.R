@@ -8,20 +8,22 @@
 #' @param Sigma Covariance matrix parameter.
 #' @param Sigma_chol Cholesky factor of covariance matrix parameter.
 #' @param Omega Precision matrix parameter.
-#' @param log If \code{TRUE}, return densities and probabilities on the log-scale.
+#' @param log If `TRUE`, return densities and probabilities on the log-scale.
 #'
 #' @return
-#' \code{dmvnorm} gives the density using specified covariance matrix,
-#' \code{dmvnorm_prec} gives the density using specified precision matrix,
-#' \code{rmvnorm} generates random deviates using specified covariance matrix,
-#' \code{rmvnorm_prec} generates random deviates using specified precision matrix,
-#' \code{r_singular_mvnorm} generates random deviates using specified singular
-#' covariance matrix (and mean zero).
+#' \item{`dmvnorm`}{gives the density using specified covariance matrix,}
+#' \item{`dmvnorm_prec`}{gives the density using specified precision matrix,}
+#' \item{`rmvnorm`}{generates random deviates using specified covariance
+#' matrix,}
+#' \item{`rmvnorm_prec`}{generates random deviates using specified precision
+#' matrix,}
+#' \item{`r_singular_mvnorm`}{generates random deviates using specified singular
+#' covariance matrix (and mean zero).}
 #'
 #' @details
-#' A use case for the function \code{r_singular_mvnorm} would be to start with
-#' a singular precision matrix \code{Q}, and use something like
-#' \code{Sigma = ginverse(Q)} as the covariance matrix.
+#' A use case for the function `r_singular_mvnorm` would be to start with
+#' a singular precision matrix `Q`, and use something like
+#' `Sigma = ginverse(Q)` as the covariance matrix.
 #'
 #' @name MultivariateNormal
 NULL
@@ -34,7 +36,7 @@ r_mvnorm = function(n, mu, Sigma)
 	stopifnot(k == nrow(Sigma) && k == ncol(Sigma))
 	Z = matrix(rnorm(n*k), k, n)
 	A = t(chol(Sigma))
-	A %*% Z + mu
+	A %*% Z + mu %x% matrix(1, 1, n)
 }
 
 #' @name MultivariateNormal
@@ -44,7 +46,7 @@ r_mvnorm_chol = function(n, mu, Sigma_chol)
 	k = length(mu)
 	stopifnot(k == nrow(Sigma_chol) && k == ncol(Sigma_chol))
 	Z = matrix(rnorm(n*k), k, n)
-	Sigma_chol %*% Z + mu
+	Sigma_chol %*% Z + mu %x% matrix(1, 1, n)
 }
 
 #' @name MultivariateNormal
@@ -55,7 +57,7 @@ r_mvnorm_prec = function(n, mu, Omega)
 	stopifnot(k == nrow(Omega) && k == ncol(Omega))
 	Z = matrix(rnorm(n*k), k, n)
 	A = chol(Omega)
-	solve(A, Z) + mu
+	solve(A, Z) + mu %x% matrix(1, 1, n)
 }
 
 #' @name MultivariateNormal
@@ -71,9 +73,9 @@ d_mvnorm = function(x, mu, Sigma, log = FALSE)
 	qr_out = qr(Sigma)
 	Omega_xc = solve(Sigma, t(xc))
 	logdetA = sum(log(abs(diag(qr.R(qr_out)))))
-	logf = -k/2*log(2*pi) - logdetA / 2 - rowSums(xc * t(Omega_xc)) / 2
+	out = -k/2*log(2*pi) - logdetA / 2 - rowSums(xc * t(Omega_xc)) / 2
 
-	if (log) { return(logf) } else { return(exp(logf))}
+	if (log) { return(out) } else { return(exp(out)) }
 }
 
 #' @name MultivariateNormal
@@ -87,8 +89,8 @@ d_mvnorm_prec = function(x, mu, Omega, log = FALSE)
 	xc = x - t(mu) %x% matrix(1,n,1)
 	Omega_xc = Omega %*% t(xc)
 	logdetA = -as.numeric(determinant(Omega)$modulus)
-	logf = -k/2*log(2*pi) - logdetA / 2 - rowSums(xc * t(Omega_xc)) / 2
+	out = -k/2*log(2*pi) - logdetA / 2 - rowSums(xc * t(Omega_xc)) / 2
 
-	if (log) { return(logf) } else { return(exp(logf))}
+	if (log) { return(out) } else { return(exp(out)) }
 }
 

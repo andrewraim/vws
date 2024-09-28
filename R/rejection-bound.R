@@ -8,7 +8,7 @@
 #'
 #' @param log_xi_upper The vector \eqn{\log \overline{\xi}_1, \ldots, \log \overline{\xi}_N}
 #' @param log_xi_lower The vector \eqn{\log \underline{\xi}_1, \ldots, \log \underline{\xi}_N}
-#' @param log If \code{TRUE}, return result on the log-scale
+#' @param log If `TRUE`, return result on the log-scale
 #'
 #' @export
 rejection_bound = function(log_xi_upper, log_xi_lower, log = FALSE) {
