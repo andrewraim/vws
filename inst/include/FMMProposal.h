@@ -58,6 +58,12 @@ public:
 
 	// Get mixing weights. They are specified in order so that they correspond
 	// to the set of regions.
+	unsigned int get_N() const {
+		return _log_xi_upper->size();
+	}
+
+	// Get mixing weights. They are specified in order so that they correspond
+	// to the set of regions.
 	Rcpp::NumericVector get_pi(bool log = false) const;
 
 	//' @description
@@ -142,7 +148,10 @@ public:
 
 	void bifurcate(const R& r);
 
-	Rcpp::NumericVector adapt(unsigned int N, double tol = R_NegInf, unsigned int report = uint_max);
+	Rcpp::NumericVector adapt(const std::vector<T>& knots);
+
+	Rcpp::NumericVector adapt(unsigned int N, double tol = R_NegInf,
+		unsigned int report = uint_max);
 
 private:
 	void recache();
@@ -154,11 +163,61 @@ private:
 	std::unique_ptr<Rcpp::LogicalVector> _bifurcatable;
 };
 
+
+template <class T, class R>
+Rcpp::NumericVector FMMProposal<T,R>::adapt(const std::vector<T>& knots)
+{
+	unsigned int N = knots.size() + 1;
+
+	std::vector<double> log_bdd_hist;
+
+	log_bdd_hist.push_back(rejection_bound(true));
+
+	for (unsigned int j = 0; j < knots.size(); j++) {
+		unsigned int L = _regions.size();
+
+		const T& x = knots[j];
+		const R& reg0 = _regions.begin()->singleton(x);
+
+		typename std::set<R>::const_iterator itr_lower = _regions.upper_bound(reg0);
+		--itr_lower;
+
+		if (itr_lower == _regions.end()) {
+			Rcpp::stop("Could not find region with point knots[%d]", j);
+		}
+
+		if (!itr_lower->s(x)) {
+			reg0.print();
+			itr_lower->print();
+			Rcpp::stop("!itr_lower->s(knots[%d])", j);
+		}
+
+		if (!itr_lower->is_bifurcatable()) {
+			Rprintf("!itr_lower->is_bifurcatable(knots[%d])\n", j);
+			continue;
+		}
+
+		const R& r = *itr_lower;
+
+		const std::pair<R,R>& bif_out = r.bifurcate(x);
+		typename std::set<R>::iterator itr = _regions.find(r);
+		_regions.erase(itr);
+		_regions.insert(bif_out.first);
+		_regions.insert(bif_out.second);
+		recache();
+
+		log_bdd_hist.push_back(rejection_bound(true));
+	}
+
+	return Rcpp::NumericVector(log_bdd_hist.begin(), log_bdd_hist.end());
+}
+
 // Recall that region volumes reflect where there mixture is further from the
 // target: it takes into account both the weight difference and the probability
 // of being in that region.
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol, unsigned int report)
+Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol,
+	unsigned int report)
 {
 	// Rprintf("FMMProposal::adapt Checkpoint 1\n");
 
