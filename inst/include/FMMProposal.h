@@ -183,17 +183,19 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(const std::vector<T>& knots)
 		--itr_lower;
 
 		if (itr_lower == _regions.end()) {
-			Rcpp::stop("Could not find region with point knots[%d]", j);
+			Rcpp::warning("Could not find region which is upper bound for knots[%d]", j);
+			continue;
 		}
 
+		// In this case, x was smaller (according to operator<) than all of the
+		// regions in the set. So print a warning and continue.
 		if (!itr_lower->s(x)) {
-			reg0.print();
-			itr_lower->print();
-			Rcpp::stop("!itr_lower->s(knots[%d])", j);
+			Rcpp::warning("Could not find a region that contains knots[%d]", j);
+			continue;
 		}
 
 		if (!itr_lower->is_bifurcatable()) {
-			Rprintf("!itr_lower->is_bifurcatable(knots[%d])\n", j);
+			Rcpp::warning("Region that contains knots[%d] is not bifurcatable", j);
 			continue;
 		}
 
@@ -444,17 +446,19 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 	typename std::set<R>::const_iterator itr_lower = _regions.upper_bound(x_singleton);
 	--itr_lower;
 
+	double out;
+
 	if (itr_lower == _regions.end()) {
-		Rcpp::stop("Could not find region with point x");
+		// Could not find region which is upper bound for x. Assume that x is
+		// outside of the support
+		out = R_NegInf;
+	} else if (!itr_lower->s(x)) {
+		// Could not find a region that contains x. Assume that x is outside of
+		// the support.
+		out = R_NegInf;
+	} else {
+		out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - log_nc;
 	}
-
-	if (!itr_lower->s(x)) {
-		x_singleton.print();
-		itr_lower->print();
-		Rcpp::stop("!itr_lower->s(x)");
-	}
-
-	double out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - log_nc;
 
 	return log ? out : exp(out);
 }
