@@ -156,6 +156,9 @@ public:
 		_log_prob = x._log_prob;
 		return *this;
 	}
+
+	double get_upper() const { return _b; }
+	double get_lower() const { return _a; }
 };
 
 inline UnivariateConstRegion::UnivariateConstRegion(double a,
