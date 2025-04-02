@@ -39,7 +39,8 @@ geometry:
   - top=0.75in
   - bottom=1.00in
 execute:
-  eval: true
+  eval: false
+#  eval: true
 code-block-bg: true
 code-block-border-left: "#31BAE9"
 callout-icon: false
@@ -87,7 +88,7 @@ This section is heavily under construction.
 To implement a rejection sampler with the `vws` package, the user must make use
 of an existing subclass of `Region` or implement a new one. Two such subclasses
 included in the package implement the univariate "constant VWS" method described
-by @VWS2024:
+by @VWS2025:
 
 - `UnivariateConstRegion`: constant VWS with a continuous support.
 - `IntUnivariateConstRegion`: constant VWS with an integer support.
@@ -150,7 +151,7 @@ and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind(T \in \mathcal{D}_j)]$ w
 \label{eqn:bound}
 \end{align}
 <!-- -->
-This bound can be used to quickly determine whether the proposal will be viable for rejection sampling. If the bound is seen to be large, the proposal may be refined by altering the partition or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2024 and will be reviewed in the present document. [@sec-UnivariateConstRegion] discusses the use of a constant function. A linear function is discussed in the context of specific examples in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
+This bound can be used to quickly determine whether the proposal will be viable for rejection sampling. If the bound is seen to be large, the proposal may be refined by altering the partition or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in the present document. [@sec-UnivariateConstRegion] discusses the use of a constant function. A linear function is discussed in the context of specific examples in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
 
 # Usage
 
@@ -197,13 +198,14 @@ Before sampling, the `adapt` function can be used to refine a given
 The can make it a better approximation of the target distribution. Details are
 given in Section [-@sec-adapt].
 
-Figure \ref{fig:diagram} displays a diagram of the high-level design just described. Sections [-@sec-FMMProposal] through [-@sec-utilities] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
+Figure \ref{fig:design} displays a diagram of the high-level design just described. Sections [-@sec-FMMProposal] through [-@sec-utilities] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
 
 \begin{figure}
 \centering
-\includegraphics[trim={0 5.5in 4in 0},clip, width=0.8\textwidth]{diagram.pdf}
+%\includegraphics[trim={0 5.5in 4in 0},clip, width=0.8\textwidth]{software-design.pdf}
+\includegraphics[width=0.8\textwidth]{software-design.pdf}
 \caption{An overview of the vws package.}
-\label{fig:diagram}
+\label{fig:design}
 \end{figure}
 
 ## FMMProposal {#sec-FMMProposal}
