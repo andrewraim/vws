@@ -5,10 +5,10 @@
 \title{Rejection Control}
 \usage{
 rejection_control(
-  max_rejects = 1000,
-  report = 100,
-  extra_outputs = FALSE,
-  action_incomplete = c("stop", "warning", "message")
+  max_rejects = .Machine$integer.max,
+  report = .Machine$integer.max,
+  ratio_ub = exp(1e-05),
+  action = c("stop", "warning", "message")
 )
 }
 \arguments{
@@ -16,12 +16,10 @@ rejection_control(
 
 \item{report}{Report progress each time this many candidates are proposed.}
 
-\item{extra_outputs}{If \code{TRUE}, return a list with extended output
-in addition to the accepted draws. Otherwise only return accepted draws.}
+\item{ratio_ub}{TBD}
 
-\item{action_incomplete}{What should happen if sampler halts with
-\code{max_rejects} rejections: one of \code{"stop"},  \code{"warning"}, or
-\code{"message"}.}
+\item{action}{What should happen if sampler halts with \code{max_rejects}
+rejections: one of \code{"stop"},  \code{"warning"}, or \code{"message"}.}
 }
 \value{
 A control object to be passed to the \code{rejection} function.

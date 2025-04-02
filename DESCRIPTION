@@ -22,7 +22,8 @@ LinkingTo:
 Suggests: 
     knitr,
     rmarkdown,
-    quarto
+    quarto,
+    tidyverse
 VignetteBuilder:
     quarto
 Roxygen: list(markdown = TRUE)

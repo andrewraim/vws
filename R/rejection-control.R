@@ -4,30 +4,31 @@
 #'
 #' @param max_rejects Maximum number of rejections to tolerate before bailing out.
 #' @param report Report progress each time this many candidates are proposed.
-#' @param extra_outputs If `TRUE`, return a list with extended output
-#' in addition to the accepted draws. Otherwise only return accepted draws.
-#' @param action_incomplete What should happen if sampler halts with
-#' `max_rejects` rejections: one of `"stop"`,  `"warning"`, or
-#' `"message"`.
+#' @param ratio_ub TBD
+#' @param action What should happen if sampler halts with `max_rejects`
+#' rejections: one of `"stop"`,  `"warning"`, or `"message"`.
 #'
 #' @return
 #' A control object to be passed to the `rejection` function.
 #'
 #' @name rejection_control
 #' @export
-rejection_control = function(max_rejects = 1000, report = 100,
-	extra_outputs = FALSE, action_incomplete = c("stop", "warning", "message"))
+rejection_control = function(max_rejects = .Machine$integer.max,
+	report = .Machine$integer.max, ratio_ub = exp(1e-5),
+	action = c("stop", "warning", "message"))
 {
-	action_incomplete = switch(match.arg(action_incomplete),
-		stop = stop,
-		warning = warning,
-		message = message)
+	action = switch(match.arg(action),
+		stop = 0L,
+		warning = 1L,
+		message = 2L
+	)
 
 	out = list(
 		max_rejects = max_rejects,
 		report = report,
-		extra_outputs = extra_outputs,
-		action_incomplete = action_incomplete
+		ratio_ub = ratio_ub,
+		action = action
 	)
+
 	structure(out, class = "rejection_control")
 }

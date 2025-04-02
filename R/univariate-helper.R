@@ -1,3 +1,5 @@
+# TBD: S4?
+
 #' Univariate Distribution Helper
 #'
 #' A container to support VWS with univariate distributions.
