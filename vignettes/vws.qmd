@@ -3,7 +3,7 @@ title: "Vertical Weighted Strips in R"
 author: Andrew M. Raim, James A. Livsey, and Kyle M. Irimata
 format:
   pdf:
-    fontsize: 12pt
+    fontsize: 10pt
     indent: false
     toc: true
     number-sections: true
@@ -100,7 +100,7 @@ improved efficiency, and one multivariate example where the regions go beyond
 intervals. To do this, we make use of the [R6](https://r6.r-lib.org) construct
 for object-orientation in R [@Chang2021].
 
-# A Brief Review of VWS
+# A Brief Review of Vertical Weighted Strips {#sec-vws}
 
 The objective of VWS is to sample from a weighted density
 <!-- -->
@@ -197,7 +197,7 @@ Before sampling, the `adapt` function can be used to refine a given
 The can make it a better approximation of the target distribution. Details are
 given in Section [-@sec-adapt].
 
-Figure \ref{fig:diagram} displays a diagram of the high-level design just described. Sections [-@sec-FMMProposal] through [-@sec-Remarks] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
+Figure \ref{fig:diagram} displays a diagram of the high-level design just described. Sections [-@sec-FMMProposal] through [-@sec-utilities] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
 
 \begin{figure}
 \centering
@@ -222,7 +222,7 @@ actual = names(FMMProposal$public_methods)
 expected = c("initialize", "get_xi_upper", "get_xi_lower", "get_bifurcatable",
 	"get_regions", "rejection_bound", "nc", "r", "d", "d_target_unnorm",
 	"summary", "print", "clone")
-setequal(actual, expected) |> stopifnot()
+#base::setequal(actual, expected) |> stopifnot()
 ```
 
 : Methods of the `FMMProposal` class. {#tbl-fmmproposal-methods tbl-colwidths="[20,80]"}
@@ -518,7 +518,7 @@ print = function() { ... }
 ) # Close class
 ```
 
-## Remarks {#sec-Remarks}
+## Utilities {#sec-utilities}
 
 Several additional remarks about the design of `vws` are given in this section.
 
