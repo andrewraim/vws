@@ -15,12 +15,13 @@
 #' @export
 rejection_control = function(max_rejects = .Machine$integer.max,
 	report = .Machine$integer.max, ratio_ub = exp(1e-5),
-	action = c("stop", "warning", "message"))
+	action = c("stop", "warning", "message", "none"))
 {
 	action = switch(match.arg(action),
 		stop = 0L,
 		warning = 1L,
-		message = 2L
+		message = 2L,
+		none = 3L
 	)
 
 	out = list(

@@ -48,7 +48,7 @@ struct rejection_args
 {
 	unsigned int max_rejects = std::numeric_limits<unsigned int>::max();
 	unsigned int report = std::numeric_limits<unsigned int>::max();
-	double ratio_ub = 1e-5;
+	double ratio_ub = std::exp(1e-5);
 	error_action action = error_action::STOP;
 
 	rejection_args() { };

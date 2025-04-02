@@ -1,5 +1,5 @@
 ---
-title: "Vertical Weighted Strips in R"
+title: "`vws`: Vertical Weighted Strips in R using C++"
 author: Andrew M. Raim, James A. Livsey, and Kyle M. Irimata
 format:
   pdf:
@@ -59,6 +59,18 @@ set.seed(1234)
 - If plotting code gets too repetitive, consider making functions for plots.
 - `w_major` and other functions whose arguments are support points: should they
   take a list of points to be consistent? They currently take a vector as input.
+- API section should describe the major objects and utilities.
+- We should have a separate section where we describe doing stuff: constructing
+  the proposal (special cases and general case where we override abstract
+  region), refining the proposal, ...
+- Mention the namespace.
+- Mention general use of including and linking to the package
+- Mention general use of exposing an R function.
+- Other functions to document: `log-sum-exp` family, Gumbel distribution, any
+  other distributions we need to maintain, `optimize-hybrid`.
+- We may want to provide an implementation of `IntUnivariateConstRegion`, with
+  documentation and at least a brief example. Do we need to provide another
+  R interface function for this?
 :::
 
 # Introduction
@@ -155,6 +167,8 @@ This bound can be used to quickly determine whether the proposal will be viable 
 
 # Usage
 
+## Concept
+
 ::: {.callout-caution title="TBD"}
 Misc
 
@@ -191,14 +205,14 @@ expected = c("max_rejects", "report", "extra_outputs", "action_incomplete")
 base::setequal(actual, expected) |> stopifnot()
 ```
 
-Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-Region], [-@sec-UnivariateConstRegion], and [-@sec-UserRegion].
+Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-region], [-@sec-UnivariateConstRegion], and [-@sec-UserRegion].
 
 Before sampling, the `adapt` function can be used to refine a given
 `FMMProposal` object by partitioning a given set of regions into a finer set.
 The can make it a better approximation of the target distribution. Details are
 given in Section [-@sec-adapt].
 
-Figure \ref{fig:design} displays a diagram of the high-level design just described. Sections [-@sec-FMMProposal] through [-@sec-utilities] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
+Figure \ref{fig:design} displays a diagram of the high-level design just described. Sections [-@sec-fmm-proposal] through [-@sec-utilities] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
 
 \begin{figure}
 \centering
@@ -207,128 +221,6 @@ Figure \ref{fig:design} displays a diagram of the high-level design just describ
 \caption{An overview of the vws package.}
 \label{fig:design}
 \end{figure}
-
-## FMMProposal {#sec-FMMProposal}
-
-`FMMProposal` has the following public methods which are described in [@tbl-fmmproposal-methods].
-
-```{r}
-#| prompt: true
-names(FMMProposal$public_methods)
-```
-
-```{r}
-#| include: false
-# If the interface has changed, catch it and bail out
-actual = names(FMMProposal$public_methods)
-expected = c("initialize", "get_xi_upper", "get_xi_lower", "get_bifurcatable",
-	"get_regions", "rejection_bound", "nc", "r", "d", "d_target_unnorm",
-	"summary", "print", "clone")
-#base::setequal(actual, expected) |> stopifnot()
-```
-
-: Methods of the `FMMProposal` class. {#tbl-fmmproposal-methods tbl-colwidths="[20,80]"}
-
--------------------------------------------------------------------------------
-Method             Description
------              -----
-`initialize`       A standard `R6` constructor that allows objects to be
-                   created via `FMMProposal$new(...)`.
-
-`r`                Generate draws from finite mixture.
- 
-`d`                Evaluates the finite mixture density.
- 
-`nc`               Evaluate normalizing constant $\psi_N$ of the finite
-                   mixture density.
-
-`rejection_bound`  Returns either the bound \eqref{eqn:bound} or a vector
-                   \eqref{eqn:bound-components} which represents the
-                   contribution of each region to the bound.
-
-`print`            Provides a meaningful display for objects of the class when
-                   printed.
-
-`summary`          Supports the `print` method.
-
-`d_target_unnorm`  Computes the unnormalized log-density
-                   $\log h_0(x) = \log \overline{w}(x) + \log g(x)$ for
-                   $x \in \mathcal{D}_j$ which is used as an envelope in
-                   rejection sampling.
-
-`get_xi_upper`     Returns the vector $\overline{\xi}_1, \ldots, \overline{\xi}_N$
-                   from the underlying $\mathcal{D}_1, \ldots, \mathcal{D}_N$.
-
-`get_xi_lower`     Returns the vector $\underline{\xi}_1, \ldots, \underline{\xi}_N$
-                   from the underlying $\mathcal{D}_1, \ldots, \mathcal{D}_N$.
-
-`get_bifurcatable` Returns a vector of logical values indicating whether
-                   respective regions can be bifurcated (described in
-                   [@sec-adapt]).
-
-`get_regions`      Returns the list of `Region` objects based on the underlying                                  $\mathcal{D}_1, \ldots, \mathcal{D}_N$.
-
-`clone`            Make a copy of the object.
--------------------------------------------------------------------------------
-
-## Region {#sec-Region}
-
-`Region` is an abstract base class whose interface represents all problem-specific logic that must be coded to implement VWS. The interface consists of the following methods.
-
-```{r}
-#| prompt: true
-names(Region$public_methods)
-```
-
-```{r}
-#| include: false
-# If the interface has changed, catch it and bail out
-actual = names(Region$public_methods)
-expected = c("d_base", "w", "r", "d", "s", "w_major", "bifurcate",
-	"is_bifurcatable", "bifurcate_at",
-	"xi_upper", "xi_lower", "description", "print", "clone")
-setequal(actual, expected) |> stopifnot()
-```
-
-The methods are briefly described in [@tbl-region-methods]. Expressions with an index $j$ correspond to a $\mathcal{D}_j$ which is associated with the `Region` object.
-
-: Methods of the abstract `Region` class. {#tbl-region-methods tbl-colwidths="[20,80]"}
-
--------------------------------------------------------------------------------
-Method            Description
------             -----
-`w`               The weight function $w(x)$
-
-`w_major`         The majorized weight function $\overline{w}_j(x)$.
-
-`d_base`          Compute the density function $g$ of the base distribution.
-
-`r`               Generate draws from truncated and reweighted distribution
-                  $g_j$.
-
-`d`               Compute the density of truncated and reweighted distribution
-                  $g_j$.
-
-`s`               Indicator of whether a given point is in the support of
-                  truncated and reweighted distribution $g_j$.
-
-`xi_upper`        Compute $\overline{\xi}_j$.
-
-`xi_lower`        Compute $\underline{\xi}_j$.
-
-`bifurcate`       Used with `adapt` discussed in Section [-@sec-adapt].
-                  Bifurcates region object into two new `Region` objects.
-
-`is_bifurcatable` Used with `adapt`. Indicator of whether the region is
-                  eligible to be bifurcated.
-
-`print`           Provides a meaningful display for objects of the class when
-                  printed.
-
-`description`     Produce a short label that describes the region.
-
-`clone`           Make a copy of the object.
--------------------------------------------------------------------------------
 
 ## Refining the Proposal {#sec-adapt}
 
@@ -520,7 +412,345 @@ print = function() { ... }
 ) # Close class
 ```
 
+# API {#sec-api}
+
+## FMMProposal {#sec-fmm-proposal}
+
+The class `FMMProposal` represents a proposal. It has two template arguments:
+`T` is the data type for the underlying distribution (e.g., `T = double` for
+univariate and real-valued) and `R` is the type of the regions of which the
+proposal will be composed.
+
+```{cpp}
+template <class T, class R>
+class FMMProposal { ... }
+```
+
+There is a single constructor that take a vector of regions of type `R`. There
+must be at least one region in the vector, and these regions are expected to be
+a partition of the support $\Omega$.
+
+```{cpp}
+FMMProposal(const std::vector<R>& regions);
+```
+
+The following functions make use of the proposal as a distribution. They are
+especially utilized in rejection sampling.
+
+```{cpp}
+std::vector<T> r(unsigned int n = 1) const;                                           // <1>
+std::pair<std::vector<T>, std::vector<unsigned int>> r_ext(unsigned int n = 1) const; // <2>
+double d(const T& x, bool normalize = true, bool log = false) const;                  // <3>
+double w_major(const T& x, bool log = true) const;                                    // <4>
+double d_target_unnorm(const T& x, bool log = true) const;                            // <5>
+```
+1. Draw $n$ variates of type `T` from the proposal.
+2. Draw $n$ variates of type `T` from the proposal and retain the indices of
+the regions used in each draw. The results are returned as an STL pair whose
+first element is the vector of draws and second element is the vector of
+indices.
+3. Evaluate the density $h$ on the given $x$. If `normalize = false`, $h_0(x)$
+is computed. If `log = true`, the log-density is returned.
+4. Evaluate the majorized weight function `\overline{w}(x)`. If `log = true`,
+the log-density is returned.
+5. Evaluate the unnormalized target $f_0(x) = w(x) g(x)$. If `log = true`, the
+value on the log-scale is returned.
+
+The following accessors are provided.
+
+```{cpp}
+Rcpp::NumericVector get_xi_upper(bool log = true) const;              // <1>
+Rcpp::NumericVector get_xi_lower(bool log = true) const;              // <2>
+Rcpp::LogicalVector get_bifurcatable() const;                         // <3>
+Rcpp::NumericVector get_pi(bool log = false) const;                   // <4>
+Rcpp::NumericVector rejection_bound_regions(bool log = false) const;  // <5>
+double rejection_bound(bool log = false) const;                       // <6>
+double nc(bool log = false) const;                                    // <7>
+unsigned int get_N() const;                                           // <8>
+```
+1. Get the constants $\overline{\xi}_1, \ldots, \overline{\xi}_N$.
+2. Get the constants $\underline{\xi}_1, \ldots, \underline{\xi}_N$.
+3. Get a vector of $N$ logical values indicating whether the corresponding
+regions can be bifurcated. For example, when the support `T` is `int`, a
+region $[a,b]$ containing one integer should not be bifurcated because one of
+the two resulting regions will not contain any points of the support.
+4. Get the mixing proportions $\pi_1, \ldots, \pi_N$.
+5. Get the contributions $\rho_1, \ldots, \rho_N$ to bound \eqref{eqn:bound}
+for each region.
+6. Get the overall rejection bound \eqref{eqn:bound}.
+7. Get the normalizing constant $\psi_N$
+8. Get the number of regions $N$.
+
+Methods above with the a `log` argument return values on the log-scale when
+`log = true`.
+
+The following methods can be used to get (read-only) iterators to internal data structures. These can be more efficient than the accessors above because they
+do not make a copy of the data.
+
+```{cpp}
+std::set<R>::const_iterator regions_begin() const;               // <1>
+std::set<R>::const_iterator regions_end() const;
+Rcpp::NumericVector::const_iterator log_xi_upper_begin() const;  // <2>
+Rcpp::NumericVector::const_iterator log_xi_upper_end() const;
+Rcpp::NumericVector::const_iterator log_xi_lower_begin() const;  // <3>
+Rcpp::NumericVector::const_iterator log_xi_lower_end() const;
+Rcpp::LogicalVector::const_iterator bifurcatable_begin() const;  // <4>
+Rcpp::LogicalVector::const_iterator bifurcatable_end() const;
+```
+1. The start and end of the set of regions (of type `R`) in the proposal.
+2. The start and end of the vector
+$\overline{\xi}_1, \ldots, \overline{\xi}_N$.
+3. The start and end of the vector
+$\underline{\xi}_1, \ldots, \underline{\xi}_N$.
+4. The start and end of the vector of bifurcatable indicators.
+
+Two functions are provided to refine the proposal from
+$\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition.
+
+```{cpp}
+Rcpp::NumericVector adapt(const std::vector<T>& knots);    // <1>
+Rcpp::NumericVector adapt(unsigned int N, double tol = 0,  // <2>
+	bool greedy = false, unsigned int report = uint_max);
+```
+1. Partition at the given vector of knots.
+2. Refine the proposal using rule of thumb for sequential knot selection
+from @VWS2025. Refining will halt when \eqref{eqn:bound} reduces below `tol`;
+this has an effect when `tol` is positive. Otherwise, `N` is the maximum number
+of partition steps taken. If `greedy = true`, the region with the largest
+$\rho_\ell$ is always selected for partitioning; otherwise, regions are
+selected with probabilities proportional to $\rho_1, \ldots, \rho_N$. The
+argument `report` represents the period that progress is written to the
+console.
+
+Several methods are provided to summarize the regions in the proposal.
+
+```{cpp}
+Rcpp::DataFrame summary() const;       // <1>
+void print(unsigned int n = 5) const;  // <2>
+```
+1. Get a data frame with the summary.
+1. Print summary to the console.
+
+## Region {#sec-region}
+
+`Region` is an abstract base class whose interface represents the
+problem-specific logic that must be coded to implement VWS. Users create a
+subclass of this method to construct a proposal for a given problem. However,
+for the most common application of VWS - univariate support with a constant
+majorizer - users may start with a specialized subclass. See Sections [-@sec-univariate-const-region] and TBD.
+
+The class has one template argument `T`, which is the data type for the
+underlying distribution.
+
+```{cpp}
+template <class T>
+class Region { ... }
+```
+
+The interface consists of the following public methods. These are abstract and
+must be implemented in a subclass.
+
+```{cpp}
+virtual double d_base(const T& x, bool log = false) const = 0; // <1>
+virtual std::vector<T> r(unsigned int n) const = 0;            // <2>
+virtual double d(const T& x, bool log = false) const = 0;      // <3>
+virtual bool s(const T& x) const = 0;                          // <4>
+virtual double w(const T& x, bool log = true) const = 0;       // <5>
+virtual double w_major(const T& x, bool log = true) const = 0; // <6>
+virtual bool is_bifurcatable() const = 0;                      // <7>
+virtual double get_xi_upper(bool log = true) const = 0;        // <8>
+virtual double get_xi_lower(bool log = true) const = 0;        // <9>
+virtual std::string description() const = 0;                   // <10>
+virtual void print() const = 0;                                // <11>
+```
+1. Density function $g$ of the base distribution.
+2. Generate a vector of $n$ draws from $g_j$ specific to this region.
+3. Density of $g_j$ specific to this region.
+4. Indicator of whether $x$ is in the support for $g_j$ specific to this region.
+5. The weight function $w$.
+6. Majorized weight function $\overline{w}_j$ for this region.
+7. Indicator of whether this region is bifurcatable into two smaller regions.
+This is used when refining a proposal; see Section TBD. One reason that a
+region should not be bifurcated is when one of the resulting regions will not
+have any points of support.
+8. The quantity $\overline{\xi}_j$ for this region.
+9. The quantity $\underline{\xi}_j$ for this region.
+10. A string that describes this region.
+11. Print a description of this region.
+
+The argument `log = true` in the methods above requests values to be returned
+on the log-scale.
+
+## UnivariateConstRegion {#sec-univariate-const-region}
+
+This is a subclass of `Region`, defined in @sec-region, for univariate problems
+with continuous support where
+$\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind(x \in \mathscr{D}_j)$ is
+constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. Similarly,
+a minorizer
+$\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind(x \in \mathscr{D}_j)$
+is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$.
+The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical
+optimization; however, if a closed-form solution is known, the user may
+create a subclass and override the optimization method.
+
+In addition to the methods defined in `Region`, we have the following
+constructors.
+
+```{cpp}
+UnivariateConstRegion(
+	double a,                               // <1>
+	double b,                               // <2>
+	const uv_weight_function& w,            // <3>
+	const UnivariateHelper<double>& helper  // <4>
+);
+
+UnivariateConstRegion(
+	double a,                               // <1>
+	const uv_weight_function& w,            // <3>
+	const UnivariateHelper<double>& helper  // <4>
+);
+```
+1. Lower limit of interval that defines this region.
+2. Upper limit of interval that defines this region.
+3. Weight function $w$ for the target distribution.
+4. A subclass of `UnivariateHelper` which specifies operations of the base
+distribution $g$.
+
+TBD: left off here.
+
+```{cpp}
+/*
+* Maximize or minimize the function $w$ over this region. Optimization
+* is carried out with the `optimize_hybrid` function.
+*
+* - `maximize`: if `true` do maximization; otherwise do minimization.
+* - `log`: if `true`, return value on the log-scale. Otherwise, return it
+*   on the original scale.
+*
+* Returns the optimized value of $w$.
+*/
+double optimize(bool maximize = true, bool log = true) const;
+
+/*
+* A midpoint between limits $a$ and $b$ of region. If $a$ and $b$ are both
+* finite, return the standard midpoint. If both are infinite, return zero.
+* If only $a$ is finite, return a larger point in the support. If only $b$
+* is finite, return a smaller point in the support.
+*/
+double midpoint() const;
+
+/*
+* Return a pair of regions that result from bifurcating this region. The
+* bifurcation point is chosen to be the midpoint of $(a, b]$.
+*/
+std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate() const;
+
+// Return a pair of regions that result from bifurcating this region at $x$.
+std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate(const double& x) const;
+
+// Return a region based on the singleton interval $(x, x]$, using this
+// object's weight function, base distribution, etc.
+UnivariateConstRegion singleton(const double& x) const;
+
+// Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $a_1 < a_2$.
+bool operator<(const UnivariateConstRegion& x) const;
+
+// Region $(a_1, b_1]$ is considered "equal to" $(a_2, b_2]$ if $a_1 = a_2$
+// and $b_1 = b_2$.
+bool operator==(const UnivariateConstRegion& x) const;
+
+// Set this Region to be equal to `x`.
+const UnivariateConstRegion& operator=(const UnivariateConstRegion& x);
+```
+
+## Rejection Sampling {#sec-rejection}
+
+The following functions carry out rejection sampling using a VWS proposal
+described in @sec-fmm-proposal.
+
+```{cpp}
+template <typename T, typename R>
+inline rejection_result<T> rejection(
+	const FMMProposal<T,R>& h,         // <1>
+	unsigned int n,                    // <2>
+	const rejection_args& args         // <3>
+);
+
+template <typename T, typename R>
+inline rejection_result<T> rejection(
+	const FMMProposal<T,R>& h,         // <1>
+	unsigned int n                     // <2>
+);
+```
+1. An `FMMProposal` object to use as the proposal.
+2. The number of desired draws.
+3. Additional arguments for rejection sampling. Default values are assumed in
+the second form.
+
+Template arguments `T` and `R` correspond to the given proposal `h` and are
+described in @sec-fmm-proposal. Additional arguments are provided via the
+following struct.
+
+```{cpp}
+struct rejection_args
+{
+	unsigned int max_rejects = std::numeric_limits<unsigned int>::max(); // <1>
+	unsigned int report = std::numeric_limits<unsigned int>::max();      // <2>
+	double ratio_ub = std::exp(1e-5);                                    // <3>
+	error_action action = error_action::STOP;                            // <4>
+
+	rejection_args() { };                                                // <5>
+	rejection_args(SEXP obj);                                            // <6>
+	operator SEXP() const;                                               // <7>
+};
+```
+1. Maximum number of rejections to tolerate overall (among all $n$ attempted
+draws) before bailing out.
+2. Determines period at which progress is logged to the console.
+3. Upper bound for the ratio $f_0(x) / h_0(x)$. The ratio may be slightly
+larger than 1 due to numerical precision, but an error is thrown if it is
+larger than this value.
+4. The action to take if `max_rejects` rejections is exceeded. See
+@sec-utilities for possible values.
+5. Constructor that takes no arguments.
+6. Convert an `Rcpp::List` to a `rejection_args` struct.
+7. Return a `Rcpp::List` from a `rejection_args` struct.
+
+The return value of `rejection` is a struct of the following type.
+
+```{cpp}
+template <typename T>
+struct rejection_result
+{
+	std::vector<T> draws;               // <1>
+	std::vector<unsigned int> rejects;  // <2>
+
+	operator SEXP() const;              // <3>
+};
+```
+1. Vector of draws.
+2. Vector of rejection counts; the $i$th element represents number of
+rejections observed before accepting the $i$th draw.
+3. Return a `Rcpp::List` from a `rejection_args` struct.
+
+If `action != error_action::STOP`in `rejection_args`, the sampler can halt
+before all $n$ desired variates are drawn. In this case, the `draws` and
+`rejects` vectors will have lengths shorter than $n$.
+
+
 ## Utilities {#sec-utilities}
+
+```{cpp}
+enum class error_action {
+	STOP,
+	WARNING,
+	MESSAGE,
+	NONE
+};
+```
+
+Equal-spaced knots.
 
 Several additional remarks about the design of `vws` are given in this section.
 
