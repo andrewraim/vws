@@ -7,20 +7,21 @@
 equal_spaced_knots(N, lo, hi)
 }
 \arguments{
-\item{N}{TBD}
+\item{N}{Number of desired intervals.}
 
-\item{lo}{TBD}
+\item{lo}{Left endpoint; must be finite.}
 
-\item{hi}{TBD}
+\item{hi}{Right endpoint; must be finite.}
 }
 \value{
-TBD
+A vector of \eqn{N-1} knots.
 }
 \description{
-Prepare \eqn{N} equally-spaced intervals between finite endpoints \code{lo} and
-\code{hi}.
+Prepare knots which define \eqn{N} equally-spaced intervals between finite
+endpoints \code{lo} and \code{hi}.
 }
 \examples{
-print("TBD")
+equal_spaced_knots(2, lo = 0, hi = 1)
+equal_spaced_knots(3, lo = 0, hi = 1)
 
 }

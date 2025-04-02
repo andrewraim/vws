@@ -25,6 +25,71 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// r_gamma_trunc_rcpp
+Rcpp::NumericVector r_gamma_trunc_rcpp(unsigned int n, double shape, double rate, double a, double b);
+RcppExport SEXP _vws_r_gamma_trunc_rcpp(SEXP nSEXP, SEXP shapeSEXP, SEXP rateSEXP, SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< unsigned int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type shape(shapeSEXP);
+    Rcpp::traits::input_parameter< double >::type rate(rateSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(r_gamma_trunc_rcpp(n, shape, rate, a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
+// d_gamma_trunc_rcpp
+Rcpp::NumericVector d_gamma_trunc_rcpp(const Rcpp::NumericVector& x, double shape, double rate, double a, double b, bool log);
+RcppExport SEXP _vws_d_gamma_trunc_rcpp(SEXP xSEXP, SEXP shapeSEXP, SEXP rateSEXP, SEXP aSEXP, SEXP bSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type shape(shapeSEXP);
+    Rcpp::traits::input_parameter< double >::type rate(rateSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(d_gamma_trunc_rcpp(x, shape, rate, a, b, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// p_gamma_trunc_rcpp
+Rcpp::NumericVector p_gamma_trunc_rcpp(const Rcpp::NumericVector& q, double shape, double rate, double a, double b, bool lower, bool log);
+RcppExport SEXP _vws_p_gamma_trunc_rcpp(SEXP qSEXP, SEXP shapeSEXP, SEXP rateSEXP, SEXP aSEXP, SEXP bSEXP, SEXP lowerSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type q(qSEXP);
+    Rcpp::traits::input_parameter< double >::type shape(shapeSEXP);
+    Rcpp::traits::input_parameter< double >::type rate(rateSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(p_gamma_trunc_rcpp(q, shape, rate, a, b, lower, log));
+    return rcpp_result_gen;
+END_RCPP
+}
+// q_gamma_trunc_rcpp
+Rcpp::NumericVector q_gamma_trunc_rcpp(const Rcpp::NumericVector& p, double shape, double rate, double a, double b, bool lower, bool log);
+RcppExport SEXP _vws_q_gamma_trunc_rcpp(SEXP pSEXP, SEXP shapeSEXP, SEXP rateSEXP, SEXP aSEXP, SEXP bSEXP, SEXP lowerSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type shape(shapeSEXP);
+    Rcpp::traits::input_parameter< double >::type rate(rateSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower(lowerSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(q_gamma_trunc_rcpp(p, shape, rate, a, b, lower, log));
+    return rcpp_result_gen;
+END_RCPP
+}
 // r_gumbel_rcpp
 Rcpp::NumericVector r_gumbel_rcpp(unsigned int n, double mu, double sigma);
 RcppExport SEXP _vws_r_gumbel_rcpp(SEXP nSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
@@ -350,6 +415,10 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_vws_r_categ_rcpp", (DL_FUNC) &_vws_r_categ_rcpp, 4},
+    {"_vws_r_gamma_trunc_rcpp", (DL_FUNC) &_vws_r_gamma_trunc_rcpp, 5},
+    {"_vws_d_gamma_trunc_rcpp", (DL_FUNC) &_vws_d_gamma_trunc_rcpp, 6},
+    {"_vws_p_gamma_trunc_rcpp", (DL_FUNC) &_vws_p_gamma_trunc_rcpp, 7},
+    {"_vws_q_gamma_trunc_rcpp", (DL_FUNC) &_vws_q_gamma_trunc_rcpp, 7},
     {"_vws_r_gumbel_rcpp", (DL_FUNC) &_vws_r_gumbel_rcpp, 3},
     {"_vws_d_gumbel_rcpp", (DL_FUNC) &_vws_d_gumbel_rcpp, 4},
     {"_vws_p_gumbel_rcpp", (DL_FUNC) &_vws_p_gumbel_rcpp, 5},

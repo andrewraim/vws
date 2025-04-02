@@ -1,10 +1,21 @@
 #ifndef VWS_H
 #define VWS_H
 
+/*
+* Export classes, functions, etc to package users.
+*
+* Note that `result.h` must be listed first because it uses a technique
+* described [1].
+*
+* [1] Dirk Eddelbuettel and Romain Francois. Rcpp Extending. Vignette from
+* Rcpp version 1.0.13.
+*/
+
 #include "result.h"
 
 #include "categ.h"
 #include "FMMProposal.h"
+#include "gamma-trunc.h"
 #include "gumbel.h"
 #include "invgamma.h"
 #include "log-sum-exp.h"

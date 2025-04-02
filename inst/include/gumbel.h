@@ -3,12 +3,25 @@
 
 #include <Rcpp.h>
 
+/*
+* Functions for the Gumbel distribution with location parameter $\mu$ and
+* scale parameter $\sigma$.
+*/
+
 namespace vws {
 
 /*
-* Non-vectorized distribution functions.
+* Quantile function for Gumbel distribution
+*
+* - `p`: probability of desired quantile.
+* - `mu`: location parameter.
+* - `sigma`: scale parameter.
+* - `lower`: if `true`, request $p$ quantile. Otherwise request $1-p$ quantile.
+* - `log`: if `true`, assume $p$ is specified on the log-scale. Otherwise,
+*   assume it is on the original scale.
+*
+* Returns a single value.
 */
-
 inline double q_gumbel(double p, double mu = 0, double sigma = 1,
 	bool lower = true, bool log = false)
 {
@@ -17,22 +30,53 @@ inline double q_gumbel(double p, double mu = 0, double sigma = 1,
 	return mu - sigma * std::log(-lp);
 }
 
+/*
+* Draw from Gumbel distribution
+*
+* - `mu`: location parameter.
+* - `sigma`: scale parameter.
+*
+* Returns a draw.
+*/
 inline double r_gumbel(double mu = 0, double sigma = 1)
 {
 	double u = R::runif(0, 1);
 	return q_gumbel(u, mu, sigma);
 }
 
-inline double d_gumbel(double x, double mu = 0,
-	double sigma = 1, bool log = false)
+/*
+* Density function for Gumbel distribution
+*
+* - `x`: argument of density.
+* - `mu`: location parameter.
+* - `sigma`: scale parameter.
+* - `log`: if `true`, return density on the log-scale. Otherwise, return it on
+*    the original scale.
+*
+* Returns a single value.
+*/
+inline double d_gumbel(double x, double mu = 0, double sigma = 1,
+	bool log = false)
 {
 	double z = (x - mu) / sigma;
 	double out = -std::log(sigma) - (z + std::exp(-z));
 	return log ? out : std::exp(out);
 }
 
-inline double p_gumbel(double q, double mu = 0,
-	double sigma = 1, bool lower = true, bool log = false)
+/*
+* CDF for Gumbel distribution
+*
+* - `q`: argument of CDF.
+* - `mu`: location parameter.
+* - `sigma`: scale parameter.
+* - `lower`: if `true`, compute $P(X \leq q)$. Otherwise compute $P(X > q)$.
+* - `log`: if `true`, return value on the log-scale. Otherwise, return it on
+*   the original scale.
+*
+* Returns a single value.
+*/
+inline double p_gumbel(double q, double mu = 0, double sigma = 1,
+	bool lower = true, bool log = false)
 {
 	double z = (q - mu) / sigma;
 	double out0 = -std::exp(-z);
@@ -41,10 +85,16 @@ inline double p_gumbel(double q, double mu = 0,
 }
 
 /*
-* Vectorized distribution functions.
+* Draw from Gumbel distribution
+*
+* - `n`: desired number of draws.
+* - `mu`: location parameter.
+* - `sigma`: scale parameter.
+*
+* Returns a vector of $n$ iid draws.
 */
-
-inline Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1)
+inline Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0,
+	double sigma = 1)
 {
 	const Rcpp::NumericVector& u = Rcpp::runif(n);
 	Rcpp::NumericVector out(n);
@@ -56,6 +106,17 @@ inline Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma 
 	return out;
 }
 
+/*
+* Density function for Gumbel distribution
+*
+* - `x`: a vector of $n$ density arguments.
+* - `mu`: location parameter.
+* - `sigma`: scale parameter.
+* - `log`: if `true`, return density values on the log-scale. Otherwise, return
+*    them on the original scale.
+*
+* Returns a vector of $n$ values.
+*/
 inline Rcpp::NumericVector d_gumbel(const Rcpp::NumericVector& x, double mu = 0,
 	double sigma = 1, bool log = false)
 {
@@ -69,6 +130,18 @@ inline Rcpp::NumericVector d_gumbel(const Rcpp::NumericVector& x, double mu = 0,
 	return out;
 }
 
+/*
+* CDF for Gumbel distribution
+*
+* - `q`: a vector of $n$ CDF arguments.
+* - `mu`: location parameter.
+* - `sigma`: scale parameter.
+* - `lower`: if `true`, compute $P(X \leq q)$. Otherwise compute $P(X > q)$.
+* - `log`: if `true`, return values on the log-scale. Otherwise, return them on
+*   the original scale.
+*
+* Returns a vector of $n$ values.
+*/
 inline Rcpp::NumericVector p_gumbel(const Rcpp::NumericVector& q, double mu = 0,
 	double sigma = 1, bool lower = true, bool log = false)
 {
@@ -82,6 +155,18 @@ inline Rcpp::NumericVector p_gumbel(const Rcpp::NumericVector& q, double mu = 0,
 	return out;
 }
 
+/*
+* Quantile function for Gumbel distribution
+*
+* - `p`: a vector of $n$ quantile arguments.
+* - `mu`: location parameter.
+* - `scale`: scale parameter.
+* - `lower`: if `true`, request $p$ quantile. Otherwise request $1-p$ quantile.
+* - `log`: if `true`, assume $p$ is specified on the log-scale. Otherwise,
+*    assume it is on the original scale.
+*
+* Returns a vector of $n$ values.
+*/
 inline Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
 	double sigma = 1, bool lower = true, bool log = false)
 {
@@ -98,3 +183,4 @@ inline Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
 }
 
 #endif
+

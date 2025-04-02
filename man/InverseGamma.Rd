@@ -6,7 +6,7 @@
 \alias{d_invgamma}
 \alias{p_invgamma}
 \alias{q_invgamma}
-\title{Inverse Gamma distribution}
+\title{Inverse Gamma Distribution}
 \usage{
 r_invgamma(n, a, b)
 
@@ -23,25 +23,49 @@ q_invgamma(p, a, b, lower = TRUE, log = FALSE)
 
 \item{b}{Rate parameter.}
 
-\item{x}{Vector of quantiles.}
+\item{x}{Vector; argument of density.}
 
 \item{log}{If \code{TRUE}, return densities and probabilities on the log-scale.}
 
-\item{q}{Vector of quantiles.}
+\item{q}{Vector; argument of cumulative distribution function.}
 
-\item{lower}{logical; if TRUE (default), probabilities are
+\item{lower}{logical; if \code{TRUE} (default), probabilities are
 \eqn{P(X \leq x)}; otherwise, \eqn{P(X > x)}.}
 
-\item{p}{Vector of probabilities.}
+\item{p}{Vector; argument of quantile function.}
 }
 \value{
 \code{d_invgamma} computes the density, \code{r_invgamma} generates random deviates,
 \code{p_invgamma} computes the CDF, and \code{q_invgamma} computes quantiles.
 }
 \description{
-Inverse Gamma distribution
+Functions for the Inverse Gamma distribution parameterized by shape and
+rate, whose density is
+\deqn{
+f(x \mid a, b) =
+\frac{
+b^a
+}{
+\Gamma(a)
 }
-\details{
-Note that \verb{Rcpp::*gamma} and \verb{R::*gamma} functions are both parameterized
-by a scale parameter, which is the inverse of the rate.
+x^{a-1} e^{-b x} \textrm{I}(x \geq 0)
+}
+}
+\examples{
+a = 10
+b = 5
+x = r_invgamma(100000, a, b)
+xx = seq(0, 3, length.out = 100)
+
+plot(density(x))
+lines(xx, d_invgamma(xx, a, b), lty = 2, col = "blue", lwd = 2)
+
+plot(ecdf(x))
+lines(xx, p_invgamma(xx, a, b), lty = 2, col = "blue", lwd = 2)
+
+pp = seq(0, 1, length.out = 102) |> head(-1) |> tail(-1)
+qq = quantile(x, probs = pp)
+plot(pp, qq)
+lines(pp, q_invgamma(pp, a, b), lty = 2, col = "blue", lwd = 2)
+
 }

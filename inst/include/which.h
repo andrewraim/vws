@@ -6,12 +6,14 @@
 namespace vws {
 
 /*
-* A C++ implementation of the R "which" function. Does a standard
-* implementation already exist?
+* A C++ implementation of the R `which` function.
 *
-* Returns the indices in `x` which have the value `true`. If `one_based` is
-* true, indices are transformed to start at 1 (especially for use in R).
-* Otherwise, indices begin at 0.
+* - `x`: a vector of $n$ logical values.
+* - `one_based`: if `true`, returned indices will be in $\{ 1, \ldots, n \}$.
+*   Otherwise, returned indices will be in $\{ 0, \ldots, n-1 \}$.
+*
+* Returns a vector of indices whose length is between $0$ and $n$. Indices
+* correspond to elements of `x` which are `true`.
 */
 inline Rcpp::IntegerVector which(const Rcpp::LogicalVector& x, bool one_based = false)
 {
@@ -23,8 +25,7 @@ inline Rcpp::IntegerVector which(const Rcpp::LogicalVector& x, bool one_based = 
 		}
 	}
 
-	Rcpp::IntegerVector out(idx.begin(), idx.end());
-	return out;
+	return Rcpp::IntegerVector(idx.begin(), idx.end());
 }
 
 }

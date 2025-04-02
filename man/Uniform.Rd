@@ -7,6 +7,26 @@
 \usage{
 mgf_unif(s, lo, hi, log = FALSE)
 }
+\arguments{
+\item{s}{Vector; argument of MGF.}
+
+\item{lo}{Lower bound \eqn{a} of distribution.}
+
+\item{hi}{Lower bound \eqn{b} of distribution.}
+
+\item{log}{logical; if \code{TRUE}, return value on log-scale. Otherwise return
+value on original scale.}
+}
+\value{
+Value of MGF.
+}
 \description{
-Uniform Distribution
+Moment-generating function (MGF) for the \eqn{Uniform(a, b)} distribution.
+}
+\examples{
+mgf_unif(0, lo = 0, hi = 1, log = TRUE)
+mgf_unif(-0.25, lo = 0, hi = 1, log = TRUE)
+mgf_unif(-0.25, lo = 0, hi = 1, log = FALSE)
+mgf_unif(+0.25, lo = 0, hi = 1, log = TRUE)
+
 }

@@ -30,6 +30,9 @@ r_truncated(n, lo, hi, pf, qf, ...)
 \item{log}{logical; if \code{TRUE}, probabilities \code{p} are given as
 \eqn{\log(p)}.}
 
+\item{tol}{A tolerance used to decide whether to upper or lower tailed
+probabilities internally.}
+
 \item{...}{Additional arguments.}
 
 \item{log.p}{logical; if \code{TRUE}, probabilities \code{p} are given as

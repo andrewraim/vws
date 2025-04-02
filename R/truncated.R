@@ -15,6 +15,8 @@
 #' @param df Density function for the untruncated distribution.
 #' @param pf Cumulative distribution function for the untruncated distribution.
 #' @param qf Quantile function for the untruncated distribution.
+#' @param tol A tolerance used to decide whether to upper or lower tailed
+#' probabilities internally.
 #' @param ... Additional arguments.
 #'
 #' @details
@@ -97,18 +99,6 @@ p_truncated = function(x, lo, hi, pf, log.p = FALSE, tol = 1e-6, ...)
 	log_p_hi = pf(hi[idx2], log.p = TRUE, ...)
 	log_p_x = pf(x[idx2], log.p = TRUE, ...)
 	out[idx2] = log_sub2_exp(log_p_x, log_p_lo[idx2]) - log_sub2_exp(log_p_hi, log_p_lo)
-
-	# n = length(x)
-	# log_p_lo = pf(lo, log.p = TRUE, ...)
-	# log_p_hi = pf(hi, log.p = TRUE, ...)
-	# idx0 = which(x <= lo)
-	# idx1 = which(x > hi)
-	# idx2 = setdiff(1:n, c(idx0, idx1))
-	# out = numeric(n)
-	# out[idx0] = -Inf
-	# out[idx1] = 0
-	# log_p_x = pf(x[idx2], log.p = TRUE, ...)
-	# out[idx2] = log_sub2_exp(log_p_x, log_p_lo) - log_sub2_exp(log_p_hi, log_p_lo)
 
 	if (log.p) { return(out) } else { return(exp(out)) }
 }

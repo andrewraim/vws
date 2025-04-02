@@ -12,29 +12,12 @@
 
 namespace vws {
 
-//' Univariate Region with Constant Majorizer
-//'
-//' A class which represents a region based on univariate intervals with a
-//' constant majorizer for the weight function. This version is for continuous
-//' supports.
-//'
-//' @field w Weight function for the target distribution. Its expected interface
-//' is \code{w(x, log = TRUE)} so that results are returned on the log-scale by
-//' default.
-//'
-//' @examples
-//' # Define base distribution and weight function
-//' g = normal_univariate_helper(mean = 0, sd = 5)
-//' w = function(x, log = FALSE) { dlnorm(10 - x, meanlog = 5, sdlog = 2, log) }
-//'
-//' reg = UnivariateConstRegion$new(-Inf, 10, w, g)
-//' print(reg)
-//'
-//' out = reg$bifurcate(0)
-//' print(out[[1]])
-//' print(out[[2]])
-//'
-//' @export
+/*
+* Univariate Region with Constant Majorizer
+*
+* A subclass of Region based on univariate intervals and a constant majorizer
+* for the weight function. This version is for continuous supports.
+*/
 class UnivariateConstRegion : public Region<double>
 {
 protected:
@@ -47,105 +30,99 @@ protected:
 	double _log_prob;
 
 public:
-	//' @param a Lower and upper limit of interval.
-	//' @param w Weight function for the target distribution.
-	//' @param g An object created by \code{univariate_helper}.
-	UnivariateConstRegion(double a,
-		const uv_weight_function& w,
+	/*
+	* Construct a singleton region based on interval $(a,a]$.
+	* - `a`: Lower and upper limit of interval.
+	* - `w`: Weight function for the target distribution.
+	* - `helper`: a subclass of `UnivariateHelper`.
+	*/
+	UnivariateConstRegion(double a, const uv_weight_function& w,
 		const UnivariateHelper<double>& helper);
 
-	//' @param a Lower limit of interval.
-	//' @param b Upper limit of interval.
-	//' @param w Weight function for the target distribution.
-	//' @param g An object created by \code{univariate_helper}.
-	UnivariateConstRegion(double a, double b,
-		const uv_weight_function& w,
+	/*
+	* Construct a region based on interval $(a,b]$.
+	* - `a` Lower limit of interval.
+	* - `b` Upper limit of interval.
+	* - `w` Weight function for the target distribution.
+	* - `helper`: a subclass of `UnivariateHelper`.
+	*/
+	UnivariateConstRegion(double a, double b, const uv_weight_function& w,
 		const UnivariateHelper<double>& helper);
 
-	//' @description
-	//' Density function \eqn{g} for the base distribution.
-	//' @param x Density argument.
-	//' @param log logical; if \code{TRUE}, return result on the log-scale.
+	/*
+	* The following functions override abstract methods in `Region`. See that
+	* class' documentation for their interfaces.
+	*/
 	double d_base(const double& x, bool log = false) const;
-
-	//' @description
-	//' Generate a draw from \eqn{g_j} specific to this region.
-	//' @param n Number of draws to generate.
-	//' @return A list of draws, with one draw per list element.
 	std::vector<double> r(unsigned int n) const;
-
-	//' @description
-	//' Density of \eqn{g_j} specific to this region.
-	//' @param x Density argument.
 	double d(const double& x, bool log = false) const;
-
-	//' @description
-	//' Test if given \code{x} is in the support for the \eqn{g_j} specific to
-	//' this region.
-	//' @param x Density argument.
 	bool s(const double& x) const;
-
 	double w(const double& x, bool log = true) const;
-
-	//' @description
-	//' Return a logical value indicating whether this region is bifurcatable.
+	double w_major(const double& x, bool log = true) const;
 	bool is_bifurcatable() const;
-
-	//' @description
-	//' The quantity \eqn{\overline{\xi}_j} for this region.
-	//' @param log logical; if \code{TRUE}, return result on the log-scale.
+	double get_lower() const { return _a; }
+	double get_upper() const { return _b; }
 	double get_xi_upper(bool log = true) const;
-
-	//' @description
-	//' The quantity \eqn{\underline{\xi}_j} for this region.
-	//' @param log logical; if \code{TRUE}, return result on the log-scale.
 	double get_xi_lower(bool log = true) const;
-
-	//' @description
-	//' A string that describes the region.
 	std::string description() const;
-
-	//' @description
-	//' Print a description of the region.
 	void print() const;
 
-	//' @description
-	//' Maximize or minimize the function \eqn{w(x)} over this region. Optimization
-	//' is carried out with \code{optim} using arguments
-	//' \code{method = "Nelder-Mead"} and
-	//' \code{control = list(maxit = 100000, warn.1d.NelderMead = FALSE)}.
-	//' @param maximize logical; if \code{TRUE} do maximization. Otherwise do
-	//' minimization.
-	//' @param log logical; if \code{TRUE} return optimized value of \eqn{\log w(x)}.
-	//' Otherwise return optimized value of \eqn{w(x)}.
+	/*
+	* Maximize or minimize the function $w$ over this region. Optimization
+	* is carried out with the `optimize_hybrid` function.
+	*
+	* - `maximize`: if `true` do maximization; otherwise do minimization.
+	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
+	*   on the original scale.
+	*
+	* Returns the optimized value of $w$.
+	*/
 	double optimize(bool maximize = true, bool log = true) const;
 
-	//' @description
-	//' Majorized weight function \eqn{\overline{w}_j} for this region.
-	//' @param x Argument to weight function.
-	//' @param log logical; if \code{TRUE}, return result on the log-scale.
-	double w_major(const double& x, bool log = true) const;
 
+	/*
+	* A midpoint between limits $a$ and $b$ of region. If $a$ and $b$ are both
+	* finite, return the standard midpoint. If both are infinite, return zero.
+	* If only $a$ is finite, return a larger point in the support. If only $b$
+	* is finite, return a smaller point in the support.
+	*/
 	double midpoint() const;
 
+	/*
+	* Return a pair of regions that result from bifurcating this region. The
+	* bifurcation point is chosen to be the midpoint of $(a, b]$.
+	*/
 	std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate() const;
 
-	//' @description
-	//' Bifurcate this region into two regions. Use \code{x} as the bifurcation
-	//' point if it is not \code{NULL}. Otherwise, select a point for bifurcation.
-	//' @param x An optional bifurcation point.
+	/*
+	* Return a pair of regions that result from bifurcating this region at $x$.
+	*/
 	std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate(const double& x) const;
 
+	/*
+	* Return a region based on the singleton interval $(x, x]$, using this
+	* object's weight function, base distribution, etc.
+	*/
 	UnivariateConstRegion singleton(const double& x) const;
 
+	/*
+	* Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $a_1 < a_2$.
+	*/
 	bool operator<(const UnivariateConstRegion& x) const {
 		return _a < x._a;
 	}
 
+	/*
+	* Region $(a_1, b_1]$ is considered "equal to" $(a_2, b_2]$ if $a_1 = a_2$
+	* and $b_1 = b_2$.
+	*/
 	bool operator==(const UnivariateConstRegion& x) const {
 		return _a == x._a && _b == x._b;
 	}
 
+	/*
+	* Set this Region to be equal to `x`.
+	*/
 	const UnivariateConstRegion& operator=(const UnivariateConstRegion& x) {
 		_a = x._a;
 		_b = x._b;
@@ -156,9 +133,6 @@ public:
 		_log_prob = x._log_prob;
 		return *this;
 	}
-
-	double get_upper() const { return _b; }
-	double get_lower() const { return _a; }
 };
 
 inline UnivariateConstRegion::UnivariateConstRegion(double a,
@@ -181,7 +155,7 @@ inline UnivariateConstRegion::UnivariateConstRegion(double a, double b,
 	_log_w_max = optimize(true);
 	_log_w_min = optimize(false);
 
-	// Compute g.p(b) - g.p(a) on the log scale
+	// Compute $P(a < X <= b)$ for $X \sim g$ on the log scale.
 	_log_prob = log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
 }
 
@@ -192,8 +166,8 @@ inline double UnivariateConstRegion::d_base(const double& x, bool log) const
 
 inline std::vector<double> UnivariateConstRegion::r(unsigned int n) const
 {
-	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this region.
-	// Compute g$q((pb - pa) * u + pa) on the log scale
+	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this
+	// region. Compute g$q((pb - pa) * u + pa) on the log scale.
 	const Rcpp::NumericVector& u = Rcpp::runif(n);
 	double log_pa = _helper->p(_a, true, true);
 	const Rcpp::NumericVector& log_p = log_add2_exp(_log_prob + log(u), Rcpp::rep(log_pa, n));
@@ -238,13 +212,13 @@ inline double UnivariateConstRegion::midpoint() const
 	double out;
 
 	if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
-		// In this case, we have an interval (-Inf, Inf). Make a split at zero.
+		// In this case, we have an interval (-inf, inf). Make a split at zero.
 		out = 0;
 	} else if (std::isinf(_a) && _a < 0) {
-		// Left endpoint is -Inf. Split based on right endpoint.
+		// Left endpoint is -inf. Split based on right endpoint.
 		out = _b - std::fabs(_b) - 1;
 	} else if (std::isinf(_b) && _b > 0) {
-		// Right endpoint is Inf. Split based on left endpoint.
+		// Right endpoint is inf. Split based on left endpoint.
 		out = _a + std::fabs(_a) + 1;
 	} else {
 		out = (_a + _b) / 2;
@@ -298,12 +272,12 @@ inline std::string UnivariateConstRegion::description() const
 
 inline void UnivariateConstRegion::print() const
 {
-	printf("Region<double> (%g, %g]\n", _a, _b);
+	Rprintf("Region<double> (%g, %g]\n", _a, _b);
 }
 
 inline double UnivariateConstRegion::optimize(bool maximize, bool log) const
 {
-	// The log-weight function
+	// Pass the log-weight function to `optimize_hybrid`.
     const fntl::dfd& f = [&](double x) -> double { return (*_w)(x, true); };
 	const auto& out = optimize_hybrid(f, 0, _a, _b, maximize);
 

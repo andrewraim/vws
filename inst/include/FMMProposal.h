@@ -12,62 +12,59 @@
 
 namespace vws {
 
-//' FMMProposal
-//'
-//' An R6 class which represents a VWS proposal: a finite mixture that some
-//' specific certain operations.
-//'
-//' @details
-//' \itemize{
-//' \item The list \code{regions} represents
-//' (\eqn{\mathcal{D}_1, \ldots, \mathcal{D}_N}).
-//' Each entry should be an object based on an R6  subclass of \code{Region}.
-//' \item The numeric vectors \code{log_xi_upper} and \code{log_xi_lower}
-//' represent
-//' \eqn{(\log \overline{\xi}_1, \ldots, \log \overline{\xi}_N)}
-//' and
-//' \eqn{(\log \underline{\xi}_1, \ldots, \log \underline{\xi}_N)},
-//' respectively.
-//' \item The logical vector \code{bifurcatable} indicates whether each
-//' region can be bifurcated or not.
-//' }
-//'
-//' @export
+/*
+* FMMProposal is a class which represents a VWS proposal: a finite mixture that
+* implements certain operations. It takes two template arguments:
+*
+* - `T`: the data type of the support. For example, for a continuous
+*   univariate support, we may use `double`.
+* - `R`: a subclass of `Region` toused by the proposal. `Region` subclasses
+*   implement any problem-specific logic used in the proposal.
+*/
 template <class T, class R>
 class FMMProposal
 {
 public:
-	//' @description
-	//' Constructor for FMMProposal.
-	//' @param regions A list of objects whose class derives from \code{Region}.
+	/*
+	* Constructor for FMMProposal based on a vector of one or more Regions.
+	*/
 	FMMProposal(const std::vector<R>& regions);
 
-	//' @description
-	//' Access the vector \eqn{\overline{\xi}_1, \ldots, \overline{\xi}_N}.
-	//' @param log If \code{TRUE} compute result on log-scale.
+	/*
+	* Access region characteristics
+	*
+	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
+	*   on the original scale.
+	*
+	* Return vectors which are ordered so that elements correspond to regions
+	* $1, \ldots, N$.
+	*
+ 	* - `get_xi_upper`: get $(\overline{\xi}_1, \ldots \overline{\xi}_1)$.
+	* - `get_xi_lower`: get $(\underline{\xi}_1, \ldots \underline{\xi}_1)$.
+	* - `get_bifurcatable`: vector of indicators of whether regions are
+	*   bifurcatable.
+	* - `get_pi`: mixing weights $(\pi_1, \ldots, \pi_N)$.
+	* - `rejection_bound_regions`: vector of contributions to the rejection
+	*   bound. These sum to the value of `rejection_bound`.
+	*/
 	Rcpp::NumericVector get_xi_upper(bool log = true) const;
-
-	//' @description
-	//' Access the vector \eqn{\underline{\xi}_1, \ldots, \underline{\xi}_N}.
-	//' @param log If \code{TRUE} compute result on log-scale.
 	Rcpp::NumericVector get_xi_lower(bool log = true) const;
-
-	//' @description
-	//' Access the vector \code{bifurcatable}.
 	Rcpp::LogicalVector get_bifurcatable() const;
+	Rcpp::NumericVector get_pi(bool log = false) const;
+	Rcpp::NumericVector rejection_bound_regions(bool log = false) const;
 
-	// Get mixing weights. They are specified in order so that they correspond
-	// to the set of regions.
+	/*
+	* Access number of regions.
+	*/
 	unsigned int get_N() const {
 		return _log_xi_upper->size();
 	}
 
-	// Get mixing weights. They are specified in order so that they correspond
-	// to the set of regions.
-	Rcpp::NumericVector get_pi(bool log = false) const;
-
-	//' @description
-	//' Access the vector \code{regions}.
+	/*
+	* The following provide const iterators to internal data structures. These
+	* may be more efficient (but less convenient) than the accessors because
+	* copies are not made here.
+	*/
 	typename std::set<R>::const_iterator regions_begin() const {
 		return _regions.begin();
 	}
@@ -93,67 +90,130 @@ public:
 		return _bifurcatable->end();
 	}
 
-	//' @description
-	//' Upper bound for rejection probability.
-	//' @param byregion If \code{TRUE}, compute bound by region. Otherwise compute
-	//' total.
-	//' @param log If \code{TRUE} compute result on log-scale.
-	//' @return A vector of size \code{N} or a single scalar.
+	/*
+	* Upper bound for rejection probability.
+	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
+	*   on the original scale.
+	*/
 	double rejection_bound(bool log = false) const;
 
-	Rcpp::NumericVector rejection_bound_regions(bool log = false) const;
-
-	//' @description
-	//' Normalizing constant for proposal distribution.
-	//' @param log If \code{TRUE} compute result on log-scale
+	/*
+	* Normalizing constant for the proposal distribution.
+	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
+	*   on the original scale.
+	*/
 	double nc(bool log = false) const;
 
-	//' @description
-	//' Generate draws from proposal distribution.
-	//' @param n Number of draws to generate.
-	//' @param indices If \code{TRUE}, return indices of mixture components selected
-	//' during draws.
-	//' @return A list which each element is a saved draw.
+	/*
+	*  Generate draws from proposal distribution.
+	*  - `n`: desired number of draws.
+	*  Returns a vector of draws.
+	*/
 	std::vector<T> r(unsigned int n = 1) const;
 
+	/*
+	*  Generate draws from proposal distribution.
+	*  - `n`: desired number of draws.
+	*  Returns a pair. First element is vector of draws. Second element is
+	*  vector with indices, each represents the region from which the draw was
+	*  taken.
+	*/
 	std::pair<std::vector<T>, std::vector<unsigned int>> r_ext(unsigned int n = 1) const;
 
-	//' @description
-	//' Compute density of proposal distribution.
-	//' @param x A list where each element is a density value to evaluate.
-	//' @param normalize If \code{TRUE}, apply the normalizing constant; otherwise
-	//' do not.
-	//' @param log If \code{TRUE}, return density results on the log-scale.
-	//' @return A vector or scalar of density values corresponding to \code{x}.
+	/*
+	* Compute density of proposal distribution.
+	* - `x`: argument of density.
+	* - `normalize`: whether to compute normalized or unnormalized density.
+	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
+	*   on the original scale.
+	*/
 	double d(const T& x, bool normalize = true, bool log = false) const;
 
-	//' @description
-	//' Compute \eqn{f_0(x) = w(x) g(x)} for each element of the given \code{x}
-	//' which is a list whose elements are density values.
-	//' @param x a list where each element represents one argument.
-	//' @param log If \code{TRUE}, return density results on the log-scale.
-	//' @return A vector or scalar of density values corresponding to \code{x}.
+	/*
+	* Compute $\overline{w}_(x)$.
+	*
+	* - `x`: a density argument.
+	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
+	*   on the original scale.
+	*/
+	double w_major(const T& x, bool log = true) const;
+
+	/*
+	* Compute $f_0(x) = w(x) g(x)$.
+	*
+	* - `x`: a density argument.
+	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
+	*   on the original scale.
+	*/
 	double d_target_unnorm(const T& x, bool log = true) const;
 
-	//' @description
-	//' Summary table of regions which compose the proposal distribution. Returns a
-	//' data frame.
+	/*
+	* Prepare summary table of regions which compose the proposal distribution.
+	*/
 	Rcpp::DataFrame summary() const;
 
-	//' @description
-	//' Display summary table of regions which compose the proposal distribution.
-	//' Limit the display to \code{n} regions.
-	//' @param n Number of regions to print.
+	/*
+	* Print summary table of regions which compose the proposal distribution.
+	* Limit the display to `n` regions.
+	*/
 	void print(unsigned int n = 5) const;
 
-	void bifurcate(const R& r);
-
+	/*
+	* Adapt / refine the proposal.
+	*
+	* - `knots`: vector of $N$ knots at which to bifurcate.
+	*
+	* This function modifies the proposal object in place.
+	*
+	* It returns a vector of $N+1$ values that represent rejection bounds (on
+	* the log-scale) corresponding to the bifurcations from `knots`: the
+	* element with index `j` is the bound after applying the first $j$ `knots`.
+	*/
 	Rcpp::NumericVector adapt(const std::vector<T>& knots);
 
-	Rcpp::NumericVector adapt(unsigned int N, double tol = R_NegInf,
-		unsigned int report = uint_max);
+	/*
+	* Adapt / refine the proposal.
+	*
+	* - `N`: number of additional desired bifurcations.
+	* - `tol`: tolerance for rejection bound.
+	* - `greedy`: whether to use greedy selection to select regions for
+	*   bifurcation.
+	* - `report`: specifies the period in which progress should be reported
+	*   (printed to the screen as a log message).
+	*
+	* This function modifies the proposal object in place.
+	*
+	* If `greedy` is `true`, the selected region to bifurcate will be the one
+	* with the largest contribution to the rejection bound. Otherwise, the
+	* selection is random, with probability proportional to regions'
+	* contribution. Note that in either case, non-bifurcatable regions are
+	* excluded from the candidates.
+	*
+	* If tolerance `tol` is achieved for the rejection bound before $N$
+	* bifurcation steps are attempted, the operation is considered to be
+	* complete.
+	*
+	* This function returns a vector of up to $N+1$ values that represent
+	* rejection bounds (on the log-scale) that correspond to the bifurcation
+	* steps: the element with index `j` corresponds to the bound at the $j$th
+	* step.
+	*/
+	Rcpp::NumericVector adapt(unsigned int N, double tol = 0,
+		bool greedy = false, unsigned int report = uint_max);
 
 private:
+
+	/*
+	* Recompute internal auxiliary data structures.
+	*
+	* The following data structures are based on the set `_regions`:
+	* - `_regions_vec`
+	* - `_log_xi_upper`
+	* - `_log_xi_lower`
+	* - `_bifurcatable`
+	*
+	* Here we construct them from the current state of `_regions`.
+	*/
 	void recache();
 
 	std::set<R> _regions;
@@ -162,7 +222,6 @@ private:
 	std::unique_ptr<Rcpp::NumericVector> _log_xi_lower;
 	std::unique_ptr<Rcpp::LogicalVector> _bifurcatable;
 };
-
 
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::adapt(const std::vector<T>& knots)
@@ -201,6 +260,8 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(const std::vector<T>& knots)
 
 		const R& r = *itr_lower;
 
+		// Bifurcate the selected region and replace the selected region with
+		// the two new ones.
 		const std::pair<R,R>& bif_out = r.bifurcate(x);
 		typename std::set<R>::iterator itr = _regions.find(r);
 		_regions.erase(itr);
@@ -214,14 +275,13 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(const std::vector<T>& knots)
 	return Rcpp::NumericVector(log_bdd_hist.begin(), log_bdd_hist.end());
 }
 
-// Recall that region volumes reflect where there mixture is further from the
-// target: it takes into account both the weight difference and the probability
-// of being in that region.
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol,
-	unsigned int report)
+	bool greedy, unsigned int report)
 {
-	// Rprintf("FMMProposal::adapt Checkpoint 1\n");
+	if (tol < 0) {
+		Rcpp::stop("tol must be nonnegative");
+	}
 
 	std::vector<double> log_bdd_hist;
 
@@ -229,78 +289,55 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol,
 
 	for (unsigned int j = 0; j < N; j++) {
 		// If we can beat the tolerance before we reach N steps, return now
-		if (log_bdd_hist[j] <= tol) {
+		if (log_bdd_hist[j] <= std::log(tol)) {
 			break;
 		}
-
-		// Rprintf("FMMProposal::adapt Checkpoint 1.1 N = %d\n", N);
 
 		unsigned int L = _regions.size();
 
 		// Each region's contribution to the rejection rate
 		Rcpp::NumericVector log_volume = rejection_bound_regions(true);
 
-		// Rprintf("FMMProposal::adapt Checkpoint 1.2\n");
-
-		// printf("Checkpoint: log_volume before transform\n");
-		// Rcpp::print(log_volume);
-
+		// Identify the regions which are bifurcatable; for the rest, we set
+		// their log-volume to -inf so they will not be selected.
 		unsigned int n_bif = 0;
 		for (unsigned int l = 0; l < L; l++) {
 			log_volume(l) = (*_bifurcatable)(l) ? log_volume(l) : R_NegInf;
 			n_bif += (*_bifurcatable)(l);
 		}
 
-		// Rprintf("FMMProposal::adapt Checkpoint 1.3\n");
-
 		if (n_bif == 0) {
 			Rcpp::warning("No regions left to bifurcate");
 			break;
 		}
 
-		// printf("Checkpoint: log_volume after transform\n");
-		// Rcpp::print(log_volume);
+		unsigned int jdx;
+		if (greedy) {
+			jdx = Rcpp::which_max(log_volume);
+		} else {
+			jdx = r_categ(log_volume, true);
+		}
 
-		unsigned int jdx = r_categ(log_volume, true);
-		// printf("Checkpoint: jdx = %d\n", jdx);
 		const R& r = _regions_vec[jdx];
-
-		// Rprintf("FMMProposal::adapt Checkpoint 1.4\n");
-
-		// Rcpp::print(log_volume);
-		// Rprintf("jdx = %d\n", jdx);
-		// r.print();
 
 		// Split the target region and make another proposal with it.
 		//
 		// TBD: we may not need to recache each time through the loop.
 		// Perhaps we can insert into the end and zero out the removed entries?
-		// printf("Checkpoint: begin split\n");
 		const std::pair<R,R>& bif_out = r.bifurcate();
-		// printf("Checkpoint: bifurcate\n");
 		typename std::set<R>::iterator itr = _regions.find(r);
-		// printf("Checkpoint: erase\n");
 		_regions.erase(itr);
-		// printf("Checkpoint: insert first\n");
 		_regions.insert(bif_out.first);
-		// printf("Checkpoint: insert second\n");
 		_regions.insert(bif_out.second);
-		// printf("Checkpoint: recache\n");
 		recache();
-
-		// Rprintf("FMMProposal::adapt Checkpoint 1.5\n");
 
 		log_bdd_hist.push_back(rejection_bound(true));
 
-		// Rprintf("FMMProposal::adapt Checkpoint 1.6\n");
-
-		// printf("Checkpoint: end split\n");
 		if (j % report == 0 && report < uint_max) {
 			logger("After %d steps log Pr{rejection} <= %g\n", j, log_bdd_hist[j+1]);
 		}
 	}
 
-	// Rprintf("FMMProposal::adapt Checkpoint K\n");
 	return Rcpp::NumericVector(log_bdd_hist.begin(), log_bdd_hist.end());
 }
 
@@ -315,14 +352,16 @@ FMMProposal<T,R>::FMMProposal(const std::vector<R>& regions)
 template <class T, class R>
 void FMMProposal<T,R>::recache()
 {
-	// TBD: This might be a good place to check for no overlaps, and perhaps to
-	// make sure there are no gaps?
+	/*
+	* TBD: This might be a good place to check for no overlaps, and perhaps to
+	* make sure there are no gaps?
+	*/
 
 	unsigned int N = _regions.size();
 	_regions_vec.clear();
-	_log_xi_upper = std::make_unique<Rcpp::NumericVector>(_regions.size());
-	_log_xi_lower = std::make_unique<Rcpp::NumericVector>(_regions.size());
-	_bifurcatable = std::make_unique<Rcpp::LogicalVector>(_regions.size());
+	_log_xi_upper = std::make_unique<Rcpp::NumericVector>(N);
+	_log_xi_lower = std::make_unique<Rcpp::NumericVector>(N);
+	_bifurcatable = std::make_unique<Rcpp::LogicalVector>(N);
 
 	unsigned int j = 0;
 	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
@@ -405,16 +444,10 @@ template <class T, class R>
 typename std::pair<std::vector<T>, std::vector<unsigned int>>
 FMMProposal<T,R>::r_ext(unsigned int n) const
 {
-	unsigned int N = _regions.size();
-
-	// Draw from the mixing weights, which are given on the log scale and
-	// not normalized.
+	// Draw from the mixing weights, which are given on the log scale and not
+	// normalized.
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
 	const Rcpp::IntegerVector& idx = r_categ(n, lxu, true);
-
-	// Warning: super verbose. Temporary only.
-	// Rcpp::print(lxu);
-	// Rcpp::print(idx);
 
 	// Draw the values from the respective mixture components.
 	std::vector<T> x;
@@ -471,6 +504,35 @@ double FMMProposal<T,R>::d_target_unnorm(const T& x, bool log) const
 }
 
 template <class T, class R>
+double FMMProposal<T,R>::w_major(const T& x, bool log) const
+{
+	/*
+	* Search for the region containing x using std::set, similar to the `d`
+	* method.
+	*/
+	const R& x_singleton = _regions.begin()->singleton(x);
+
+	typename std::set<R>::const_iterator itr_lower = _regions.upper_bound(x_singleton);
+	--itr_lower;
+
+	double out;
+
+	if (itr_lower == _regions.end()) {
+		// Could not find region which is upper bound for x. Assume that x is
+		// outside of the support
+		out = R_NegInf;
+	} else if (!itr_lower->s(x)) {
+		// Could not find a region that contains x. Assume that x is outside of
+		// the support.
+		out = R_NegInf;
+	} else {
+		out = itr_lower->w_major(x, true);
+	}
+
+	return log ? out : exp(out);
+}
+
+template <class T, class R>
 Rcpp::DataFrame FMMProposal<T,R>::summary() const
 {
 	unsigned int N = _regions.size();
@@ -497,7 +559,6 @@ Rcpp::DataFrame FMMProposal<T,R>::summary() const
 template <class T, class R>
 void FMMProposal<T,R>::print(unsigned int n) const
 {
-	// unsigned int N = _regions.size();
 	const Rcpp::DataFrame& tbl = summary();
 	unsigned int N = tbl.nrows();
 
@@ -513,12 +574,12 @@ void FMMProposal<T,R>::print(unsigned int n) const
 		Rcpp::Named("log_xi_lower") = v3[idx]
 	);
 
-	printf("FMM Proposal with %d regions\n", N);
+	Rprintf("FMM Proposal with %d regions\n", N);
 
 	Rcpp::print(tbl_head);
 
 	if (N > n) {
-		printf("There are %d more regions not displayed\n", N - n);
+		Rprintf("There are %d more regions not displayed\n", N - n);
 	}
 }
 

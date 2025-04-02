@@ -3,15 +3,27 @@
 
 #include <Rcpp.h>
 
-//' Inverse Gamma distribution
+//' Inverse Gamma Distribution
+//'
+//' Functions for the Inverse Gamma distribution parameterized by shape and
+//' rate, whose density is
+//' \deqn{
+//' f(x \mid a, b) =
+//' \frac{
+//' b^a
+//' }{
+//' \Gamma(a)
+//' }
+//' x^{a-1} e^{-b x} \textrm{I}(x \geq 0)
+//' }
 //'
 //' @param n Number of draws.
-//' @param x Vector of quantiles.
-//' @param q Vector of quantiles.
-//' @param p Vector of probabilities.
+//' @param x Vector; argument of density.
+//' @param q Vector; argument of cumulative distribution function.
+//' @param p Vector; argument of quantile function.
 //' @param a Shape parameter.
 //' @param b Rate parameter.
-//' @param lower logical; if TRUE (default), probabilities are
+//' @param lower logical; if `TRUE` (default), probabilities are
 //' \eqn{P(X \leq x)}; otherwise, \eqn{P(X > x)}.
 //' @param log If `TRUE`, return densities and probabilities on the log-scale.
 //'
@@ -19,11 +31,25 @@
 //' `d_invgamma` computes the density, `r_invgamma` generates random deviates,
 //' `p_invgamma` computes the CDF, and `q_invgamma` computes quantiles.
 //'
-//' @details
-//' Note that `Rcpp::*gamma` and `R::*gamma` functions are both parameterized
-//' by a scale parameter, which is the inverse of the rate.
+//' @examples
+//' a = 10
+//' b = 5
+//' x = r_invgamma(100000, a, b)
+//' xx = seq(0, 3, length.out = 100)
+//'
+//' plot(density(x))
+//' lines(xx, d_invgamma(xx, a, b), lty = 2, col = "blue", lwd = 2)
+//'
+//' plot(ecdf(x))
+//' lines(xx, p_invgamma(xx, a, b), lty = 2, col = "blue", lwd = 2)
+//'
+//' pp = seq(0, 1, length.out = 102) |> head(-1) |> tail(-1)
+//' qq = quantile(x, probs = pp)
+//' plot(pp, qq)
+//' lines(pp, q_invgamma(pp, a, b), lty = 2, col = "blue", lwd = 2)
 //'
 //' @name InverseGamma
+//' @export
 // [[Rcpp::export(name = "r_invgamma")]]
 Rcpp::NumericVector r_invgamma_rcpp(unsigned int n, double a, double b);
 

@@ -4,19 +4,25 @@
 #include <Rcpp.h>
 #include "fntl.h"
 #include "logit.h"
+#include "result.h"
+#include "rect.h"
 
 namespace vws {
 
-struct optimize_hybrid_result {
-	double par;
-	double value;
-	std::string method;
-};
-
 /*
 * A hybrid optimization for univariate problems. Use Brent if both bounds are
-* finite; otherwise, use L-BFGS-B. In the latter cause, if one of the bounds is
-* finite, enforce it with a transformation.
+* finite; otherwise, use BFGS. In the latter case, if one of the bounds is
+* finite, it is enforced via a transformation.
+*
+* - `f`: objective function.
+* - `init`: initial value used with BFGS.
+* - `lower`: lower bound.
+* - `upper`: upper bound.
+* - `maximize`: if `true`, optimization will be a maximization. Otherwise it
+*   is a minimization.
+* - `maxiter`: maximum number of iterations.
+*
+* Returns a `optimize_hybrid_result` structure.
 */
 inline optimize_hybrid_result optimize_hybrid(const fntl::dfd& f, double init,
 	double lower, double upper, bool maximize, unsigned maxiter = 100000)
@@ -33,6 +39,7 @@ inline optimize_hybrid_result optimize_hybrid(const fntl::dfd& f, double init,
 	bool f_upper_neg_inf = (f_upper < 0) && std::isinf(f_upper);
 
 	optimize_hybrid_result out;
+	out.status = 0;
 
 	if (maximize && f_lower_pos_inf) {
 		out.par = lower;
@@ -73,22 +80,14 @@ inline optimize_hybrid_result optimize_hybrid(const fntl::dfd& f, double init,
 		out.value = opt_out.value;
 		out.method = "Brent";
 	} else {
-		// If one or both endpoints are infinite, use L-BFGS-B method
-		fntl::lbfgsb_args args;
+		// If one or both endpoints are infinite, use BFGS method
+		fntl::bfgs_args args;
 		args.fnscale = maximize ? -1 : 1;
 		args.maxit = maxiter;
 
 		// Transform to the interval (a,b]
 		const fntl::dfd& tx = [&](double x) {
-			if (std::isinf(lower) && std::isinf(upper) && lower < 0 && upper > 0) {
-				return x;
-			} else if (std::isinf(lower) && lower < 0) {
-				return upper * logit(x);
-			} else if (std::isinf(upper) && upper > 0) {
-				return std::exp(x) + lower;
-			} else {
-				return (upper - lower) * logit(x) + lower;
-			}
+			return inv_rect(x, lower, upper);
 		};
 
 		// Compose function with transformation
@@ -97,16 +96,12 @@ inline optimize_hybrid_result optimize_hybrid(const fntl::dfd& f, double init,
 		};
 
 		const auto& vinit = Rcpp::NumericVector::create(init);
-		const fntl::lbfgsb_result& opt_out = fntl::lbfgsb(vinit, ff, args);
-
-		if (opt_out.status != fntl::lbfgsb_status::OK) {
-			Rcpp::warning("L-BFGS-B: convergence status was %d",
-				fntl::to_underlying(opt_out.status));
-		}
+		const fntl::bfgs_result& opt_out = fntl::bfgs(vinit, ff, args);
 
 		out.par = tx(opt_out.par[0]);
 		out.value = opt_out.value;
-		out.method = "L-BFGS-B";
+		out.method = "BFGS";
+		out.status = fntl::to_underlying(opt_out.status);
 	}
 
 	// In case the function is strictly increasing or decreasing, check the

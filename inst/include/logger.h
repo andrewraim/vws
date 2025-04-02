@@ -6,13 +6,18 @@
 namespace vws {
 
 /*
-* Default date format and separator. We may be able to delegate to the more
-* general function, but initial attempts to do this seem to be messing up the
-* variable argument construct.
+* Logger
+*
+* Print a message prepended with a time stamp.
+*
+* - `fmt`: format string for message; should be compatible with `printf`.
+* - `...`: variable argument list; is passed to `printf`
+*
+* Returns a status code from the function `vprintf`.
 */
 inline int logger(const char* fmt, ...)
 {
-	// Print time and separator
+	// Prepare a string with the time stamp
 	time_t timer;
 	char buffer[64];
 	struct tm* tm_info;
@@ -21,7 +26,9 @@ inline int logger(const char* fmt, ...)
 	tm_info = localtime(&timer);
 
 	strftime(buffer, 64, "%Y-%m-%d %H:%M:%S", tm_info);
-	printf("%s%s", buffer, " - ");
+
+	// Print time stamp and separator
+	Rprintf("%s%s", buffer, " - ");
 
 	// Call printf to handle the rest of the message
 	va_list arg;
