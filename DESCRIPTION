@@ -14,7 +14,6 @@ RoxygenNote: 7.3.2
 Imports:
     methods,
     R6,
-    quarto,
     Rcpp
 LinkingTo:
     Rcpp,
@@ -23,6 +22,7 @@ Suggests:
     knitr,
     rmarkdown,
     quarto,
+    statmod,
     tidyverse
 VignetteBuilder:
     quarto
