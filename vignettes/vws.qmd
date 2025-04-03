@@ -91,7 +91,6 @@ This section is heavily under construction.
   Make sure we're consistent about using either this notation or something else.
 - We will use `ggplot2`, `dplyr` and other packages of the tidyverse
   [@Tidyverse2019] in the examples.
-- We use R6 in some places to promote more formal object-orientation.
 - Remark: We don't use Rcpp at the moment because interoperability between C++
   classes and R becomes more complicated. It is possible with Rcpp Modules
   though.
@@ -205,7 +204,7 @@ expected = c("max_rejects", "report", "extra_outputs", "action_incomplete")
 base::setequal(actual, expected) |> stopifnot()
 ```
 
-Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-region], [-@sec-UnivariateConstRegion], and [-@sec-UserRegion].
+Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-region], [-@sec-UnivariateConstRegion], and [-@sec-user-region].
 
 Before sampling, the `adapt` function can be used to refine a given
 `FMMProposal` object by partitioning a given set of regions into a finer set.
@@ -382,7 +381,7 @@ region$optimize(maximize = TRUE, log = TRUE)
 
 The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntUnivariateConstRegion` or `UnivariateConstRegion` and override the `optimize` method. An example of this is given in [@sec-ln-norm-const-cf].
 
-## User-Defined Regions {#sec-UserRegion}
+## User-Defined Regions {#sec-user-region}
 
 For targets where the support is not univariate, or where the desired majorizer is something other than a constant, the user may create a subclass `Region` to implement VWS. This new class must implement the methods in [@tbl-region-methods] using `R6`. Here is a skeleton of a such a subclass named `CustomRegion` to illustrate this process. Complete implementations of such subclasses are given in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
 
@@ -412,19 +411,86 @@ print = function() { ... }
 ) # Close class
 ```
 
-# API {#sec-api}
+# R API {#sec-r-api}
+
+## Rejection Sampling {#sec-r-rejection-sampling}
+
+An implementation of VWS rejection sampling is provided in R to help with quick
+prototyping. It is limited to univariate problems, and assumes constant
+majorizers and minorizers where constants are obtained from numerical
+optimization.
+
+### `rejection` function {.unnumbered .unlisted}
+
+```{r}
+#| eval: false
+rejection(
+	n,                             # <1>
+	lo,                            # <2>
+	hi,                            # <3>
+	w,                             # <4>
+	helper,                        # <5>
+	N,                             # <6>
+	tol,                           # <7>
+	control = rejection_control()  # <8>
+)
+```
+1. Number of desired variates.
+2. Lower endpoint of support; may be `-Inf`.
+3. Upper endpoint of support; may be `Inf`.
+4. A weight function `w(x, log)` which takes argument: `x` a point in the
+support and `log` an indicator of whether value should be returned on the
+log-scale.
+5. A structure created from `univariate_helper`. See below.
+6. Maximum number of regions to create in the proposal.
+7. Desired bound for probability of rejection in the proposal.
+8. An object constructed using `rejection_control`. See below.
+
+### `rejection_control` function {.unnumbered .unlisted}
+
+```{r}
+#| eval: false
+rejection_control(
+	max_rejects = .Machine$integer.max,               # <1>
+	report = .Machine$integer.max,                    # <2>
+	ratio_ub = exp(1e-5),                             # <3>
+	action = c("stop", "warning", "message", "none")  # <4>
+)
+```	
+1. Maximum number of rejections to tolerate before bailing out.
+2. Report progress each time this many candidates are proposed.
+3. Rejection ratio $f_0(x) / h_0(x)$ may be larger than 1 due to numerical
+precision. Throw an error if it is larger than this value.
+4. Action to take if rejection sampling halts early due to the maximum number
+of rejections being exceeded.
+
+### `univariate_helper` function {.unnumbered .unlisted}
+
+TBD: `univariate_helper`
+
+TBD: remove other R functions or document them?
+
+
+# C++ API {#sec-cpp-api}
 
 ## FMMProposal {#sec-fmm-proposal}
 
-The class `FMMProposal` represents a proposal. It has two template arguments:
-`T` is the data type for the underlying distribution (e.g., `T = double` for
-univariate and real-valued) and `R` is the type of the regions of which the
-proposal will be composed.
+The class `FMMProposal` represents a VWS proposal. 
+
+### Class Definition {.unnumbered .unlisted}
+
+`FMMProposal` has two template arguments: `T` is the data type for the
+underlying distribution (e.g., `T = double` for univariate and real-valued) and
+`R` is the type of the regions of which the proposal will be composed.
 
 ```{cpp}
 template <class T, class R>
-class FMMProposal { ... }
+class FMMProposal {
+	...
+}
 ```
+
+### Constructor {.unnumbered .unlisted}
 
 There is a single constructor that take a vector of regions of type `R`. There
 must be at least one region in the vector, and these regions are expected to be
@@ -433,6 +499,8 @@ a partition of the support $\Omega$.
 ```{cpp}
 FMMProposal(const std::vector<R>& regions);
 ```
+
+### Distribution Methods {.unnumbered .unlisted}
 
 The following functions make use of the proposal as a distribution. They are
 especially utilized in rejection sampling.
@@ -455,6 +523,8 @@ is computed. If `log = true`, the log-density is returned.
 the log-density is returned.
 5. Evaluate the unnormalized target $f_0(x) = w(x) g(x)$. If `log = true`, the
 value on the log-scale is returned.
+
+### Accessors {.unnumbered .unlisted}
 
 The following accessors are provided.
 
@@ -484,6 +554,8 @@ for each region.
 Methods above with the a `log` argument return values on the log-scale when
 `log = true`.
 
+### Iterator Methods {.unnumbered .unlisted}
+
 The following methods can be used to get (read-only) iterators to internal data structures. These can be more efficient than the accessors above because they
 do not make a copy of the data.
 
@@ -504,6 +576,8 @@ $\overline{\xi}_1, \ldots, \overline{\xi}_N$.
 $\underline{\xi}_1, \ldots, \underline{\xi}_N$.
 4. The start and end of the vector of bifurcatable indicators.
 
+### Methods to Refine the Proposal {.unnumbered .unlisted}
+
 Two functions are provided to refine the proposal from
 $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition.
 
@@ -522,6 +596,8 @@ selected with probabilities proportional to $\rho_1, \ldots, \rho_N$. The
 argument `report` represents the period that progress is written to the
 console.
 
+### Summary Methods {.unnumbered .unlisted}
+
 Several methods are provided to summarize the regions in the proposal.
 
 ```{cpp}
@@ -537,7 +613,10 @@ void print(unsigned int n = 5) const;  // <2>
 problem-specific logic that must be coded to implement VWS. Users create a
 subclass of this method to construct a proposal for a given problem. However,
 for the most common application of VWS - univariate support with a constant
-majorizer - users may start with a specialized subclass. See Sections [-@sec-univariate-const-region] and TBD.
+majorizer - users may start with a specialized subclass. See
+Sections [-@sec-univariate-const-region] and TBD.
+
+### Class Definition {.unnumbered .unlisted}
 
 The class has one template argument `T`, which is the data type for the
 underlying distribution.
@@ -546,6 +625,8 @@ underlying distribution.
 template <class T>
 class Region { ... }
 ```
+
+### Public Methods {.unnumbered .unlisted}
 
 The interface consists of the following public methods. These are abstract and
 must be implemented in a subclass.
@@ -594,6 +675,8 @@ The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical
 optimization; however, if a closed-form solution is known, the user may
 create a subclass and override the optimization method.
 
+### Constructors {.unnumbered .unlisted}
+
 In addition to the methods defined in `Region`, we have the following
 constructors.
 
@@ -617,52 +700,94 @@ UnivariateConstRegion(
 4. A subclass of `UnivariateHelper` which specifies operations of the base
 distribution $g$.
 
-TBD: left off here.
+### Methods {.unnumbered .unlisted}
+
+The `optimize` method maximizes or minimizes the weight function $w$ over the
+given region. The the optimized value of $w$ is returned. If `maximize = true`
+do maximization; otherwise do minimization. If `log = true`, return value on
+the log-scale. Otherwise, return it on the original scale.
 
 ```{cpp}
-/*
-* Maximize or minimize the function $w$ over this region. Optimization
-* is carried out with the `optimize_hybrid` function.
-*
-* - `maximize`: if `true` do maximization; otherwise do minimization.
-* - `log`: if `true`, return value on the log-scale. Otherwise, return it
-*   on the original scale.
-*
-* Returns the optimized value of $w$.
-*/
 double optimize(bool maximize = true, bool log = true) const;
+```
 
-/*
-* A midpoint between limits $a$ and $b$ of region. If $a$ and $b$ are both
-* finite, return the standard midpoint. If both are infinite, return zero.
-* If only $a$ is finite, return a larger point in the support. If only $b$
-* is finite, return a smaller point in the support.
-*/
+The `midpoint` method returns a point between endpoints $a$ and $b$ of the
+region. If $a$ and $b$ are both finite, return the standard midpoint. If both
+are infinite, zero is returned. If only $a$ is finite, return a larger point in
+the support. If only $b$ is finite, return a smaller point in the support.
+
+```{cpp}
 double midpoint() const;
+```
 
-/*
-* Return a pair of regions that result from bifurcating this region. The
-* bifurcation point is chosen to be the midpoint of $(a, b]$.
-*/
-std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate() const;
+The `bifurcate` returns two disjoint regions whose union is the current region.
+The result is given as an STL pair.
 
-// Return a pair of regions that result from bifurcating this region at $x$.
-std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate(const double& x) const;
+```{cpp}
+std::pair<UnivariateConstRegion,UnivariateConstRegion>
+bifurcate() const;                                      \\ <1>
 
-// Return a region based on the singleton interval $(x, x]$, using this
-// object's weight function, base distribution, etc.
+std::pair<UnivariateConstRegion,UnivariateConstRegion>
+bifurcate(const double& x) const;                       \\ <2>
+```
+1. This version partitions the the midpoint of the current region, determined
+by the `midpoint` method.
+2. This version partitions at the given $x$.
+
+The `singleton` method returns a singleton interval $(x, x]$, using the current
+object's weight function, base distribution, etc.
+
+```{cpp}
 UnivariateConstRegion singleton(const double& x) const;
+```
 
-// Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $a_1 < a_2$.
+The following methods determine an ordering of the current region and an
+another region specified as argument `x`. Region $(a_1, b_1]$ is considered
+"less than" $(a_2, b_2]$ if $a_1 < a_2$. The regions are considered equal if
+$a_1 = a_2$ and $b_1 = b_2$. Note that other elements such as $w$ are $g$ are
+not explicitly checked, and are assumed to be the same.
+
+```{cpp}
 bool operator<(const UnivariateConstRegion& x) const;
-
-// Region $(a_1, b_1]$ is considered "equal to" $(a_2, b_2]$ if $a_1 = a_2$
-// and $b_1 = b_2$.
 bool operator==(const UnivariateConstRegion& x) const;
+```
 
-// Set this Region to be equal to `x`.
+The following method assigns the current region to be equal to the argument `x`.
+
+```{cpp}
 const UnivariateConstRegion& operator=(const UnivariateConstRegion& x);
 ```
+
+
+## UnivariateHelper {#sec-univariate-helper}
+
+`UnivariateHelper` is an abstract base class for use with `UnivariateConstRegion`. It encapsulates several operations needed from the base distribution $g$. Users should subclass `UnivariateHelper` with operations for their particular problem.
+
+The class has a template argument `T` which represents the underlying data type.
+
+```{cpp}
+template <class T>
+class UnivariateHelper { ... }
+```
+
+The following methods are abstract and intended to be overridden.
+
+```{cpp}
+virtual double d(T x, bool log = false) const = 0;                     // <1>
+virtual double p(T q, bool lower = true, bool log = false) const = 0;  // <2>
+virtual double q(T p, bool lower = true, bool log = false) const = 0;  // <3>
+virtual bool s(T x) const = 0;                                         // <4>
+```
+1. Evaluate the density function at argument $x$. Result is on the log-scale if
+`log = true`.
+2. Evaluate the cumulative distribution function (CDF) at argument $q$. Result
+is on the log-scale if `log = true`. Result represents $P(X \leq q)$ if
+`lower = true` and $P(X > q)$ otherwise.
+3. Evaluate the quantile function at argument $p$. Assume $p$ is specified on
+the log-scale if `log = true`. Request $p$ quantile if `lower = true` and
+$1-p$ quantile otherwise.
+4. Indicator of whether argument $x$ is in the support of the distribution.
+
 
 ## Rejection Sampling {#sec-rejection}
 
@@ -1868,7 +1993,7 @@ ggplot() +
 Content needed
 :::
 
-# Acknowledgments {-}
+# Acknowledgments {.unnumbered .unlisted}
 
 ::: {.callout-caution title="TBD"}
 Content needed

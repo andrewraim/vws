@@ -8,9 +8,6 @@ namespace vws {
 /*
 * This abstract class encapsulates several functions for univariate
 * distributions. It is used with the UnivariateConstRegion class.
-*
-*
-*
 */
 template <class T>
 class UnivariateHelper

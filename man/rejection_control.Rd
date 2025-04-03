@@ -8,7 +8,7 @@ rejection_control(
   max_rejects = .Machine$integer.max,
   report = .Machine$integer.max,
   ratio_ub = exp(1e-05),
-  action = c("stop", "warning", "message")
+  action = c("stop", "warning", "message", "none")
 )
 }
 \arguments{
