@@ -43,6 +43,8 @@ execute:
 #  eval: true
 code-block-bg: true
 code-block-border-left: "#31BAE9"
+filters:
+  - include-code-files
 callout-icon: false
 ---
 
@@ -56,21 +58,36 @@ set.seed(1234)
 ```
 
 ::: {.callout-caution title="TBD"}
+# Older {-}
+
 - If plotting code gets too repetitive, consider making functions for plots.
+
+- We may or may not want to suppress plotting code from the document if it gets
+  too lengthy.
+
 - `w_major` and other functions whose arguments are support points: should they
   take a list of points to be consistent? They currently take a vector as input.
-- API section should describe the major objects and utilities.
+
 - We should have a separate section where we describe doing stuff: constructing
   the proposal (special cases and general case where we override abstract
   region), refining the proposal, ...
-- Mention the namespace.
-- Mention general use of including and linking to the package
-- Mention general use of exposing an R function.
+
 - Other functions to document: `log-sum-exp` family, Gumbel distribution, any
   other distributions we need to maintain, `optimize-hybrid`.
+
 - We may want to provide an implementation of `IntUnivariateConstRegion`, with
   documentation and at least a brief example. Do we need to provide another
   R interface function for this?
+
+- Consider changing `UniformHelper` into a container of lambdas so the user
+  doesn't need to use inheritance for this part.
+
+# Outline {-}
+
+- Usage
+	+ Adapting the Proposal
+
+- C++ API
 :::
 
 # Introduction
@@ -166,7 +183,7 @@ This bound can be used to quickly determine whether the proposal will be viable 
 
 # Usage
 
-## Concept
+## Overview {#sec-overview}
 
 ::: {.callout-caution title="TBD"}
 Misc
@@ -211,17 +228,105 @@ Before sampling, the `adapt` function can be used to refine a given
 The can make it a better approximation of the target distribution. Details are
 given in Section [-@sec-adapt].
 
-Figure \ref{fig:design} displays a diagram of the high-level design just described. Sections [-@sec-fmm-proposal] through [-@sec-utilities] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
+@fig-software-design displays a diagram of the high-level design just described. Sections [-@sec-fmm-proposal] through [-@sec-utilities] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
 
-\begin{figure}
-\centering
-%\includegraphics[trim={0 5.5in 4in 0},clip, width=0.8\textwidth]{software-design.pdf}
-\includegraphics[width=0.8\textwidth]{software-design.pdf}
-\caption{An overview of the vws package.}
-\label{fig:design}
-\end{figure}
+![Design of `vws` package.](software-design.pdf){#fig-software-design}
 
-## Refining the Proposal {#sec-adapt}
+
+## Quick Start in R {#sec-quick-r}
+
+::: {.callout-caution title="TBD"}
+Under construction
+:::
+
+```{r}
+lo = -1
+hi = 1
+d = 4
+kappa = 5
+
+helper = univariate_helper(
+	d = \(x, log = F) { dunif(x, min = lo, max = hi, log = log) },
+	s = \(x) { x >= lo & x <= hi },
+	p = \(q, lower.tail = T, log.p = F) {
+		punif(q, min = lo, max = hi, lower.tail = lower.tail, log.p = log.p)
+	},
+	q = \(p, lower.tail = T, log.p = F) {
+		qunif(p, min = lo, max = hi, lower.tail = lower.tail, log.p = log.p)
+	}
+)
+	
+w = function(x, log = TRUE) {
+	out = -Inf
+	if (lo < x & x <= hi) {
+		out = 0.5 * (d - 3) * log1p(-x^2) + kappa*x
+	}
+	if (log) { return(out) } else { return(exp(out)) }
+}
+
+rejection(n = 10, lo, hi, N = 10, tol = 1e-3, w, helper)
+```
+
+
+## First Example in C++ {#sec-first-cpp}
+
+::: {.callout-caution title="TBD"}
+Under construction
+
+
+- A basic program that links to `vws` and does something productive.
+- Maybe grab it from the replication materials.
+- Explain what is going on in each important line
+	a. Including and linking to `vws`.
+	a. The `vws` namespace.
+- Expose it as an R function.
+- Demonstrate how to run it
+
+:::
+
+Let us consider an example C++ code making use of this framework.
+
+```{.cpp include="examples/first-cpp/sampler.cpp" code-line-numbers="true"}
+```
+
+There are several points of interest to call out.
+
+- Line 1 ensures that this code is linked with the `vws` and `fntl` packages.
+  `fntl` is not used directly in this example, but is needed by `vws`.
+- Line 2 includes the headers for C++ framework in `vws`.
+- Line 3 includes the header for a "helper" class that encapsulates several
+  functions of the $\text{Uniform}(a,b)$ distribution needed by the sampler:
+  the density, CDF, quantile function, and an indicator function for the
+  support.
+- Lines 5-6 define a C++ function and export it for use in R.
+- Lines 9-11 prepare a structure with arguments for rejection sampling. Notice
+  that `rejection_args` (along with other `vws` classes and functions) are in
+  the `vws` namespace.
+- Lines 13-20 define the weight function using C++ lambda syntax.
+- Lines 22-24 construct a specific type of `Region` and build an `FMMProposal`
+  from it. Notice that there are two template arguments specified here: the
+  first `double` specifies the type of the support and the second
+  `UnivariateConstRegion` specifies the type of `Region`.
+- Line 26 refines the proposal `N-1` times so that there are `N` regions.
+- Line 27 carries out rejection sampling with proposal `h`.
+- Line 29-32 extracts the draws and vector rejection counts (where the `i`th
+  element represents the number of rejections for the `i`-th draw) and returns
+  them in an `Rcpp::List`.
+
+
+TBD: here is the code for `UniformHelper.h`.
+
+```{.cpp include="examples/first-cpp/UniformHelper.h" code-line-numbers="true"}
+```
+
+We may call the exported R function as follows.
+
+```{r}
+Rcpp::sourceCpp("examples/first-cpp/sampler.cpp")
+sample(n = 10, kappa = 5, d = 4, lo = -1, hi = 1, N = 10)
+```
+
+## (STALE) Refining the Proposal {#sec-adapt}
 
 The `adapt` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain a new partition $\mathcal{D}_1^*, \ldots, \mathcal{D}_{N + N'}^*$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
 <!-- -->
@@ -274,7 +379,7 @@ plot(step, bdd, type = "l")
 
 If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `adapt` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
 
-## Univariate Regions with Constant Majorizer {#sec-UnivariateConstRegion}
+## (STALE) Univariate Regions with Constant Majorizer {#sec-UnivariateConstRegion}
 
 `UnivariateConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Furthermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
 $g_j(x) = g(x) \ind(x \in \mathcal{D}_j) / \Prob(T \in \mathcal{D}_j)$
@@ -381,7 +486,7 @@ region$optimize(maximize = TRUE, log = TRUE)
 
 The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntUnivariateConstRegion` or `UnivariateConstRegion` and override the `optimize` method. An example of this is given in [@sec-ln-norm-const-cf].
 
-## User-Defined Regions {#sec-user-region}
+## (STALE) User-Defined Regions {#sec-user-region}
 
 For targets where the support is not univariate, or where the desired majorizer is something other than a constant, the user may create a subclass `Region` to implement VWS. This new class must implement the methods in [@tbl-region-methods] using `R6`. Here is a skeleton of a such a subclass named `CustomRegion` to illustrate this process. Complete implementations of such subclasses are given in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
 
@@ -413,14 +518,12 @@ print = function() { ... }
 
 # R API {#sec-r-api}
 
-## Rejection Sampling {#sec-r-rejection-sampling}
-
 An implementation of VWS rejection sampling is provided in R to help with quick
 prototyping. It is limited to univariate problems, and assumes constant
 majorizers and minorizers where constants are obtained from numerical
 optimization.
 
-### `rejection` function {.unnumbered .unlisted}
+## `rejection` function {#sec-r-rejection}
 
 ```{r}
 #| eval: false
@@ -441,12 +544,12 @@ rejection(
 4. A weight function `w(x, log)` which takes argument: `x` a point in the
 support and `log` an indicator of whether value should be returned on the
 log-scale.
-5. A structure created from `univariate_helper`. See below.
+5. A structure created from `univariate_helper` (@sec-r-univariate-helper).
 6. Maximum number of regions to create in the proposal.
 7. Desired bound for probability of rejection in the proposal.
-8. An object constructed using `rejection_control`. See below.
+8. An object constructed using `rejection_control` (@sec-r-rejection-control).
 
-### `rejection_control` function {.unnumbered .unlisted}
+## `rejection_control` function {#sec-r-rejection-control}
 
 ```{r}
 #| eval: false
@@ -464,11 +567,30 @@ precision. Throw an error if it is larger than this value.
 4. Action to take if rejection sampling halts early due to the maximum number
 of rejections being exceeded.
 
-### `univariate_helper` function {.unnumbered .unlisted}
+## `univariate_helper` function {#sec-r-univariate-helper}
 
-TBD: `univariate_helper`
+```{r}
+#| eval: false
+univariate_helper(
+	d,              # <1>
+	p,              # <2>
+	q,              # <3>
+	s               # <4>
+)
+```
+1. A density function `d(x, log = FALSE)` with argument `x`.
+2. A cumulative distribution function `p(q, lower.tail = TRUE, log.p = FALSE)`
+with argument `q`. 
+3. A quantile function `q(p, lower.tail = TRUE, log.p = FALSE)` with argument
+`p`.
+4. An indicator `s(x)` of whether argument `x` is in the distribution's support.
 
-TBD: remove other R functions or document them?
+Arguments `log` and `log.p` are logical; if `TRUE`, probabilities are given on
+the log-scale. Argument `lower.tail` is logical; if `TRUE`, probabilities are
+$P(X \leq x)$ and $P(X > x)$ otherwise.
+
+
+**TBD: remove other R functions or document them?**
 
 
 # C++ API {#sec-cpp-api}
