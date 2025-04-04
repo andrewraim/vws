@@ -58,6 +58,9 @@ set.seed(1234)
 ```
 
 ::: {.callout-caution title="TBD"}
+
+Mentioned `density`, `cdf`, etc definitions from `fntl`.
+
 # Older {-}
 
 - If plotting code gets too repetitive, consider making functions for plots.

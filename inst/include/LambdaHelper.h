@@ -6,7 +6,7 @@
 #include "UnivariateHelper.h"
 
 /*
-* Subclass of `UnivariateHelper` for functions specified via Rcpp.
+* Subclass of `UnivariateHelper` for functions specified as lambdas.
 */
 
 namespace vws {
