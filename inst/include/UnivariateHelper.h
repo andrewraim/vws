@@ -1,53 +1,45 @@
-#ifndef VWS_UNIVARIATE_HELPER_H
-#define VWS_UNIVARIATE_HELPER_H
+#ifndef UNIVARIATE_HELPER_H
+#define UNIVARIATE_HELPER_H
 
-#include <Rcpp.h>
+#include "fntl.h"
+#include "typedefs.h"
 
 namespace vws {
 
-/*
-* This abstract class encapsulates several functions for univariate
-* distributions. It is used with the UnivariateConstRegion class.
-*/
-template <class T>
 class UnivariateHelper
 {
 public:
+	UnivariateHelper(const fntl::density& d,
+		const fntl::cdf& p, const fntl::quantile& q, const supp& s)
+	: _d(d), _p(p), _q(q), _s(s)
+	{
+	}
 
-	/*
-	* Density function
-	* - `x`: argument
-	* - `log`: if `true`, return density values on the log-scale. Otherwise,
-	*   return them on the original scale.
-	*/
-	virtual double d(T x, bool log = false) const = 0;
+	double d(double x, bool log = false) const {
+		return _d(x, log);
+	}
+	double p(double q, bool lower = true, bool log = false) const {
+		return _p(q, lower, log);
+	}
+	double q(double p, bool lower = true, bool log = false) const {
+		return _q(p, lower, log);
+	}
+	bool s(double x) const {
+		return _s(x);
+	}
+	const UnivariateHelper& operator=(const UnivariateHelper& x) {
+		_d = x._d;
+		_p = x._p;
+		_q = x._q;
+		_s = x._s;
+		return *this;
+	}
 
-	/*
-	* CDF
-	* - `q`: argument
-	* - `lower`: if `true`, compute $P(X \leq q)$. Otherwise compute $P(X > q)$.
-	* - `log`: if `true`, return values on the log-scale. Otherwise, return
-	*   them on the original scale.
-	*/
-	virtual double p(T q, bool lower = true, bool log = false) const = 0;
-
-	/*
-	* Quantile function
-	* - `p`: argument
-	* - `lower`: if `true`, request $p$ quantile. Otherwise request $1-p$
-	*   quantile.
-	* - `log`: if `true`, assume $p$ is specified on the log-scale. Otherwise,
-	*   assume it is on the original scale.
-	*/
-	virtual double q(T p, bool lower = true, bool log = false) const = 0;
-
-	/*
-	* Support indicator function
-	* - `x`: argument
-	* Returns `true` if $x$ is in the support of the distribution; `false`
-	* otherwise.
-	*/
-	virtual bool s(T x) const = 0;
+private:
+	fntl::density _d;
+	fntl::cdf _p;
+	fntl::quantile _q;
+	supp _s;
 };
 
 }

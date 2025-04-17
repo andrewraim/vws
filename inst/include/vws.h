@@ -18,7 +18,6 @@
 #include "gamma-trunc.h"
 #include "gumbel.h"
 #include "invgamma.h"
-#include "LambdaHelper.h"
 #include "log-sum-exp.h"
 #include "logger.h"
 #include "logit.h"

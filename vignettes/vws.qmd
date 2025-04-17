@@ -59,13 +59,13 @@ set.seed(1234)
 
 ::: {.callout-caution title="TBD"}
 
-Mentioned `density`, `cdf`, etc definitions from `fntl`.
+Mention `density`, `cdf`, etc definitions from `fntl`.
 
 # Older {-}
 
 - If plotting code gets too repetitive, consider making functions for plots.
 
-- We may or may not want to suppress plotting code from the document if it gets
+- We can consider suppressing plotting code from the document if it gets
   too lengthy.
 
 - `w_major` and other functions whose arguments are support points: should they
@@ -78,12 +78,11 @@ Mentioned `density`, `cdf`, etc definitions from `fntl`.
 - Other functions to document: `log-sum-exp` family, Gumbel distribution, any
   other distributions we need to maintain, `optimize-hybrid`.
 
-- We may want to provide an implementation of `IntUnivariateConstRegion`, with
-  documentation and at least a brief example. Do we need to provide another
-  R interface function for this?
+- We may need to provide an implementation of `IntUnivariateConstRegion`, with
+  documentation and at least a brief example. If we need this, do we also need
+  to provide another R interface function?
 
-- Consider changing `UniformHelper` into a container of lambdas so the user
-  doesn't need to use inheritance for this part.
+- Clean out experimental stuff and maybe put it somewhere else.
 
 # Outline {-}
 
@@ -289,7 +288,7 @@ Under construction
 
 Let us consider an example C++ code making use of this framework.
 
-```{.cpp include="examples/first-cpp/sampler.cpp" code-line-numbers="true"}
+```{.cpp include="examples/first-cpp/sample.cpp" code-line-numbers="true"}
 ```
 
 There are several points of interest to call out.
@@ -807,23 +806,22 @@ constructors.
 
 ```{cpp}
 UnivariateConstRegion(
-	double a,                               // <1>
-	double b,                               // <2>
-	const uv_weight_function& w,            // <3>
-	const UnivariateHelper<double>& helper  // <4>
+	double a,                       // <1>
+	double b,                       // <2>
+	const uv_weight_function& w,    // <3>
+	const UnivariateHelper& helper  // <4>
 );
 
 UnivariateConstRegion(
-	double a,                               // <1>
-	const uv_weight_function& w,            // <3>
-	const UnivariateHelper<double>& helper  // <4>
+	double a,                       // <1>
+	const uv_weight_function& w,    // <3>
+	const UnivariateHelper& helper  // <4>
 );
 ```
 1. Lower limit of interval that defines this region.
 2. Upper limit of interval that defines this region.
 3. Weight function $w$ for the target distribution.
-4. A subclass of `UnivariateHelper` which specifies operations of the base
-distribution $g$.
+4. A container with operations of the base distribution $g$.
 
 ### Methods {.unnumbered .unlisted}
 
@@ -886,22 +884,30 @@ const UnivariateConstRegion& operator=(const UnivariateConstRegion& x);
 
 ## UnivariateHelper {#sec-univariate-helper}
 
-`UnivariateHelper` is an abstract base class for use with `UnivariateConstRegion`. It encapsulates several operations needed from the base distribution $g$. Users should subclass `UnivariateHelper` with operations for their particular problem.
+`UnivariateHelper` is a class which is intended for use with `UnivariateConstRegion`. It contains several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
 
-The class has a template argument `T` which represents the underlying data type.
 
 ```{cpp}
-template <class T>
-class UnivariateHelper { ... }
+UnivariateHelper(
+	const fntl::density& d,  // <1>
+	const fntl::cdf& p,      // <2>
+	const fntl::quantile& q, // <3>
+	const supp& s            // <4>
+);
 ```
+1. A function to evaluate density $g$.
+2. A function to evaluate the CDF $G$.
+3. A function to evaluate the quantile function $G^{-}$.
+4. An indicator function that returns $1$ if its argument is in the support of
+$g$; otherwise, it returns $0$.
 
-The following methods are abstract and intended to be overridden.
+The following methods on `UnivariateHelper` utilize the lambdas specified above.
 
 ```{cpp}
-virtual double d(T x, bool log = false) const = 0;                     // <1>
-virtual double p(T q, bool lower = true, bool log = false) const = 0;  // <2>
-virtual double q(T p, bool lower = true, bool log = false) const = 0;  // <3>
-virtual bool s(T x) const = 0;                                         // <4>
+double d(double x, bool log = false) const;                     // <1>
+double p(double q, bool lower = true, bool log = false) const;  // <2>
+double q(double p, bool lower = true, bool log = false) const;  // <3>
+bool s(double x) const;                                         // <4>
 ```
 1. Evaluate the density function at argument $x$. Result is on the log-scale if
 `log = true`.

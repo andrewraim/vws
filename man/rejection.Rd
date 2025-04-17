@@ -4,7 +4,7 @@
 \alias{rejection}
 \title{Rejection Sampling with VWS Proposal}
 \usage{
-rejection(n, lo, hi, w, helper, N, tol, control = rejection_control())
+rejection(n, lo, hi, w, helper, N, tol = 0, control = rejection_control())
 }
 \arguments{
 \item{n}{Number of desired draws.}

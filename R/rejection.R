@@ -71,7 +71,8 @@
 #'   theme_light()
 #'
 #' @export
-rejection = function(n, lo, hi, w, helper, N, tol, control = rejection_control())
+rejection = function(n, lo, hi, w, helper, N, tol = 0,
+	control = rejection_control())
 {
 	rejection_rcpp(n = n, lo = lo, hi = hi, w = w, d_base = helper$d,
 		p_base = helper$p, q_base = helper$q, s_base = helper$s,

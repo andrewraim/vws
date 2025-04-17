@@ -24,7 +24,7 @@ protected:
 	double _a;
 	double _b;
 	const uv_weight_function* _w;
-	const UnivariateHelper<double>* _helper;
+	const UnivariateHelper* _helper;
 	double _log_w_max;
 	double _log_w_min;
 	double _log_prob;
@@ -34,20 +34,20 @@ public:
 	* Construct a singleton region based on interval $(a,a]$.
 	* - `a`: Lower and upper limit of interval.
 	* - `w`: Weight function for the target distribution.
-	* - `helper`: a subclass of `UnivariateHelper`.
+	* - `helper`: contains operations of the base distribution $g$.
 	*/
 	UnivariateConstRegion(double a, const uv_weight_function& w,
-		const UnivariateHelper<double>& helper);
+		const UnivariateHelper& helper);
 
 	/*
 	* Construct a region based on interval $(a,b]$.
 	* - `a` Lower limit of interval.
 	* - `b` Upper limit of interval.
 	* - `w` Weight function for the target distribution.
-	* - `helper`: a subclass of `UnivariateHelper`.
+	* - `helper`: contains operations of the base distribution $g$.
 	*/
 	UnivariateConstRegion(double a, double b, const uv_weight_function& w,
-		const UnivariateHelper<double>& helper);
+		const UnivariateHelper& helper);
 
 	/*
 	* The following functions override abstract methods in `Region`. See that
@@ -136,7 +136,7 @@ public:
 };
 
 inline UnivariateConstRegion::UnivariateConstRegion(double a,
-	const uv_weight_function& w, const UnivariateHelper<double>& helper)
+	const uv_weight_function& w, const UnivariateHelper& helper)
 : _a(a), _b(a), _w(&w), _helper(&helper)
 {
 	_log_w_max = (*_w)(a, true);
@@ -145,7 +145,7 @@ inline UnivariateConstRegion::UnivariateConstRegion(double a,
 }
 
 inline UnivariateConstRegion::UnivariateConstRegion(double a, double b,
-	const uv_weight_function& w, const UnivariateHelper<double>& helper)
+	const uv_weight_function& w, const UnivariateHelper& helper)
 : _a(a), _b(b), _w(&w), _helper(&helper)
 {
 	if (a > b) {

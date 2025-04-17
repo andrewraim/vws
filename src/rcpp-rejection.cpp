@@ -48,7 +48,7 @@ Rcpp::List rejection_rcpp(unsigned int n, double lo, double hi,
 		return out(0);
 	};
 
-	vws::LambdaHelper helper(lo, hi, d0, p0, q0, s0);
+	vws::UnivariateHelper helper(d0, p0, q0, s0);
 	vws::UnivariateConstRegion supp(lo, hi, w0, helper);
 	vws::FMMProposal<double, vws::UnivariateConstRegion> h({ supp });
 
