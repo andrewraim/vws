@@ -185,7 +185,25 @@ This bound can be used to quickly determine whether the proposal will be viable 
 
 # Usage
 
-## Overview {#sec-overview}
+The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples.
+
+## Quick Start in R {#sec-quick-r}
+
+::: {.callout-caution title="TBD"}
+Under construction. Describe the minimum we need to know to understand this
+example. Refer to details, which I think will be later in the document.
+:::
+
+```{.cpp include="examples/first-r/sample.R" code-line-numbers="true"}
+```
+
+
+```{r}
+source("sample.R")
+sample(n = 10, kappa = 5, d = 4, N = 10)
+```
+
+## Overview of API {#sec-overview}
 
 ::: {.callout-caution title="TBD"}
 Misc
@@ -200,7 +218,7 @@ Misc
   going into any detail.
 :::
 
-The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples. Use of the package focuses on two `R6` classes. The `FMMProposal` class represents finite mixture \eqref{eqn:fmm-proposal} and encapsulates operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations that must be supported on it for VWS; i.e., all problem-specific logic is coded within a `Region`. An `FMMProposal` object is created from a list of one or more `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
+Use of the package focuses on two `R6` classes. The `FMMProposal` class represents finite mixture \eqref{eqn:fmm-proposal} and encapsulates operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations that must be supported on it for VWS; i.e., all problem-specific logic is coded within a `Region`. An `FMMProposal` object is created from a list of one or more `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
 
 The `rejection` function takes an object `h` of class `FMMProposal` and carries out
 the rejection sampling algorithm to obtain `n` draws. The return value of `rejection` is a list where each element represents an accepted draw. Optional arguments may be passed
@@ -234,64 +252,19 @@ given in Section [-@sec-adapt].
 
 ![Design of `vws` package.](software-design.pdf){#fig-software-design}
 
-
-## Quick Start in R {#sec-quick-r}
-
-::: {.callout-caution title="TBD"}
-Under construction
-:::
-
-```{r}
-lo = -1
-hi = 1
-d = 4
-kappa = 5
-
-helper = univariate_helper(
-	d = \(x, log = F) { dunif(x, min = lo, max = hi, log = log) },
-	s = \(x) { x >= lo & x <= hi },
-	p = \(q, lower.tail = T, log.p = F) {
-		punif(q, min = lo, max = hi, lower.tail = lower.tail, log.p = log.p)
-	},
-	q = \(p, lower.tail = T, log.p = F) {
-		qunif(p, min = lo, max = hi, lower.tail = lower.tail, log.p = log.p)
-	}
-)
-	
-w = function(x, log = TRUE) {
-	out = -Inf
-	if (lo < x & x <= hi) {
-		out = 0.5 * (d - 3) * log1p(-x^2) + kappa*x
-	}
-	if (log) { return(out) } else { return(exp(out)) }
-}
-
-rejection(n = 10, lo, hi, N = 10, tol = 1e-3, w, helper)
-```
-
-
 ## First Example in C++ {#sec-first-cpp}
 
 ::: {.callout-caution title="TBD"}
 Under construction
-
-
-- A basic program that links to `vws` and does something productive.
-- Maybe grab it from the replication materials.
-- Explain what is going on in each important line
-	a. Including and linking to `vws`.
-	a. The `vws` namespace.
-- Expose it as an R function.
-- Demonstrate how to run it
-
 :::
 
-Let us consider an example C++ code making use of this framework.
+Let us consider an example C++ code making use of this framework. The following
+declares a `sample` function in C++ that is also exposed as an R function.
 
 ```{.cpp include="examples/first-cpp/sample.cpp" code-line-numbers="true"}
 ```
 
-There are several points of interest to call out.
+There are several points of interest to call out. (TBD: needs to be updated)
 
 - Line 1 ensures that this code is linked with the `vws` and `fntl` packages.
   `fntl` is not used directly in this example, but is needed by `vws`.
@@ -315,17 +288,11 @@ There are several points of interest to call out.
   element represents the number of rejections for the `i`-th draw) and returns
   them in an `Rcpp::List`.
 
-
-TBD: here is the code for `UniformHelper.h`.
-
-```{.cpp include="examples/first-cpp/UniformHelper.h" code-line-numbers="true"}
-```
-
 We may call the exported R function as follows.
 
 ```{r}
 Rcpp::sourceCpp("examples/first-cpp/sampler.cpp")
-sample(n = 10, kappa = 5, d = 4, lo = -1, hi = 1, N = 10)
+sample(n = 10, kappa = 5, d = 4, N = 10)
 ```
 
 ## (STALE) Refining the Proposal {#sec-adapt}
@@ -374,7 +341,7 @@ computed at steps $t = 0, 1, \ldots, N'$ of the refinement process. Here, $\over
 ```{r}
 #| eval: false
 #| prompt: true
-step = seq_along(out$log_bdd_hist) - 1  ## Make sequence 0, 1, ..., N'
+step = seq_along(out$log_bdd_hist) - 1  ## Make sequence 0, 1, ..., N
 bdd = exp(out$log_bdd_hist)             ## Exponentiate to probability scale
 plot(step, bdd, type = "l")
 ```
@@ -536,7 +503,7 @@ rejection(
 	w,                             # <4>
 	helper,                        # <5>
 	N,                             # <6>
-	tol,                           # <7>
+	tol = 0,                       # <7>
 	control = rejection_control()  # <8>
 )
 ```
@@ -548,7 +515,9 @@ support and `log` an indicator of whether value should be returned on the
 log-scale.
 5. A structure created from `univariate_helper` (@sec-r-univariate-helper).
 6. Maximum number of regions to create in the proposal.
-7. Desired bound for probability of rejection in the proposal.
+7. Desired bound for probability of rejection in the proposal. The default
+value of `0` ensures that the proposal is adapted `N` times without halting
+early.
 8. An object constructed using `rejection_control` (@sec-r-rejection-control).
 
 ## `rejection_control` function {#sec-r-rejection-control}
@@ -642,9 +611,10 @@ the regions used in each draw. The results are returned as an STL pair whose
 first element is the vector of draws and second element is the vector of
 indices.
 3. Evaluate the density $h$ on the given $x$. If `normalize = false`, $h_0(x)$
-is computed. If `log = true`, the log-density is returned.
-4. Evaluate the majorized weight function `\overline{w}(x)`. If `log = true`,
-the log-density is returned.
+is computed; otherwise $h(x)$ is computed. If `log = true`, results are given
+on the log-scale.
+4. Evaluate the majorized weight function $\overline{w}(x)$. If `log = true`,
+results are returned on the log-scale.
 5. Evaluate the unnormalized target $f_0(x) = w(x) g(x)$. If `log = true`, the
 value on the log-scale is returned.
 
@@ -788,8 +758,8 @@ on the log-scale.
 
 ## UnivariateConstRegion {#sec-univariate-const-region}
 
-This is a subclass of `Region`, defined in @sec-region, for univariate problems
-with continuous support where
+This is a subclass of `Region`, defined in @sec-region, specifically for
+univariate problems with continuous support where
 $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind(x \in \mathscr{D}_j)$ is
 constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. Similarly,
 a minorizer
@@ -822,6 +792,10 @@ UnivariateConstRegion(
 2. Upper limit of interval that defines this region.
 3. Weight function $w$ for the target distribution.
 4. A container with operations of the base distribution $g$.
+
+The first constructor creates a region based on the interval $(a,b]$; the
+second creates a region based on the singleton set $\{a\}$, which is intended
+primarily for internal use.
 
 ### Methods {.unnumbered .unlisted}
 

@@ -35,7 +35,7 @@ Rcpp::List sample(unsigned int n, double kappa, double d, unsigned int N)
     vws::FMMProposal<double, vws::UnivariateConstRegion> h({ supp });
 
     h.adapt(N - 1);
-    const auto& out = vws::rejection(h, n, args);
+    auto out = vws::rejection(h, n, args);
 
     return Rcpp::List::create(
         Rcpp::Named("draws") = out.draws,

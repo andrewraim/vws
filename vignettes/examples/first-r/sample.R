@@ -11,17 +11,15 @@ sample = function(n, kappa, d, N)
 	}
 
 	df = \(x, log = F) {
-		dunif(x, min = -1, max = 1, log = log)
+		dunif(x, min = -1, max = 1, log)
 	}
 	pf = \(q, lower.tail = T, log.p = F) {
-		punif(q, min = -1, max = 1, lower.tail = lower.tail, log.p = log)
+		punif(q, min = -1, max = 1, lower.tail, log.p)
 	}
 	qf = \(p, lower.tail = T, log.p = F) {
-		qunif(p, min = -1, max = 1, lower.tail = lower.tail, log.p = log)
+		qunif(p, min = -1, max = 1, lower.tail, log.p)
 	}
-	sf = \(x) {
-		-1 <= x && x <= 1
-	}
+	sf = \(x) { -1 <= x && x <= 1 }
 	helper = univariate_helper(df, pf, qf, sf)
 
 	ctrl = rejection_control(max_rejects = 1000, report = 100)
