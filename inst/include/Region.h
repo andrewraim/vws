@@ -28,14 +28,6 @@ public:
 	virtual std::vector<T> r(unsigned int n) const = 0;
 
 	/*
-	* Density of $g_j$ specific to this region.
-	* - `x`: argument of density.
-	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
-	*   on the original scale.
-	*/
-	virtual double d(const T& x, bool log = false) const = 0;
-
-	/*
 	* Indicator of whether $x$ is in the support for $g_j$ specific to this
 	* region.
 	*/
@@ -80,11 +72,6 @@ public:
 	* A string that describes this region.
 	*/
 	virtual std::string description() const = 0;
-
-	/*
-	* Print a description of this region.
-	*/
-	virtual void print() const = 0;
 };
 
 }

@@ -400,8 +400,12 @@ inv_rect <- function(x, a, b) {
     .Call(`_vws_inv_rect_rcpp`, x, a, b)
 }
 
-rejection_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, control) {
-    .Call(`_vws_rejection_rcpp`, n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, control)
+rejection_int_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, control) {
+    .Call(`_vws_rejection_int_rcpp`, n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, control)
+}
+
+rejection_numeric_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, control) {
+    .Call(`_vws_rejection_numeric_rcpp`, n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, control)
 }
 
 #' Truncated Exponential

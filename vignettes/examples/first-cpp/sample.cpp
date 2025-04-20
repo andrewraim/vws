@@ -31,8 +31,8 @@ Rcpp::List sample(unsigned int n, double kappa, double d, unsigned int N)
     };
 
     vws::UnivariateHelper helper(df, pf, qf, sf);
-    vws::UnivariateConstRegion supp(-1, 1, w, helper);
-    vws::FMMProposal<double, vws::UnivariateConstRegion> h({ supp });
+    vws::RealConstRegion supp(-1, 1, w, helper);
+    vws::FMMProposal<double, vws::RealConstRegion> h({ supp });
 
     h.adapt(N - 1);
     auto out = vws::rejection(h, n, args);

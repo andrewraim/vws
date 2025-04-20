@@ -728,30 +728,26 @@ must be implemented in a subclass.
 ```{cpp}
 virtual double d_base(const T& x, bool log = false) const = 0; // <1>
 virtual std::vector<T> r(unsigned int n) const = 0;            // <2>
-virtual double d(const T& x, bool log = false) const = 0;      // <3>
-virtual bool s(const T& x) const = 0;                          // <4>
-virtual double w(const T& x, bool log = true) const = 0;       // <5>
-virtual double w_major(const T& x, bool log = true) const = 0; // <6>
-virtual bool is_bifurcatable() const = 0;                      // <7>
-virtual double get_xi_upper(bool log = true) const = 0;        // <8>
-virtual double get_xi_lower(bool log = true) const = 0;        // <9>
-virtual std::string description() const = 0;                   // <10>
-virtual void print() const = 0;                                // <11>
+virtual bool s(const T& x) const = 0;                          // <3>
+virtual double w(const T& x, bool log = true) const = 0;       // <4>
+virtual double w_major(const T& x, bool log = true) const = 0; // <5>
+virtual bool is_bifurcatable() const = 0;                      // <6>
+virtual double get_xi_upper(bool log = true) const = 0;        // <7>
+virtual double get_xi_lower(bool log = true) const = 0;        // <8>
+virtual std::string description() const = 0;                   // <9>
 ```
-1. Density function $g$ of the base distribution.
+1. Evaluate the density function $g$ of the base distribution.
 2. Generate a vector of $n$ draws from $g_j$ specific to this region.
-3. Density of $g_j$ specific to this region.
-4. Indicator of whether $x$ is in the support for $g_j$ specific to this region.
-5. The weight function $w$.
-6. Majorized weight function $\overline{w}_j$ for this region.
-7. Indicator of whether this region is bifurcatable into two smaller regions.
+3. Indicator of whether $x$ is in the support for $g_j$ specific to this region.
+4. The weight function $w$.
+5. Majorized weight function $\overline{w}_j$ for this region.
+6. Indicator of whether this region is bifurcatable into two smaller regions.
 This is used when refining a proposal; see Section TBD. One reason that a
 region should not be bifurcated is when one of the resulting regions will not
 have any points of support.
-8. The quantity $\overline{\xi}_j$ for this region.
-9. The quantity $\underline{\xi}_j$ for this region.
-10. A string that describes this region.
-11. Print a description of this region.
+7. The quantity $\overline{\xi}_j$ for this region.
+8. The quantity $\underline{\xi}_j$ for this region.
+9. A string that describes this region.
 
 The argument `log = true` in the methods above requests values to be returned
 on the log-scale.

@@ -9,6 +9,32 @@
 
 class CustomLinearRegion : public vws::Region<double>
 {
+public:
+	CustomLinearRegion(double a, double b, double mu, double sigma2, double z,
+		double lambda2);
+
+	double mgf(double s, bool log = true) const;
+	double midpoint() const;
+
+	double d_base(const double& x, bool log = false) const;
+	double w(const double& x, bool log = true) const;
+	std::vector<double> r(unsigned int n) const;
+	bool s(const double& x) const;
+	bool is_bifurcatable() const;
+	double w_major(const double& x, bool log = true) const;
+	double get_xi_upper(bool log = true) const;
+	double get_xi_lower(bool log = true) const;
+	std::string description() const;
+
+	std::pair<CustomLinearRegion,CustomLinearRegion> bifurcate() const;
+	std::pair<CustomLinearRegion,CustomLinearRegion> bifurcate(const double& x) const;
+
+	CustomLinearRegion singleton(const double& x) const;
+
+	bool operator<(const CustomLinearRegion& x) const;
+	bool operator==(const CustomLinearRegion& x) const;
+	const CustomLinearRegion& operator=(const CustomLinearRegion& x);
+
 private:
 	double _a;
 	double _b;
@@ -20,106 +46,6 @@ private:
 	double _beta1_min;
 	double _beta0_max;
 	double _beta1_max;
-
-public:
-	CustomLinearRegion(double a, double b, double mu,
-		double sigma2, double z, double lambda2);
-
-	double mgf(double s, bool log = true) const;
-	double midpoint() const;
-
-	double d_base(const double& x, bool log = false) const
-	{
-		return R::dnorm(x, _z, std::sqrt(_lambda2), log);
-	}
-
-	double w(const double& x, bool log = true) const {
-		double out = R_NegInf;
-		if (x > 0) {
-			out = -std::log(x) - std::pow(std::log(x) - _mu, 2.0) / (2*_sigma2);
-		}
-		return log ? out : exp(out);
-	}
-
-	std::vector<double> r(unsigned int n) const {
-		double mean = _z + _beta1_max * _lambda2;
-		double sd = std::sqrt(_lambda2);
-		const Rcpp::NumericVector& out = r_norm_trunc(n, mean, sd, _a, _b);
-		return Rcpp::as<std::vector<double>>(out);
-	}
-
-	double d(const double& x, bool log = false) const {
-		double mean = _z + _beta1_max * _lambda2;
-		double sd = std::sqrt(_lambda2);
-		return d_norm_trunc(x, mean, sd, _a, _b, log);
-	}
-
-	bool s(const double& x) const {
-		return _a < x & x <= _b;
-	}
-
-	bool is_bifurcatable() const {
-		return true;
-	}
-
-	double w_major(const double& x, bool log = true) const {
-		double out = R_NegInf;
-		if (s(x)) {
-			out = _beta0_max + _beta1_max*x;
-		}
-		return log ? out : exp(out);
-	}
-
-	double get_xi_upper(bool log = true) const;
-	double get_xi_lower(bool log = true) const;
-
-	std::pair<CustomLinearRegion,CustomLinearRegion> bifurcate() const {
-		return bifurcate(midpoint());
-	}
-
-	std::pair<CustomLinearRegion,CustomLinearRegion> bifurcate(const double& x) const {
-		// printf("About to begin bifurcate at %g\n", x);
-		CustomLinearRegion r1(_a, x, _mu, _sigma2, _z, _lambda2);
-		CustomLinearRegion r2(x, _b, _mu, _sigma2, _z, _lambda2);
-		// printf("About to return from bifurcate at %g\n", x);
-		return std::make_pair(r1, r2);
-	}
-
-	std::string description() const {
-		char buf[32];
-		sprintf(buf, "(%g, %g]", _a, _b);
-		return buf;
-	}
-
-	CustomLinearRegion singleton(const double& x) const {
-		return CustomLinearRegion(x, x, _mu, _sigma2, _z, _lambda2);
-	}
-
-	void print() const {
-		printf("Custom Linear Region (%g, %g]\n", _a, _b);
-	}
-
-	bool operator<(const CustomLinearRegion& x) const {
-		return _a < x._a;
-	}
-
-	bool operator==(const CustomLinearRegion& x) const {
-		return _a == x._a && _b == x._b;
-	}
-
-	const CustomLinearRegion& operator=(const CustomLinearRegion& x) {
-		_a = x._a;
-		_b = x._b;
-		_mu = x._mu;
-		_sigma2 = x._sigma2;
-		_z = x._z;
-		_lambda2 = x._lambda2;
-		_beta0_min = x._beta0_min;
-		_beta1_min = x._beta1_min;
-		_beta0_max = x._beta0_max;
-		_beta1_max = x._beta1_max;
-		return *this;
-	}
 };
 
 // MGF of the truncated and reweighted g
@@ -150,15 +76,6 @@ double CustomLinearRegion::mgf(double s, bool log) const
 		vws::log_sub2_exp(clp_den_a, clp_den_b),
 		vws::log_sub2_exp(lp_den_b, lp_den_a)
 	);
-
-	// printf("In mgf\n");
-	// printf("lp_num: %g\n", lp_num);
-	// printf("lp_den: %g\n", lp_den);
-	// printf("s: %g\n", s);
-	// printf("_z: %g\n", _z);
-	// printf("_a: %g\n", _a);
-	// printf("_b: %g\n", _b);
-	// printf("_lambda2: %g\n", _lambda2);
 
 	double out = lp_num - lp_den + s*_z + pow(s, 2.0) * _lambda2 / 2;
 	return log ? out : exp(out);
@@ -203,8 +120,6 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		return;
 	}
 
-	// printf("Begin constructor for CustomLinearRegion\n");
-
     const fntl::dfd& d_log_w = [&](double x) {
 		double out;
 
@@ -239,7 +154,8 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 	bool l_concave = std::log(_a) < _mu - _sigma2 + 1;
 	bool r_convex = std::log(_b) > _mu - _sigma2 + 1;
 	if (l_concave && r_convex) {
-		Rcpp::stop("Partition your region so that %g is not in the interior\n", exp(_mu - _sigma2 + 1));
+		Rcpp::stop("Partition your region so that %g is not in the interior\n",
+			exp(_mu - _sigma2 + 1));
 	}
 
 	bool is_concave = l_concave;
@@ -248,7 +164,7 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 	if (is_concave) {
 		// log w(x) is concave
 
-		// For the minorizer
+		// For the majorizer
 		fntl::neldermead_args args;
 		args.maxit = 100000;
 		args.fnscale = 1.0;
@@ -258,7 +174,7 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		_beta0_max = w(c_star) - c_star * d_log_w(c_star);
 		_beta1_max = d_log_w(c_star);
 
-		// For the majorizer
+		// For the minorizer
 		_beta1_min = (w(b) - w(a)) / (b - a);
 		_beta0_min = w(a) - a*_beta1_min;
 
@@ -298,16 +214,48 @@ CustomLinearRegion::CustomLinearRegion(double a, double b, double mu,
 		printf("_beta1_max = %g\n", _beta1_max);
 		Rcpp::stop("PAUSE!");
 	}
+}
 
-	// printf("End constructor for CustomLinearRegion\n");
+double CustomLinearRegion::d_base(const double& x, bool log = false) const
+{
+	return R::dnorm(x, _z, std::sqrt(_lambda2), log);
+}
+
+double CustomLinearRegion::w(const double& x, bool log = true) const
+{
+	double out = R_NegInf;
+	if (x > 0) {
+		out = -std::log(x) - std::pow(std::log(x) - _mu, 2.0) / (2*_sigma2);
+	}
+	return log ? out : exp(out);
+}
+
+std::vector<double> CustomLinearRegion::r(unsigned int n) const
+{
+	double mean = _z + _beta1_max * _lambda2;
+	double sd = std::sqrt(_lambda2);
+	const Rcpp::NumericVector& out = r_norm_trunc(n, mean, sd, _a, _b);
+	return Rcpp::as<std::vector<double>>(out);
+}
+
+bool CustomLinearRegion::s(const double& x) const
+{
+	return _a < x & x <= _b;
+}
+
+bool CustomLinearRegion::is_bifurcatable() const
+{
+	return true;
+}
+
+double CustomLinearRegion::w_major(const double& x, bool log = true) const
+{
+	double out = s(x) ? _beta0_max + _beta1_max*x : R_NegInf;
+	return log ? out : exp(out);
 }
 
 double CustomLinearRegion::get_xi_upper(bool log) const
 {
-	// printf("Begin get_xi_upper\n");
-	// printf("_a = %g, _b = %g, _z = %g, _lambda2 = %g\n", _a, _b, _z, _lambda2);
-	// printf("_beta0_max = %g, _beta1_max = %g\n", _beta0_max, _beta1_max);
-
 	double lp_a = R::pnorm(_a, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), true, true);
 	double lp_b = R::pnorm(_b, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), true, true);
 	double lp1_diff = vws::log_sub2_exp(lp_b, lp_a);
@@ -316,16 +264,10 @@ double CustomLinearRegion::get_xi_upper(bool log) const
 	double clp_b = R::pnorm(_b, _z + _beta1_max*_lambda2, std::sqrt(_lambda2), false, true);
 	double lp2_diff = vws::log_sub2_exp(clp_a, clp_b);
 
-	// printf("lp_a = %g, lp_b = %g, lp1_diff = %g\n", lp_a, lp_b, lp1_diff);
-	// printf("clp_a = %g, clp_b = %g, lp2_diff = %g\n", clp_a, clp_b, lp2_diff);
-
 	// If we are truncating way into the upper tail of a distribution, working
 	// with the complement of the CDF helps to retain precision.
 	double lp_diff = std::max(lp1_diff, lp2_diff);
-	// printf("lp_diff = %g\n", lp_diff);
 	double out = _beta0_max + _beta1_max * _z + std::pow(_beta1_max, 2.0) * _lambda2 / 2 + lp_diff;
-
-	// printf("End get_xi_upper with (log) out = %g\n", out);
 	return log ? out : exp(out);
 }
 
@@ -348,8 +290,56 @@ double CustomLinearRegion::get_xi_lower(bool log) const
 	// If we hopelessly run out of precision and the result is larger than
 	// xi_upper, set xi_lower to xi_upper.
 	out = std::min(out, get_xi_upper(true));
-	// printf("End get_xi_lower with (log) out = %g\n", out);
 	return log ? out : exp(out);
+}
+
+std::pair<CustomLinearRegion,CustomLinearRegion> CustomLinearRegion::bifurcate() const
+{
+	return bifurcate(midpoint());
+}
+
+std::pair<CustomLinearRegion,CustomLinearRegion> CustomLinearRegion::bifurcate(const double& x) const
+{
+	CustomLinearRegion r1(_a, x, _mu, _sigma2, _z, _lambda2);
+	CustomLinearRegion r2(x, _b, _mu, _sigma2, _z, _lambda2);
+	return std::make_pair(r1, r2);
+}
+
+std::string CustomLinearRegion::description() const
+{
+	char buf[32];
+	sprintf(buf, "(%g, %g]", _a, _b);
+	return buf;
+}
+
+CustomLinearRegion CustomLinearRegion::singleton(const double& x) const
+{
+	return CustomLinearRegion(x, x, _mu, _sigma2, _z, _lambda2);
+}
+
+bool CustomLinearRegion::operator<(const CustomLinearRegion& x) const
+{
+	return _a < x._a;
+}
+
+bool CustomLinearRegion::operator==(const CustomLinearRegion& x) const
+{
+	return _a == x._a && _b == x._b;
+}
+
+const CustomLinearRegion& CustomLinearRegion::operator=(const CustomLinearRegion& x)
+{
+	_a = x._a;
+	_b = x._b;
+	_mu = x._mu;
+	_sigma2 = x._sigma2;
+	_z = x._z;
+	_lambda2 = x._lambda2;
+	_beta0_min = x._beta0_min;
+	_beta1_min = x._beta1_min;
+	_beta0_max = x._beta0_max;
+	_beta1_max = x._beta1_max;
+	return *this;
 }
 
 #endif

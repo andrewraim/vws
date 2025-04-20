@@ -1,7 +1,7 @@
-#include "rcpp-rejection.h"
+#include "rcpp-rejection-int.h"
 #include "vws.h"
 
-Rcpp::List rejection_rcpp(unsigned int n, double lo, double hi,
+Rcpp::List rejection_int_rcpp(unsigned int n, double lo, double hi,
 	const Rcpp::Function& w, const Rcpp::Function& d_base,
 	const Rcpp::Function& p_base, const Rcpp::Function& q_base,
 	const Rcpp::Function& s_base, unsigned int N, double tol,
@@ -49,8 +49,8 @@ Rcpp::List rejection_rcpp(unsigned int n, double lo, double hi,
 	};
 
 	vws::UnivariateHelper helper(d0, p0, q0, s0);
-	vws::UnivariateConstRegion supp(lo, hi, w0, helper);
-	vws::FMMProposal<double, vws::UnivariateConstRegion> h({ supp });
+	vws::IntConstRegion supp(lo, hi, w0, helper);
+	vws::FMMProposal<double, vws::IntConstRegion> h({ supp });
 
 	vws::rejection_args args(control);
 	const auto& adapt_out = h.adapt(N - 1, tol);

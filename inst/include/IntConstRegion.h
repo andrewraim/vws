@@ -1,10 +1,11 @@
-#ifndef VWS_UNIVARIATE_CONST_REGION_H
-#define VWS_UNIVARIATE_CONST_REGION_H
+#ifndef VWS_INT_CONST_REGION_H
+#define VWS_INT_CONST_REGION_H
 
 #include <Rcpp.h>
 #include <memory>
 #include "fntl.h"
 #include "Region.h"
+#include "RealConstRegion.h"
 #include "UnivariateHelper.h"
 #include "optimize-hybrid.h"
 #include "log-sum-exp.h"
@@ -13,22 +14,13 @@
 namespace vws {
 
 /*
-* Univariate Region with Constant Majorizer
+* Integer-Valued Region with Constant Majorizer
 *
 * A subclass of Region based on univariate intervals and a constant majorizer
-* for the weight function. This version is for continuous supports.
+* for the weight function. This version is for integer supports.
 */
-class UnivariateConstRegion : public Region<double>
+class IntConstRegion : public RealConstRegion
 {
-protected:
-	double _a;
-	double _b;
-	const uv_weight_function* _w;
-	const UnivariateHelper* _helper;
-	double _log_w_max;
-	double _log_w_min;
-	double _log_prob;
-
 public:
 	/*
 	* Construct a singleton region based on interval $(a,a]$.
@@ -36,7 +28,7 @@ public:
 	* - `w`: Weight function for the target distribution.
 	* - `helper`: contains operations of the base distribution $g$.
 	*/
-	UnivariateConstRegion(double a, const uv_weight_function& w,
+	IntConstRegion(double a, const uv_weight_function& w,
 		const UnivariateHelper& helper);
 
 	/*
@@ -46,26 +38,24 @@ public:
 	* - `w` Weight function for the target distribution.
 	* - `helper`: contains operations of the base distribution $g$.
 	*/
-	UnivariateConstRegion(double a, double b, const uv_weight_function& w,
+	IntConstRegion(double a, double b, const uv_weight_function& w,
 		const UnivariateHelper& helper);
 
 	/*
 	* The following functions override abstract methods in `Region`. See that
 	* class' documentation for their interfaces.
 	*/
-	double d_base(const double& x, bool log = false) const;
-	std::vector<double> r(unsigned int n) const;
-	double d(const double& x, bool log = false) const;
+	// double d_base(const double& x, bool log = false) const;
+	// std::vector<double> r(unsigned int n) const;
 	bool s(const double& x) const;
-	double w(const double& x, bool log = true) const;
-	double w_major(const double& x, bool log = true) const;
+	// double w(const double& x, bool log = true) const;
+	// double w_major(const double& x, bool log = true) const;
 	bool is_bifurcatable() const;
-	double get_lower() const { return _a; }
-	double get_upper() const { return _b; }
-	double get_xi_upper(bool log = true) const;
-	double get_xi_lower(bool log = true) const;
-	std::string description() const;
-	void print() const;
+	// double get_lower() const { return _a; }
+	// double get_upper() const { return _b; }
+	// double get_xi_upper(bool log = true) const;
+	// double get_xi_lower(bool log = true) const;
+	// std::string description() const;
 
 	/*
 	* Maximize or minimize the function $w$ over this region. Optimization
@@ -77,8 +67,7 @@ public:
 	*
 	* Returns the optimized value of $w$.
 	*/
-	double optimize(bool maximize = true, bool log = true) const;
-
+	// double optimize(bool maximize = true, bool log = true) const;
 
 	/*
 	* A midpoint between limits $a$ and $b$ of region. If $a$ and $b$ are both
@@ -92,79 +81,57 @@ public:
 	* Return a pair of regions that result from bifurcating this region. The
 	* bifurcation point is chosen to be the midpoint of $(a, b]$.
 	*/
-	std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate() const;
+	std::pair<IntConstRegion,IntConstRegion> bifurcate() const;
 
 	/*
 	* Return a pair of regions that result from bifurcating this region at $x$.
 	*/
-	std::pair<UnivariateConstRegion,UnivariateConstRegion> bifurcate(const double& x) const;
+	std::pair<IntConstRegion,IntConstRegion> bifurcate(const double& x) const;
 
 	/*
 	* Return a region based on the singleton interval $(x, x]$, using this
 	* object's weight function, base distribution, etc.
 	*/
-	UnivariateConstRegion singleton(const double& x) const;
+	IntConstRegion singleton(const double& x) const;
 
 	/*
 	* Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $a_1 < a_2$.
 	*/
-	bool operator<(const UnivariateConstRegion& x) const {
-		return _a < x._a;
-	}
+	bool operator<(const IntConstRegion& x) const;
 
 	/*
 	* Region $(a_1, b_1]$ is considered "equal to" $(a_2, b_2]$ if $a_1 = a_2$
 	* and $b_1 = b_2$.
 	*/
-	bool operator==(const UnivariateConstRegion& x) const {
-		return _a == x._a && _b == x._b;
-	}
+	bool operator==(const IntConstRegion& x) const;
 
 	/*
 	* Set this Region to be equal to `x`.
 	*/
-	const UnivariateConstRegion& operator=(const UnivariateConstRegion& x) {
-		_a = x._a;
-		_b = x._b;
-		_w = x._w;
-		_helper = x._helper;
-		_log_w_max = x._log_w_max;
-		_log_w_min = x._log_w_min;
-		_log_prob = x._log_prob;
-		return *this;
-	}
+	const IntConstRegion& operator=(const IntConstRegion& x);
 };
 
-inline UnivariateConstRegion::UnivariateConstRegion(double a,
+inline IntConstRegion::IntConstRegion(double a,
 	const uv_weight_function& w, const UnivariateHelper& helper)
-: _a(a), _b(a), _w(&w), _helper(&helper)
+: RealConstRegion(a, w, helper)
 {
-	_log_w_max = (*_w)(a, true);
-	_log_w_min = (*_w)(a, true);
-	_log_prob = R_NegInf;
 }
 
-inline UnivariateConstRegion::UnivariateConstRegion(double a, double b,
+inline IntConstRegion::IntConstRegion(double a, double b,
 	const uv_weight_function& w, const UnivariateHelper& helper)
-: _a(a), _b(b), _w(&w), _helper(&helper)
+: RealConstRegion(a, b, w, helper)
 {
-	if (a > b) {
-		Rcpp::stop("a > b");
-	}
-
-	_log_w_max = optimize(true);
-	_log_w_min = optimize(false);
-
-	// Compute $P(a < X <= b)$ for $X \sim g$ on the log scale.
-	_log_prob = log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
 }
 
-inline double UnivariateConstRegion::d_base(const double& x, bool log) const
+/*
+inline double IntConstRegion::d_base(const double& x, bool log) const
 {
 	return _helper->d(x, log);
 }
+*/
 
-inline std::vector<double> UnivariateConstRegion::r(unsigned int n) const
+/*
+inline std::vector<double> IntConstRegion::r(unsigned int n) const
 {
 	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this
 	// region. Compute g$q((pb - pa) * u + pa) on the log scale.
@@ -179,36 +146,34 @@ inline std::vector<double> UnivariateConstRegion::r(unsigned int n) const
 
 	return out;
 }
+*/
 
-inline double UnivariateConstRegion::d(const double& x, bool log) const
+inline bool IntConstRegion::s(const double& x) const
 {
-	double out;
-	if (!s(x)) {
-		out = R_NegInf;
-	} else {
-		out = _helper->d(x, true) - log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
-	}
-	return log ? out : exp(out);
-}
+	Rcpp::stop("Should this be false if x is not an integer?");
 
-inline bool UnivariateConstRegion::s(const double& x) const
-{
 	return (_a < x && x <= _b) && _helper->s(x);
 }
 
-inline double UnivariateConstRegion::w(const double& x, bool log) const
+/*
+inline double IntConstRegion::w(const double& x, bool log) const
 {
 	return (*_w)(x, log);
 }
+*/
 
-inline double UnivariateConstRegion::w_major(const double& x, bool log) const
+/*
+inline double IntConstRegion::w_major(const double& x, bool log) const
 {
 	double out = _helper->s(x) ? _log_w_max : R_NegInf;
 	return log ? out : exp(out);
 }
+*/
 
-inline double UnivariateConstRegion::midpoint() const
+inline double IntConstRegion::midpoint() const
 {
+	Rcpp::stop("Implement me");
+
 	double out;
 
 	if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
@@ -227,65 +192,90 @@ inline double UnivariateConstRegion::midpoint() const
 	return out;
 }
 
-inline std::pair<UnivariateConstRegion,UnivariateConstRegion>
-UnivariateConstRegion::bifurcate() const
+inline std::pair<IntConstRegion,IntConstRegion>
+IntConstRegion::bifurcate() const
 {
 	return bifurcate(midpoint());
 }
 
-inline std::pair<UnivariateConstRegion,UnivariateConstRegion>
-UnivariateConstRegion::bifurcate(const double& x) const
+inline std::pair<IntConstRegion,IntConstRegion>
+IntConstRegion::bifurcate(const double& x) const
 {
-	UnivariateConstRegion r1(_a, x, *_w, *_helper);
-	UnivariateConstRegion r2(x, _b, *_w, *_helper);
+	IntConstRegion r1(_a, x, *_w, *_helper);
+	IntConstRegion r2(x, _b, *_w, *_helper);
 	return std::make_pair(r1, r2);
 }
 
-inline UnivariateConstRegion UnivariateConstRegion::singleton(const double& x) const
+inline IntConstRegion IntConstRegion::singleton(const double& x) const
 {
-	return UnivariateConstRegion(x, *_w, *_helper);
+	return IntConstRegion(x, *_w, *_helper);
 }
 
-inline bool UnivariateConstRegion::is_bifurcatable() const
+inline bool IntConstRegion::is_bifurcatable() const
 {
-	return true;
+	return std::ceil(_a + 1) <= std::floor(_b);
 }
 
-inline double UnivariateConstRegion::get_xi_upper(bool log) const
+/*
+inline double IntConstRegion::get_xi_upper(bool log) const
 {
 	double log_xi_upper = _log_w_max + _log_prob;
 	return log ? log_xi_upper : exp(log_xi_upper);
 }
+*/
 
-inline double UnivariateConstRegion::get_xi_lower(bool log) const
+/*
+inline double IntConstRegion::get_xi_lower(bool log) const
 {
 	double log_xi_lower = _log_w_min + _log_prob;
 	return log ? log_xi_lower : exp(log_xi_lower);
 }
+*/
 
-inline std::string UnivariateConstRegion::description() const
+/*
+inline std::string IntConstRegion::description() const
 {
 	char buf[32];
 	sprintf(buf, "(%g, %g]", _a, _b);
 	return buf;
 }
+*/
 
-inline void UnivariateConstRegion::print() const
-{
-	Rprintf("Region<double> (%g, %g]\n", _a, _b);
-}
-
-inline double UnivariateConstRegion::optimize(bool maximize, bool log) const
+/*
+inline double IntConstRegion::optimize(bool maximize, bool log) const
 {
 	// Pass the log-weight function to `optimize_hybrid`.
     const fntl::dfd& f = [&](double x) -> double { return (*_w)(x, true); };
 	const auto& out = optimize_hybrid(f, 0, _a, _b, maximize);
 
 	if ( (out.value > 0) && std::isinf(out.value) ) {
-		Rcpp::stop("Infinite value found in optimize. Cannot be used with UnivariateConstRegion");
+		Rcpp::stop("Infinite value found in optimize. Cannot be used with IntConstRegion");
 	}
 
 	return log ? out.value : exp(out.value);
+}
+*/
+
+inline bool IntConstRegion::operator<(const IntConstRegion& x) const
+{
+	return _a < x._a;
+}
+
+inline bool IntConstRegion::operator==(const IntConstRegion& x) const
+{
+	return _a == x._a && _b == x._b;
+}
+
+inline const IntConstRegion& IntConstRegion::operator=(const IntConstRegion& x)
+{
+	_a = x._a;
+	_b = x._b;
+	_w = x._w;
+	_helper = x._helper;
+	_log_w_max = x._log_w_max;
+	_log_w_min = x._log_w_min;
+	_log_prob = x._log_prob;
+	return *this;
 }
 
 }
