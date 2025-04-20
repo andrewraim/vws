@@ -2,9 +2,13 @@
 % Please edit documentation in R/rejection.R
 \name{rejection}
 \alias{rejection}
+\alias{rejection_numeric}
+\alias{rejection_int}
 \title{Rejection Sampling with VWS Proposal}
 \usage{
-rejection(n, lo, hi, w, helper, N, tol = 0, control = rejection_control())
+rejection_numeric(n, lo, hi, w, helper, control = rejection_control())
+
+rejection_int(n, lo, hi, w, helper, control = rejection_control())
 }
 \arguments{
 \item{n}{Number of desired draws.}
@@ -17,10 +21,6 @@ rejection(n, lo, hi, w, helper, N, tol = 0, control = rejection_control())
 
 \item{helper}{A helper object constructed from \link{univariate_helper} that
 characterizes the base distribution \eqn{g}.}
-
-\item{N}{Maximum number of regions to create in the proposal.}
-
-\item{tol}{Desired bound for probability of rejection in the proposal.}
 
 \item{control}{An object constructed using \link{rejection_control}.}
 }
@@ -47,6 +47,9 @@ proposal is needed or other variations of VWS are desired.
 \details{
 VWS requires decomposition of the target \eqn{f} into
 \eqn{f(x) \propto w(x) g(x)}.
+
+The functions \code{rejection_numeric} and \code{rejection_int} are for targets with
+continuous and integer supports, respectively.
 }
 \examples{
 library(tidyverse)
@@ -63,7 +66,7 @@ w = function(y, log = TRUE) {
   dlnorm(y, mu, sigma, log = log)
 }
 
-out = rejection(n = 10000, lo = 0, hi = Inf, N = 50, tol = tol, w,
+out = rejection_numeric(n = 10000, lo = 0, hi = Inf, N = 50, tol = tol, w,
   helper, control = rejection_control(max_rejects = 10000, action = "stop"))
 sum(out$rejects)
 
@@ -87,5 +90,7 @@ data.frame(draw = seq_along(out$rejects), crej = cumsum(out$rejects)) \%>\%
   xlab("Draw") +
   ylab("Cumulative Rejection Count") +
   theme_light()
+
+print("TBD: add an example with integer support")
 
 }

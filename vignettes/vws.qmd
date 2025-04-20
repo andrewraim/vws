@@ -492,19 +492,28 @@ prototyping. It is limited to univariate problems, and assumes constant
 majorizers and minorizers where constants are obtained from numerical
 optimization.
 
-## `rejection` function {#sec-r-rejection}
+## Rejection Sampling {#sec-r-rejection}
+
+TBD: there are functions for numeric draws and integer draws.
 
 ```{r}
 #| eval: false
-rejection(
+rejection_numeric(
 	n,                             # <1>
 	lo,                            # <2>
 	hi,                            # <3>
 	w,                             # <4>
 	helper,                        # <5>
-	N,                             # <6>
-	tol = 0,                       # <7>
-	control = rejection_control()  # <8>
+	control = rejection_control()  # <6>
+)
+
+rejection_int(
+	n,                             # <1>
+	lo,                            # <2>
+	hi,                            # <3>
+	w,                             # <4>
+	helper,                        # <5>
+	control = rejection_control()  # <6>
 )
 ```
 1. Number of desired variates.
@@ -514,28 +523,30 @@ rejection(
 support and `log` an indicator of whether value should be returned on the
 log-scale.
 5. A structure created from `univariate_helper` (@sec-r-univariate-helper).
-6. Maximum number of regions to create in the proposal.
-7. Desired bound for probability of rejection in the proposal. The default
-value of `0` ensures that the proposal is adapted `N` times without halting
-early.
-8. An object constructed using `rejection_control` (@sec-r-rejection-control).
+6. An object constructed using `rejection_control` (@sec-r-rejection-control).
 
 ## `rejection_control` function {#sec-r-rejection-control}
 
 ```{r}
 #| eval: false
 rejection_control(
-	max_rejects = .Machine$integer.max,               # <1>
-	report = .Machine$integer.max,                    # <2>
-	ratio_ub = exp(1e-5),                             # <3>
-	action = c("stop", "warning", "message", "none")  # <4>
+	N = 30,                                           # <1>
+	tol = 0.1,                                        # <2>
+	max_rejects = .Machine$integer.max,               # <3>
+	report = .Machine$integer.max,                    # <4>
+	ratio_ub = exp(1e-5),                             # <5>
+	action = c("stop", "warning", "message", "none")  # <6>
 )
-```	
-1. Maximum number of rejections to tolerate before bailing out.
-2. Report progress each time this many candidates are proposed.
-3. Rejection ratio $f_0(x) / h_0(x)$ may be larger than 1 due to numerical
+```
+1. Maximum number of regions to create in the proposal.
+2. Desired bound for probability of rejection in the proposal. The default
+value of `0` ensures that the proposal is adapted `N` times without halting
+early.
+3. Maximum number of rejections to tolerate before bailing out.
+4. Report progress each time this many candidates are proposed.
+5. Rejection ratio $f_0(x) / h_0(x)$ may be larger than 1 due to numerical
 precision. Throw an error if it is larger than this value.
-4. Action to take if rejection sampling halts early due to the maximum number
+6. Action to take if rejection sampling halts early due to the maximum number
 of rejections being exceeded.
 
 ## `univariate_helper` function {#sec-r-univariate-helper}

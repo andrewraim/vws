@@ -11,13 +11,14 @@
 #' @param w The weight function \eqn{w}.
 #' @param helper A helper object constructed from [univariate_helper] that
 #' characterizes the base distribution \eqn{g}.
-#' @param N Maximum number of regions to create in the proposal.
-#' @param tol Desired bound for probability of rejection in the proposal.
 #' @param control An object constructed using [rejection_control].
 #'
 #' @details
 #' VWS requires decomposition of the target \eqn{f} into
 #' \eqn{f(x) \propto w(x) g(x)}.
+#'
+#' The functions `rejection_numeric` and `rejection_int` are for targets with
+#' continuous and integer supports, respectively.
 #'
 #' @return A list with the following elements.
 #' - `draws`: Vector with accepted draws.
@@ -45,7 +46,7 @@
 #'   dlnorm(y, mu, sigma, log = log)
 #' }
 #'
-#' out = rejection(n = 10000, lo = 0, hi = Inf, N = 50, tol = tol, w,
+#' out = rejection_numeric(n = 10000, lo = 0, hi = Inf, N = 50, tol = tol, w,
 #'   helper, control = rejection_control(max_rejects = 10000, action = "stop"))
 #' sum(out$rejects)
 #'
@@ -70,11 +71,27 @@
 #'   ylab("Cumulative Rejection Count") +
 #'   theme_light()
 #'
+#' print("TBD: add an example with integer support")
+#'
+#' @name rejection
+NULL
+
+#' @name rejection
 #' @export
-rejection = function(n, lo, hi, w, helper, N, tol = 0,
+rejection_numeric = function(n, lo, hi, w, helper,
 	control = rejection_control())
 {
-	rejection_rcpp(n = n, lo = lo, hi = hi, w = w, d_base = helper$d,
+	rejection_numeric_rcpp(n = n, lo = lo, hi = hi, w = w, d_base = helper$d,
 		p_base = helper$p, q_base = helper$q, s_base = helper$s,
-		N = N, tol = tol, control = control)
+		N = control$N, tol = control$tol, control = control)
+}
+
+#' @name rejection
+#' @export
+rejection_int = function(n, lo, hi, w, helper,
+	control = rejection_control())
+{
+	rejection_int_rcpp(n = n, lo = lo, hi = hi, w = w, d_base = helper$d,
+		p_base = helper$p, q_base = helper$q, s_base = helper$s,
+		N = control$N, tol = control$tol, control = control)
 }

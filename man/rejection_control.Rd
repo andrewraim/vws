@@ -5,6 +5,8 @@
 \title{Rejection Control}
 \usage{
 rejection_control(
+  N = 30,
+  tol = 0.1,
   max_rejects = .Machine$integer.max,
   report = .Machine$integer.max,
   ratio_ub = exp(1e-05),
@@ -12,6 +14,10 @@ rejection_control(
 )
 }
 \arguments{
+\item{N}{Maximum number of regions to create in the proposal.}
+
+\item{tol}{Desired bound for probability of rejection in the proposal.}
+
 \item{max_rejects}{Maximum number of rejections to tolerate before bailing out.}
 
 \item{report}{Report progress each time this many candidates are proposed.}

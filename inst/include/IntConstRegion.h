@@ -17,7 +17,8 @@ namespace vws {
 * Integer-Valued Region with Constant Majorizer
 *
 * A subclass of Region based on univariate intervals and a constant majorizer
-* for the weight function. This version is for integer supports.
+* for the weight function. This version is for integer supports. It uses
+* doubles for its domain but values are integers.
 */
 class IntConstRegion : public RealConstRegion
 {
@@ -42,32 +43,11 @@ public:
 		const UnivariateHelper& helper);
 
 	/*
-	* The following functions override abstract methods in `Region`. See that
+	* The following functions override methods in `RealConstRegion`. See that
 	* class' documentation for their interfaces.
 	*/
-	// double d_base(const double& x, bool log = false) const;
-	// std::vector<double> r(unsigned int n) const;
-	bool s(const double& x) const;
-	// double w(const double& x, bool log = true) const;
-	// double w_major(const double& x, bool log = true) const;
+	// bool s(const double& x) const;
 	bool is_bifurcatable() const;
-	// double get_lower() const { return _a; }
-	// double get_upper() const { return _b; }
-	// double get_xi_upper(bool log = true) const;
-	// double get_xi_lower(bool log = true) const;
-	// std::string description() const;
-
-	/*
-	* Maximize or minimize the function $w$ over this region. Optimization
-	* is carried out with the `optimize_hybrid` function.
-	*
-	* - `maximize`: if `true` do maximization; otherwise do minimization.
-	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
-	*   on the original scale.
-	*
-	* Returns the optimized value of $w$.
-	*/
-	// double optimize(bool maximize = true, bool log = true) const;
 
 	/*
 	* A midpoint between limits $a$ and $b$ of region. If $a$ and $b$ are both
@@ -75,7 +55,7 @@ public:
 	* If only $a$ is finite, return a larger point in the support. If only $b$
 	* is finite, return a smaller point in the support.
 	*/
-	double midpoint() const;
+	// double midpoint() const;
 
 	/*
 	* Return a pair of regions that result from bifurcating this region. The
@@ -95,19 +75,10 @@ public:
 	IntConstRegion singleton(const double& x) const;
 
 	/*
-	* Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $a_1 < a_2$.
+	* See RealConstRegion for documentation of the following.
 	*/
 	bool operator<(const IntConstRegion& x) const;
-
-	/*
-	* Region $(a_1, b_1]$ is considered "equal to" $(a_2, b_2]$ if $a_1 = a_2$
-	* and $b_1 = b_2$.
-	*/
 	bool operator==(const IntConstRegion& x) const;
-
-	/*
-	* Set this Region to be equal to `x`.
-	*/
 	const IntConstRegion& operator=(const IntConstRegion& x);
 };
 
@@ -124,52 +95,13 @@ inline IntConstRegion::IntConstRegion(double a, double b,
 }
 
 /*
-inline double IntConstRegion::d_base(const double& x, bool log) const
-{
-	return _helper->d(x, log);
-}
-*/
-
-/*
-inline std::vector<double> IntConstRegion::r(unsigned int n) const
-{
-	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this
-	// region. Compute g$q((pb - pa) * u + pa) on the log scale.
-	const Rcpp::NumericVector& u = Rcpp::runif(n);
-	double log_pa = _helper->p(_a, true, true);
-	const Rcpp::NumericVector& log_p = log_add2_exp(_log_prob + log(u), Rcpp::rep(log_pa, n));
-
-	std::vector<double> out;
-	for (unsigned int i = 0; i < n; i++) {
-		out.push_back(_helper->q(log_p(i), true, true));
-	}
-
-	return out;
-}
-*/
-
 inline bool IntConstRegion::s(const double& x) const
 {
-	Rcpp::stop("Should this be false if x is not an integer?");
-
 	return (_a < x && x <= _b) && _helper->s(x);
 }
-
-/*
-inline double IntConstRegion::w(const double& x, bool log) const
-{
-	return (*_w)(x, log);
-}
 */
 
 /*
-inline double IntConstRegion::w_major(const double& x, bool log) const
-{
-	double out = _helper->s(x) ? _log_w_max : R_NegInf;
-	return log ? out : exp(out);
-}
-*/
-
 inline double IntConstRegion::midpoint() const
 {
 	Rcpp::stop("Implement me");
@@ -191,6 +123,7 @@ inline double IntConstRegion::midpoint() const
 
 	return out;
 }
+*/
 
 inline std::pair<IntConstRegion,IntConstRegion>
 IntConstRegion::bifurcate() const
@@ -213,48 +146,9 @@ inline IntConstRegion IntConstRegion::singleton(const double& x) const
 
 inline bool IntConstRegion::is_bifurcatable() const
 {
-	return std::ceil(_a + 1) <= std::floor(_b);
+	// Return true if there are at least two integers between a and b
+	return std::ceil(_a) + 1 <= std::floor(_b);
 }
-
-/*
-inline double IntConstRegion::get_xi_upper(bool log) const
-{
-	double log_xi_upper = _log_w_max + _log_prob;
-	return log ? log_xi_upper : exp(log_xi_upper);
-}
-*/
-
-/*
-inline double IntConstRegion::get_xi_lower(bool log) const
-{
-	double log_xi_lower = _log_w_min + _log_prob;
-	return log ? log_xi_lower : exp(log_xi_lower);
-}
-*/
-
-/*
-inline std::string IntConstRegion::description() const
-{
-	char buf[32];
-	sprintf(buf, "(%g, %g]", _a, _b);
-	return buf;
-}
-*/
-
-/*
-inline double IntConstRegion::optimize(bool maximize, bool log) const
-{
-	// Pass the log-weight function to `optimize_hybrid`.
-    const fntl::dfd& f = [&](double x) -> double { return (*_w)(x, true); };
-	const auto& out = optimize_hybrid(f, 0, _a, _b, maximize);
-
-	if ( (out.value > 0) && std::isinf(out.value) ) {
-		Rcpp::stop("Infinite value found in optimize. Cannot be used with IntConstRegion");
-	}
-
-	return log ? out.value : exp(out.value);
-}
-*/
 
 inline bool IntConstRegion::operator<(const IntConstRegion& x) const
 {

@@ -3,5 +3,5 @@ PKG_CPPFLAGS=-I../inst/include -I.
 SOURCES=rcpp-rect.cpp rcpp-invgamma.cpp rcpp-gumbel.cpp \
 	rcpp-optimize-hybrid.cpp rcpp-categ.cpp rcpp-log-sum-exp.cpp \
 	rcpp-texp.cpp rcpp-unif.cpp rcpp-gamma-trunc.cpp \
-	rcpp-rejection-numeric.cpp rcpp-rejection-int.cpp
+	rcpp-rejection-numeric.cpp rcpp-rejection-int.cpp rcpp-to-lambdas.cpp
 OBJECTS=RcppExports.o $(SOURCES:.cpp=.o)

@@ -1,5 +1,6 @@
 #include "rcpp-rejection-int.h"
 #include "vws.h"
+#include "rcpp-to-lambdas.h"
 
 Rcpp::List rejection_int_rcpp(unsigned int n, double lo, double hi,
 	const Rcpp::Function& w, const Rcpp::Function& d_base,
@@ -7,49 +8,10 @@ Rcpp::List rejection_int_rcpp(unsigned int n, double lo, double hi,
 	const Rcpp::Function& s_base, unsigned int N, double tol,
 	const Rcpp::List& control)
 {
-	const vws::uv_weight_function& w0 =
-	[&](double x, bool log = true) -> double {
-		const Rcpp::NumericVector& x0 = Rcpp::NumericVector::create(x);
-		const Rcpp::LogicalVector& log0 = Rcpp::LogicalVector::create(log);
-		const Rcpp::NumericVector& out = w(x0, log0);
-		return out(0);
-	};
+	const RejectionLambdas& lam = rcpp_to_lambdas(w, d_base, p_base, q_base, s_base);
+	vws::UnivariateHelper helper(lam.d, lam.p, lam.q, lam.s);
 
-	const fntl::density& d0 =
-	[&](double x, bool log = true) -> double {
-		const Rcpp::NumericVector& x0 = Rcpp::NumericVector::create(x);
-		const Rcpp::LogicalVector& log0 = Rcpp::LogicalVector::create(log);
-		const Rcpp::NumericVector& out = d_base(x0, log0);
-		return out(0);
-	};
-
-	const fntl::cdf& p0 =
-	[&](double x, bool lower = true, bool log = true) -> double {
-		const Rcpp::NumericVector& x0 = Rcpp::NumericVector::create(x);
-		const Rcpp::LogicalVector& lower0 = Rcpp::LogicalVector::create(lower);
-		const Rcpp::LogicalVector& log0 = Rcpp::LogicalVector::create(log);
-		const Rcpp::NumericVector& out = p_base(x0, lower0, log0);
-		return out(0);
-	};
-
-	const fntl::quantile& q0 =
-	[&](double x, bool lower = true, bool log = true) -> double {
-		const Rcpp::NumericVector& x0 = Rcpp::NumericVector::create(x);
-		const Rcpp::LogicalVector& lower0 = Rcpp::LogicalVector::create(lower);
-		const Rcpp::LogicalVector& log0 = Rcpp::LogicalVector::create(log);
-		const Rcpp::NumericVector& out = q_base(x0, lower0, log0);
-		return out(0);
-	};
-
-	const vws::supp& s0 =
-	[&](double x) -> double {
-		const Rcpp::NumericVector& x0 = Rcpp::NumericVector::create(x);
-		const Rcpp::NumericVector& out = s_base(x0);
-		return out(0);
-	};
-
-	vws::UnivariateHelper helper(d0, p0, q0, s0);
-	vws::IntConstRegion supp(lo, hi, w0, helper);
+	vws::IntConstRegion supp(lo, hi, lam.w, helper);
 	vws::FMMProposal<double, vws::IntConstRegion> h({ supp });
 
 	vws::rejection_args args(control);

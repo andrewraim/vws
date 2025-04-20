@@ -338,6 +338,8 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol,
 		}
 	}
 
+	// print(1000);
+	// Rcpp::stop("PAUSE!");
 	return Rcpp::NumericVector(log_bdd_hist.begin(), log_bdd_hist.end());
 }
 
@@ -413,7 +415,7 @@ double FMMProposal<T,R>::rejection_bound(bool log) const
 
 	// Overall rejection rate bound
 	double out = log_sum_exp(log_bound);
-	if (log) { return out; } else { return exp(out); }
+	return log ? out : exp(out);
 }
 
 template <class T, class R>
@@ -462,7 +464,9 @@ FMMProposal<T,R>::r_ext(unsigned int n) const
 template <class T, class R>
 double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 {
-	double log_nc = normalize ? nc(true) : 0;
+	//// print(1000);
+
+	double lnc = normalize ? nc(true) : 0;
 
 	/*
 	* Search for the region containing x using std::set. This should require
@@ -476,21 +480,44 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 	*/
 	const R& x_singleton = _regions.begin()->singleton(x);
 
+	//// Rprintf("x_singleton: %s\n", x_singleton.description().c_str());
+
+	/*
 	typename std::set<R>::const_iterator itr_lower = _regions.upper_bound(x_singleton);
+	Rprintf("Upper bound: %s\n", itr_lower->description().c_str());
 	--itr_lower;
+	*/
+
+	typename std::set<R>::const_iterator itr_lower = _regions.lower_bound(x_singleton);
+
+	//// if (itr_lower != _regions.end()) {
+	//// 	Rprintf("Initial lower bound: %s\n", itr_lower->description().c_str());
+	//// }
+	if (!itr_lower->s(x)) {
+		// x is in the boundary of this region, so go to the previous region.
+		// TBD: do we need to check the condition to decrement the iterator?
+	 	--itr_lower;
+	}
+	//// Rprintf("Decremented lower bound: %s\n", itr_lower->description().c_str());
 
 	double out;
 
 	if (itr_lower == _regions.end()) {
 		// Could not find region which is upper bound for x. Assume that x is
 		// outside of the support
+		// Rprintf("Checkpoint 1\n");
 		out = R_NegInf;
 	} else if (!itr_lower->s(x)) {
 		// Could not find a region that contains x. Assume that x is outside of
 		// the support.
 		out = R_NegInf;
+		// Rprintf("Checkpoint 2: %s\n", itr_lower->description().c_str());
 	} else {
-		out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - log_nc;
+		// Rprintf("Checkpoint 3\n");
+		// Rprintf("itr_lower->w_major(x, true) = %g\n", itr_lower->w_major(x, true));
+		// Rprintf("itr_lower->d_base(x, true) = %g\n", itr_lower->d_base(x, true));
+		// Rprintf("lnc = %g\n", lnc);
+		out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - lnc;
 	}
 
 	return log ? out : exp(out);

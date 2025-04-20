@@ -2,6 +2,8 @@
 #'
 #' Control object for rejection sampler.
 #'
+#' @param N Maximum number of regions to create in the proposal.
+#' @param tol Desired bound for probability of rejection in the proposal.
 #' @param max_rejects Maximum number of rejections to tolerate before bailing out.
 #' @param report Report progress each time this many candidates are proposed.
 #' @param ratio_ub TBD
@@ -13,7 +15,8 @@
 #'
 #' @name rejection_control
 #' @export
-rejection_control = function(max_rejects = .Machine$integer.max,
+rejection_control = function(N = 30, tol = 0.1,
+	max_rejects = .Machine$integer.max,
 	report = .Machine$integer.max, ratio_ub = exp(1e-5),
 	action = c("stop", "warning", "message", "none"))
 {
@@ -25,6 +28,8 @@ rejection_control = function(max_rejects = .Machine$integer.max,
 	)
 
 	out = list(
+		N = N,
+		tol = tol,
 		max_rejects = max_rejects,
 		report = report,
 		ratio_ub = ratio_ub,

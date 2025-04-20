@@ -10,5 +10,4 @@ Rcpp::List rejection_int_rcpp(unsigned int n, double lo, double hi,
 	const Rcpp::Function& s_base, unsigned int N, double tol,
 	const Rcpp::List& control);
 
-
 #endif

@@ -258,7 +258,16 @@ inline double RealConstRegion::optimize(bool maximize, bool log) const
 
 inline bool RealConstRegion::operator<(const RealConstRegion& x) const
 {
-	return _a < x._a;
+	/*
+	if (_a < x._a) {
+		return true;
+	} else if (_a > x._a) {
+		return false;
+	} else {
+		return _b <= x._a;
+	}
+	*/
+	return _b <= x._a;
 }
 
 inline bool RealConstRegion::operator==(const RealConstRegion& x) const
