@@ -321,7 +321,7 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol,
 
 		const R& r = _regions_vec[jdx];
 
-		Rcpp::print(log_volume);
+		// Rcpp::print(log_volume);
 
 		// Split the target region and make another proposal with it.
 		//

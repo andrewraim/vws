@@ -26,9 +26,13 @@ public:
 	* - `a`: Lower and upper limit of interval.
 	* - `w`: Weight function for the target distribution.
 	* - `helper`: contains operations of the base distribution $g$.
+	* - `opt`: a function of type `weight_optimization` that can both minimize
+	*   and maximize `w`. If not specified, we use numerical optimization.
 	*/
 	RealConstRegion(double a, const uv_weight_function& w,
 		const UnivariateHelper& helper);
+	RealConstRegion(double a, const uv_weight_function& w,
+		const UnivariateHelper& helper, const weight_optimization& opt);
 
 	/*
 	* Construct a region based on interval $(a,b]$.
@@ -36,9 +40,13 @@ public:
 	* - `b` Upper limit of interval.
 	* - `w` Weight function for the target distribution.
 	* - `helper`: contains operations of the base distribution $g$.
+	* - `opt`: a function of type `weight_optimization` that can both minimize
+	*   and maximize `w`. If not specified, we use numerical optimization.
 	*/
 	RealConstRegion(double a, double b, const uv_weight_function& w,
 		const UnivariateHelper& helper);
+	RealConstRegion(double a, double b, const uv_weight_function& w,
+		const UnivariateHelper& helper, const weight_optimization& opt);
 
 	/*
 	* The following functions override abstract methods in `Region`. See that
@@ -110,6 +118,7 @@ public:
 	const RealConstRegion& operator=(const RealConstRegion& x);
 
 protected:
+	void init();
 	double _a;
 	double _b;
 	const uv_weight_function* _w;
@@ -117,30 +126,74 @@ protected:
 	double _log_w_max;
 	double _log_w_min;
 	double _log_prob;
+	weight_optimization _opt;
 };
 
 inline RealConstRegion::RealConstRegion(double a,
 	const uv_weight_function& w, const UnivariateHelper& helper)
-: _a(a), _b(a), _w(&w), _helper(&helper)
+: _a(a), _b(a), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
+  _log_prob(NAN), _opt()
 {
 	_log_w_max = (*_w)(a, true);
 	_log_w_min = (*_w)(a, true);
 	_log_prob = R_NegInf;
 }
 
+inline RealConstRegion::RealConstRegion(double a,
+	const uv_weight_function& w, const UnivariateHelper& helper,
+	const weight_optimization& opt)
+: _a(a), _b(a), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
+  _log_prob(NAN), _opt(opt)
+{
+	RealConstRegion::init();
+}
+
 inline RealConstRegion::RealConstRegion(double a, double b,
 	const uv_weight_function& w, const UnivariateHelper& helper)
-: _a(a), _b(b), _w(&w), _helper(&helper)
+: _a(a), _b(b), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
+  _log_prob(NAN), _opt()
 {
-	if (a > b) {
+	RealConstRegion::init();
+}
+
+inline RealConstRegion::RealConstRegion(double a, double b,
+	const uv_weight_function& w, const UnivariateHelper& helper,
+	const weight_optimization& opt)
+: _a(a), _b(b), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
+  _log_prob(NAN), _opt(opt)
+{
+	RealConstRegion::init();
+}
+
+inline void RealConstRegion::init()
+{
+	if (_a > _b) {
+		// Invalid interval
 		Rcpp::stop("a > b");
+	} else if (_a < _b) {
+		if (_opt) {
+			// Use custom optimization function that was provided
+			_log_w_max = _opt(*_w, _a, _b, true, true);
+			_log_w_min = _opt(*_w, _a, _b, false, true);
+		} else {
+			// Use default numerical optimization
+			_log_w_max = optimize(true);
+			_log_w_min = optimize(false);
+		}
+
+		// Compute $P(a < X <= b)$ for $X \sim g$ on the log scale.
+		_log_prob = log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
+	} else {
+		// Singleton interval (a,a]
+		_log_w_max = (*_w)(_a, true);
+		_log_w_min = (*_w)(_a, true);
+		_log_prob = R_NegInf;
+
 	}
 
-	_log_w_max = optimize(true);
-	_log_w_min = optimize(false);
-
-	// Compute $P(a < X <= b)$ for $X \sim g$ on the log scale.
-	_log_prob = log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
+	if ( (_log_w_max > 0) && std::isinf(_log_w_max) ) {
+		Rcpp::stop("Infinite maximum value found in optimize. Cannot be used with RealConstRegion");
+	}
 }
 
 inline double RealConstRegion::d_base(const double& x, bool log) const
@@ -209,14 +262,14 @@ RealConstRegion::bifurcate() const
 inline std::pair<RealConstRegion,RealConstRegion>
 RealConstRegion::bifurcate(const double& x) const
 {
-	RealConstRegion r1(_a, x, *_w, *_helper);
-	RealConstRegion r2(x, _b, *_w, *_helper);
+	RealConstRegion r1(_a, x, *_w, *_helper, _opt);
+	RealConstRegion r2(x, _b, *_w, *_helper, _opt);
 	return std::make_pair(r1, r2);
 }
 
 inline RealConstRegion RealConstRegion::singleton(const double& x) const
 {
-	return RealConstRegion(x, *_w, *_helper);
+	return RealConstRegion(x, *_w, *_helper, _opt);
 }
 
 inline bool RealConstRegion::is_bifurcatable() const
@@ -248,25 +301,11 @@ inline double RealConstRegion::optimize(bool maximize, bool log) const
 	// Pass the log-weight function to `optimize_hybrid`.
     const fntl::dfd& f = [&](double x) -> double { return (*_w)(x, true); };
 	const auto& out = optimize_hybrid(f, 0, _a, _b, maximize);
-
-	if ( (out.value > 0) && std::isinf(out.value) ) {
-		Rcpp::stop("Infinite value found in optimize. Cannot be used with RealConstRegion");
-	}
-
 	return log ? out.value : exp(out.value);
 }
 
 inline bool RealConstRegion::operator<(const RealConstRegion& x) const
 {
-	/*
-	if (_a < x._a) {
-		return true;
-	} else if (_a > x._a) {
-		return false;
-	} else {
-		return _b <= x._a;
-	}
-	*/
 	return _b <= x._a;
 }
 
@@ -284,6 +323,7 @@ inline const RealConstRegion& RealConstRegion::operator=(const RealConstRegion& 
 	_log_w_max = x._log_w_max;
 	_log_w_min = x._log_w_min;
 	_log_prob = x._log_prob;
+	_opt = x._opt;
 	return *this;
 }
 
