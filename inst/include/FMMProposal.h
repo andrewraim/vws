@@ -107,9 +107,10 @@ public:
 	/*
 	*  Generate draws from proposal distribution.
 	*  - `n`: desired number of draws.
-	*  Returns a vector of draws.
+	*  Returns a vector of `n` draws, or a single draw when `n` is unspecified.
 	*/
-	std::vector<T> r(unsigned int n = 1) const;
+	T r() const;
+	std::vector<T> r(unsigned int n) const;
 
 	/*
 	*  Generate draws from proposal distribution.
@@ -283,13 +284,13 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol,
 		Rcpp::stop("tol must be nonnegative");
 	}
 
-	std::vector<double> log_bdd_hist;
+	std::vector<double> lbdd_hist;
 
-	log_bdd_hist.push_back(rejection_bound(true));
+	lbdd_hist.push_back(rejection_bound(true));
 
 	for (unsigned int j = 0; j < N; j++) {
 		// If we can beat the tolerance before we reach N steps, return now
-		if (log_bdd_hist[j] <= std::log(tol)) {
+		if (lbdd_hist[j] <= std::log(tol)) {
 			break;
 		}
 
@@ -320,6 +321,8 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol,
 
 		const R& r = _regions_vec[jdx];
 
+		Rcpp::print(log_volume);
+
 		// Split the target region and make another proposal with it.
 		//
 		// TBD: we may not need to recache each time through the loop.
@@ -331,16 +334,27 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol,
 		_regions.insert(bif_out.second);
 		recache();
 
-		log_bdd_hist.push_back(rejection_bound(true));
+		// Rprintf("Make a bifurcation at %d\n", jdx);
+
+		lbdd_hist.push_back(rejection_bound(true));
+
+		// Rprintf("Pushed back\n");
 
 		if (j % report == 0 && report < uint_max) {
-			logger("After %d steps log Pr{rejection} <= %g\n", j, log_bdd_hist[j+1]);
+			logger("After %d steps log Pr{rejection} <= %g\n", j, lbdd_hist[j+1]);
 		}
 	}
 
+	Rcpp::NumericVector out(lbdd_hist.begin(), lbdd_hist.end());
+
+	// Rprintf("Almost finished adapt\n");
+	// Rcpp::print(out);
+
+	// print(100);
+
 	// print(1000);
 	// Rcpp::stop("PAUSE!");
-	return Rcpp::NumericVector(log_bdd_hist.begin(), log_bdd_hist.end());
+	return out;
 }
 
 template <class T, class R>
@@ -437,6 +451,12 @@ double FMMProposal<T,R>::nc(bool log) const
 }
 
 template <class T, class R>
+T FMMProposal<T,R>::r() const
+{
+	return r_ext(1).first[0];
+}
+
+template <class T, class R>
 typename std::vector<T> FMMProposal<T,R>::r(unsigned int n) const
 {
 	return r_ext(n).first;
@@ -469,8 +489,10 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 	double lnc = normalize ? nc(true) : 0;
 
 	/*
-	* Search for the region containing x using std::set. This should require
-	* something like O(log N) time, where N is the number of regions.
+	* Search for the region containing x using std::set. This is a bit more
+	* complicated than just iterating over all the regions until we find the
+	* right one, but it should take something like O(log N) time rather than
+	* O(N), where N is the number of regions.
 	*
 	* 1. Create a singleton region `x_singleton` from the point x.
 	* 2. Find the region r in  _regions whose upper bound is x. This should be
@@ -482,41 +504,45 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 
 	//// Rprintf("x_singleton: %s\n", x_singleton.description().c_str());
 
-	/*
 	typename std::set<R>::const_iterator itr_lower = _regions.upper_bound(x_singleton);
-	Rprintf("Upper bound: %s\n", itr_lower->description().c_str());
+	// Rprintf("Upper bound: %s\n", itr_lower->description().c_str());
 	--itr_lower;
-	*/
+	// Rprintf("Adjusted upper bound: %s\n", itr_lower->description().c_str());
 
+	/*
 	typename std::set<R>::const_iterator itr_lower = _regions.lower_bound(x_singleton);
 
-	//// if (itr_lower != _regions.end()) {
-	//// 	Rprintf("Initial lower bound: %s\n", itr_lower->description().c_str());
-	//// }
+	if (itr_lower != _regions.end()) {
+		Rprintf("Initial lower bound: %s\n", itr_lower->description().c_str());
+	} else {
+		Rprintf("Initial lower bound was end\n");
+	}
+
 	if (!itr_lower->s(x)) {
 		// x is in the boundary of this region, so go to the previous region.
 		// TBD: do we need to check the condition to decrement the iterator?
 	 	--itr_lower;
 	}
-	//// Rprintf("Decremented lower bound: %s\n", itr_lower->description().c_str());
+	Rprintf("Decremented lower bound: %s\n", itr_lower->description().c_str());
+	*/
 
 	double out;
 
 	if (itr_lower == _regions.end()) {
 		// Could not find region which is upper bound for x. Assume that x is
 		// outside of the support
-		// Rprintf("Checkpoint 1\n");
+		//// Rprintf("Checkpoint 1: Reached end of regions\n");
 		out = R_NegInf;
 	} else if (!itr_lower->s(x)) {
 		// Could not find a region that contains x. Assume that x is outside of
 		// the support.
 		out = R_NegInf;
-		// Rprintf("Checkpoint 2: %s\n", itr_lower->description().c_str());
+		//// Rprintf("Checkpoint 2: %s\n", itr_lower->description().c_str());
 	} else {
-		// Rprintf("Checkpoint 3\n");
-		// Rprintf("itr_lower->w_major(x, true) = %g\n", itr_lower->w_major(x, true));
-		// Rprintf("itr_lower->d_base(x, true) = %g\n", itr_lower->d_base(x, true));
-		// Rprintf("lnc = %g\n", lnc);
+		//// Rprintf("Checkpoint 3\n");
+		//// Rprintf("itr_lower->w_major(x, true) = %g\n", itr_lower->w_major(x, true));
+		//// Rprintf("itr_lower->d_base(x, true) = %g\n", itr_lower->d_base(x, true));
+		//// Rprintf("lnc = %g\n", lnc);
 		out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - lnc;
 	}
 
@@ -566,20 +592,26 @@ Rcpp::DataFrame FMMProposal<T,R>::summary() const
 	Rcpp::StringVector v1(N);
 	Rcpp::NumericVector v2(N);
 	Rcpp::NumericVector v3(N);
+	Rcpp::NumericVector v4(N);
+	double lden = log_sum_exp(*_log_xi_upper);
 
 	unsigned int j = 0;
 
 	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
+		double lxl = itr->get_xi_lower(true);
+		double lxu = itr->get_xi_upper(true);
 		v1[j] = itr->description();
-		v2[j] = itr->get_xi_upper(true);
-		v3[j] = itr->get_xi_lower(true);
+		v2[j] = lxu;
+		v3[j] = lxl;
+		v4[j] = log_sub2_exp(lxu, lxl) - lden;
 		j++;
 	}
 
 	return Rcpp::DataFrame::create(
 		Rcpp::Named("Region") = v1,
 		Rcpp::Named("log_xi_upper") = v2,
-		Rcpp::Named("log_xi_lower") = v3
+		Rcpp::Named("log_xi_lower") = v3,
+		Rcpp::Named("log_volume") = v4
 	);
 }
 
@@ -594,11 +626,13 @@ void FMMProposal<T,R>::print(unsigned int n) const
 	const Rcpp::StringVector& v1 = tbl["Region"];
 	const Rcpp::NumericVector& v2 = tbl["log_xi_upper"];
 	const Rcpp::NumericVector& v3 = tbl["log_xi_lower"];
+	const Rcpp::NumericVector& v4 = tbl["log_volume"];
 
 	const Rcpp::DataFrame& tbl_head = Rcpp::DataFrame::create(
 		Rcpp::Named("Region") = v1[idx],
 		Rcpp::Named("log_xi_upper") = v2[idx],
-		Rcpp::Named("log_xi_lower") = v3[idx]
+		Rcpp::Named("log_xi_lower") = v3[idx],
+		Rcpp::Named("log_volume") = v4[idx]
 	);
 
 	Rprintf("FMM Proposal with %d regions\n", N);

@@ -35,8 +35,6 @@ Rcpp::List sample(unsigned int n, double a, double nu, unsigned int N,
     auto lbdd = h.adapt(N - 1);
     auto out = vws::rejection(h, n, args);
 
-    h.print(500);
-
     return Rcpp::List::create(
         Rcpp::Named("draws") = out.draws,
         Rcpp::Named("rejects") = out.rejects,

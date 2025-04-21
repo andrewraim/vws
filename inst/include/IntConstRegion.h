@@ -147,12 +147,17 @@ inline IntConstRegion IntConstRegion::singleton(const double& x) const
 inline bool IntConstRegion::is_bifurcatable() const
 {
 	// Return true if there are at least two integers between a and b
-	return std::ceil(_a) + 1 <= std::floor(_b);
+	// Rprintf("Region (%g,%g] contains %g integers. is_bifurcatable = %d\n",
+	// 	_a, _b, std::floor(_b) - std::ceil(_a) + 1,
+	// 	std::ceil(_a) + 1 <= std::floor(_b));
+	// return std::ceil(_a) + 1 <= std::floor(_b);
+	return _b - _a > 1;
 }
 
 inline bool IntConstRegion::operator<(const IntConstRegion& x) const
 {
-	return _a < x._a;
+	// return _a < x._a;
+	return _b <= x._a;
 }
 
 inline bool IntConstRegion::operator==(const IntConstRegion& x) const
