@@ -15,10 +15,8 @@
 
 #include "categ.h"
 #include "FMMProposal.h"
-#include "gamma-trunc.h"
 #include "gumbel.h"
 #include "IntConstRegion.h"
-#include "invgamma.h"
 #include "log-sum-exp.h"
 #include "logger.h"
 #include "logit.h"
@@ -28,9 +26,7 @@
 #include "rect.h"
 #include "rejection.h"
 #include "rejection-args.h"
-#include "texp.h"
 #include "typedefs.h"
 #include "UnivariateHelper.h"
-#include "unif.h"
 
 #endif

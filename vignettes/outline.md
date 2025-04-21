@@ -52,8 +52,11 @@ Some misc items
 		+ IntConstRegion
 	- UnivariateHelper
 	- Rejection Sampling
-	- TypeDefs (including weight_optimization)
-	- Utility Functions
+	- Typedefs
+		+ weight function
+		+ weight_optimization
+		+ ...
+	- Utility Functions (consider not exporting these unless we really want to)
 		+ optimize_hybrid
 		+ Gumbel Distribution
 		+ Categorical Distribution
@@ -83,19 +86,19 @@ ability to customize the optimization.
 
 Candidate C++ code for removal
 
-- [ ] RectConstRegion.h
-- [ ] Region.h
-- [ ] invgamma.h
-- [ ] logit.h
-- [ ] rect.h
-- [ ] texp.h
-- [ ] unif.h
-- [ ] which.h
+- [x] gamma-trunc.h
+- [x] RectConstRegion.h
+- [x] invgamma.h: Moved to vignettes/examples/common for now
+- [ ] logit.h: We use this but may not want to export it.
+- [ ] rect.h: We need this currently. May not want to export it.
+- [x] texp.h: Moved to vignettes/examples/common for now
+- [x] unif.h: Moved to vignettes/examples/common for now
+- [x] which.h
 
 Candidate R code for removal
 
-- [ ] mvnorm.R
-- [ ] polar.R
+- [x] mvnorm.R
+- [x] polar.R
 
 # Older (Possibly Stale) Notes
 
