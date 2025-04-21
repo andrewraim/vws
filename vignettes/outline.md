@@ -19,6 +19,26 @@ Some misc items
 
 # Outline
 
+1. Introduction
+2. Review of VWS
+3. Usage
+	a. Quick start in R
+	b. Overview of API
+	c. First example in C++
+4. R API
+5. C++ API
+6. Examples
+	a. Disclosure avoidance
+	b. Bessel
+	c. VMF variate generation
+
+
+**Review of VWS**: just review enough so that the rest of the vignette is
+self-contained. May want to revist this toward the end of writing.
+
+**Overview of API**: mentio both Real and Int versions of ConstRegion. Mention
+ability to customize the optimization.
+
 Review of VWS Method
 
 - Avoid rehashing everything from the other paper. Just try to make this one

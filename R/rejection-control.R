@@ -9,6 +9,7 @@
 #' @param ratio_ub TBD
 #' @param action What should happen if sampler halts with `max_rejects`
 #' rejections: one of `"stop"`,  `"warning"`, or `"message"`.
+#' @param opt TBD
 #'
 #' @return
 #' A control object to be passed to the `rejection` function.
@@ -18,7 +19,8 @@
 rejection_control = function(N = 30, tol = 0.1,
 	max_rejects = .Machine$integer.max,
 	report = .Machine$integer.max, ratio_ub = exp(1e-5),
-	action = c("stop", "warning", "message", "none"))
+	action = c("stop", "warning", "message", "none"),
+	opt = NULL)
 {
 	action = switch(match.arg(action),
 		stop = 0L,
@@ -33,7 +35,8 @@ rejection_control = function(N = 30, tol = 0.1,
 		max_rejects = max_rejects,
 		report = report,
 		ratio_ub = ratio_ub,
-		action = action
+		action = action,
+		opt = opt
 	)
 
 	structure(out, class = "rejection_control")

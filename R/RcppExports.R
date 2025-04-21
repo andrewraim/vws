@@ -404,8 +404,16 @@ rejection_int_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, s_base, N, 
     .Call(`_vws_rejection_int_rcpp`, n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, control)
 }
 
+rejection_int_opt_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, opt, control) {
+    .Call(`_vws_rejection_int_opt_rcpp`, n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, opt, control)
+}
+
 rejection_numeric_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, control) {
     .Call(`_vws_rejection_numeric_rcpp`, n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, control)
+}
+
+rejection_numeric_opt_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, opt, control) {
+    .Call(`_vws_rejection_numeric_opt_rcpp`, n, lo, hi, w, d_base, p_base, q_base, s_base, N, tol, opt, control)
 }
 
 #' Truncated Exponential

@@ -81,9 +81,19 @@ NULL
 rejection_numeric = function(n, lo, hi, w, helper,
 	control = rejection_control())
 {
-	rejection_numeric_rcpp(n = n, lo = lo, hi = hi, w = w, d_base = helper$d,
-		p_base = helper$p, q_base = helper$q, s_base = helper$s,
-		N = control$N, tol = control$tol, control = control)
+	if (is.null(control$opt)) {
+		out = rejection_numeric_rcpp(n = n, lo = lo, hi = hi, w = w,
+			d_base = helper$d, p_base = helper$p, q_base = helper$q,
+			s_base = helper$s, N = control$N, tol = control$tol,
+			control = control)
+	} else {
+		out = rejection_numeric_opt_rcpp(n = n, lo = lo, hi = hi, w = w,
+			d_base = helper$d, p_base = helper$p, q_base = helper$q,
+			s_base = helper$s, N = control$N, tol = control$tol,
+			opt = control$opt, control = control)
+	}
+
+	return(out)
 }
 
 #' @name rejection
@@ -91,7 +101,17 @@ rejection_numeric = function(n, lo, hi, w, helper,
 rejection_int = function(n, lo, hi, w, helper,
 	control = rejection_control())
 {
-	rejection_int_rcpp(n = n, lo = lo, hi = hi, w = w, d_base = helper$d,
-		p_base = helper$p, q_base = helper$q, s_base = helper$s,
-		N = control$N, tol = control$tol, control = control)
+	if (is.null(control$opt)) {
+		out = rejection_int_rcpp(n = n, lo = lo, hi = hi, w = w,
+			d_base = helper$d, p_base = helper$p, q_base = helper$q,
+			s_base = helper$s, N = control$N, tol = control$tol,
+			control = control)
+	} else {
+		out = rejection_int_opt_rcpp(n = n, lo = lo, hi = hi, w = w,
+			d_base = helper$d, p_base = helper$p, q_base = helper$q,
+			s_base = helper$s, N = control$N, tol = control$tol,
+			opt = control$opt, control = control)
+	}
+
+	return(out)
 }
