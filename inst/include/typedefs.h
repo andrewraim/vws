@@ -14,10 +14,9 @@ static const unsigned int uint_max = std::numeric_limits<unsigned int>::max();
 * Typedefs for several functions used in VWS programming.
 */
 typedef std::function<double(double, bool)> uv_weight_function;
-typedef std::function<double(const Rcpp::NumericVector&, bool)> mv_weight_function;
-typedef std::function<double(double)> supp;
+typedef std::function<bool(double)> indicator;
 typedef std::function<double(const uv_weight_function& w, double lo, double hi,
-	bool maximize, bool log)> weight_optimization;
+	bool log)> optimizer;
 
 /*
 * Enumeration that represents actions to be taken when an error condition

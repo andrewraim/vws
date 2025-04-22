@@ -30,19 +30,18 @@ namespace vws {
 *
 *  - `max_rejects`: Maximum number of rejections to tolerate before bailing out.
 *
-*  - `report_period`: specifies the period in which progress should be reported
-*    (printed to the screen as a log message).
+*  - `report`: specifies the period in which progress should be reported. This
+*    is printed to the screen as a log message.
 *
-*  - `max_rejects_action`: what should happen if `max_rejects` rejections have
-*    been obtained during sampling. The default action `STOP` results in an
+*  - `action`: what should happen if `max_rejects` rejections have been
+*    obtained during sampling. The default action `STOP` results in an
 *    exception being thrown; here, any successful draws that may have been
 *    obtained are not returned.
 *
-*  - `log_ratio_ub`: it is possible numerically for log-ratio
-*    $\log[f_0(x) / h_0(x)]$ to be greater than zero. This condition should
-*    not occur otherwise, and usually indicates a mistake in user code. This
-*    argument is the maximum value allowed where an exception will not be
-*    thrown.
+*  - `ratio_ub`: it is possible numerically for ratio $f_0(x) / h_0(x)$ to be
+*    greater than zero. This condition should not occur otherwise, and usually
+*    indicates a mistake in user code. This argument is the maximum value
+*    allowed where an exception will not be thrown.
 */
 struct rejection_args
 {

@@ -5,7 +5,6 @@
 #include "typedefs.h"
 #include "log-sum-exp.h"
 #include "categ.h"
-#include "which.h"
 #include "logger.h"
 #include "Region.h"
 #include <iterator>
@@ -14,7 +13,7 @@ namespace vws {
 
 /*
 * FMMProposal is a class which represents a VWS proposal: a finite mixture that
-* implements certain operations. It takes two template arguments:
+* implements certain operations. It takes two template arguments.
 *
 * - `T`: the data type of the support. For example, for a continuous
 *   univariate support, we may use `double`.

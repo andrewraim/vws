@@ -2,7 +2,7 @@
 
 RejectionLambdas rcpp_to_lambdas(const Rcpp::Function& w,
 	const Rcpp::Function& d_base, const Rcpp::Function& p_base,
-	const Rcpp::Function& q_base, const Rcpp::Function& s_base)
+	const Rcpp::Function& q_base)
 {
 	const vws::uv_weight_function& w0 =
 	[&](double x, bool log = true) -> double {
@@ -38,29 +38,19 @@ RejectionLambdas rcpp_to_lambdas(const Rcpp::Function& w,
 		return out(0);
 	};
 
-	const vws::supp& s0 =
-	[&](double x) -> double {
-		const Rcpp::NumericVector& x0 = Rcpp::NumericVector::create(x);
-		const Rcpp::NumericVector& out = s_base(x0);
-		return out(0);
-	};
-
 	RejectionLambdas out;
 	out.w = w0;
 	out.d = d0;
 	out.p = p0;
 	out.q = q0;
-	out.s = s0;
 	return out;
 }
 
-
 RejectionLambdas rcpp_to_lambdas(const Rcpp::Function& w,
 	const Rcpp::Function& d_base, const Rcpp::Function& p_base,
-	const Rcpp::Function& q_base, const Rcpp::Function& s_base,
-	const Rcpp::Function& opt)
+	const Rcpp::Function& q_base, const Rcpp::Function& opt)
 {
-	RejectionLambdas out = rcpp_to_lambdas(w, d_base, p_base, q_base, s_base);
+	RejectionLambdas out = rcpp_to_lambdas(w, d_base, p_base, q_base);
 
 	const vws::weight_optimization& opt0 = [&](const vws::uv_weight_function& ww,
 		double lo, double hi, bool maximize, bool log) -> double

@@ -28,13 +28,16 @@ public:
 	* - `a`: Lower and upper limit of interval.
 	* - `w`: Weight function for the target distribution.
 	* - `helper`: contains operations of the base distribution $g$.
-	* - `opt`: a function of type `weight_optimization` that can both minimize
-	*   and maximize `w`. If not specified, we use numerical optimization.
+	* - `maxopt`: a function of type `optimizer` that maximizes `w`.
+	* - `minopt`: a function of type `optimizer` that minimizes `w`.
+	* 
+	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*/
 	IntConstRegion(double a, const uv_weight_function& w,
 		const UnivariateHelper& helper);
 	IntConstRegion(double a, const uv_weight_function& w,
-		const UnivariateHelper& helper, const weight_optimization& opt);
+		const UnivariateHelper& helper, const optimizer& maxopt,
+		const optimizer& minopt);
 
 	/*
 	* Construct a region based on interval $(a,b]$.
@@ -42,19 +45,21 @@ public:
 	* - `b` Upper limit of interval.
 	* - `w` Weight function for the target distribution.
 	* - `helper`: contains operations of the base distribution $g$.
-	* - `opt`: a function of type `weight_optimization` that can both minimize
-	*   and maximize `w`. If not specified, we use numerical optimization.
+	* - `maxopt`: a function of type `optimizer` that maximizes `w`.
+	* - `minopt`: a function of type `optimizer` that minimizes `w`.
+	*
+	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*/
 	IntConstRegion(double a, double b, const uv_weight_function& w,
 		const UnivariateHelper& helper);
 	IntConstRegion(double a, double b, const uv_weight_function& w,
-		const UnivariateHelper& helper, const weight_optimization& opt);
+		const UnivariateHelper& helper, const optimizer& maxopt,
+		const optimizer& minopt);
 
 	/*
 	* The following functions override methods in `RealConstRegion`. See that
 	* class' documentation for their interfaces.
 	*/
-	// bool s(const double& x) const;
 	bool is_bifurcatable() const;
 
 	/*
@@ -90,8 +95,8 @@ inline IntConstRegion::IntConstRegion(double a,
 
 inline IntConstRegion::IntConstRegion(double a,
 	const uv_weight_function& w, const UnivariateHelper& helper,
-	const weight_optimization& opt)
-: RealConstRegion(a, w, helper, opt)
+	const optimizer& maxopt, const optimizer& minopt)
+: RealConstRegion(a, w, helper, maxopt, minopt)
 {
 }
 
@@ -103,8 +108,8 @@ inline IntConstRegion::IntConstRegion(double a, double b,
 
 inline IntConstRegion::IntConstRegion(double a, double b,
 	const uv_weight_function& w, const UnivariateHelper& helper,
-	const weight_optimization& opt)
-: RealConstRegion(a, b, w, helper, opt)
+	const optimizer& maxopt, const optimizer& minopt)
+: RealConstRegion(a, b, w, helper, maxopt, minopt)
 {
 }
 
@@ -117,14 +122,14 @@ IntConstRegion::bifurcate() const
 inline std::pair<IntConstRegion,IntConstRegion>
 IntConstRegion::bifurcate(const double& x) const
 {
-	IntConstRegion r1(_a, x, *_w, *_helper, _opt);
-	IntConstRegion r2(x, _b, *_w, *_helper, _opt);
+	IntConstRegion r1(_a, x, *_w, *_helper, _maxopt, _minopt);
+	IntConstRegion r2(x, _b, *_w, *_helper, _maxopt, _minopt);
 	return std::make_pair(r1, r2);
 }
 
 inline IntConstRegion IntConstRegion::singleton(const double& x) const
 {
-	return IntConstRegion(x, *_w, *_helper, _opt);
+	return IntConstRegion(x, *_w, *_helper, _maxopt, _minopt);
 }
 
 inline bool IntConstRegion::is_bifurcatable() const
@@ -153,3 +158,4 @@ inline const IntConstRegion& IntConstRegion::operator=(const IntConstRegion& x)
 }
 
 #endif
+

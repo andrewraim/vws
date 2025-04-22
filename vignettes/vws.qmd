@@ -183,172 +183,9 @@ and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind(T \in \mathcal{D}_j)]$ w
 <!-- -->
 This bound can be used to quickly determine whether the proposal will be viable for rejection sampling. If the bound is seen to be large, the proposal may be refined by altering the partition or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in the present document. [@sec-UnivariateConstRegion] discusses the use of a constant function. A linear function is discussed in the context of specific examples in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
 
-# Usage
+## Constant Majorizer {#sec-vws-constant}
 
-The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples.
-
-## Quick Start in R {#sec-quick-r}
-
-::: {.callout-caution title="TBD"}
-Under construction. Describe the minimum we need to know to understand this
-example. Refer to details, which I think will be later in the document.
-:::
-
-```{.cpp include="examples/first-r/sample.R" code-line-numbers="true"}
-```
-
-
-```{r}
-source("sample.R")
-sample(n = 10, kappa = 5, d = 4, N = 10)
-```
-
-## Overview of API {#sec-overview}
-
-::: {.callout-caution title="TBD"}
-Misc
-
-- How about the name `d_g` instead of `d_base`?
-- We'll want to show some examples where we override `optimize` and maybe the
-  bifurcate functions. Consider pointing to them somewhere in this section. We
-  may want to avoid reviewing R6 inheritance in a more general way.
-- Readers might want to check out one of the first / easiest examples (name
-  one) to see the basic usage pattern, then jump back up here to see the
-  components described in more detail. May want to say this before we start
-  going into any detail.
-:::
-
-Use of the package focuses on two `R6` classes. The `FMMProposal` class represents finite mixture \eqref{eqn:fmm-proposal} and encapsulates operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations that must be supported on it for VWS; i.e., all problem-specific logic is coded within a `Region`. An `FMMProposal` object is created from a list of one or more `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
-
-The `rejection` function takes an object `h` of class `FMMProposal` and carries out
-the rejection sampling algorithm to obtain `n` draws. The return value of `rejection` is a list where each element represents an accepted draw. Optional arguments may be passed
-through a `rejection_control` (S3) object, including: a count of rejections to be tolerated before halting, and whether to return additional information about rejections which occurred during sampling. The following display gives a typical workflow for sampling.
-
-```{R}
-#| eval: false
-#| prompt: true
-regions = list(region1, region2)
-h = FMMProposal$new(regions)
-ctrl = rejection_control(max_rejects = 5000)
-rejection(h, n = 1000, control = ctrl)
-```
-
-```{r}
-#| include: false
-# If the interface has changed, catch it and bail out
-actual = names(formals(rejection_control))
-expected = c("max_rejects", "report", "extra_outputs", "action_incomplete")
-base::setequal(actual, expected) |> stopifnot()
-```
-
-Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-region], [-@sec-UnivariateConstRegion], and [-@sec-user-region].
-
-Before sampling, the `adapt` function can be used to refine a given
-`FMMProposal` object by partitioning a given set of regions into a finer set.
-The can make it a better approximation of the target distribution. Details are
-given in Section [-@sec-adapt].
-
-@fig-software-design displays a diagram of the high-level design just described. Sections [-@sec-fmm-proposal] through [-@sec-utilities] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
-
-![Design of `vws` package.](software-design.pdf){#fig-software-design}
-
-## First Example in C++ {#sec-first-cpp}
-
-::: {.callout-caution title="TBD"}
-Under construction
-:::
-
-Let us consider an example C++ code making use of this framework. The following
-declares a `sample` function in C++ that is also exposed as an R function.
-
-```{.cpp include="examples/first-cpp/sample.cpp" code-line-numbers="true"}
-```
-
-There are several points of interest to call out. (TBD: needs to be updated)
-
-- Line 1 ensures that this code is linked with the `vws` and `fntl` packages.
-  `fntl` is not used directly in this example, but is needed by `vws`.
-- Line 2 includes the headers for C++ framework in `vws`.
-- Line 3 includes the header for a "helper" class that encapsulates several
-  functions of the $\text{Uniform}(a,b)$ distribution needed by the sampler:
-  the density, CDF, quantile function, and an indicator function for the
-  support.
-- Lines 5-6 define a C++ function and export it for use in R.
-- Lines 9-11 prepare a structure with arguments for rejection sampling. Notice
-  that `rejection_args` (along with other `vws` classes and functions) are in
-  the `vws` namespace.
-- Lines 13-20 define the weight function using C++ lambda syntax.
-- Lines 22-24 construct a specific type of `Region` and build an `FMMProposal`
-  from it. Notice that there are two template arguments specified here: the
-  first `double` specifies the type of the support and the second
-  `UnivariateConstRegion` specifies the type of `Region`.
-- Line 26 refines the proposal `N-1` times so that there are `N` regions.
-- Line 27 carries out rejection sampling with proposal `h`.
-- Line 29-32 extracts the draws and vector rejection counts (where the `i`th
-  element represents the number of rejections for the `i`-th draw) and returns
-  them in an `Rcpp::List`.
-
-We may call the exported R function as follows.
-
-```{r}
-Rcpp::sourceCpp("examples/first-cpp/sampler.cpp")
-sample(n = 10, kappa = 5, d = 4, N = 10)
-```
-
-## (STALE) Refining the Proposal {#sec-adapt}
-
-The `adapt` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain a new partition $\mathcal{D}_1^*, \ldots, \mathcal{D}_{N + N'}^*$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
-<!-- -->
-\begin{align}
-\rho_1 = \frac{
-\overline{\xi}_1 - \underline{\xi}_1
-}{
-\sum_{j=1}^N \overline{\xi}_j
-},
-\quad \ldots, \quad
-\rho_N = \frac{
-\overline{\xi}_N - \underline{\xi}_N
-}{
-\sum_{j=1}^N \overline{\xi}_j
-}
-\label{eqn:bound-components}
-\end{align}
-<!-- -->
-be the contribution of each region to \eqref{eqn:bound} when there are $N$ regions. We draw index $\ell$ from $(1, \ldots, N)$ with probabilities proportional to $\rho_1, \ldots, \rho_N$, then bifurcate region $\ell$ into regions $\mathcal{D}_\ell^{(1)}$ and $\mathcal{D}_\ell^{(2)}$. There may be a number of ways to define bifurcation when $\Omega$ is a multivariate set. For a given subclass of `Region`, the bifurcation approach is to be implemented in the `bifurcate` method. Additionally, each subclass of `Region` should implement the `is_bifurcatable` method which returns `FALSE` if a `Region` object should not be further bifurcated; otherwise it returns `TRUE`.
-
-In the following example, a proposal `h_init` is refined `N = 10` times
-to yield an improved proposal `h`.
-
-```{R}
-#| eval: false
-#| prompt: true
-h_init = FMMProposal$new(regions)
-out = adapt(h_init, N = 10)
-h = out$h
-```
-
-In addition to the element `h` in the return value which represents the adapted
-proposal, the element `log_bdd_hist` contains a vector with values
-<!-- -->
-\begin{align*}
-\log\left\{
-1 - \frac{\sum_{j=1}^{N+t} \underline{\xi}_j^{(t)}}{\sum_{j=1}^{N+t} \overline{\xi}_j^{(t)}}
-\right\}
-\end{align*}
-<!-- -->
-computed at steps $t = 0, 1, \ldots, N'$ of the refinement process. Here, $\overline{\xi}_j^{(t)}$ and $\underline{\xi}_j^{(t)}$ respectively represent $\overline{\xi}_j$ and $\underline{\xi}_j$ at step $t$. Effectiveness of a call to `adapt` can be evaluated by examining `log_bdd_hist`.
-
-```{r}
-#| eval: false
-#| prompt: true
-step = seq_along(out$log_bdd_hist) - 1  ## Make sequence 0, 1, ..., N
-bdd = exp(out$log_bdd_hist)             ## Exponentiate to probability scale
-plot(step, bdd, type = "l")
-```
-
-If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `adapt` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
-
-## (STALE) Univariate Regions with Constant Majorizer {#sec-UnivariateConstRegion}
+**TBD: Make this only about the method. Code will be elsewhere**
 
 `UnivariateConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Furthermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
 $g_j(x) = g(x) \ind(x \in \mathcal{D}_j) / \Prob(T \in \mathcal{D}_j)$
@@ -455,6 +292,193 @@ region$optimize(maximize = TRUE, log = TRUE)
 
 The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntUnivariateConstRegion` or `UnivariateConstRegion` and override the `optimize` method. An example of this is given in [@sec-ln-norm-const-cf].
 
+## Linear Majorizer {#sec-vws-linear}
+
+**TBD: write about linear majorizer**
+
+## Knot Selection {#sec-vws-knots}
+
+**TBD: write about methods here**
+
+# Usage
+
+The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples.
+
+## Overview of Package {#sec-overview}
+
+::: {.callout-caution title="TBD"}
+Misc
+
+- How about the name `d_g` instead of `d_base`?
+- We'll want to show some examples where we override `optimize` and maybe the
+  bifurcate functions. Consider pointing to them somewhere in this section. We
+  may want to avoid reviewing R6 inheritance in a more general way.
+- Readers might want to check out one of the first / easiest examples (name
+  one) to see the basic usage pattern, then jump back up here to see the
+  components described in more detail. May want to say this before we start
+  going into any detail.
+:::
+
+Use of the package focuses on two `R6` classes. The `FMMProposal` class represents finite mixture \eqref{eqn:fmm-proposal} and encapsulates operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations that must be supported on it for VWS; i.e., all problem-specific logic is coded within a `Region`. An `FMMProposal` object is created from a list of one or more `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
+
+The `rejection` function takes an object `h` of class `FMMProposal` and carries out
+the rejection sampling algorithm to obtain `n` draws. The return value of `rejection` is a list where each element represents an accepted draw. Optional arguments may be passed
+through a `rejection_control` (S3) object, including: a count of rejections to be tolerated before halting, and whether to return additional information about rejections which occurred during sampling. The following display gives a typical workflow for sampling.
+
+```{R}
+#| eval: false
+#| prompt: true
+regions = list(region1, region2)
+h = FMMProposal$new(regions)
+ctrl = rejection_control(max_rejects = 5000)
+rejection(h, n = 1000, control = ctrl)
+```
+
+```{r}
+#| include: false
+# If the interface has changed, catch it and bail out
+actual = names(formals(rejection_control))
+expected = c("max_rejects", "report", "extra_outputs", "action_incomplete")
+base::setequal(actual, expected) |> stopifnot()
+```
+
+Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-region], [-@sec-UnivariateConstRegion], and [-@sec-user-region].
+
+Before sampling, the `adapt` function can be used to refine a given
+`FMMProposal` object by partitioning a given set of regions into a finer set.
+The can make it a better approximation of the target distribution. Details are
+given in Section [-@sec-adapt].
+
+@fig-software-design displays a diagram of the high-level design just described. Sections [-@sec-fmm-proposal] through [-@sec-utilities] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
+
+![Design of `vws` package.](software-design.pdf){#fig-software-design}
+
+## Quick Start in R {#sec-quick-r}
+
+::: {.callout-caution title="TBD"}
+Under construction. Describe the minimum we need to know to understand this
+example. Refer to details, which I think will be later in the document.
+:::
+
+```{.cpp include="examples/first-r/sample.R" code-line-numbers="true"}
+```
+
+
+```{r}
+source("sample.R")
+sample(n = 10, kappa = 5, d = 4, N = 10)
+```
+
+## Quick Start in C++ {#sec-first-cpp}
+
+::: {.callout-caution title="TBD"}
+Under construction
+:::
+
+Let us consider an example C++ code making use of this framework. The following
+declares a `sample` function in C++ that is also exposed as an R function.
+
+```{.cpp include="examples/first-cpp/sample.cpp" code-line-numbers="true"}
+```
+
+There are several points of interest to call out. (TBD: needs to be updated)
+
+- Line 1 ensures that this code is linked with the `vws` and `fntl` packages.
+  `fntl` is not used directly in this example, but is needed by `vws`.
+- Line 2 includes the headers for C++ framework in `vws`.
+- Line 3 includes the header for a "helper" class that encapsulates several
+  functions of the $\text{Uniform}(a,b)$ distribution needed by the sampler:
+  the density, CDF, quantile function, and an indicator function for the
+  support.
+- Lines 5-6 define a C++ function and export it for use in R.
+- Lines 9-11 prepare a structure with arguments for rejection sampling. Notice
+  that `rejection_args` (along with other `vws` classes and functions) are in
+  the `vws` namespace.
+- Lines 13-20 define the weight function using C++ lambda syntax.
+- Lines 22-24 construct a specific type of `Region` and build an `FMMProposal`
+  from it. Notice that there are two template arguments specified here: the
+  first `double` specifies the type of the support and the second
+  `UnivariateConstRegion` specifies the type of `Region`.
+- Line 26 refines the proposal `N-1` times so that there are `N` regions.
+- Line 27 carries out rejection sampling with proposal `h`.
+- Line 29-32 extracts the draws and vector rejection counts (where the `i`th
+  element represents the number of rejections for the `i`-th draw) and returns
+  them in an `Rcpp::List`.
+
+We may call the exported R function as follows.
+
+```{r}
+Rcpp::sourceCpp("examples/first-cpp/sampler.cpp")
+sample(n = 10, kappa = 5, d = 4, N = 10)
+```
+
+## Custom Optimization {#sec-user-opt}
+
+**TBD**
+
+- Mention that we use a numerical method by default
+- R version
+- C++ version
+
+## (STALE) Refining the Proposal {#sec-adapt}
+
+**TBD**
+
+- Our rule of thumb (and greedy option)
+- At specified knots
+
+
+The `adapt` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain a new partition $\mathcal{D}_1^*, \ldots, \mathcal{D}_{N + N'}^*$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
+<!-- -->
+\begin{align}
+\rho_1 = \frac{
+\overline{\xi}_1 - \underline{\xi}_1
+}{
+\sum_{j=1}^N \overline{\xi}_j
+},
+\quad \ldots, \quad
+\rho_N = \frac{
+\overline{\xi}_N - \underline{\xi}_N
+}{
+\sum_{j=1}^N \overline{\xi}_j
+}
+\label{eqn:bound-components}
+\end{align}
+<!-- -->
+be the contribution of each region to \eqref{eqn:bound} when there are $N$ regions. We draw index $\ell$ from $(1, \ldots, N)$ with probabilities proportional to $\rho_1, \ldots, \rho_N$, then bifurcate region $\ell$ into regions $\mathcal{D}_\ell^{(1)}$ and $\mathcal{D}_\ell^{(2)}$. There may be a number of ways to define bifurcation when $\Omega$ is a multivariate set. For a given subclass of `Region`, the bifurcation approach is to be implemented in the `bifurcate` method. Additionally, each subclass of `Region` should implement the `is_bifurcatable` method which returns `FALSE` if a `Region` object should not be further bifurcated; otherwise it returns `TRUE`.
+
+In the following example, a proposal `h_init` is refined `N = 10` times
+to yield an improved proposal `h`.
+
+```{R}
+#| eval: false
+#| prompt: true
+h_init = FMMProposal$new(regions)
+out = adapt(h_init, N = 10)
+h = out$h
+```
+
+In addition to the element `h` in the return value which represents the adapted
+proposal, the element `log_bdd_hist` contains a vector with values
+<!-- -->
+\begin{align*}
+\log\left\{
+1 - \frac{\sum_{j=1}^{N+t} \underline{\xi}_j^{(t)}}{\sum_{j=1}^{N+t} \overline{\xi}_j^{(t)}}
+\right\}
+\end{align*}
+<!-- -->
+computed at steps $t = 0, 1, \ldots, N'$ of the refinement process. Here, $\overline{\xi}_j^{(t)}$ and $\underline{\xi}_j^{(t)}$ respectively represent $\overline{\xi}_j$ and $\underline{\xi}_j$ at step $t$. Effectiveness of a call to `adapt` can be evaluated by examining `log_bdd_hist`.
+
+```{r}
+#| eval: false
+#| prompt: true
+step = seq_along(out$log_bdd_hist) - 1  ## Make sequence 0, 1, ..., N
+bdd = exp(out$log_bdd_hist)             ## Exponentiate to probability scale
+plot(step, bdd, type = "l")
+```
+
+If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `adapt` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
+
 ## (STALE) User-Defined Regions {#sec-user-region}
 
 For targets where the support is not univariate, or where the desired majorizer is something other than a constant, the user may create a subclass `Region` to implement VWS. This new class must implement the methods in [@tbl-region-methods] using `R6`. Here is a skeleton of a such a subclass named `CustomRegion` to illustrate this process. Complete implementations of such subclasses are given in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
@@ -486,6 +510,8 @@ print = function() { ... }
 ```
 
 # R API {#sec-r-api}
+
+**TBD**: consider flattening the structure of this section.
 
 An implementation of VWS rejection sampling is provided in R to help with quick
 prototyping. It is limited to univariate problems, and assumes constant
@@ -525,7 +551,7 @@ log-scale.
 5. A structure created from `univariate_helper` (@sec-r-univariate-helper).
 6. An object constructed using `rejection_control` (@sec-r-rejection-control).
 
-## `rejection_control` function {#sec-r-rejection-control}
+## rejection_control function {#sec-r-rejection-control}
 
 ```{r}
 #| eval: false
@@ -549,7 +575,7 @@ precision. Throw an error if it is larger than this value.
 6. Action to take if rejection sampling halts early due to the maximum number
 of rejections being exceeded.
 
-## `univariate_helper` function {#sec-r-univariate-helper}
+## univariate_helper function {#sec-r-univariate-helper}
 
 ```{r}
 #| eval: false
@@ -577,7 +603,60 @@ $P(X \leq x)$ and $P(X > x)$ otherwise.
 
 # C++ API {#sec-cpp-api}
 
-## FMMProposal {#sec-fmm-proposal}
+## Typedefs {#sec-cpp-api-typedefs}
+
+**TBD**
+
+- weight function
+- weight_optimization
+- `...`
+
+We define a shorthand for the maximum value of an unsigned integer.
+
+```{cpp}
+unsigned int uint_max = std::numeric_limits<unsigned int>::max();
+```
+
+The following typedef represents an indicator function. 
+
+```{cpp}
+typedef std::function<bool(double x)> indicator;
+```
+
+The following typedef represents a weight function. 
+
+```{cpp}
+typedef std::function<double(
+	double x,                  // <1>
+	bool log                   // <2>
+)> uv_weight_function;
+```
+1. The argument.
+2. Logical; `log = true` specifies that the result should be returned on the
+log-scale. Otherwise, it should be returned on the original scale.
+
+The following typedef represents a function that optimizes (i.e., maximizes or
+minimizes) a weight function on a given interval.
+
+```{cpp}
+typedef std::function<double(
+	const uv_weight_function& w,  // <1>
+	double lo,                    // <2>
+	double hi,                    // <3>
+	bool log                      // <4>
+)> optimize;
+```
+1. A weight function.
+2. Lower bound of the interval; may be `R_NegInf`.
+3. Upper bound of the interval; may be `R_PosInf`.
+4. Logical; `log = true` specifies that the result should be the optimal value
+   $\log w(x^*)$, given on the log-scale. Otherwise, the result should be the
+   optimal value $w(x^*)$ on the original scale.
+
+**TBD** Can we pass `optimize_hybrid` to `RealConstRegion` as the default and
+clean up that part of the code?
+
+## Finite Mixture Proposal {#sec-cpp-api-proposal}
 
 The class `FMMProposal` represents a VWS proposal. 
 
@@ -701,6 +780,8 @@ selected with probabilities proportional to $\rho_1, \ldots, \rho_N$. The
 argument `report` represents the period that progress is written to the
 console.
 
+**TBD**: note on how to get equal-spaced knots.
+
 ### Summary Methods {.unnumbered .unlisted}
 
 Several methods are provided to summarize the regions in the proposal.
@@ -763,7 +844,7 @@ have any points of support.
 The argument `log = true` in the methods above requests values to be returned
 on the log-scale.
 
-## UnivariateConstRegion {#sec-univariate-const-region}
+## Region on Real-Valued Support with Constant Majorizer {#sec-cpp-api-realconstregion}
 
 This is a subclass of `Region`, defined in @sec-region, specifically for
 univariate problems with continuous support where
@@ -782,14 +863,14 @@ In addition to the methods defined in `Region`, we have the following
 constructors.
 
 ```{cpp}
-UnivariateConstRegion(
+RealConstRegion(
 	double a,                       // <1>
 	double b,                       // <2>
 	const uv_weight_function& w,    // <3>
 	const UnivariateHelper& helper  // <4>
 );
 
-UnivariateConstRegion(
+RealConstRegion(
 	double a,                       // <1>
 	const uv_weight_function& w,    // <3>
 	const UnivariateHelper& helper  // <4>
@@ -824,46 +905,45 @@ the support. If only $b$ is finite, return a smaller point in the support.
 double midpoint() const;
 ```
 
-The `bifurcate` returns two disjoint regions whose union is the current region.
-The result is given as an STL pair.
+The `bifurcate` method returns two disjoint regions whose union is the current
+region. The result is given as an STL pair. The first version bifurcates at the
+midpoint of the current region, determined by the `midpoint` method. The second
+version partitions at the given $x$.
 
 ```{cpp}
-std::pair<UnivariateConstRegion,UnivariateConstRegion>
-bifurcate() const;                                      \\ <1>
-
-std::pair<UnivariateConstRegion,UnivariateConstRegion>
-bifurcate(const double& x) const;                       \\ <2>
+std::pair<RealConstRegion,RealConstRegion> bifurcate() const;
+std::pair<RealConstRegion,RealConstRegion> bifurcate(const double& x) const;
 ```
-1. This version partitions the the midpoint of the current region, determined
-by the `midpoint` method.
-2. This version partitions at the given $x$.
 
 The `singleton` method returns a singleton interval $(x, x]$, using the current
 object's weight function, base distribution, etc.
 
 ```{cpp}
-UnivariateConstRegion singleton(const double& x) const;
+RealConstRegion singleton(const double& x) const;
 ```
 
 The following methods determine an ordering of the current region and an
 another region specified as argument `x`. Region $(a_1, b_1]$ is considered
-"less than" $(a_2, b_2]$ if $a_1 < a_2$. The regions are considered equal if
+"less than" $(a_2, b_2]$ if $b_1 < a_2$. The regions are considered equal if
 $a_1 = a_2$ and $b_1 = b_2$. Note that other elements such as $w$ are $g$ are
 not explicitly checked, and are assumed to be the same.
 
 ```{cpp}
-bool operator<(const UnivariateConstRegion& x) const;
-bool operator==(const UnivariateConstRegion& x) const;
+bool operator<(const RealConstRegion& x) const;
+bool operator==(const RealConstRegion& x) const;
 ```
 
 The following method assigns the current region to be equal to the argument `x`.
 
 ```{cpp}
-const UnivariateConstRegion& operator=(const UnivariateConstRegion& x);
+const RealConstRegion& operator=(const RealConstRegion& x);
 ```
 
+## Region on Integer-Valued Support with Constant Majorizer {#sec-cpp-api-intconstregion}
 
-## UnivariateHelper {#sec-univariate-helper}
+**TBD**
+
+## Univariate Helper {#sec-cpp-api-helper}
 
 `UnivariateHelper` is a class which is intended for use with `UnivariateConstRegion`. It contains several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
 
@@ -901,7 +981,7 @@ $1-p$ quantile otherwise.
 4. Indicator of whether argument $x$ is in the support of the distribution.
 
 
-## Rejection Sampling {#sec-rejection}
+## Rejection Sampling {#sec-cpp-api-rejection}
 
 The following functions carry out rejection sampling using a VWS proposal
 described in @sec-fmm-proposal.
@@ -949,7 +1029,7 @@ draws) before bailing out.
 larger than 1 due to numerical precision, but an error is thrown if it is
 larger than this value.
 4. The action to take if `max_rejects` rejections is exceeded. See
-@sec-utilities for possible values.
+below for possible values.
 5. Constructor that takes no arguments.
 6. Convert an `Rcpp::List` to a `rejection_args` struct.
 7. Return a `Rcpp::List` from a `rejection_args` struct.
@@ -975,8 +1055,7 @@ If `action != error_action::STOP`in `rejection_args`, the sampler can halt
 before all $n$ desired variates are drawn. In this case, the `draws` and
 `rejects` vectors will have lengths shorter than $n$.
 
-
-## Utilities {#sec-utilities}
+**TBD** here is `error_action`.
 
 ```{cpp}
 enum class error_action {
@@ -987,65 +1066,113 @@ enum class error_action {
 };
 ```
 
-Equal-spaced knots.
+## Optimization on an Interval {#sec-cpp-api-opt}
 
-Several additional remarks about the design of `vws` are given in this section.
+**TBD**: `optimize_hybrid`
+
+## Log-Sum-Exp {#sec-cpp-api-logsumexp}
 
 Calculations in the package are carried out on the log-scale, where possible,
 to avoid issues from floating point numbers with very small or very large
-magnitudes. Users may want to follow this convention when customizing to their
+magnitudes. Users may want to follow this convention when implementing their
 own sampling problems. Several included functions help to avoid explicit
-exponentiation and may be helpful for this purpose; they are listed in
-[@tbl-log-sum-exp].
+exponentiation and may be helpful for this purpose.
 
-: Functions for sums and differences on the log-scale. {#tbl-log-sum-exp tbl-colwidths="[25,75]"}
+The following compute $\log\{ \sum_{i=1}^n \exp(x_i) \}$. The first form yields
+a scalar based on a vector $x \in \mathbb{R}^n$. The second form applies the
+computation to the rows of a matrix $X \in \mathbb{R}^{m \times n}$ to yield
+an $m$-dimensional vector.
 
--------------------------------------------------------------------------------
-Function             Description
------                -----
-`log_sum_exp(x)`     Compute $\log\{ \sum_{i=1}^n \exp(x_i) \}$ based on a
-                     vector `x`.
+```{cpp}
+double log_sum_exp(const Rcpp::NumericVector& x);
+Rcpp::NumericVector log_sum_exp_mat(const Rcpp::NumericMatrix& x);
+```
 
-`log_add2_exp(x, y)` Compute $\log(e^x + e^y)$. If `x` and/or `y` is a vector,
-                     the function produces a vector of corresponding results.
+The following are for addition on the log scale: $\log(e^x + e^y)$. The first
+form takes scalar $x$ and $y$. The second and third forms take
+$x, y \in \mathbb{R}^n$ and produce an $n$-dimensional vector.
 
-`log_sub2_exp(x, y)` Compute $\log(e^x - e^y)$; vectorized similar to
-                     `log_add2_exp`. Here, elements of `x` smaller than `y`
-                     result in `NaN` outputs.
--------------------------------------------------------------------------------
+```{cpp}
+double log_add2_exp(double x, double y);
+std::vector<double> log_add2_exp(const std::vector<double>& x, const std::vector<double>& y);
+Rcpp::NumericVector log_add2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y);
+```
 
-We make use of the Gumbel trick [e.g., @MaddisonTarlowMinka2014] in several places to
-draw from a discrete distribution with values $1, \ldots, k$ and corresponding
-probabilities $p_1, \ldots, p_k$. This approach allows probabilities
-to be specified on the log-scale without the need to exponentiate them or
-normalize so that they sum to one. The Gumbel trick generates a draw $x$
-from the desired discrete distribution via
+The following carry out subtraction on the log scale: $\log(e^x - e^y)$. The
+first form takes scalar $x$ and $y$. The second and third forms take
+$x, y \in \mathbb{R}^n$ and produce an $n$-dimensional vector. Here, elements of $x$ smaller than $y$ result in `NaN`.
+
+```{cpp}
+double log_sub2_exp(double x, double y);
+std::vector<double> log_sub2_exp(const std::vector<double>& x, const std::vector<double>& y);
+Rcpp::NumericVector log_sub2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y);
+```
+
+## Generating from a Discrete Distribution {#sec-cpp-api-discrete}
+
+We make use of the Gumbel trick [e.g., @MaddisonTarlowMinka2014] to draw from a discrete distribution with probabilities $p_1, \ldots, p_k$. This approach allows probabilities to be specified on the log-scale without the need to exponentiate them or normalize so that they sum to one. The Gumbel trick generates a draw $x$ from the desired discrete distribution via
 <!-- -->
-\begin{align*}
+$$
 X = \argmax \{ Z_1 + \log p_1, \ldots, Z_k + \log p_k \},
 \quad Z_1, \ldots, Z_k \iid \text{Gumbel}(0,1),
-\end{align*}
+$$
 <!-- -->
 where $\text{Gumbel}(0,1)$ is a standard Gumbel distribution with density
-$f(x) = e^{-(x + e^{x})}$. See the functions specified in [@tbl-gumbel].
+$f(x) = e^{-(x + e^{x})}$. A benefit of this method is that the probabilities
+can be given on the log-scale and do not necessarily need to be exponentiated.
 
-: Gumbel distribution and variate generation from discrete distribution  {#tbl-gumbel tbl-colwidths="[20,80]"}
+The following functions generate a draw of $X$. The first form generates a
+single variate and the second form generates a sample of size $n$.
 
--------------------------------------------------------------------------------
-Function   Description
------      -----
-`r_categ`  Generate draws from discrete distribution with values $1, \ldots, k$
-           and corresponding probabilities (unnormalized and specified on the
-           log-scale) $p_1, \ldots, p_k$ via Gumbel trick.
-           
-`r_gumbel` Generate draws from Gumbel distribution.
+```{cpp}
+unsigned int r_categ(
+	const Rcpp::NumericVector& p,  // <2>
+	bool log = false,              // <3>
+	bool one_based = false         // <4>
+);
+Rcpp::IntegerVector r_categ(
+	unsigned int n,                // <1>
+	const Rcpp::NumericVector& p,  // <2>
+	bool log = false,              // <3>
+	bool one_based = false         // <4>
+);
+```
+1. Desired sample size.
+2. Vector of probabilities $p_1, \ldots, p_k$.
+3. Logical; if `true`, indicates that argument `p` should be interpreted as
+$\log p_1, \ldots, \log p_k$. Otherwise, it is interpreted as
+$p_1, \ldots, p_k$ on the original scale.
+4. Logical; if `true`, support is assumed to be $1, \ldots, k$, where $k$ is
+length of the given `p`. Otherwise it is assumed to be $0, \ldots, k-1$. The
+former is useful to generate indices in C++ while the latter is useful for
+indices in R.
 
-`d_gumbel` Compute density of Gumbel distribution.
+The following functions are provided for the Gumbel distribution with location
+parameter $\mu$ and scale $\sigma$. They provide density, CDF, quantile, and
+variate generation, respectively.
 
-`p_gumbel` Compute CDF of Gumbel distribution.
+```{cpp}
+double d_gumbel(double x, double mu = 0, double sigma = 1,
+	bool log = false);
+double p_gumbel(double q, double mu = 0, double sigma = 1,
+	bool lower = true, bool log = false);
+double q_gumbel(double p, double mu = 0, double sigma = 1,
+	bool lower = true, bool log = false);
+double r_gumbel(double mu = 0, double sigma = 1);
+```
 
-`q_gumbel` Compute quantiles of Gumbel distribution.
--------------------------------------------------------------------------------
+The following vectorized versions operate on an independent and identically
+distributed sample.
+
+```{cpp}
+Rcpp::NumericVector d_gumbel(const Rcpp::NumericVector& x, double mu = 0,
+	double sigma = 1, bool log = false);
+Rcpp::NumericVector p_gumbel(const Rcpp::NumericVector& q, double mu = 0,
+	double sigma = 1, bool lower = true, bool log = false);
+Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
+	double sigma = 1, bool lower = true, bool log = false);
+Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1);
+```
 
 # Examples {#sec-examples}
 

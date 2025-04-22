@@ -11,11 +11,8 @@ in action, plot the adaptation rate achieved, and plot the result.
 
 Some misc items
 
-- Give figures captions
+- Give captions for the figures.
 - Make figures render nicely. This might be doable with a global option.
-- See if there's a nice way to let the user determine how optimization works in
-  UnivariateConstRegion and Int version. What if they can do it in closed form?
-  Maybe make the min and max functions into methods that can be overridden.
 
 # Outline
 
@@ -27,6 +24,7 @@ Some misc items
 	- The model of coding in C++ and exposing functions to R
 	- Explain that computations are kept on log-scale in the package and why we
 	  do it.
+	- vws namespace. But this could be pointed out in the first C++ example.
 3. Usage
 	a. Overview of API
 	b. Quick start in R

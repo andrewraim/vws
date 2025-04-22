@@ -10,7 +10,7 @@ class UnivariateHelper
 {
 public:
 	UnivariateHelper(const fntl::density& d,
-		const fntl::cdf& p, const fntl::quantile& q, const supp& s)
+		const fntl::cdf& p, const fntl::quantile& q, const indicator& s)
 	: _d(d), _p(p), _q(q), _s(s)
 	{
 	}
@@ -39,7 +39,7 @@ private:
 	fntl::density _d;
 	fntl::cdf _p;
 	fntl::quantile _q;
-	supp _s;
+	indicator _s;
 };
 
 }
