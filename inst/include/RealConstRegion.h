@@ -2,11 +2,9 @@
 #define VWS_REAL_CONST_REGION_H
 
 #include <Rcpp.h>
-#include <memory>
-#include "fntl.h"
+//#include <memory>
 #include "Region.h"
 #include "UnivariateHelper.h"
-#include "optimize-hybrid.h"
 #include "log-sum-exp.h"
 #include "typedefs.h"
 
@@ -32,11 +30,12 @@ public:
     * If `maxopt` and `minopt` are not specified, we use numerical optimization.
     *
 	*/
+	//RealConstRegion(double a, const uv_weight_function& w,
+	//	const UnivariateHelper& helper);
 	RealConstRegion(double a, const uv_weight_function& w,
-		const UnivariateHelper& helper);
-	RealConstRegion(double a, const uv_weight_function& w,
-		const UnivariateHelper& helper, const optimizer& maxopt,
-		const optimizer& minopt);
+		const UnivariateHelper& helper,
+		const optimizer& maxopt = maxopt_default,
+		const optimizer& minopt = minopt_default);
 
 	/*
 	* Construct a region based on interval $(a,b]$.
@@ -49,11 +48,12 @@ public:
     *
     * If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*/
+	// RealConstRegion(double a, double b, const uv_weight_function& w,
+	//	const UnivariateHelper& helper);
 	RealConstRegion(double a, double b, const uv_weight_function& w,
-		const UnivariateHelper& helper);
-	RealConstRegion(double a, double b, const uv_weight_function& w,
-		const UnivariateHelper& helper, const optimizer& maxopt,
-		const optimizer& minopt);
+		const UnivariateHelper& helper,
+		const optimizer& maxopt = maxopt_default,
+		const optimizer& minopt = minopt_default);
 
 	/*
 	* The following functions override abstract methods in `Region`. See that
@@ -138,28 +138,10 @@ protected:
 };
 
 inline RealConstRegion::RealConstRegion(double a,
-	const uv_weight_function& w, const UnivariateHelper& helper)
-: _a(a), _b(a), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
-  _log_prob(NAN), _maxopt(), _minopt()
-{
-	_log_w_max = (*_w)(a, true);
-	_log_w_min = (*_w)(a, true);
-	_log_prob = R_NegInf;
-}
-
-inline RealConstRegion::RealConstRegion(double a,
 	const uv_weight_function& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt)
 : _a(a), _b(a), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt)
-{
-	RealConstRegion::init();
-}
-
-inline RealConstRegion::RealConstRegion(double a, double b,
-	const uv_weight_function& w, const UnivariateHelper& helper)
-: _a(a), _b(b), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
-  _log_prob(NAN), _maxopt(), _minopt()
 {
 	RealConstRegion::init();
 }
@@ -179,26 +161,13 @@ inline void RealConstRegion::init()
 		// Invalid interval
 		Rcpp::stop("a > b");
 	} else if (_a < _b) {
-		if (_maxopt) {
-			// Use custom optimization function that was provided
-			_log_w_max = _maxopt(*_w, _a, _b, true);
-		} else {
-			// Use default numerical optimization
-			_log_w_max = optimize(true);
-		}
-
-		if (_minopt) {
-			// Use custom optimization function that was provided
-			_log_w_min = _minopt(*_w, _a, _b, true);
-		} else {
-			// Use default numerical optimization
-			_log_w_min = optimize(false);
-		}
-
+		// Nontrivial interval (a,b].
 		// Compute $P(a < X <= b)$ for $X \sim g$ on the log scale.
+		_log_w_max = _maxopt(*_w, _a, _b, true);
+		_log_w_min = _minopt(*_w, _a, _b, true);
 		_log_prob = log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
 	} else {
-		// Singleton interval (a,a]
+		// Singleton interval (a,a].
 		_log_w_max = (*_w)(_a, true);
 		_log_w_min = (*_w)(_a, true);
 		_log_prob = R_NegInf;
@@ -309,14 +278,6 @@ inline std::string RealConstRegion::description() const
 	char buf[32];
 	sprintf(buf, "(%g, %g]", _a, _b);
 	return buf;
-}
-
-inline double RealConstRegion::optimize(bool maximize, bool log) const
-{
-	// Pass the log-weight function to `optimize_hybrid`.
-    const fntl::dfd& f = [&](double x) -> double { return (*_w)(x, true); };
-	const auto& out = optimize_hybrid(f, 0, _a, _b, maximize);
-	return log ? out.value : exp(out.value);
 }
 
 inline bool RealConstRegion::operator<(const RealConstRegion& x) const

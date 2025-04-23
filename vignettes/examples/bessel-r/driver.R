@@ -9,11 +9,13 @@ n = 20000
 a = 5
 nu = 2
 N = 12
+tol = 0
+max_rejects = 50000
+report = 10000
 
 # ----- Version 1 -----
 # Use numerical optimization to compute constants in majorizer
-
-out = sample(n, a, nu, N)
+out = sample(n, a, nu, N, tol, max_rejects, report)
 
 xseq = seq(0, max(out$draws))
 fseq = d_bessel(xseq, a = 5, nu = 2)
@@ -34,7 +36,7 @@ data.frame(lbdd = out$lbdd) %>%
 
 # ----- Version 2 -----
 # Use custom optimization routine to compute constants in majorizer
-out2 = sample2(n, a, nu, N)
+out2 = sample2(n, a, nu, N, tol, max_rejects, report)
 
 xseq = seq(0, max(out2$draws))
 fseq = d_bessel(xseq, a, nu)

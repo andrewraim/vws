@@ -2,13 +2,8 @@
 #define VWS_INT_CONST_REGION_H
 
 #include <Rcpp.h>
-#include <memory>
-#include "fntl.h"
-#include "Region.h"
 #include "RealConstRegion.h"
 #include "UnivariateHelper.h"
-#include "optimize-hybrid.h"
-#include "log-sum-exp.h"
 #include "typedefs.h"
 
 namespace vws {
@@ -30,14 +25,15 @@ public:
 	* - `helper`: contains operations of the base distribution $g$.
 	* - `maxopt`: a function of type `optimizer` that maximizes `w`.
 	* - `minopt`: a function of type `optimizer` that minimizes `w`.
-	* 
+	*
 	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*/
+	// IntConstRegion(double a, const uv_weight_function& w,
+	//	const UnivariateHelper& helper);
 	IntConstRegion(double a, const uv_weight_function& w,
-		const UnivariateHelper& helper);
-	IntConstRegion(double a, const uv_weight_function& w,
-		const UnivariateHelper& helper, const optimizer& maxopt,
-		const optimizer& minopt);
+		const UnivariateHelper& helper,
+		const optimizer& maxopt = maxopt_default,
+		const optimizer& minopt = minopt_default);
 
 	/*
 	* Construct a region based on interval $(a,b]$.
@@ -50,11 +46,12 @@ public:
 	*
 	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*/
+	//IntConstRegion(double a, double b, const uv_weight_function& w,
+	//	const UnivariateHelper& helper);
 	IntConstRegion(double a, double b, const uv_weight_function& w,
-		const UnivariateHelper& helper);
-	IntConstRegion(double a, double b, const uv_weight_function& w,
-		const UnivariateHelper& helper, const optimizer& maxopt,
-		const optimizer& minopt);
+		const UnivariateHelper& helper,
+		const optimizer& maxopt = maxopt_default,
+		const optimizer& minopt = minopt_default);
 
 	/*
 	* The following functions override methods in `RealConstRegion`. See that
@@ -88,21 +85,9 @@ public:
 };
 
 inline IntConstRegion::IntConstRegion(double a,
-	const uv_weight_function& w, const UnivariateHelper& helper)
-: RealConstRegion(a, w, helper)
-{
-}
-
-inline IntConstRegion::IntConstRegion(double a,
 	const uv_weight_function& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt)
 : RealConstRegion(a, w, helper, maxopt, minopt)
-{
-}
-
-inline IntConstRegion::IntConstRegion(double a, double b,
-	const uv_weight_function& w, const UnivariateHelper& helper)
-: RealConstRegion(a, b, w, helper)
 {
 }
 

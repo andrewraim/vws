@@ -369,6 +369,27 @@ source("sample.R")
 sample(n = 10, kappa = 5, d = 4, N = 10)
 ```
 
+```{r}
+# TEMP code to compute max of weight function.
+
+w = \(x, log = T) {
+	out = 0.5 * (d - 3) * log1p(-x^2) + kappa*x
+	if (log) { return(out) } else { return(exp(out)) }
+}
+
+A = 1
+B = (d-3) / kappa
+C = -1
+f = function(x) { A*x^2 + B*x + C }
+x_roots = ( -B + c(-1,1) * sqrt(B^2 - 4*A*C) ) / (2*A)
+
+curve(w(x), xlim = c(-1,1))
+abline(v = x_roots, lty = 2)
+
+curve(f, xlim = c(-1,1))
+abline(h = 0, lty = 2)
+```
+
 ## Quick Start in C++ {#sec-first-cpp}
 
 ::: {.callout-caution title="TBD"}
@@ -801,6 +822,9 @@ subclass of this method to construct a proposal for a given problem. However,
 for the most common application of VWS - univariate support with a constant
 majorizer - users may start with a specialized subclass. See
 Sections [-@sec-univariate-const-region] and TBD.
+
+**TBD**: mention that bifurcated objects inherit values of the original such
+as `w` and the optimization functions.
 
 ### Class Definition {.unnumbered .unlisted}
 
