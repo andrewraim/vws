@@ -48,24 +48,39 @@ RejectionLambdas rcpp_to_lambdas(const Rcpp::Function& w,
 
 RejectionLambdas rcpp_to_lambdas(const Rcpp::Function& w,
 	const Rcpp::Function& d_base, const Rcpp::Function& p_base,
-	const Rcpp::Function& q_base, const Rcpp::Function& opt)
+	const Rcpp::Function& q_base, const Rcpp::Function& maxopt,
+	const Rcpp::Function& minopt)
 {
 	RejectionLambdas out = rcpp_to_lambdas(w, d_base, p_base, q_base);
 
-	const vws::weight_optimization& opt0 = [&](const vws::uv_weight_function& ww,
-		double lo, double hi, bool maximize, bool log) -> double
+	const vws::optimizer& maxopt0 = [&](const vws::uv_weight_function& ww,
+		double lo, double hi, bool log) -> double
 	{
 		// Note: here we take w from the captured w rather than the argument
 		// `ww`. This helps us avoid having to create an Rcpp::Function that
 		// calls `ww`.
 		const Rcpp::NumericVector& lo0 = Rcpp::NumericVector::create(lo);
 		const Rcpp::NumericVector& hi0 = Rcpp::NumericVector::create(hi);
-		const Rcpp::LogicalVector& maximize0 = Rcpp::LogicalVector::create(maximize);
 		const Rcpp::LogicalVector& log0 = Rcpp::LogicalVector::create(log);
-		const Rcpp::NumericVector& out = opt(w, lo0, hi0, maximize0, log0);
+		const Rcpp::NumericVector& out = maxopt(w, lo0, hi0, log0);
 		return out(0);
 	};
 
-	out.opt = opt0;
+	const vws::optimizer& minopt0 = [&](const vws::uv_weight_function& ww,
+		double lo, double hi, bool log) -> double
+	{
+		// Note: here we take w from the captured w rather than the argument
+		// `ww`. This helps us avoid having to create an Rcpp::Function that
+		// calls `ww`.
+		const Rcpp::NumericVector& lo0 = Rcpp::NumericVector::create(lo);
+		const Rcpp::NumericVector& hi0 = Rcpp::NumericVector::create(hi);
+		const Rcpp::LogicalVector& log0 = Rcpp::LogicalVector::create(log);
+		const Rcpp::NumericVector& out = minopt(w, lo0, hi0, log0);
+		return out(0);
+	};
+
+
+	out.maxopt = maxopt0;
+	out.minopt = minopt0;
 	return out;
 }

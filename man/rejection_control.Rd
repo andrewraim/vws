@@ -11,7 +11,8 @@ rejection_control(
   report = .Machine$integer.max,
   ratio_ub = exp(1e-05),
   action = c("stop", "warning", "message", "none"),
-  opt = NULL
+  maxopt = NULL,
+  minopt = NULL
 )
 }
 \arguments{

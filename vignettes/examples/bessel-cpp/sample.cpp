@@ -26,16 +26,13 @@ Rcpp::List sample(unsigned int n, double a, double nu, unsigned int N,
     fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
         return R::qpois(p, lambda, lower, log);
     };
-    vws::supp sf = [](double x) { return 0 <= x; };
 
-    vws::UnivariateHelper helper(df, pf, qf, sf);
+    vws::UnivariateHelper helper(df, pf, qf);
     vws::IntConstRegion supp(R_NegInf, R_PosInf, w, helper);
     vws::FMMProposal<double, vws::IntConstRegion> h({ supp });
 
     auto lbdd = h.adapt(N - 1);
     auto out = vws::rejection(h, n, args);
-
-    h.print(N+1);
 
     return Rcpp::List::create(
         Rcpp::Named("draws") = out.draws,

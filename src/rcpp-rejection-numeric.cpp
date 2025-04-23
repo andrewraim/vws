@@ -5,12 +5,10 @@
 Rcpp::List rejection_numeric_rcpp(unsigned int n, double lo, double hi,
 	const Rcpp::Function& w, const Rcpp::Function& d_base,
 	const Rcpp::Function& p_base, const Rcpp::Function& q_base,
-	const Rcpp::Function& s_base, unsigned int N, double tol,
-	const Rcpp::List& control)
+	unsigned int N, double tol, const Rcpp::List& control)
 {
-	const RejectionLambdas& lam = rcpp_to_lambdas(w, d_base, p_base, q_base,
-		s_base);
-	vws::UnivariateHelper helper(lam.d, lam.p, lam.q, lam.s);
+	const RejectionLambdas& lam = rcpp_to_lambdas(w, d_base, p_base, q_base);
+	vws::UnivariateHelper helper(lam.d, lam.p, lam.q);
 	vws::RealConstRegion supp(lo, hi, lam.w, helper);
 	vws::FMMProposal<double, vws::RealConstRegion> h({ supp });
 
@@ -28,13 +26,13 @@ Rcpp::List rejection_numeric_rcpp(unsigned int n, double lo, double hi,
 Rcpp::List rejection_numeric_opt_rcpp(unsigned int n, double lo, double hi,
 	const Rcpp::Function& w, const Rcpp::Function& d_base,
 	const Rcpp::Function& p_base, const Rcpp::Function& q_base,
-	const Rcpp::Function& s_base, unsigned int N, double tol,
-	const Rcpp::Function& opt, const Rcpp::List& control)
+	const Rcpp::Function& maxopt, const Rcpp::Function& minopt,
+	unsigned int N, double tol, const Rcpp::List& control)
 {
 	const RejectionLambdas& lam = rcpp_to_lambdas(w, d_base, p_base, q_base,
-		s_base, opt);
-	vws::UnivariateHelper helper(lam.d, lam.p, lam.q, lam.s);
-	vws::RealConstRegion supp(lo, hi, lam.w, helper, lam.opt);
+		maxopt, minopt);
+	vws::UnivariateHelper helper(lam.d, lam.p, lam.q);
+	vws::RealConstRegion supp(lo, hi, lam.w, helper, lam.maxopt, lam.minopt);
 	vws::FMMProposal<double, vws::RealConstRegion> h({ supp });
 
 	vws::rejection_args args(control);

@@ -81,16 +81,19 @@ NULL
 rejection_numeric = function(n, lo, hi, w, helper,
 	control = rejection_control())
 {
+	# Require for now that maxopt and minopt are either both specified or both
+	# unspecified.
+	stopifnot(is.null(control$maxopt) == is.null(control$minopt))
+
 	if (is.null(control$opt)) {
 		out = rejection_numeric_rcpp(n = n, lo = lo, hi = hi, w = w,
 			d_base = helper$d, p_base = helper$p, q_base = helper$q,
-			s_base = helper$s, N = control$N, tol = control$tol,
-			control = control)
+			N = control$N, tol = control$tol, control = control)
 	} else {
 		out = rejection_numeric_opt_rcpp(n = n, lo = lo, hi = hi, w = w,
 			d_base = helper$d, p_base = helper$p, q_base = helper$q,
-			s_base = helper$s, N = control$N, tol = control$tol,
-			opt = control$opt, control = control)
+			maxopt = control$maxopt, minopt = control$minopt,
+			N = control$N, tol = control$tol, control = control)
 	}
 
 	return(out)
@@ -101,16 +104,19 @@ rejection_numeric = function(n, lo, hi, w, helper,
 rejection_int = function(n, lo, hi, w, helper,
 	control = rejection_control())
 {
-	if (is.null(control$opt)) {
+	# Require for now that maxopt and minopt are either both specified or both
+	# unspecified.
+	stopifnot(is.null(control$maxopt) == is.null(control$minopt))
+
+	if (is.null(control$maxopt)) {
 		out = rejection_int_rcpp(n = n, lo = lo, hi = hi, w = w,
 			d_base = helper$d, p_base = helper$p, q_base = helper$q,
-			s_base = helper$s, N = control$N, tol = control$tol,
-			control = control)
+			N = control$N, tol = control$tol, control = control)
 	} else {
 		out = rejection_int_opt_rcpp(n = n, lo = lo, hi = hi, w = w,
 			d_base = helper$d, p_base = helper$p, q_base = helper$q,
-			s_base = helper$s, N = control$N, tol = control$tol,
-			opt = control$opt, control = control)
+			maxopt = control$maxopt, minopt = control$minopt,
+			N = control$N, tol = control$tol, control = control)
 	}
 
 	return(out)

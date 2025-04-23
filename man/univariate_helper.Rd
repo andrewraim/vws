@@ -12,10 +12,6 @@ univariate_helper(d, p, q, s)
 \item{p}{Cumulative distribution function.}
 
 \item{q}{Quantile function.}
-
-\item{s}{Indicator function that returns \code{TRUE} when the
-argument is in the support of the distribution; otherwise returns
-\code{FALSE}.}
 }
 \description{
 A container to support VWS with univariate distributions.
@@ -26,7 +22,6 @@ The specified functions must support the following interfaces.
 \item{\code{d(x, log = FALSE)}}{}
 \item{\code{p(q, lower.tail = TRUE, log.p = FALSE)}}{}
 \item{\code{q(p, lower.tail = TRUE, log.p = FALSE)}}{}
-\item{\code{s(x)}}{}
 }
 
 Arguments to these functions are interpreted as usual for the \code{stats}
@@ -48,7 +43,6 @@ helper = univariate_helper(
     q = function(p, lower.tail = TRUE, log.p = FALSE) {
         qpois(p, 10, lower.tail, log.p)
     },
-    s = function(x) { is.numeric(x) }
 )
 
 helper$d(5)

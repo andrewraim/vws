@@ -10,8 +10,8 @@ class UnivariateHelper
 {
 public:
 	UnivariateHelper(const fntl::density& d,
-		const fntl::cdf& p, const fntl::quantile& q, const indicator& s)
-	: _d(d), _p(p), _q(q), _s(s)
+		const fntl::cdf& p, const fntl::quantile& q)
+	: _d(d), _p(p), _q(q)
 	{
 	}
 
@@ -24,14 +24,10 @@ public:
 	double q(double p, bool lower = true, bool log = false) const {
 		return _q(p, lower, log);
 	}
-	bool s(double x) const {
-		return _s(x);
-	}
 	const UnivariateHelper& operator=(const UnivariateHelper& x) {
 		_d = x._d;
 		_p = x._p;
 		_q = x._q;
-		_s = x._s;
 		return *this;
 	}
 
@@ -39,7 +35,6 @@ private:
 	fntl::density _d;
 	fntl::cdf _p;
 	fntl::quantile _q;
-	indicator _s;
 };
 
 }

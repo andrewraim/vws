@@ -20,7 +20,7 @@ rejection_control = function(N = 30, tol = 0.1,
 	max_rejects = .Machine$integer.max,
 	report = .Machine$integer.max, ratio_ub = exp(1e-5),
 	action = c("stop", "warning", "message", "none"),
-	opt = NULL)
+	maxopt = NULL, minopt = NULL)
 {
 	action = switch(match.arg(action),
 		stop = 0L,
@@ -36,7 +36,8 @@ rejection_control = function(N = 30, tol = 0.1,
 		report = report,
 		ratio_ub = ratio_ub,
 		action = action,
-		opt = opt
+		maxopt = maxopt,
+		minopt = minopt
 	)
 
 	structure(out, class = "rejection_control")

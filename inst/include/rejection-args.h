@@ -69,7 +69,7 @@ inline rejection_args::rejection_args(SEXP obj)
 	const Rcpp::List& x = Rcpp::as<Rcpp::List>(obj);
 
 	const Rcpp::StringVector& ex_names = { "max_rejects", "report",
-		"ratio_ub", "action", "N", "tol", "opt"};
+		"ratio_ub", "action", "N", "tol", "maxopt", "minopt"};
 	const Rcpp::StringVector& ac_names = x.names();
 	const auto& diff = Rcpp::setdiff(ac_names, ex_names);
 	if (diff.size() > 0) {

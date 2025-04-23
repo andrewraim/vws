@@ -234,7 +234,7 @@ inline std::vector<double> RealConstRegion::r(unsigned int n) const
 
 inline bool RealConstRegion::s(const double& x) const
 {
-	return (_a < x && x <= _b) && _helper->s(x);
+	return _a < x && x <= _b;
 }
 
 inline double RealConstRegion::w(const double& x, bool log) const
@@ -244,7 +244,7 @@ inline double RealConstRegion::w(const double& x, bool log) const
 
 inline double RealConstRegion::w_major(const double& x, bool log) const
 {
-	double out = _helper->s(x) ? _log_w_max : R_NegInf;
+	double out = _log_w_max;
 	return log ? out : exp(out);
 }
 

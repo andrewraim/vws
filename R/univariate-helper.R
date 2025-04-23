@@ -5,9 +5,6 @@
 #' @param d Density function.
 #' @param p Cumulative distribution function.
 #' @param q Quantile function.
-#' @param s Indicator function that returns `TRUE` when the
-#' argument is in the support of the distribution; otherwise returns
-#' `FALSE`.
 #'
 #' @details
 #' The specified functions must support the following interfaces.
@@ -15,7 +12,6 @@
 #' \item{`d(x, log = FALSE)`}{}
 #' \item{`p(q, lower.tail = TRUE, log.p = FALSE)`}{}
 #' \item{`q(p, lower.tail = TRUE, log.p = FALSE)`}{}
-#' \item{`s(x)`}{}
 #' }
 #'
 #' Arguments to these functions are interpreted as usual for the `stats`
@@ -37,7 +33,6 @@
 #'     q = function(p, lower.tail = TRUE, log.p = FALSE) {
 #'         qpois(p, 10, lower.tail, log.p)
 #'     },
-#'     s = function(x) { is.numeric(x) }
 #' )
 #'
 #' helper$d(5)
@@ -52,9 +47,8 @@ univariate_helper = function(d, p, q, s)
 	stopifnot(all(c("x", "log") %in% names(formals(d))))
 	stopifnot(all(c("q", "lower.tail", "log.p") %in% names(formals(p))))
 	stopifnot(all(c("p", "lower.tail", "log.p") %in% names(formals(q))))
-	stopifnot(all(c("x") %in% names(formals(s))))
 
-	out = list(d = d, p = p, q = q, s = s)
+	out = list(d = d, p = p, q = q)
 	structure(out, class = "univariate_helper")
 }
 
