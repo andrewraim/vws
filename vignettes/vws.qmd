@@ -59,8 +59,6 @@ set.seed(1234)
 
 ::: {.callout-caution title="TBD"}
 
-Mention `density`, `cdf`, etc definitions from `fntl`.
-
 # Older {-}
 
 - If plotting code gets too repetitive, consider making functions for plots.
@@ -75,21 +73,7 @@ Mention `density`, `cdf`, etc definitions from `fntl`.
   the proposal (special cases and general case where we override abstract
   region), refining the proposal, ...
 
-- Other functions to document: `log-sum-exp` family, Gumbel distribution, any
-  other distributions we need to maintain, `optimize-hybrid`.
-
-- We may need to provide an implementation of `IntUnivariateConstRegion`, with
-  documentation and at least a brief example. If we need this, do we also need
-  to provide another R interface function?
-
 - Clean out experimental stuff and maybe put it somewhere else.
-
-# Outline {-}
-
-- Usage
-	+ Adapting the Proposal
-
-- C++ API
 :::
 
 # Introduction
@@ -130,6 +114,9 @@ give one univariate example that makes use of the linear VWS method for
 improved efficiency, and one multivariate example where the regions go beyond
 intervals. To do this, we make use of the [R6](https://r6.r-lib.org) construct
 for object-orientation in R [@Chang2021].
+
+**TBD**: The example sections illustrate VWS samplers implemented using the `vws` package. The first example in [@sec-ln-norm] is described in the most explicit level of detail.
+
 
 # A Brief Review of Vertical Weighted Strips {#sec-vws}
 
@@ -181,7 +168,7 @@ and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind(T \in \mathcal{D}_j)]$ w
 \label{eqn:bound}
 \end{align}
 <!-- -->
-This bound can be used to quickly determine whether the proposal will be viable for rejection sampling. If the bound is seen to be large, the proposal may be refined by altering the partition or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in the present document. [@sec-UnivariateConstRegion] discusses the use of a constant function. A linear function is discussed in the context of specific examples in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
+This bound can be used to quickly determine whether the proposal will be viable for rejection sampling. If the bound is seen to be large, the proposal may be refined by altering the partition or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in the present document. [@sec-vws-constant] discusses the use of a constant function. A linear function is discussed in @sec-vws-linear.
 
 ## Constant Majorizer {#sec-vws-constant}
 
@@ -300,6 +287,25 @@ The arguments `maximize` and `log` are both indicators: optimization is carried 
 
 **TBD: write about methods here**
 
+# Programming Preliminaries {#sec-prelim}
+
+## Lambdas
+## fntl Package
+
+Mention density, cdf, quantile function definitions and numerical tools.
+
+## Exposing Functions to R
+
+The model of coding in C++ and exposing functions to R
+
+## Log-Scale
+
+Explain that computations are kept on log-scale in the package and why we do it.
+
+## VWS Namespace
+
+Perhaps this should be pointed out in the first C++ example instead.
+
 # Usage
 
 The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples.
@@ -342,14 +348,14 @@ expected = c("max_rejects", "report", "extra_outputs", "action_incomplete")
 base::setequal(actual, expected) |> stopifnot()
 ```
 
-Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-region], [-@sec-UnivariateConstRegion], and [-@sec-user-region].
+Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-region], [-@sec-cpp-api-realconstregion], and [-@sec-user-region].
 
 Before sampling, the `adapt` function can be used to refine a given
 `FMMProposal` object by partitioning a given set of regions into a finer set.
 The can make it a better approximation of the target distribution. Details are
 given in Section [-@sec-adapt].
 
-@fig-software-design displays a diagram of the high-level design just described. Sections [-@sec-fmm-proposal] through [-@sec-utilities] will walk through the components in more depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
+@fig-software-design displays a diagram of the high-level design just described. @sec-cpp-api walks through the API components in depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
 
 ![Design of `vws` package.](software-design.pdf){#fig-software-design}
 
@@ -365,8 +371,16 @@ example. Refer to details, which I think will be later in the document.
 
 
 ```{r}
-source("sample.R")
+source("examples/first-r/sample.R")
 sample(n = 10, kappa = 5, d = 4, N = 10)
+```
+
+```{.cpp include="examples/first-r/sample2.R" code-line-numbers="true"}
+```
+
+```{r}
+source("examples/first-r/sample2.R")
+sample2(n = 10, kappa = 5, d = 4, N = 10)
 ```
 
 ```{r}
@@ -502,7 +516,7 @@ If the bound can be reduced to a sufficiently small probability, the user can be
 
 ## (STALE) User-Defined Regions {#sec-user-region}
 
-For targets where the support is not univariate, or where the desired majorizer is something other than a constant, the user may create a subclass `Region` to implement VWS. This new class must implement the methods in [@tbl-region-methods] using `R6`. Here is a skeleton of a such a subclass named `CustomRegion` to illustrate this process. Complete implementations of such subclasses are given in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
+For targets where the support is not univariate, or where the desired majorizer is something other than a constant, the user may create a subclass `Region` to implement VWS. This new class must implement the methods in Table `?` using `R6`. Here is a skeleton of a such a subclass named `CustomRegion` to illustrate this process. Complete implementations of such subclasses are given in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
 
 ```{r}
 #| eval: false
@@ -572,7 +586,7 @@ log-scale.
 5. A structure created from `univariate_helper` (@sec-r-univariate-helper).
 6. An object constructed using `rejection_control` (@sec-r-rejection-control).
 
-## rejection_control function {#sec-r-rejection-control}
+## Rejection Control {#sec-r-rejection-control}
 
 ```{r}
 #| eval: false
@@ -582,7 +596,9 @@ rejection_control(
 	max_rejects = .Machine$integer.max,               # <3>
 	report = .Machine$integer.max,                    # <4>
 	ratio_ub = exp(1e-5),                             # <5>
-	action = c("stop", "warning", "message", "none")  # <6>
+	action = c("stop", "warning", "message", "none"), # <6>
+	maxopt = NULL,                                    # <7>
+	minopt = NULL                                     # <8>
 )
 ```
 1. Maximum number of regions to create in the proposal.
@@ -595,8 +611,14 @@ early.
 precision. Throw an error if it is larger than this value.
 6. Action to take if rejection sampling halts early due to the maximum number
 of rejections being exceeded.
+7. A maximization routine. See below.
+8. A minimization routine. See below.
 
-## univariate_helper function {#sec-r-univariate-helper}
+The arguments `maxopt` and `minopt` are functions of the form `function(w, lo, hi, log)` that repectively maximize and minimize the weight function `w` on the interval `(lo, hi]`. If `log = T`, the optimized value of `log(w(x))` is returned (on the log-scale); otherwise, the optimized value of `w(x)` is returned. If these are left to the default `NULL` value, an numerical optimization routine will be used.
+
+**TBD**: point to numerical optimization.
+
+## Univariate Helper {#sec-r-univariate-helper}
 
 ```{r}
 #| eval: false
@@ -619,7 +641,7 @@ the log-scale. Argument `lower.tail` is logical; if `TRUE`, probabilities are
 $P(X \leq x)$ and $P(X > x)$ otherwise.
 
 
-**TBD: remove other R functions or document them?**
+**TBD**: remove other R functions or document them?
 
 
 # C++ API {#sec-cpp-api}
@@ -821,7 +843,7 @@ problem-specific logic that must be coded to implement VWS. Users create a
 subclass of this method to construct a proposal for a given problem. However,
 for the most common application of VWS - univariate support with a constant
 majorizer - users may start with a specialized subclass. See
-Sections [-@sec-univariate-const-region] and TBD.
+Sections [-@sec-cpp-api-realconstregion] and [-@sec-cpp-api-intconstregion].
 
 **TBD**: mention that bifurcated objects inherit values of the original such
 as `w` and the optimization functions.
@@ -1008,7 +1030,7 @@ $1-p$ quantile otherwise.
 ## Rejection Sampling {#sec-cpp-api-rejection}
 
 The following functions carry out rejection sampling using a VWS proposal
-described in @sec-fmm-proposal.
+described in @sec-cpp-api-proposal.
 
 ```{cpp}
 template <typename T, typename R>
@@ -1030,7 +1052,7 @@ inline rejection_result<T> rejection(
 the second form.
 
 Template arguments `T` and `R` correspond to the given proposal `h` and are
-described in @sec-fmm-proposal. Additional arguments are provided via the
+described in @sec-cpp-api-proposal. Additional arguments are provided via the
 following struct.
 
 ```{cpp}
@@ -1198,11 +1220,7 @@ Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
 Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1);
 ```
 
-# Examples {#sec-examples}
-
-The following subsections illustrate VWS samplers implemented using the `vws` package. The first example in [@sec-ln-norm] is described in the most explicit level of detail.
-
-## Lognormal-Normal Conditional Distribution {#sec-ln-norm}
+# Example: Lognormal-Normal Conditional Distribution {#sec-ln-norm}
 
 ::: {.callout-caution title="TBD"}
 - [ ] Why are the first two samplers so slow to adapt? They seemed much faster
@@ -1269,7 +1287,7 @@ print(y_true)
 print(z)
 ```
 
-### Constant Majorizer with Numerical Optimization {#sec-ln-norm-const}
+## Constant Majorizer with Numerical Optimization {#sec-ln-norm-const}
 
 To implement this version of the sampler, let us first code the weight function. Note that calculations are carried out on the log-scale, and only exponentiated if explicitly requested.
 
@@ -1281,7 +1299,7 @@ w = function(y, log = TRUE) {
 }
 ```
 
-Recall from [@sec-UnivariateConstRegion] that a `univariate_helper` structure is used to construct an object of class `UnivariateConstRegion` to provide necessary functions of the base distribution $g$. The `vws` package contains a built-in variant of `univariate_helper` named `normal_helper` for the normal distribution with mean and standard deviation parameters, which is appropriate for use in this problem.
+Recall from [@sec-cpp-api-realconstregion] that a `univariate_helper` structure is used to construct an object of class `UnivariateConstRegion` to provide necessary functions of the base distribution $g$. The `vws` package contains a built-in variant of `univariate_helper` named `normal_helper` for the normal distribution with mean and standard deviation parameters, which is appropriate for use in this problem.
 
 ```{r}
 helper = normal_helper(mean = z, sd = sqrt(lambda2))
@@ -1450,7 +1468,7 @@ ggplot() +
 	theme_minimal()
 ```
 
-### Constant Majorizer with Custom Optimization {#sec-ln-norm-const-cf}
+## Constant Majorizer with Custom Optimization {#sec-ln-norm-const-cf}
 
 The log-weight function $\zeta$ from \eqref{eqn:ln-norm-log-weight-fn} can be both maximized and minimized in closed form. Coding it explicitly may reduce computational overhead and avoid possible convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `UnivariateConstRegion`.
 
@@ -1538,7 +1556,7 @@ out = rejection(h, n = 10000, control = ctrl)
 y = unlist(out)
 ```
 
-### Linear Majorizer {#sec-ln-norm-linear}
+## Linear Majorizer {#sec-ln-norm-linear}
 
 ::: {.callout-caution title="TBD"}
 We need to pick finite endpoints I think ...
@@ -1693,7 +1711,7 @@ and
 \end{align}
 <!-- -->
 The results obtained thus far can be used to implement the necessary operations
-of a `Region` which are listed in [@tbl-region-methods]. We name the resulting
+of a `Region` which are listed in Table `?`. We name the resulting
 class `CustomLinearRegion`. Operations for `CustomLinearRegion` are summarized
 in [@tbl-ln-norm-custom-region-methods] and the complete code may be found in
 the following file.
@@ -1729,7 +1747,7 @@ Method            Description
 
 `xi_lower`        Compute $\underline{\xi}_j$ via \eqref{eqn:ln-norm-xi-lower}.
 
-`bifurcate`       Midpoint rule from [@sec-UnivariateConstRegion].
+`bifurcate`       Midpoint rule from [@sec-cpp-api-realconstregion].
 
 `is_bifurcatable` Return `TRUE`.
 -------------------------------------------------------------------------------
@@ -1826,7 +1844,7 @@ ggplot() +
 	theme_minimal()
 ```
 
-## Bessel Count Distribution
+# Example: Bessel Count Distribution
 
 ::: {.callout-caution title="TBD"}
 Under construction. The example is working, but the writing needs to be fleshed
@@ -1990,7 +2008,7 @@ ggplot(df) +
 	theme_minimal()
 ```
 
-## Von Mises Fisher
+# Example: Von Mises Fisher
 
 ::: {.callout-caution title="TBD"}
 Under construction. Both versions of the sampler are implemented, but writing
@@ -2058,7 +2076,7 @@ source("../inst/examples/vmf/VMFLinearRegion.R")  # VMFLinearRegion class def'n
 TBD: we have to truncate support to something within $[-1,1]$ when $d < 3$
 because $w$ is not finite at the endpoints.
 
-### Constant Majorizer
+## Constant Majorizer
 
 Define base distribution and weight function.
 
@@ -2153,7 +2171,7 @@ ggplot() +
 ```
 
 
-### Linear Majorizer {#sec-vws-linear}
+## Linear Majorizer {#sec-vws-linear}
 
 For this region:
 
