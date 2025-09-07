@@ -1,6 +1,5 @@
 PKG_LIBS=$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 PKG_CPPFLAGS=-I../inst/include -I.
 SOURCES=rcpp-rect.cpp rcpp-gumbel.cpp \
-	rcpp-optimize-hybrid.cpp rcpp-categ.cpp rcpp-log-sum-exp.cpp \
-	rcpp-rejection-numeric.cpp rcpp-rejection-int.cpp rcpp-to-lambdas.cpp
+	rcpp-optimize-hybrid.cpp rcpp-categ.cpp rcpp-log-sum-exp.cpp
 OBJECTS=RcppExports.o $(SOURCES:.cpp=.o)

@@ -281,11 +281,11 @@ The arguments `maximize` and `log` are both indicators: optimization is carried 
 
 ## Linear Majorizer {#sec-vws-linear}
 
-**TBD: write about linear majorizer**
+**TBD**: write about linear majorizer
 
 ## Knot Selection {#sec-vws-knots}
 
-**TBD: write about methods here**
+**TBD**: write about methods here
 
 # Programming Preliminaries {#sec-prelim}
 
@@ -320,8 +320,7 @@ Misc
 
 - How about the name `d_g` instead of `d_base`?
 - We'll want to show some examples where we override `optimize` and maybe the
-  bifurcate functions. Consider pointing to them somewhere in this section. We
-  may want to avoid reviewing R6 inheritance in a more general way.
+  bifurcate functions. Consider pointing to them somewhere in this section.
 - Readers might want to check out one of the first / easiest examples (name
   one) to see the basic usage pattern, then jump back up here to see the
   components described in more detail. May want to say this before we start

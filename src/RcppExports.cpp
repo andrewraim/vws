@@ -170,90 +170,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// rejection_int_rcpp
-Rcpp::List rejection_int_rcpp(unsigned int n, double lo, double hi, const Rcpp::Function& w, const Rcpp::Function& d_base, const Rcpp::Function& p_base, const Rcpp::Function& q_base, unsigned int N, double tol, const Rcpp::List& control);
-RcppExport SEXP _vws_rejection_int_rcpp(SEXP nSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP wSEXP, SEXP d_baseSEXP, SEXP p_baseSEXP, SEXP q_baseSEXP, SEXP NSEXP, SEXP tolSEXP, SEXP controlSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< unsigned int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
-    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type d_base(d_baseSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type p_base(p_baseSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type q_base(q_baseSEXP);
-    Rcpp::traits::input_parameter< unsigned int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type control(controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(rejection_int_rcpp(n, lo, hi, w, d_base, p_base, q_base, N, tol, control));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rejection_int_opt_rcpp
-Rcpp::List rejection_int_opt_rcpp(unsigned int n, double lo, double hi, const Rcpp::Function& w, const Rcpp::Function& d_base, const Rcpp::Function& p_base, const Rcpp::Function& q_base, const Rcpp::Function& maxopt, const Rcpp::Function& minopt, unsigned int N, double tol, const Rcpp::List& control);
-RcppExport SEXP _vws_rejection_int_opt_rcpp(SEXP nSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP wSEXP, SEXP d_baseSEXP, SEXP p_baseSEXP, SEXP q_baseSEXP, SEXP maxoptSEXP, SEXP minoptSEXP, SEXP NSEXP, SEXP tolSEXP, SEXP controlSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< unsigned int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
-    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type d_base(d_baseSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type p_base(p_baseSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type q_base(q_baseSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type maxopt(maxoptSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type minopt(minoptSEXP);
-    Rcpp::traits::input_parameter< unsigned int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type control(controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(rejection_int_opt_rcpp(n, lo, hi, w, d_base, p_base, q_base, maxopt, minopt, N, tol, control));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rejection_numeric_rcpp
-Rcpp::List rejection_numeric_rcpp(unsigned int n, double lo, double hi, const Rcpp::Function& w, const Rcpp::Function& d_base, const Rcpp::Function& p_base, const Rcpp::Function& q_base, unsigned int N, double tol, const Rcpp::List& control);
-RcppExport SEXP _vws_rejection_numeric_rcpp(SEXP nSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP wSEXP, SEXP d_baseSEXP, SEXP p_baseSEXP, SEXP q_baseSEXP, SEXP NSEXP, SEXP tolSEXP, SEXP controlSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< unsigned int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
-    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type d_base(d_baseSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type p_base(p_baseSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type q_base(q_baseSEXP);
-    Rcpp::traits::input_parameter< unsigned int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type control(controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(rejection_numeric_rcpp(n, lo, hi, w, d_base, p_base, q_base, N, tol, control));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rejection_numeric_opt_rcpp
-Rcpp::List rejection_numeric_opt_rcpp(unsigned int n, double lo, double hi, const Rcpp::Function& w, const Rcpp::Function& d_base, const Rcpp::Function& p_base, const Rcpp::Function& q_base, const Rcpp::Function& maxopt, const Rcpp::Function& minopt, unsigned int N, double tol, const Rcpp::List& control);
-RcppExport SEXP _vws_rejection_numeric_opt_rcpp(SEXP nSEXP, SEXP loSEXP, SEXP hiSEXP, SEXP wSEXP, SEXP d_baseSEXP, SEXP p_baseSEXP, SEXP q_baseSEXP, SEXP maxoptSEXP, SEXP minoptSEXP, SEXP NSEXP, SEXP tolSEXP, SEXP controlSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< unsigned int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
-    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type w(wSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type d_base(d_baseSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type p_base(p_baseSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type q_base(q_baseSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type maxopt(maxoptSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::Function& >::type minopt(minoptSEXP);
-    Rcpp::traits::input_parameter< unsigned int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type control(controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(rejection_numeric_opt_rcpp(n, lo, hi, w, d_base, p_base, q_base, maxopt, minopt, N, tol, control));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_vws_r_categ_rcpp", (DL_FUNC) &_vws_r_categ_rcpp, 4},
@@ -268,10 +184,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_vws_optimize_hybrid_rcpp", (DL_FUNC) &_vws_optimize_hybrid_rcpp, 6},
     {"_vws_rect_rcpp", (DL_FUNC) &_vws_rect_rcpp, 3},
     {"_vws_inv_rect_rcpp", (DL_FUNC) &_vws_inv_rect_rcpp, 3},
-    {"_vws_rejection_int_rcpp", (DL_FUNC) &_vws_rejection_int_rcpp, 10},
-    {"_vws_rejection_int_opt_rcpp", (DL_FUNC) &_vws_rejection_int_opt_rcpp, 12},
-    {"_vws_rejection_numeric_rcpp", (DL_FUNC) &_vws_rejection_numeric_rcpp, 10},
-    {"_vws_rejection_numeric_opt_rcpp", (DL_FUNC) &_vws_rejection_numeric_opt_rcpp, 12},
     {NULL, NULL, 0}
 };
 
