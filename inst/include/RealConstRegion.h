@@ -65,10 +65,10 @@ public:
 	double w(const double& x, bool log = true) const;
 	double w_major(const double& x, bool log = true) const;
 	bool is_bifurcatable() const;
-	double get_lower() const { return _a; }
-	double get_upper() const { return _b; }
-	double get_xi_upper(bool log = true) const;
-	double get_xi_lower(bool log = true) const;
+	double lower() const { return _a; }
+	double upper() const { return _b; }
+	double xi_upper(bool log = true) const;
+	double xi_lower(bool log = true) const;
 	std::string description() const;
 
 	/*
@@ -261,13 +261,13 @@ inline bool RealConstRegion::is_bifurcatable() const
 	return true;
 }
 
-inline double RealConstRegion::get_xi_upper(bool log) const
+inline double RealConstRegion::xi_upper(bool log) const
 {
 	double log_xi_upper = _log_w_max + _log_prob;
 	return log ? log_xi_upper : exp(log_xi_upper);
 }
 
-inline double RealConstRegion::get_xi_lower(bool log) const
+inline double RealConstRegion::xi_lower(bool log) const
 {
 	double log_xi_lower = _log_w_min + _log_prob;
 	return log ? log_xi_lower : exp(log_xi_lower);

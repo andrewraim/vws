@@ -26,10 +26,10 @@ helper = normal_helper(mean = z, sd = sqrt(lambda2))
 support = CustomConstRegion$new(a = 0, b = Inf, w = w, g = helper)
 regions = list(support)
 
-# ----- Adapt proposal -----
+# ----- Refine proposal -----
 h_init = FMMProposal$new(regions)
-adapt_out = adapt(h_init, N = 30)
-h = adapt_out$h
+refine_out = refine(h_init, N = 30)
+h = refine_out$h
 
 # ----- Rejection sampling -----
 ctrl = rejection_control(report = 5000, extra_outputs = TRUE)

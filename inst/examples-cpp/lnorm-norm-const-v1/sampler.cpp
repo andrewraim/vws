@@ -25,7 +25,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu,
 	vws::UnivariateConstRegion supp(0, R_PosInf, w, helper);
 	vws::FMMProposal<double, vws::UnivariateConstRegion> h({ supp });
 
-	h.adapt(N - 1);
+	h.refine(N - 1);
 	h.print(5);
 
 	const vws::rejection_result<double>& out = vws::rejection(h, n, args);

@@ -30,7 +30,7 @@ sample2 = function(n, kappa, d, N, tol = 0.01, max_rejects = 4*n, report = n / 1
     }
 
     minopt = \(w, lo, hi, log) {
-		w(min(lo, hi), TRUE)
+        w(min(lo, hi), TRUE)
     }
 
     ctrl = rejection_control(N = N - 1, tol = tol, max_rejects = max_rejects,

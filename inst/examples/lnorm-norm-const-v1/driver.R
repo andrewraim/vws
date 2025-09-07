@@ -27,11 +27,11 @@ support = UnivariateConstRegion$new(a = 0, b = Inf, w = w, g = helper)
 regions = list(support)
 h_init = FMMProposal$new(regions)
 
-# ----- Adapt proposal -----
-adapt_out = adapt(h_init, N = 30, tol = log(1/10), report = 10)
-h = adapt_out$h
+# ----- Refine proposal -----
+refine_out = refine(h_init, N = 30, tol = log(1/10), report = 10)
+h = refine_out$h
 
-gg = data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
+gg = data.frame(bdd = exp(refine_out$log_bdd_hist)) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
 	geom_line(aes(x = step, y = bdd)) +
@@ -41,7 +41,7 @@ gg = data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
 	theme_minimal()
 print(gg)
 
-bdd = tail(exp(adapt_out$log_bdd_hist), 1)
+bdd = tail(exp(refine_out$log_bdd_hist), 1)
 cat("Upper bound for percent of rejections:", 100 * bdd)
 
 # ----- Rejection sampling -----

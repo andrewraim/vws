@@ -59,14 +59,14 @@ public:
 	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
 	*   on the original scale.
 	*/
-	virtual double get_xi_upper(bool log = true) const = 0;
+	virtual double xi_upper(bool log = true) const = 0;
 
 	/*
 	* The quantity $\underline{\xi}_j$ for this region.
 	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
 	*   on the original scale.
 	*/
-	virtual double get_xi_lower(bool log = true) const = 0;
+	virtual double xi_lower(bool log = true) const = 0;
 
 	/*
 	* A string that describes this region.

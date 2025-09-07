@@ -257,19 +257,3 @@ inv_rect <- function(x, a, b) {
     .Call(`_vws_inv_rect_rcpp`, x, a, b)
 }
 
-rejection_int_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, N, tol, control) {
-    .Call(`_vws_rejection_int_rcpp`, n, lo, hi, w, d_base, p_base, q_base, N, tol, control)
-}
-
-rejection_int_opt_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, maxopt, minopt, N, tol, control) {
-    .Call(`_vws_rejection_int_opt_rcpp`, n, lo, hi, w, d_base, p_base, q_base, maxopt, minopt, N, tol, control)
-}
-
-rejection_numeric_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, N, tol, control) {
-    .Call(`_vws_rejection_numeric_rcpp`, n, lo, hi, w, d_base, p_base, q_base, N, tol, control)
-}
-
-rejection_numeric_opt_rcpp <- function(n, lo, hi, w, d_base, p_base, q_base, maxopt, minopt, N, tol, control) {
-    .Call(`_vws_rejection_numeric_opt_rcpp`, n, lo, hi, w, d_base, p_base, q_base, maxopt, minopt, N, tol, control)
-}
-

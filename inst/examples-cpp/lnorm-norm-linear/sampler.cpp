@@ -20,7 +20,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 
 	vws::FMMProposal<double, CustomLinearRegion> h(regions);
 
-	h.adapt(N - 1);
+	h.refine(N - 1);
 	h.print(100);
 
 	const vws::rejection_result<double>& out = vws::rejection(h, n, args);

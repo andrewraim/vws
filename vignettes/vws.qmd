@@ -104,11 +104,11 @@ of an existing subclass of `Region` or implement a new one. Two such subclasses
 included in the package implement the univariate "constant VWS" method described
 by @VWS2025:
 
-- `UnivariateConstRegion`: constant VWS with a continuous support.
-- `IntUnivariateConstRegion`: constant VWS with an integer support.
+- `RealConstRegion`: constant VWS with a continuous support.
+- `IntConstRegion`: constant VWS with an integer support.
 
 See the manual pages for each sampler for usage and examples. These two regions
-are somewhat flexible and can be adapted to a variety of problems. In this
+are somewhat flexible and can be refined to a variety of problems. In this
 vignette, we will describe the process of coding a customized region. We will
 give one univariate example that makes use of the linear VWS method for
 improved efficiency, and one multivariate example where the regions go beyond
@@ -174,18 +174,18 @@ This bound can be used to quickly determine whether the proposal will be viable 
 
 **TBD: Make this only about the method. Code will be elsewhere**
 
-`UnivariateConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Furthermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
+`RealConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Furthermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
 $g_j(x) = g(x) \ind(x \in \mathcal{D}_j) / \Prob(T \in \mathcal{D}_j)$
 along with the quantities
 $\overline{\xi}_j = \overline{w}_j \Prob(T \in \mathcal{D}_j)$ and
 $\underline{\xi}_j = \underline{w}_j \Prob(T \in \mathcal{D}_j)$.
 
-Several components are needed to construct a object of class `UnivariateConstRegion`: scalars `a` and `b` define the support, a weight function `w`, and an object that provides the necessary operations for base distribution $g$. 
+Several components are needed to construct a object of class `RealConstRegion`: scalars `a` and `b` define the support, a weight function `w`, and an object that provides the necessary operations for base distribution $g$. 
 
 ```{r}
 #| eval: false
 #| prompt: true
-region = UnivariateConstRegion$new(a, b, w, g)
+region = RealConstRegion$new(a, b, w, g)
 ```
 
 The argument `w` is a standard R function, but is expected to have two arguments: the first argument is the input to the function and the second argument `log` indicates whether the result should be returned on the log-scale (`log = TRUE`) or the original scale (`log = FALSE`).
@@ -231,8 +231,8 @@ g = normal_helper(mu, sigma)
 ```
 
 For a similar setting with an integer-valued support, the subclass
-`IntUnivariateConstRegion` of `UnivariateConstRegion` may be considered. Usage
-of `IntUnivariateConstRegion` is similar to `UnivariateConstRegion`, with some
+`IntConstRegion` of `RealConstRegion` may be considered. Usage
+of `IntConstRegion` is similar to `RealConstRegion`, with some
 implementation details customized to the integer case. In this setting, `g`
 should be a `univariate_helper` based on an integer-valued distribution.
 
@@ -240,10 +240,10 @@ should be a `univariate_helper` based on an integer-valued distribution.
 #| eval: false
 #| prompt: true
 g = poisson_helper(lambda = 10)  ## A predefined helper for Poisson(lambda)
-region = IntUnivariateConstRegion$new(a, b, w, g)
+region = IntConstRegion$new(a, b, w, g)
 ```
 
-A natural choice to partition a univariate $\Omega = (a,b]$ is to break it into intervals defined by knots $\alpha_0 < \cdots < \alpha_N$, with $\alpha_0 \equiv a$ and $\alpha_N \equiv b$ fixed. For a univariate support and a constant majorizer, the baseline strategy of `bifurcate` in the `UnivariateConstRegion` class is to replace $\mathcal{D}_\ell = (\alpha_{\ell-1}, \alpha_{\ell}]$ with $\mathcal{D}_\ell^{(1)} = (\alpha_{\ell-1}, \alpha_{\ell^*}]$ and $\mathcal{D}_\ell^{(2)} = (\alpha_{\ell^*}, \alpha_\ell]$, where
+A natural choice to partition a univariate $\Omega = (a,b]$ is to break it into intervals defined by knots $\alpha_0 < \cdots < \alpha_N$, with $\alpha_0 \equiv a$ and $\alpha_N \equiv b$ fixed. For a univariate support and a constant majorizer, the baseline strategy of `bifurcate` in the `RealConstRegion` class is to replace $\mathcal{D}_\ell = (\alpha_{\ell-1}, \alpha_{\ell}]$ with $\mathcal{D}_\ell^{(1)} = (\alpha_{\ell-1}, \alpha_{\ell^*}]$ and $\mathcal{D}_\ell^{(2)} = (\alpha_{\ell^*}, \alpha_\ell]$, where
 <!-- -->
 \begin{align*}
 \alpha_{\ell^*} =
@@ -255,7 +255,7 @@ A natural choice to partition a univariate $\Omega = (a,b]$ is to break it into 
 \end{cases}
 \end{align*}
 <!-- -->
-Here, `is_bifurcatable` is always taken to be `TRUE`. When the support is integer-valued, `UnivariateConstRegion` instead considers
+Here, `is_bifurcatable` is always taken to be `TRUE`. When the support is integer-valued, `RealConstRegion` instead considers
 <!-- -->
 \begin{align*}
 \alpha_{\ell^*} =
@@ -269,7 +269,7 @@ Here, `is_bifurcatable` is always taken to be `TRUE`. When the support is intege
 <!-- -->
 The function `is_bifurcatable` returns `FALSE` for regions which contain no integers.
 
-The `IntUnivariateConstRegion` and `UnivariateConstRegion` classes have an `optimize` method to compute the constants $\overline{w}_j$ and $\underline{w}_j$ numerically. 
+The `IntConstRegion` and `RealConstRegion` classes have an `optimize` method to compute the constants $\overline{w}_j$ and $\underline{w}_j$ numerically. 
 
 ```{r}
 #| eval: false
@@ -277,34 +277,37 @@ The `IntUnivariateConstRegion` and `UnivariateConstRegion` classes have an `opti
 region$optimize(maximize = TRUE, log = TRUE)
 ```
 
-The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntUnivariateConstRegion` or `UnivariateConstRegion` and override the `optimize` method. An example of this is given in [@sec-ln-norm-const-cf].
+The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntConstRegion` or `RealConstRegion` and override the `optimize` method. An example of this is given in [@sec-ln-norm-const-cf].
 
 ## Linear Majorizer {#sec-vws-linear}
 
-**TBD: write about linear majorizer**
+**TBD**: write about linear majorizer
 
 ## Knot Selection {#sec-vws-knots}
 
-**TBD: write about methods here**
+**TBD**: write about methods here
 
 # Programming Preliminaries {#sec-prelim}
 
 ## Lambdas
+
+**TBD**
+
 ## fntl Package
 
-Mention density, cdf, quantile function definitions and numerical tools.
+**TBD:** Mention density, cdf, quantile function definitions and numerical tools.
 
 ## Exposing Functions to R
 
-The model of coding in C++ and exposing functions to R
+**TBD:** The model of coding in C++ and exposing functions to R
 
 ## Log-Scale
 
-Explain that computations are kept on log-scale in the package and why we do it.
+**TBD:** Explain that computations are kept on log-scale in the package and why we do it.
 
 ## VWS Namespace
 
-Perhaps this should be pointed out in the first C++ example instead.
+**TBD:** Perhaps this should be pointed out in the first C++ example instead.
 
 # Usage
 
@@ -317,8 +320,7 @@ Misc
 
 - How about the name `d_g` instead of `d_base`?
 - We'll want to show some examples where we override `optimize` and maybe the
-  bifurcate functions. Consider pointing to them somewhere in this section. We
-  may want to avoid reviewing R6 inheritance in a more general way.
+  bifurcate functions. Consider pointing to them somewhere in this section.
 - Readers might want to check out one of the first / easiest examples (name
   one) to see the basic usage pattern, then jump back up here to see the
   components described in more detail. May want to say this before we start
@@ -350,59 +352,14 @@ base::setequal(actual, expected) |> stopifnot()
 
 Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-region], [-@sec-cpp-api-realconstregion], and [-@sec-user-region].
 
-Before sampling, the `adapt` function can be used to refine a given
+Before sampling, the `refine`` function can be used to refine a given
 `FMMProposal` object by partitioning a given set of regions into a finer set.
 The can make it a better approximation of the target distribution. Details are
-given in Section [-@sec-adapt].
+given in Section [-@sec-refine].
 
 @fig-software-design displays a diagram of the high-level design just described. @sec-cpp-api walks through the API components in depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
 
 ![Design of `vws` package.](software-design.pdf){#fig-software-design}
-
-## Quick Start in R {#sec-quick-r}
-
-::: {.callout-caution title="TBD"}
-Under construction. Describe the minimum we need to know to understand this
-example. Refer to details, which I think will be later in the document.
-:::
-
-```{.cpp include="examples/first-r/sample.R" code-line-numbers="true"}
-```
-
-
-```{r}
-source("examples/first-r/sample.R")
-sample(n = 10, kappa = 5, d = 4, N = 10)
-```
-
-```{.cpp include="examples/first-r/sample2.R" code-line-numbers="true"}
-```
-
-```{r}
-source("examples/first-r/sample2.R")
-sample2(n = 10, kappa = 5, d = 4, N = 10)
-```
-
-```{r}
-# TEMP code to compute max of weight function.
-
-w = \(x, log = T) {
-	out = 0.5 * (d - 3) * log1p(-x^2) + kappa*x
-	if (log) { return(out) } else { return(exp(out)) }
-}
-
-A = 1
-B = (d-3) / kappa
-C = -1
-f = function(x) { A*x^2 + B*x + C }
-x_roots = ( -B + c(-1,1) * sqrt(B^2 - 4*A*C) ) / (2*A)
-
-curve(w(x), xlim = c(-1,1))
-abline(v = x_roots, lty = 2)
-
-curve(f, xlim = c(-1,1))
-abline(h = 0, lty = 2)
-```
 
 ## Quick Start in C++ {#sec-first-cpp}
 
@@ -433,7 +390,7 @@ There are several points of interest to call out. (TBD: needs to be updated)
 - Lines 22-24 construct a specific type of `Region` and build an `FMMProposal`
   from it. Notice that there are two template arguments specified here: the
   first `double` specifies the type of the support and the second
-  `UnivariateConstRegion` specifies the type of `Region`.
+  `RealConstRegion` specifies the type of `Region`.
 - Line 26 refines the proposal `N-1` times so that there are `N` regions.
 - Line 27 carries out rejection sampling with proposal `h`.
 - Line 29-32 extracts the draws and vector rejection counts (where the `i`th
@@ -455,7 +412,7 @@ sample(n = 10, kappa = 5, d = 4, N = 10)
 - R version
 - C++ version
 
-## (STALE) Refining the Proposal {#sec-adapt}
+## (STALE) Refining the Proposal {#sec-refine}
 
 **TBD**
 
@@ -463,7 +420,7 @@ sample(n = 10, kappa = 5, d = 4, N = 10)
 - At specified knots
 
 
-The `adapt` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain a new partition $\mathcal{D}_1^*, \ldots, \mathcal{D}_{N + N'}^*$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
+The `refine` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain a new partition $\mathcal{D}_1^*, \ldots, \mathcal{D}_{N + N'}^*$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
 <!-- -->
 \begin{align}
 \rho_1 = \frac{
@@ -489,11 +446,11 @@ to yield an improved proposal `h`.
 #| eval: false
 #| prompt: true
 h_init = FMMProposal$new(regions)
-out = adapt(h_init, N = 10)
+out = refine(h_init, N = 10)
 h = out$h
 ```
 
-In addition to the element `h` in the return value which represents the adapted
+In addition to the element `h` in the return value which represents the refined
 proposal, the element `log_bdd_hist` contains a vector with values
 <!-- -->
 \begin{align*}
@@ -502,7 +459,7 @@ proposal, the element `log_bdd_hist` contains a vector with values
 \right\}
 \end{align*}
 <!-- -->
-computed at steps $t = 0, 1, \ldots, N'$ of the refinement process. Here, $\overline{\xi}_j^{(t)}$ and $\underline{\xi}_j^{(t)}$ respectively represent $\overline{\xi}_j$ and $\underline{\xi}_j$ at step $t$. Effectiveness of a call to `adapt` can be evaluated by examining `log_bdd_hist`.
+computed at steps $t = 0, 1, \ldots, N'$ of the refinement process. Here, $\overline{\xi}_j^{(t)}$ and $\underline{\xi}_j^{(t)}$ respectively represent $\overline{\xi}_j$ and $\underline{\xi}_j$ at step $t$. Effectiveness of a call to `refine` can be evaluated by examining `log_bdd_hist`.
 
 ```{r}
 #| eval: false
@@ -512,7 +469,7 @@ bdd = exp(out$log_bdd_hist)             ## Exponentiate to probability scale
 plot(step, bdd, type = "l")
 ```
 
-If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `adapt` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
+If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `refine` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
 
 ## (STALE) User-Defined Regions {#sec-user-region}
 
@@ -543,106 +500,6 @@ print = function() { ... }
 ) # Close public	
 ) # Close class
 ```
-
-# R API {#sec-r-api}
-
-**TBD**: consider flattening the structure of this section.
-
-An implementation of VWS rejection sampling is provided in R to help with quick
-prototyping. It is limited to univariate problems, and assumes constant
-majorizers and minorizers where constants are obtained from numerical
-optimization.
-
-## Rejection Sampling {#sec-r-rejection}
-
-TBD: there are functions for numeric draws and integer draws.
-
-```{r}
-#| eval: false
-rejection_numeric(
-	n,                             # <1>
-	lo,                            # <2>
-	hi,                            # <3>
-	w,                             # <4>
-	helper,                        # <5>
-	control = rejection_control()  # <6>
-)
-
-rejection_int(
-	n,                             # <1>
-	lo,                            # <2>
-	hi,                            # <3>
-	w,                             # <4>
-	helper,                        # <5>
-	control = rejection_control()  # <6>
-)
-```
-1. Number of desired variates.
-2. Lower endpoint of support; may be `-Inf`.
-3. Upper endpoint of support; may be `Inf`.
-4. A weight function `w(x, log)` which takes argument: `x` a point in the
-support and `log` an indicator of whether value should be returned on the
-log-scale.
-5. A structure created from `univariate_helper` (@sec-r-univariate-helper).
-6. An object constructed using `rejection_control` (@sec-r-rejection-control).
-
-## Rejection Control {#sec-r-rejection-control}
-
-```{r}
-#| eval: false
-rejection_control(
-	N = 30,                                           # <1>
-	tol = 0.1,                                        # <2>
-	max_rejects = .Machine$integer.max,               # <3>
-	report = .Machine$integer.max,                    # <4>
-	ratio_ub = exp(1e-5),                             # <5>
-	action = c("stop", "warning", "message", "none"), # <6>
-	maxopt = NULL,                                    # <7>
-	minopt = NULL                                     # <8>
-)
-```
-1. Maximum number of regions to create in the proposal.
-2. Desired bound for probability of rejection in the proposal. The default
-value of `0` ensures that the proposal is adapted `N` times without halting
-early.
-3. Maximum number of rejections to tolerate before bailing out.
-4. Report progress each time this many candidates are proposed.
-5. Rejection ratio $f_0(x) / h_0(x)$ may be larger than 1 due to numerical
-precision. Throw an error if it is larger than this value.
-6. Action to take if rejection sampling halts early due to the maximum number
-of rejections being exceeded.
-7. A maximization routine. See below.
-8. A minimization routine. See below.
-
-The arguments `maxopt` and `minopt` are functions of the form `function(w, lo, hi, log)` that repectively maximize and minimize the weight function `w` on the interval `(lo, hi]`. If `log = T`, the optimized value of `log(w(x))` is returned (on the log-scale); otherwise, the optimized value of `w(x)` is returned. If these are left to the default `NULL` value, an numerical optimization routine will be used.
-
-**TBD**: point to numerical optimization.
-
-## Univariate Helper {#sec-r-univariate-helper}
-
-```{r}
-#| eval: false
-univariate_helper(
-	d,              # <1>
-	p,              # <2>
-	q,              # <3>
-	s               # <4>
-)
-```
-1. A density function `d(x, log = FALSE)` with argument `x`.
-2. A cumulative distribution function `p(q, lower.tail = TRUE, log.p = FALSE)`
-with argument `q`. 
-3. A quantile function `q(p, lower.tail = TRUE, log.p = FALSE)` with argument
-`p`.
-4. An indicator `s(x)` of whether argument `x` is in the distribution's support.
-
-Arguments `log` and `log.p` are logical; if `TRUE`, probabilities are given on
-the log-scale. Argument `lower.tail` is logical; if `TRUE`, probabilities are
-$P(X \leq x)$ and $P(X > x)$ otherwise.
-
-
-**TBD**: remove other R functions or document them?
-
 
 # C++ API {#sec-cpp-api}
 
@@ -809,8 +666,8 @@ Two functions are provided to refine the proposal from
 $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition.
 
 ```{cpp}
-Rcpp::NumericVector adapt(const std::vector<T>& knots);    // <1>
-Rcpp::NumericVector adapt(unsigned int N, double tol = 0,  // <2>
+Rcpp::NumericVector refine(const std::vector<T>& knots);    // <1>
+Rcpp::NumericVector refine(unsigned int N, double tol = 0,  // <2>
 	bool greedy = false, unsigned int report = uint_max);
 ```
 1. Partition at the given vector of knots.
@@ -991,7 +848,7 @@ const RealConstRegion& operator=(const RealConstRegion& x);
 
 ## Univariate Helper {#sec-cpp-api-helper}
 
-`UnivariateHelper` is a class which is intended for use with `UnivariateConstRegion`. It contains several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
+`UnivariateHelper` is a class which is intended for use with `RealConstRegion`. It contains several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
 
 
 ```{cpp}
@@ -1116,7 +973,7 @@ enum class error_action {
 
 **TBD**: `optimize_hybrid`
 
-## Log-Sum-Exp {#sec-cpp-api-logsumexp}
+## Log-Scale Arithmetic {#sec-cpp-api-logscale}
 
 Calculations in the package are carried out on the log-scale, where possible,
 to avoid issues from floating point numbers with very small or very large
@@ -1223,7 +1080,7 @@ Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1);
 # Example: Lognormal-Normal Conditional Distribution {#sec-ln-norm}
 
 ::: {.callout-caution title="TBD"}
-- [ ] Why are the first two samplers so slow to adapt? They seemed much faster
+- [ ] Why are the first two samplers so slow to refine? They seemed much faster
   before. Did I break something in the code?
 :::
 
@@ -1299,7 +1156,7 @@ w = function(y, log = TRUE) {
 }
 ```
 
-Recall from [@sec-cpp-api-realconstregion] that a `univariate_helper` structure is used to construct an object of class `UnivariateConstRegion` to provide necessary functions of the base distribution $g$. The `vws` package contains a built-in variant of `univariate_helper` named `normal_helper` for the normal distribution with mean and standard deviation parameters, which is appropriate for use in this problem.
+Recall from [@sec-cpp-api-realconstregion] that a `univariate_helper` structure is used to construct an object of class `RealConstRegion` to provide necessary functions of the base distribution $g$. The `vws` package contains a built-in variant of `univariate_helper` named `normal_helper` for the normal distribution with mean and standard deviation parameters, which is appropriate for use in this problem.
 
 ```{r}
 helper = normal_helper(mean = z, sd = sqrt(lambda2))
@@ -1354,27 +1211,27 @@ d_target = function(y, log = TRUE) {
 Let us instantiate a single region that consists of the full support $\Omega$ and construct a proposal based on it.
 
 ```{r}
-support = UnivariateConstRegion$new(a = 0, b = Inf, w = w, g = helper)
+support = RealConstRegion$new(a = 0, b = Inf, w = w, g = helper)
 regions = list(support)
 h_init = FMMProposal$new(regions)
 ```
 
-We now refine the proposal using the `adapt` function.
+We now refine the proposal using the `refine` function.
 
 ```{r}
-adapt_out = adapt(h_init, N = 30, report = 10)
-h = adapt_out$h
+refine_out = refine(h_init, N = 30, report = 10)
+h = refine_out$h
 ```
 
-The following plot shows the rate of decrease in bound \eqref{eqn:bound} over `N` steps of the adapt call.
+The following plot shows the rate of decrease in bound \eqref{eqn:bound} over `N` steps of the refine call.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of adaptation improvement for Lognormal-Normal example with
+#|   Rate of refine improvement for Lognormal-Normal example with
 #|   constant majorizer.
-#| label: fig-ln-norm-adapt
-data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
+#| label: fig-ln-norm-refine
+data.frame(bdd = exp(refine_out$log_bdd_hist)) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
 	geom_line(aes(x = step, y = bdd)) +
@@ -1387,7 +1244,7 @@ data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
 Let us also print the final bound that was obtained.
 
 ```{r}
-bdd = tail(exp(adapt_out$log_bdd_hist), 1)
+bdd = tail(exp(refine_out$log_bdd_hist), 1)
 cat("Upper bound for percent of rejections:", 100 * bdd)
 ```
 
@@ -1470,7 +1327,7 @@ ggplot() +
 
 ## Constant Majorizer with Custom Optimization {#sec-ln-norm-const-cf}
 
-The log-weight function $\zeta$ from \eqref{eqn:ln-norm-log-weight-fn} can be both maximized and minimized in closed form. Coding it explicitly may reduce computational overhead and avoid possible convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `UnivariateConstRegion`.
+The log-weight function $\zeta$ from \eqref{eqn:ln-norm-log-weight-fn} can be both maximized and minimized in closed form. Coding it explicitly may reduce computational overhead and avoid possible convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `RealConstRegion`.
 
 We have first derivative
 <!-- -->
@@ -1501,13 +1358,13 @@ ggplot() +
 	theme_minimal()
 ```
 
-We now create a subclass `CustomConstRegion` of `UnivariateConstRegion` and specify an `optimize` method using the closed-form solution. Furthermore, we specify an `initialize` method which simply invokes `initialize` from the superclass `UnivariateConstRegion`. Otherwise, the behavior of `CustomConstRegion` is identical to `UnivariateConstRegion`.
+We now create a subclass `CustomConstRegion` of `RealConstRegion` and specify an `optimize` method using the closed-form solution. Furthermore, we specify an `initialize` method which simply invokes `initialize` from the superclass `RealConstRegion`. Otherwise, the behavior of `CustomConstRegion` is identical to `RealConstRegion`.
 
 ```{r}
 CustomConstRegion = R6::R6Class(
 
 classname = "CustomConstRegion",
-inherit = UnivariateConstRegion,
+inherit = RealConstRegion,
 
 public = list(
 
@@ -1541,15 +1398,15 @@ optimize = function(maximize = TRUE, log = TRUE) {
 ) # Close class
 ```
 
-From here, the code to construct, refine, and sample from a proposal using `CustomConstRegion` is identical to `UnivariateConstRegion`.
+From here, the code to construct, refine, and sample from a proposal using `CustomConstRegion` is identical to `RealConstRegion`.
 
 ```{r}
 support = CustomConstRegion$new(a = 0, b = Inf, w = w, g = helper)
 regions = list(support)
 
 h_init = FMMProposal$new(regions)
-adapt_out = adapt(h_init, N = 30)
-h = adapt_out$h
+refine_out = refine(h_init, N = 30)
+h = refine_out$h
 
 ctrl = rejection_control(report = 5000)
 out = rejection(h, n = 10000, control = ctrl)
@@ -1765,20 +1622,20 @@ Construct the proposal and refine it.
 
 ```{r}
 h_init = FMMProposal$new(regions)
-adapt_out = adapt(h_init, N = 30)
-h = adapt_out$h
+refine_out = refine(h_init, N = 30)
+h = refine_out$h
 ```
 
-Plot the rate of refinement during the adaptation process.
+Plot the rate of refinement over the steps.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of adaptation improvement on the log-scale for Lognormal-Normal
+#|   Rate of refine improvement on the log-scale for Lognormal-Normal
 #|   example with linear majorizer.
-#| label: fig-ln-norm-linear-adapt
+#| label: fig-ln-norm-linear-refine
 
-data.frame(bdd = adapt_out$log_bdd_hist) %>%
+data.frame(bdd = refine_out$log_bdd_hist) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
 	geom_line(aes(x = step, y = bdd)) +
@@ -1910,19 +1767,19 @@ We can explicitly describe computations involved in the sampler.
 - Optimize $w(x)$ on $\mathcal{D}_j$ to obtain $\overline{w}_j$ and
 	  $\underline{w}_j$.
 - Draw from Poisson truncated to $\mathcal{D}_j$.
-- Adaptation algorithm that uses integer midpoint.
+- Refine algorithm that uses integer midpoint.
 
 We can also show some displays of how the sampler performs.
 
-- Volume and/or log volume as we increase $N$ with adaptation.
+- Volume and/or log volume as we increase $N$ with refining.
 - The exact density versus the proposal density for several values of $N$ along
-  the adaptation path.
-- The number of draws rejected in practice along the adaptation path (say, if
+  the refinement path.
+- The number of draws rejected in practice along the refinement path (say, if
   we request a large number such as $n = 10^7$).
 
 It looks like we can capture the distribution almost exactly by covering the
 entire support with a not-too-large choice of $N$, but this will depend on the
-parameters $a$ and $\nu$. When we have adapted to this point, it becomes
+parameters $a$ and $\nu$. When we have refined to this point, it becomes
 extremely rare to reject any candidates.
 
 Consider giving background information about the Bessel distribution to show
@@ -1931,8 +1788,8 @@ why it was of special interest to Devroye.
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of adaptation improvement on the log-scale for Bessel example.
-#| label: fig-bessel-adapt
+#|   Rate of refine improvement on the log-scale for Bessel example.
+#| label: fig-bessel-refine
 
 nu = -0.5
 lambda = 10
@@ -1944,14 +1801,14 @@ w = function(x, log = TRUE) {
 	if (log) { return(out) } else { return(exp(out)) }
 }
 
-support = IntUnivariateConstRegion$new(a = -1, b = Inf, w = w, g = helper)
+support = IntConstRegion$new(a = -1, b = Inf, w = w, g = helper)
 regions = list(support)
 
 h_init = FMMProposal$new(regions)
-adapt_out = adapt(h_init, N = 30, report = 10)
-h = adapt_out$h
+refine_out = refine(h_init, N = 30, report = 10)
+h = refine_out$h
 
-data.frame(logbdd = adapt_out$log_bdd_hist) %>%
+data.frame(logbdd = refine_out$log_bdd_hist) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
 	geom_line(aes(x = step, y = logbdd)) +
@@ -2093,28 +1950,28 @@ w = function(x, log = FALSE) {
 ```
 
 ```{r}
-support = UnivariateConstRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, w = w, g = helper)
+support = RealConstRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, w = w, g = helper)
 regions = list(support)
 ```
 
-Adapt the proposal.
+Refine the proposal.
 
 ```{r}
 h_init = FMMProposal$new(regions)
-adapt_out = adapt(h_init, N = 100, report = 20)
-h = adapt_out$h
+refine_out = refine(h_init, N = 100, report = 20)
+h = refine_out$h
 ```
 
-Plot the rate of adaptation improvement. (TBD: consider making this an object
+Plot the rate of refinement improvement. (TBD: consider making this an object
 that can quickly be plotted. But this might add a dependency if it's ggplot).
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of adaptation improvement for VMF example with constant majorizer.
-#| label: fig-vmf-const-adapt
+#|   Rate of refine improvement for VMF example with constant majorizer.
+#| label: fig-vmf-const-refine
 
-data.frame(bdd = exp(adapt_out$log_bdd_hist)) %>%
+data.frame(bdd = exp(refine_out$log_bdd_hist)) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
 	geom_line(aes(x = step, y = bdd)) +
@@ -2194,24 +2051,24 @@ support = VMFLinearRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, kappa = kappa, d = d)
 regions = list(support)
 ```
 
-Adapt the proposal.
+Refine the proposal.
 
 ```{r}
 h_init = FMMProposal$new(regions)
-adapt_out = adapt(h_init, N = 100, report = 20)
-h = adapt_out$h
+refine_out = refine(h_init, N = 100, report = 20)
+h = refine_out$h
 ```
 
-Plot the rate of adaptation improvement. Plot on the log-scale; the log-scale helps to see improvement in later steps.
+Plot the rate of refinement improvement. Plot on the log-scale; the log-scale helps to see improvement in later steps.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of adaptation improvement on the log-scale for VMF example with
+#|   Rate of refine improvement on the log-scale for VMF example with
 #|   linear majorizer.
-#| label: fig-vmf-linear-adapt
+#| label: fig-vmf-linear-refine
 
-data.frame(logbdd = adapt_out$log_bdd_hist) %>%
+data.frame(logbdd = refine_out$log_bdd_hist) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
 	geom_line(aes(x = step, y = logbdd)) +
