@@ -9,7 +9,8 @@
 #' @param ratio_ub TBD
 #' @param action What should happen if sampler halts with `max_rejects`
 #' rejections: one of `"stop"`,  `"warning"`, or `"message"`.
-#' @param opt TBD
+#' @param maxopt TBD
+#' @param minopt TBD
 #'
 #' @return
 #' A control object to be passed to the `rejection` function.

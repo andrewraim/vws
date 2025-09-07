@@ -41,13 +41,23 @@
 #' lambda2 = 100
 #' tol = 0.2
 #'
-#' helper = normal_helper(mean = z, sd = sqrt(lambda2))
+#' df = \(x, log = F) { dnorm(x, mean = z, sd = sqrt(lambda2), log) }
+#' pf = \(q, lower.tail = T, log.p = F) {
+#'   pnorm(q, mean = z, sd = sqrt(lambda2), lower.tail, log.p)
+#' }
+#' qf = \(p, lower.tail = T, log.p = F) {
+#'   qnorm(p, mean = z, sd = sqrt(lambda2), lower.tail, log.p)
+#' }
+#' helper = univariate_helper(df, pf, qf)
+#'
 #' w = function(y, log = TRUE) {
 #'   dlnorm(y, mu, sigma, log = log)
 #' }
 #'
-#' out = rejection_numeric(n = 10000, lo = 0, hi = Inf, N = 50, tol = tol, w,
-#'   helper, control = rejection_control(max_rejects = 10000, action = "stop"))
+#' ctrl = rejection_control(N = 50, tol = tol, max_rejects = 10000,
+#'   action = "stop")
+#' out = rejection_numeric(n = 10000, lo = 0, hi = Inf, w, helper,
+#'   control = ctrl)
 #' sum(out$rejects)
 #'
 #' # Some plots of the results
