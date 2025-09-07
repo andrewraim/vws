@@ -31,7 +31,7 @@ Rcpp::List sample(unsigned int n, double a, double nu, unsigned int N,
     vws::IntConstRegion supp(R_NegInf, R_PosInf, w, helper);
     vws::FMMProposal<double, vws::IntConstRegion> h({ supp });
 
-    auto lbdd = h.adapt(N - 1);
+    auto lbdd = h.refine(N - 1);
     auto out = vws::rejection(h, n, args);
 
     return Rcpp::List::create(

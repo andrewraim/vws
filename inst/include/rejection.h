@@ -69,7 +69,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 				draws.push_back(x);
 				accept = true;
 			} else {
-				// Reject x and adapt the proposal
+				// Reject x and refine the proposal
 				N_rejects++;
 				rejects[i]++;
 			}

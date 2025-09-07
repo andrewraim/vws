@@ -29,7 +29,7 @@ Rcpp::List sample(unsigned int n, double kappa, double d, unsigned int N,
     vws::RealConstRegion supp(-1, 1, w, helper);
     vws::FMMProposal<double, vws::RealConstRegion> h({ supp });
 
-    auto lbdd = h.adapt(N - 1);
+    auto lbdd = h.refine(N - 1);
     auto out = vws::rejection(h, n, args);
 
     return Rcpp::List::create(

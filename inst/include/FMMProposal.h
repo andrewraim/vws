@@ -159,7 +159,7 @@ public:
 	void print(unsigned int n = 5) const;
 
 	/*
-	* Adapt / refine the proposal.
+	* Refine the proposal.
 	*
 	* - `knots`: vector of $N$ knots at which to bifurcate.
 	*
@@ -169,10 +169,10 @@ public:
 	* the log-scale) corresponding to the bifurcations from `knots`: the
 	* element with index `j` is the bound after applying the first $j$ `knots`.
 	*/
-	Rcpp::NumericVector adapt(const std::vector<T>& knots);
+	Rcpp::NumericVector refine(const std::vector<T>& knots);
 
 	/*
-	* Adapt / refine the proposal.
+	* Refine the proposal.
 	*
 	* - `N`: number of additional desired bifurcations.
 	* - `tol`: tolerance for rejection bound.
@@ -198,7 +198,7 @@ public:
 	* steps: the element with index `j` corresponds to the bound at the $j$th
 	* step.
 	*/
-	Rcpp::NumericVector adapt(unsigned int N, double tol = 0,
+	Rcpp::NumericVector refine(unsigned int N, double tol = 0,
 		bool greedy = false, unsigned int report = uint_max);
 
 private:
@@ -224,7 +224,7 @@ private:
 };
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::adapt(const std::vector<T>& knots)
+Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots)
 {
 	unsigned int N = knots.size() + 1;
 
@@ -276,7 +276,7 @@ Rcpp::NumericVector FMMProposal<T,R>::adapt(const std::vector<T>& knots)
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::adapt(unsigned int N, double tol,
+Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 	bool greedy, unsigned int report)
 {
 	if (tol < 0) {
