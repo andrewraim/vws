@@ -1,0 +1,95 @@
+\documentclass[crop,tikz,margin=1mm]{standalone}
+
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage[mathscr]{euscript}
+\usepackage{mdwlist}
+\usepackage{enumitem}
+
+\usetikzlibrary{matrix, positioning, fit, arrows.meta}
+
+\begin{document}
+
+\tikzstyle{obj} = [draw = blue, fill = blue!3, thick,
+    rectangle, rounded corners, inner sep = 5pt, inner ysep = 3pt]
+\tikzstyle{objtitle} = [draw = blue, fill = blue!0, text = black,
+	very thick, rounded corners]
+
+\begin{tikzpicture}
+
+% Create a 1 x 3 matrix of nodes to hold region1, the ellipses, and regionN.
+\node[matrix, draw = blue, matrix of nodes, inner xsep=3mm, inner ysep=0.5cm,
+	nodes={minimum width=2cm, minimum height=3cm}, very thick, rounded corners] (regions)
+{
+\node[obj](region1){
+\begin{minipage}{1.7in}
+\vspace{1em}
+\begin{itemize}[leftmargin=0.20in, itemsep=0in, itemindent=0in, parsep=0in]
+\setlength\itemsep{0em}
+\item Evaluate
+\begin{enumerate}[leftmargin=0.20in, itemsep=0in, itemindent=0in, parsep=0in]
+\item Weight $w(x)$
+\item Base $g(x)$
+\item Majorized $\overline{w}_j(x)$,
+\item Constants $\overline{\xi}_1 $ and $\underline{\xi}_1$
+\item Reweighted $g_1$
+\end{enumerate}
+\item Draw from $g_1$
+\item Bifurcate
+\end{itemize}
+\end{minipage}
+}; &
+\node(ellipses)[right of = region1]{$\cdots$}; &
+\node[obj](regionN)[
+right of = ellipses, node distance=3.5cm]{
+\begin{minipage}{1.7in}
+\vspace{1em}
+\begin{itemize}[leftmargin=0.20in, itemsep=0in, itemindent=0in, parsep=0in]
+\setlength\itemsep{0em}
+\item Evaluate
+\begin{enumerate}[leftmargin=0.20in, itemsep=0in, itemindent=0in, parsep=0in]
+\item Weight $w(x)$
+\item Base $g(x)$
+\item Majorized $\overline{w}_j(x)$,
+\item Constants $\overline{\xi}_N $ and $\underline{\xi}_N$
+\item Reweighted $g_N$
+\end{enumerate}
+\item Draw from $g_N$
+\item Bifurcate
+\end{itemize}
+\end{minipage}
+
+}; \\
+};
+
+\node[obj](proposal)[below of = regions, node distance=4.5cm, minimum width = 2in,
+minimum height = 0.75in]{
+\begin{minipage}{2.75in}
+\vspace{1em}
+\begin{itemize*}
+\item Compute density $h(x)$ or $h_0(x)$
+\item Draw from $h$
+\item Unnormalized target $f_0(x) = w(x) g(x)$
+\item Bound for probability of rejection
+\end{itemize*}
+\end{minipage}
+};
+
+\node(refine)[left of = proposal, node distance=7cm]{$\textrm{refine}()$};
+\node(rejection)[right of = proposal, node distance=5.5cm]{$\textrm{rejection}()$};
+\node(draws)[below of = rejection, node distance=1.25cm, rectangle, draw=black]{$x_1, \ldots, x_n$};
+
+% Labels
+\node[objtitle, right=0pt] at (region1.north west) {Region $\mathscr{D}_1$};
+\node[objtitle, right=0pt] at (regionN.north west) {Region $\mathscr{D}_N$};
+\node[objtitle, right=0pt] at (proposal.north west) {Proposal};
+
+% Arrows
+\draw[-{Latex[length=2.25mm]}, very thick](proposal.west) to node{}(refine.east);
+\draw[-{Latex[length=2.25mm]}, very thick] (refine.north) |- (regions.west);
+\draw[-{Latex[length=2.25mm]}, very thick] (regions.south) -- (proposal.north);
+\draw[-{Latex[length=2.25mm]}, very thick] (proposal.east) -- (rejection.west);
+\draw[-{Latex[length=2.25mm]}, very thick] (rejection.south) -- (draws.north);
+\end{tikzpicture}
+
+\end{document}
