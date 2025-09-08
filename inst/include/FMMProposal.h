@@ -381,8 +381,8 @@ void FMMProposal<T,R>::recache()
 	unsigned int j = 0;
 	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
 		_regions_vec.push_back(*itr);
-		(*_log_xi_upper)[j] = itr->get_xi_upper(true);
-		(*_log_xi_lower)[j] = itr->get_xi_lower(true);
+		(*_log_xi_upper)[j] = itr->xi_upper(true);
+		(*_log_xi_lower)[j] = itr->xi_lower(true);
 		(*_bifurcatable)[j] = itr->is_bifurcatable();
 		j++;
 	}

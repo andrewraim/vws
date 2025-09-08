@@ -285,7 +285,62 @@ The arguments `maximize` and `log` are both indicators: optimization is carried 
 
 ## Knot Selection {#sec-vws-knots}
 
-**TBD**: write about methods here
+**TBD**
+
+- Our rule of thumb (and greedy option)
+- At specified knots
+
+
+The `refine` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain a new partition $\mathcal{D}_1^*, \ldots, \mathcal{D}_{N + N'}^*$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
+<!-- -->
+\begin{align}
+\rho_1 = \frac{
+\overline{\xi}_1 - \underline{\xi}_1
+}{
+\sum_{j=1}^N \overline{\xi}_j
+},
+\quad \ldots, \quad
+\rho_N = \frac{
+\overline{\xi}_N - \underline{\xi}_N
+}{
+\sum_{j=1}^N \overline{\xi}_j
+}
+\label{eqn:bound-components}
+\end{align}
+<!-- -->
+be the contribution of each region to \eqref{eqn:bound} when there are $N$ regions. We draw index $\ell$ from $(1, \ldots, N)$ with probabilities proportional to $\rho_1, \ldots, \rho_N$, then bifurcate region $\ell$ into regions $\mathcal{D}_\ell^{(1)}$ and $\mathcal{D}_\ell^{(2)}$. There may be a number of ways to define bifurcation when $\Omega$ is a multivariate set. For a given subclass of `Region`, the bifurcation approach is to be implemented in the `bifurcate` method. Additionally, each subclass of `Region` should implement the `is_bifurcatable` method which returns `FALSE` if a `Region` object should not be further bifurcated; otherwise it returns `TRUE`.
+
+In the following example, a proposal `h_init` is refined `N = 10` times
+to yield an improved proposal `h`.
+
+```{R}
+#| eval: false
+#| prompt: true
+h_init = FMMProposal$new(regions)
+out = refine(h_init, N = 10)
+h = out$h
+```
+
+In addition to the element `h` in the return value which represents the refined
+proposal, the element `log_bdd_hist` contains a vector with values
+<!-- -->
+\begin{align*}
+\log\left\{
+1 - \frac{\sum_{j=1}^{N+t} \underline{\xi}_j^{(t)}}{\sum_{j=1}^{N+t} \overline{\xi}_j^{(t)}}
+\right\}
+\end{align*}
+<!-- -->
+computed at steps $t = 0, 1, \ldots, N'$ of the refinement process. Here, $\overline{\xi}_j^{(t)}$ and $\underline{\xi}_j^{(t)}$ respectively represent $\overline{\xi}_j$ and $\underline{\xi}_j$ at step $t$. Effectiveness of a call to `refine` can be evaluated by examining `log_bdd_hist`.
+
+```{r}
+#| eval: false
+#| prompt: true
+step = seq_along(out$log_bdd_hist) - 1  ## Make sequence 0, 1, ..., N
+bdd = exp(out$log_bdd_hist)             ## Exponentiate to probability scale
+plot(step, bdd, type = "l")
+```
+
+If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `refine` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
 
 # Programming Preliminaries {#sec-prelim}
 
@@ -361,6 +416,8 @@ given in Section [-@sec-refine].
 
 ![Design of `vws` package.](software-design.pdf){#fig-software-design}
 
+**TBD:** Basic usage and functions?
+
 ## Quick Start in C++ {#sec-first-cpp}
 
 ::: {.callout-caution title="TBD"}
@@ -412,64 +469,13 @@ sample(n = 10, kappa = 5, d = 4, N = 10)
 - R version
 - C++ version
 
-## (STALE) Refining the Proposal {#sec-refine}
-
-**TBD**
-
-- Our rule of thumb (and greedy option)
-- At specified knots
-
-
-The `refine` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain a new partition $\mathcal{D}_1^*, \ldots, \mathcal{D}_{N + N'}^*$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
-<!-- -->
-\begin{align}
-\rho_1 = \frac{
-\overline{\xi}_1 - \underline{\xi}_1
-}{
-\sum_{j=1}^N \overline{\xi}_j
-},
-\quad \ldots, \quad
-\rho_N = \frac{
-\overline{\xi}_N - \underline{\xi}_N
-}{
-\sum_{j=1}^N \overline{\xi}_j
-}
-\label{eqn:bound-components}
-\end{align}
-<!-- -->
-be the contribution of each region to \eqref{eqn:bound} when there are $N$ regions. We draw index $\ell$ from $(1, \ldots, N)$ with probabilities proportional to $\rho_1, \ldots, \rho_N$, then bifurcate region $\ell$ into regions $\mathcal{D}_\ell^{(1)}$ and $\mathcal{D}_\ell^{(2)}$. There may be a number of ways to define bifurcation when $\Omega$ is a multivariate set. For a given subclass of `Region`, the bifurcation approach is to be implemented in the `bifurcate` method. Additionally, each subclass of `Region` should implement the `is_bifurcatable` method which returns `FALSE` if a `Region` object should not be further bifurcated; otherwise it returns `TRUE`.
-
-In the following example, a proposal `h_init` is refined `N = 10` times
-to yield an improved proposal `h`.
-
-```{R}
-#| eval: false
-#| prompt: true
-h_init = FMMProposal$new(regions)
-out = refine(h_init, N = 10)
-h = out$h
+```{.cpp include="examples/first-cpp/sample2.cpp" code-line-numbers="true"}
 ```
-
-In addition to the element `h` in the return value which represents the refined
-proposal, the element `log_bdd_hist` contains a vector with values
-<!-- -->
-\begin{align*}
-\log\left\{
-1 - \frac{\sum_{j=1}^{N+t} \underline{\xi}_j^{(t)}}{\sum_{j=1}^{N+t} \overline{\xi}_j^{(t)}}
-\right\}
-\end{align*}
-<!-- -->
-computed at steps $t = 0, 1, \ldots, N'$ of the refinement process. Here, $\overline{\xi}_j^{(t)}$ and $\underline{\xi}_j^{(t)}$ respectively represent $\overline{\xi}_j$ and $\underline{\xi}_j$ at step $t$. Effectiveness of a call to `refine` can be evaluated by examining `log_bdd_hist`.
 
 ```{r}
-#| eval: false
-#| prompt: true
-step = seq_along(out$log_bdd_hist) - 1  ## Make sequence 0, 1, ..., N
-bdd = exp(out$log_bdd_hist)             ## Exponentiate to probability scale
-plot(step, bdd, type = "l")
+Rcpp::sourceCpp("examples/first-cpp/sampler2.cpp")
+sample2(n = 10, kappa = 5, d = 4, N = 10)
 ```
-
-If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `refine` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
 
 ## (STALE) User-Defined Regions {#sec-user-region}
 
@@ -680,7 +686,14 @@ selected with probabilities proportional to $\rho_1, \ldots, \rho_N$. The
 argument `report` represents the period that progress is written to the
 console.
 
-**TBD**: note on how to get equal-spaced knots.
+The `seq` function is provided to generate equally-spaced knots for univariate
+real-valued intervals.
+
+```{cpp}
+std::vector<double> seq(double lo, double hi, unsigned int N, bool endpoints = false);
+```
+
+**TBD:** Should the first refine function take a vector of ints for `IntConstRegion` regions?
 
 ### Summary Methods {.unnumbered .unlisted}
 

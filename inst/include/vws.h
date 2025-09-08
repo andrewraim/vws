@@ -5,7 +5,7 @@
 * Export classes, functions, etc to package users.
 *
 * Note that `result.h` must be listed first because it uses a technique
-* described in [1].
+* described in [1] to serialize objects between R and C++.
 *
 * [1] Dirk Eddelbuettel and Romain Francois. Rcpp Extending. Vignette from
 * Rcpp version 1.0.13.
@@ -26,6 +26,7 @@
 #include "rect.h"
 #include "rejection.h"
 #include "rejection-args.h"
+#include "seq.h"
 #include "typedefs.h"
 #include "UnivariateHelper.h"
 

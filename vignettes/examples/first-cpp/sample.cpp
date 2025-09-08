@@ -3,7 +3,7 @@
 
 // [[Rcpp::export]]
 Rcpp::List sample(unsigned int n, double kappa, double d, unsigned int N,
-	double tol = 0, unsigned int max_rejects = 10000, unsigned int report = 1000)
+    double tol = 0, unsigned int max_rejects = 10000, unsigned int report = 1000)
 {
     vws::rejection_args args;
     args.max_rejects = max_rejects;

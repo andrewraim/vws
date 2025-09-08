@@ -3,7 +3,7 @@
 
 // [[Rcpp::export]]
 Rcpp::List sample2(unsigned int n, double kappa, double d, unsigned int N,
-	double tol = 0, unsigned int max_rejects = 10000, unsigned int report = 1000)
+    double tol = 0, unsigned int max_rejects = 10000, unsigned int report = 1000)
 {
     vws::rejection_args args;
     args.max_rejects = max_rejects;
@@ -26,28 +26,28 @@ Rcpp::List sample2(unsigned int n, double kappa, double d, unsigned int N,
     };
 
     const vws::optimizer& maxopt = [&](const vws::uv_weight_function& w,
-    	double lo, double hi, bool log)
+        double lo, double hi, bool log)
     {
-    	double A = 1, B = (d-3) / kappa, C = -1;
-    	double x_root1 = ( -B + std::sqrt(B*B - 4*A*C) ) / (2*A);
-    	double x_root2 = ( -B - std::sqrt(B*B - 4*A*C) ) / (2*A);
-    	double x_root = -1 < x_root1 && x_root1 <= 1 ? x_root1 : x_root2;
-    	if (-1 >= x_root || x_root > 1) { Rcpp::stop("Invalid root"); }
+        double A = 1, B = (d-3) / kappa, C = -1;
+        double x_root1 = ( -B + std::sqrt(B*B - 4*A*C) ) / (2*A);
+        double x_root2 = ( -B - std::sqrt(B*B - 4*A*C) ) / (2*A);
+        double x_root = -1 < x_root1 && x_root1 <= 1 ? x_root1 : x_root2;
+        if (-1 >= x_root || x_root > 1) { Rcpp::stop("Invalid root"); }
 
-    	double out;
-		if (x_root < lo) {
-			out = w(lo, true);
-		} else if (x_root > hi) {
-			out = w(hi, true);
-		} else {
-			out = w(x_root, true);
-		}
+        double out;
+        if (x_root < lo) {
+            out = w(lo, true);
+        } else if (x_root > hi) {
+            out = w(hi, true);
+        } else {
+            out = w(x_root, true);
+        }
 
-    	return out;
+        return out;
     };
 
     const vws::optimizer& minopt = [&](const vws::uv_weight_function& w,
-    	double lo, double hi, bool log)
+        double lo, double hi, bool log)
     {
         return w(std::min(lo, hi), true);
     };

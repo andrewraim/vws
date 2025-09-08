@@ -170,6 +170,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_seq
+Rcpp::NumericVector rcpp_seq(double lo, double hi, unsigned int N, bool endpoints);
+RcppExport SEXP _vws_rcpp_seq(SEXP loSEXP, SEXP hiSEXP, SEXP NSEXP, SEXP endpointsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type lo(loSEXP);
+    Rcpp::traits::input_parameter< double >::type hi(hiSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< bool >::type endpoints(endpointsSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_seq(lo, hi, N, endpoints));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_vws_r_categ_rcpp", (DL_FUNC) &_vws_r_categ_rcpp, 4},
@@ -184,6 +198,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_vws_optimize_hybrid_rcpp", (DL_FUNC) &_vws_optimize_hybrid_rcpp, 6},
     {"_vws_rect_rcpp", (DL_FUNC) &_vws_rect_rcpp, 3},
     {"_vws_inv_rect_rcpp", (DL_FUNC) &_vws_inv_rect_rcpp, 3},
+    {"_vws_rcpp_seq", (DL_FUNC) &_vws_rcpp_seq, 4},
     {NULL, NULL, 0}
 };
 
