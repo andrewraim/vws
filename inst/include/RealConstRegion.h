@@ -30,9 +30,9 @@ public:
     * If `maxopt` and `minopt` are not specified, we use numerical optimization.
     *
 	*/
-	//RealConstRegion(double a, const uv_weight_function& w,
+	//RealConstRegion(double a, const weight_dfd& w,
 	//	const UnivariateHelper& helper);
-	RealConstRegion(double a, const uv_weight_function& w,
+	RealConstRegion(double a, const weight_dfd& w,
 		const UnivariateHelper& helper,
 		const optimizer& maxopt = maxopt_default,
 		const optimizer& minopt = minopt_default);
@@ -48,9 +48,9 @@ public:
     *
     * If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*/
-	// RealConstRegion(double a, double b, const uv_weight_function& w,
+	// RealConstRegion(double a, double b, const weight_dfd& w,
 	//	const UnivariateHelper& helper);
-	RealConstRegion(double a, double b, const uv_weight_function& w,
+	RealConstRegion(double a, double b, const weight_dfd& w,
 		const UnivariateHelper& helper,
 		const optimizer& maxopt = maxopt_default,
 		const optimizer& minopt = minopt_default);
@@ -128,7 +128,7 @@ protected:
 	void init();
 	double _a;
 	double _b;
-	const uv_weight_function* _w;
+	const weight_dfd* _w;
 	const UnivariateHelper* _helper;
 	double _log_w_max;
 	double _log_w_min;
@@ -138,7 +138,7 @@ protected:
 };
 
 inline RealConstRegion::RealConstRegion(double a,
-	const uv_weight_function& w, const UnivariateHelper& helper,
+	const weight_dfd& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt)
 : _a(a), _b(a), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt)
@@ -147,7 +147,7 @@ inline RealConstRegion::RealConstRegion(double a,
 }
 
 inline RealConstRegion::RealConstRegion(double a, double b,
-	const uv_weight_function& w, const UnivariateHelper& helper,
+	const weight_dfd& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt)
 : _a(a), _b(b), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt)

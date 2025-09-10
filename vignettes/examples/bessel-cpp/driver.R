@@ -10,8 +10,8 @@ report = 10000
 
 # ----- Version 1 -----
 # Use numerical optimization to compute constants in majorizer
-Rcpp::sourceCpp("sample.cpp")
-out = sample(n, a, nu, N, max_rejects, report)
+Rcpp::sourceCpp("bessel-v1.cpp")
+out = r_bessel_v1(n, a, nu, N, max_rejects, report)
 
 xseq = seq(0, max(out$draws))
 fseq = d_bessel(xseq, a, nu)
@@ -22,8 +22,8 @@ plot_bounds(out$lbdd)
 
 # ----- Version 2 -----
 # Use custom optimization routine to compute constants in majorizer
-Rcpp::sourceCpp("sample2.cpp")
-out2 = sample2(n, a, nu, N, max_rejects, report)
+Rcpp::sourceCpp("bessel-v2.cpp")
+out2 = r_bessel_v2(n, a, nu, N, max_rejects, report)
 
 xseq = seq(0, max(out2$draws))
 fseq = d_bessel(xseq, a, nu)

@@ -491,7 +491,7 @@ The following typedef represents a weight function.
 typedef std::function<double(
 	double x,                  // <1>
 	bool log                   // <2>
-)> uv_weight_function;
+)> weight_dfd;
 ```
 1. The argument.
 2. Logical; `log = true` specifies that the result should be returned on the
@@ -502,7 +502,7 @@ minimizes) a weight function on a given interval.
 
 ```{cpp}
 typedef std::function<double(
-	const uv_weight_function& w,  // <1>
+	const weight_dfd& w,  // <1>
 	double lo,                    // <2>
 	double hi,                    // <3>
 	bool log                      // <4>
@@ -696,8 +696,8 @@ virtual bool s(const T& x) const = 0;                          // <3>
 virtual double w(const T& x, bool log = true) const = 0;       // <4>
 virtual double w_major(const T& x, bool log = true) const = 0; // <5>
 virtual bool is_bifurcatable() const = 0;                      // <6>
-virtual double get_xi_upper(bool log = true) const = 0;        // <7>
-virtual double get_xi_lower(bool log = true) const = 0;        // <8>
+virtual double xi_upper(bool log = true) const = 0;        // <7>
+virtual double xi_lower(bool log = true) const = 0;        // <8>
 virtual std::string description() const = 0;                   // <9>
 ```
 1. Evaluate the density function $g$ of the base distribution.
@@ -738,13 +738,13 @@ constructors.
 RealConstRegion(
 	double a,                       // <1>
 	double b,                       // <2>
-	const uv_weight_function& w,    // <3>
+	const weight_dfd& w,    // <3>
 	const UnivariateHelper& helper  // <4>
 );
 
 RealConstRegion(
 	double a,                       // <1>
-	const uv_weight_function& w,    // <3>
+	const weight_dfd& w,    // <3>
 	const UnivariateHelper& helper  // <4>
 );
 ```
@@ -811,9 +811,9 @@ The following method assigns the current region to be equal to the argument `x`.
 const RealConstRegion& operator=(const RealConstRegion& x);
 ```
 
-## Region on Integer-Valued Support with Constant Majorizer {#sec-cpp-api-intconstregion}
+## Region on Integer-Valued Support with Constant Majorizer  {#sec-cpp-api-intconstregion}
 
-**TBD**
+**TBD**: do we still need this?
 
 ## Univariate Helper {#sec-cpp-api-helper}
 
@@ -923,7 +923,7 @@ struct rejection_result
 rejections observed before accepting the $i$th draw.
 3. Return a `Rcpp::List` from a `rejection_args` struct.
 
-If `action != error_action::STOP`in `rejection_args`, the sampler can halt
+If `action != error_action::STOP` in `rejection_args`, the sampler can halt
 before all $n$ desired variates are drawn. In this case, the `draws` and
 `rejects` vectors will have lengths shorter than $n$.
 
@@ -940,7 +940,64 @@ enum class error_action {
 
 ## Optimization on an Interval {#sec-cpp-api-opt}
 
-**TBD**: `optimize_hybrid`
+A hybrid optimization method for univariate functions $f(x) : [a,b] \rightarrow \mathbb{R}$ with bounds $x \in [a,b]$ that may be infinite. Uses Brent's method if both bounds are finite and BFGS otherwise. In the latter case, the bounds are enforced via a transformation.
+
+```{cpp}
+optimize_hybrid_result optimize_hybrid(
+	const fntl::dfd& f,       // <1>
+    double init,              // <2>
+	double lower,             // <3>
+	double upper,             // <4>
+	bool maximize,            // <5>
+	unsigned maxiter = 100000 // <6>
+);
+```
+1. Objective function.
+2. Initial value used with BFGS.
+3. Lower bound.
+4. Upper bound.
+5. Logical; if `true`, optimization will be a maximization. Otherwise it is a minimization.
+6. Maximum number of iterations.
+
+The result is a `optimize_hybrid_result` struct which is defined as follows.
+
+```{cpp}
+struct optimize_hybrid_result {
+	double par;            // <1>
+	double value;          // <2>
+	std::string method;    // <3>
+	int status;            // <4>
+
+	operator SEXP() const; // <5>
+};
+```
+1. Final value of the optimization variable $x$.
+2. Final value of the objective function $f(x)$.
+3. Description of the method used to find the result; see below.
+4. Corresponds to a code from BFGS if it is used as `method`; otherwise zero.
+5. Return an `Rcpp::List` from a `optimize_hybrid_result` struct.
+
+The `method` field can take on the following values:
+
+- "Brent": Brent optimization method was used.
+- "BFGS": BFGS method was used.
+- "Lower Limit Inf": For a maximization problem, the lower limit was taken
+  as `par` because it had value `inf`.
+- "Upper Limit Inf": For a maximization problem, the upper limit was taken
+  as `par` because it had value `inf`.
+- "Lower Limit NegInf": For a minimization problem, the lower limit was
+  taken as `par` because it had value `-inf`.
+- "Upper Limit NegInf": For a minimization problem, the upper limit was
+  taken as `par` because it had value `-inf`.
+- "Max at Lower Limit": numerical maximization was used, but a larger value
+  was found at the lower limit.
+- "Max at Upper Limit": numerical maximization was used, but a larger value
+  was found at the upper limit.
+- "Min at Lower Limit": numerical minimization was used, but a smaller value
+  was found at the lower limit.
+- "Min at Upper Limit": numerical minimization was used, but a smaller value
+  was found at the upper limit.
+
 
 ## Log-Scale Arithmetic {#sec-cpp-api-logscale}
 
@@ -950,8 +1007,7 @@ magnitudes. Users may want to follow this convention when implementing their
 own sampling problems. Several included functions help to avoid explicit
 exponentiation and may be helpful for this purpose.
 
-The following computes $\log\{ \sum_{i=1}^n \exp(x_i) \}$. It yields
-a scalar based on a vector $x \in \mathbb{R}^n$.
+The following computes the scalar $f(x) = log\{ \sum_{i=1}^n \exp(x_i) \}$ from a vector $x \in \mathbb{R}^n$.
 
 ```{cpp}
 double log_sum_exp(const Rcpp::NumericVector& x);

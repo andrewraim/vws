@@ -12,7 +12,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu,
 	args.report_period = report_period;
 	args.max_rejects_action = vws::error_action::STOP;
 
-	const vws::weight_function& w =
+	const vws::weight_dfd& w =
     [&](double x, bool log = true) {
 		double out = R_NegInf;
 		if (x > 0) {

@@ -10,7 +10,7 @@ namespace vws {
 * Structure for results of `optimize_hybrid` function.
 *
 * - `par`: value of the optimization variable.
-* - `report`: value of the objective function.
+* - `value`: value of the objective function.
 * - `method`: description of the method used to find the result.
 * - `status`: Corresponds to a code from BFGS if this is used as `method`;
 *   otherwise zero.

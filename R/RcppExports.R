@@ -251,10 +251,3 @@ inv_rect <- function(x, a, b) {
     .Call(`_vws_inv_rect_rcpp`, x, a, b)
 }
 
-#' Sequence
-#'
-#' @export
-seq <- function(lo, hi, N, endpoints = FALSE) {
-    .Call(`_vws_rcpp_seq`, lo, hi, N, endpoints)
-}
-

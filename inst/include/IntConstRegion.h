@@ -28,9 +28,9 @@ public:
 	*
 	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*/
-	// IntConstRegion(double a, const uv_weight_function& w,
+	// IntConstRegion(double a, const weight_dfd& w,
 	//	const UnivariateHelper& helper);
-	IntConstRegion(double a, const uv_weight_function& w,
+	IntConstRegion(double a, const weight_dfd& w,
 		const UnivariateHelper& helper,
 		const optimizer& maxopt = maxopt_default,
 		const optimizer& minopt = minopt_default);
@@ -46,9 +46,9 @@ public:
 	*
 	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*/
-	//IntConstRegion(double a, double b, const uv_weight_function& w,
+	//IntConstRegion(double a, double b, const weight_dfd& w,
 	//	const UnivariateHelper& helper);
-	IntConstRegion(double a, double b, const uv_weight_function& w,
+	IntConstRegion(double a, double b, const weight_dfd& w,
 		const UnivariateHelper& helper,
 		const optimizer& maxopt = maxopt_default,
 		const optimizer& minopt = minopt_default);
@@ -85,14 +85,14 @@ public:
 };
 
 inline IntConstRegion::IntConstRegion(double a,
-	const uv_weight_function& w, const UnivariateHelper& helper,
+	const weight_dfd& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt)
 : RealConstRegion(a, w, helper, maxopt, minopt)
 {
 }
 
 inline IntConstRegion::IntConstRegion(double a, double b,
-	const uv_weight_function& w, const UnivariateHelper& helper,
+	const weight_dfd& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt)
 : RealConstRegion(a, b, w, helper, maxopt, minopt)
 {

@@ -2,14 +2,14 @@
 #include "vws.h"
 
 // [[Rcpp::export]]
-Rcpp::List sample2(unsigned int n, double kappa, double d, unsigned int N,
+Rcpp::List r_vmf_pre_v2(unsigned int n, double kappa, double d, unsigned int N,
     double tol = 0, unsigned int max_rejects = 10000, unsigned int report = 1000)
 {
     vws::rejection_args args;
     args.max_rejects = max_rejects;
     args.report = report;
 
-    const vws::uv_weight_function& w =
+    const vws::weight_dfd& w =
     [&](double x, bool log = true) {
         double out = 0.5 * (d - 3) * std::log1p(-std::pow(x, 2)) + kappa*x;
         return log ? out : std::exp(out);
@@ -25,7 +25,7 @@ Rcpp::List sample2(unsigned int n, double kappa, double d, unsigned int N,
         return R::qunif(p, -1, 1, lower, log);
     };
 
-    const vws::optimizer& maxopt = [&](const vws::uv_weight_function& w,
+    const vws::optimizer& maxopt = [&](const vws::weight_dfd& w,
         double lo, double hi, bool log)
     {
         double A = 1, B = (d-3) / kappa, C = -1;
@@ -46,7 +46,7 @@ Rcpp::List sample2(unsigned int n, double kappa, double d, unsigned int N,
         return out;
     };
 
-    const vws::optimizer& minopt = [&](const vws::uv_weight_function& w,
+    const vws::optimizer& minopt = [&](const vws::weight_dfd& w,
         double lo, double hi, bool log)
     {
         return w(std::min(lo, hi), true);

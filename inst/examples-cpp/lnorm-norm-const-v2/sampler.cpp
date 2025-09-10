@@ -15,7 +15,7 @@ Rcpp::List r_lognormal_normal(unsigned int n, double z, double mu, double sigma2
 
 	MyHelper helper(z, lambda2);
 
-	const vws::uv_weight_function& w =
+	const vws::weight_dfd& w =
     [&](double x, bool log = true) {
 		double out = R_NegInf;
 		if (x > 0) {

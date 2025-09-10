@@ -1,6 +1,6 @@
 source("../common/plots.R")
-Rcpp::sourceCpp("sample.cpp")
-Rcpp::sourceCpp("sample2.cpp")
+Rcpp::sourceCpp("vmf-v1.cpp")
+Rcpp::sourceCpp("vmf-v2.cpp")
 
 n = 20000
 kappa = 5
@@ -12,7 +12,7 @@ report = 1000
 
 # ----- Version 1 -----
 # Use numerical optimization to compute constants in majorizer
-out = sample(n, kappa, d, N, tol, max_rejects, report)
+out = r_vmf_pre_v1(n, kappa, d, N, tol, max_rejects, report)
 
 plot_density(out$draws)
 plot_bounds(out$lbdd)
@@ -20,7 +20,7 @@ plot_bounds(out$lbdd)
 
 # ----- Version 2 -----
 # Use custom optimization routine to compute constants in majorizer
-out2 = sample2(n, kappa, d, N, tol, max_rejects, report)
+out2 = r_vmf_pre_v2(n, kappa, d, N, tol, max_rejects, report)
 
 plot_density(out2$draws)
 plot_bounds(out2$lbdd)

@@ -2,14 +2,14 @@
 #include "vws.h"
 
 // [[Rcpp::export]]
-Rcpp::List sample(unsigned int n, double kappa, double d, unsigned int N,
+Rcpp::List r_vmf_pre_v1(unsigned int n, double kappa, double d, unsigned int N,
     double tol = 0, unsigned int max_rejects = 10000, unsigned int report = 1000)
 {
     vws::rejection_args args;
     args.max_rejects = max_rejects;
     args.report = report;
 
-    const vws::uv_weight_function& w =
+    const vws::weight_dfd& w =
     [&](double x, bool log = true) {
         double out = 0.5 * (d - 3) * std::log1p(-std::pow(x, 2)) + kappa*x;
         return log ? out : std::exp(out);
