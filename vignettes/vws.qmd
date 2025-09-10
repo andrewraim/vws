@@ -1882,6 +1882,23 @@ ggplot(df) +
 	theme_minimal()
 ```
 
+
+## Constant Majorizer with Numerical Optimization {#sec-bessel-const-default}
+
+```{.cpp include="examples/bessel/bessel-v1.cpp" code-line-numbers="true"}
+```
+
+## Constant Majorizer with Custom Optimization {#sec-bessel-const-custom}
+
+**TBD:** Is it tractable for this problem?
+
+```{.cpp include="examples/bessel/bessel-v2.cpp" code-line-numbers="true"}
+```
+
+## Linear Majorizer {#sec-bessel-linear}
+
+**TBD:** Is it tractable for this problem?
+
 # Example: Von Mises Fisher {#sec-vmf}
 
 ::: {.callout-caution title="TBD"}
@@ -1957,9 +1974,9 @@ Under construction
 :::
 
 Let us consider an example C++ code making use of this framework. The following
-declares a `sample` function in C++ that is also exposed as an R function.
+declares a sampler in C++ and exposes an R interface function.
 
-```{.cpp include="examples/vmf-cpp/sample.cpp" code-line-numbers="true"}
+```{.cpp include="examples/vmf/vmf-v1.cpp" code-line-numbers="true"}
 ```
 
 There are several points of interest to call out. (TBD: needs to be updated)
@@ -1989,7 +2006,7 @@ There are several points of interest to call out. (TBD: needs to be updated)
 We may call the exported R function as follows.
 
 ```{r}
-Rcpp::sourceCpp("examples/vmf-cpp/sampler.cpp")
+Rcpp::sourceCpp("examples/vmf/vmf-v1.cpp")
 sample(n = 10, kappa = 5, d = 4, N = 10)
 ```
 
@@ -2089,11 +2106,11 @@ ggplot() +
 ## Constant Majorizer with Custom Optimization
 
 
-```{.cpp include="examples/vmf-cpp/sample2.cpp" code-line-numbers="true"}
+```{.cpp include="examples/vmf/vmf-v2.cpp" code-line-numbers="true"}
 ```
 
 ```{r}
-Rcpp::sourceCpp("examples/vmf-cpp/sampler2.cpp")
+Rcpp::sourceCpp("examples/vmfvmf/vmf-v2.cpp")
 sample2(n = 10, kappa = 5, d = 4, N = 10)
 ```
 

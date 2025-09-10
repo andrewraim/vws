@@ -597,8 +597,8 @@ Rcpp::DataFrame FMMProposal<T,R>::summary() const
 	unsigned int j = 0;
 
 	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
-		double lxl = itr->get_xi_lower(true);
-		double lxu = itr->get_xi_upper(true);
+		double lxl = itr->xi_lower(true);
+		double lxu = itr->xi_upper(true);
 		v1[j] = itr->description();
 		v2[j] = lxu;
 		v3[j] = lxl;
