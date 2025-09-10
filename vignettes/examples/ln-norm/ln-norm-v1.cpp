@@ -34,13 +34,12 @@ Rcpp::List r_ln_norm_v1(unsigned int n, double z, double mu,
     vws::RealConstRegion supp(0, R_PosInf, w, helper);
     vws::FMMProposal<double, vws::RealConstRegion> h({ supp });
 
-    h.refine(N - 1);
-    h.print(5);
-
+    auto lbdd = h.refine(N - 1);
     const vws::rejection_result<double>& out = vws::rejection(h, n, args);
 
     return Rcpp::List::create(
         Rcpp::Named("draws") = out.draws,
-        Rcpp::Named("rejects") = out.rejects
+        Rcpp::Named("rejects") = out.rejects,
+        Rcpp::Named("lbdd") = lbdd
     );
 }

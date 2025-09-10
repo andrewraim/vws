@@ -1,12 +1,6 @@
 // [[Rcpp::depends(vws, fntl)]]
 #include "vws.h"
-//#include "target.h"
-//#include "UniformHelper.h"
-//#include "ExpHelper.h"
-//#include "TExpHelper.h"
 #include "LinearVWSRegion.h"
-//#include "LinearVSRegion.h"
-//#include "eqprob-knots.h"
 
 // [[Rcpp::export]]
 Rcpp::List r_vmf_pre_v3(unsigned int n, double kappa, double d,

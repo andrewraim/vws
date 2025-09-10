@@ -1,5 +1,7 @@
 source("../common/plots.R")
-source("../common/bessel.R")
+source("bessel.R")
+Rcpp::sourceCpp("bessel-v1.cpp")
+Rcpp::sourceCpp("bessel-v2.cpp")
 
 n = 20000
 a = 5
@@ -10,7 +12,6 @@ report = 10000
 
 # ----- Version 1 -----
 # Use numerical optimization to compute constants in majorizer
-Rcpp::sourceCpp("bessel-v1.cpp")
 out = r_bessel_v1(n, a, nu, N, max_rejects, report)
 
 xseq = seq(0, max(out$draws))
@@ -22,12 +23,11 @@ plot_bounds(out$lbdd)
 
 # ----- Version 2 -----
 # Use custom optimization routine to compute constants in majorizer
-Rcpp::sourceCpp("bessel-v2.cpp")
-out2 = r_bessel_v2(n, a, nu, N, max_rejects, report)
+out = r_bessel_v2(n, a, nu, N, max_rejects, report)
 
-xseq = seq(0, max(out2$draws))
+xseq = seq(0, max(out$draws))
 fseq = d_bessel(xseq, a, nu)
 
-plot_pmf(out2$draws) +
+plot_pmf(out$draws) +
 	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y))
-plot_bounds(out2$lbdd)
+plot_bounds(out$lbdd)

@@ -7,7 +7,7 @@ n = 20000
 kappa = 5
 d = 4
 N = 50
-tol = 1e-4 # 0.25
+tol = 0.10
 max_rejects = 10000
 report = 1000
 
