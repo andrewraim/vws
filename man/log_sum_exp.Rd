@@ -2,14 +2,11 @@
 % Please edit documentation in R/RcppExports.R
 \name{log_sum_exp}
 \alias{log_sum_exp}
-\alias{log_sum_exp_mat}
 \alias{log_add2_exp}
 \alias{log_sub2_exp}
 \title{Log-Sum-Exp}
 \usage{
 log_sum_exp(x)
-
-log_sum_exp_mat(x)
 
 log_add2_exp(x, y)
 

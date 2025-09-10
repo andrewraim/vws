@@ -50,11 +50,6 @@ double log_sum_exp_rcpp(const Rcpp::NumericVector& x);
 
 //' @name log_sum_exp
 //' @export
-// [[Rcpp::export(name = "log_sum_exp_mat")]]
-Rcpp::NumericVector log_sum_exp_mat_rcpp(const Rcpp::NumericMatrix& x);
-
-//' @name log_sum_exp
-//' @export
 // [[Rcpp::export(name = "log_add2_exp")]]
 Rcpp::NumericVector log_add2_exp_rcpp(const Rcpp::NumericVector& x,
 	const Rcpp::NumericVector& y);

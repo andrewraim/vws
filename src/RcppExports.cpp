@@ -93,17 +93,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// log_sum_exp_mat_rcpp
-Rcpp::NumericVector log_sum_exp_mat_rcpp(const Rcpp::NumericMatrix& x);
-RcppExport SEXP _vws_log_sum_exp_mat_rcpp(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(log_sum_exp_mat_rcpp(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 // log_add2_exp_rcpp
 Rcpp::NumericVector log_add2_exp_rcpp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y);
 RcppExport SEXP _vws_log_add2_exp_rcpp(SEXP xSEXP, SEXP ySEXP) {
@@ -192,7 +181,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_vws_p_gumbel_rcpp", (DL_FUNC) &_vws_p_gumbel_rcpp, 5},
     {"_vws_q_gumbel_rcpp", (DL_FUNC) &_vws_q_gumbel_rcpp, 5},
     {"_vws_log_sum_exp_rcpp", (DL_FUNC) &_vws_log_sum_exp_rcpp, 1},
-    {"_vws_log_sum_exp_mat_rcpp", (DL_FUNC) &_vws_log_sum_exp_mat_rcpp, 1},
     {"_vws_log_add2_exp_rcpp", (DL_FUNC) &_vws_log_add2_exp_rcpp, 2},
     {"_vws_log_sub2_exp_rcpp", (DL_FUNC) &_vws_log_sub2_exp_rcpp, 2},
     {"_vws_optimize_hybrid_rcpp", (DL_FUNC) &_vws_optimize_hybrid_rcpp, 6},

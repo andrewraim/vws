@@ -134,25 +134,6 @@ inline double log_sum_exp(const Rcpp::NumericVector& x)
     return s;
 }
 
-/*
-* Apply log-sum-exp operation to rows of a matrix
-*
-* - `x`: an $n \times k$ matrix
-*
-* Returns vector `log(sum(exp(x[i,]))`for rows $i = 1, \ldots, n$.
-*/
-inline Rcpp::NumericVector log_sum_exp_mat(const Rcpp::NumericMatrix& x)
-{
-    unsigned int n = x.nrow();
-    Rcpp::NumericVector out(n);
-
-    for (unsigned int i = 0; i < n; i++) {
-        out(i) = log_sum_exp(x.row(i));
-    }
-
-    return out;
-}
-
 }
 
 #endif

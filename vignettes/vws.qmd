@@ -59,21 +59,18 @@ set.seed(1234)
 
 ::: {.callout-caution title="TBD"}
 
-# Older {-}
+# TBD {-}
 
-- If plotting code gets too repetitive, consider making functions for plots.
-
-- We can consider suppressing plotting code from the document if it gets
-  too lengthy.
-
-- `w_major` and other functions whose arguments are support points: should they
-  take a list of points to be consistent? They currently take a vector as input.
+- Consider suppressing plotting code from the document if it gets too lengthy.
+  We can mention to readers that the plotting code can be found with the
+  vignette sources, or try to get them installed with the package perhaps.
 
 - We should have a separate section where we describe doing stuff: constructing
   the proposal (special cases and general case where we override abstract
   region), refining the proposal, ...
 
-- Clean out experimental stuff and maybe put it somewhere else.
+- Make sure to mention that other region types (e.g., multivariate) can be
+  implemented with the API.
 :::
 
 # Introduction
@@ -342,33 +339,37 @@ plot(step, bdd, type = "l")
 
 If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `refine` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
 
-# Programming Preliminaries {#sec-prelim}
+# Preliminaries {#sec-prelim}
 
-## Lambdas
+## Programming Model
 
-**TBD**
+**TBD**: Write samplers in C++ and expose them in R via Rcpp. Show a minimal
+example of such a function here. Maybe mention that the first working example
+is coming up in @sec-vmf or another example.
 
-## fntl Package
+**TBD:** Emphasize that API is in the `vws` namespace.
 
-**TBD:** Mention density, cdf, quantile function definitions and numerical tools.
+## Lambdas in C++
 
-## Exposing Functions to R
+**TBD**: Recall lambdas in general
 
-**TBD:** The model of coding in C++ and exposing functions to R
+**TBD:** Mention density, cdf, quantile function definitions and numerical tools via fntl.
 
-## Log-Scale
+## Log-Scale Arithmetic
 
 **TBD:** Explain that computations are kept on log-scale in the package and why we do it.
 
-## VWS Namespace
+## Custom Optimization {#sec-user-opt}
 
-**TBD:** Perhaps this should be pointed out in the first C++ example instead.
+**TBD**
 
-# Usage
+- Mention that we use a numerical method by default
+- R version
+- C++ version
+
+# Overview of Package {#sec-overview}
 
 The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples.
-
-## Overview of Package {#sec-overview}
 
 ::: {.callout-caution title="TBD"}
 Misc
@@ -405,79 +406,26 @@ expected = c("max_rejects", "report", "extra_outputs", "action_incomplete")
 base::setequal(actual, expected) |> stopifnot()
 ```
 
-Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-region], [-@sec-cpp-api-realconstregion], and [-@sec-user-region].
+Here, `region1` and `region2` are objects whose class is a subclass of `Region`. The `Region` class itself is abstract and defines necessary operations. Further details are given in Sections [-@sec-cpp-api-region], [-@sec-cpp-api-realconstregion], and [-@sec-cpp-api-intconstregion].
 
-Before sampling, the `refine`` function can be used to refine a given
+Before sampling, the `refine` function can be used to refine a given
 `FMMProposal` object by partitioning a given set of regions into a finer set.
 The can make it a better approximation of the target distribution. Details are
-given in Section [-@sec-refine].
+given in Section [-@sec-cpp-api-proposal].
 
 @fig-software-design displays a diagram of the high-level design just described. @sec-cpp-api walks through the API components in depth. The user may also consult manual entries (e.g., `?Region`) for details such as arguments to methods and their default values.
 
 ![Design of `vws` package.](software-design.pdf){#fig-software-design}
 
-**TBD:** Basic usage and functions?
+## Basic Usage {#sec-overview-usage}
 
-## Quick Start in C++ {#sec-first-cpp}
+**TBD:** Basic usage and functions here. Maybe not a working example here, but
+refer the reader to one of the complete working examples that comes up later.
+Also give a reference to the API section.
 
-::: {.callout-caution title="TBD"}
-Under construction
-:::
+## Implementing Samplers via Regions {#sec-overview-regions}
 
-Let us consider an example C++ code making use of this framework. The following
-declares a `sample` function in C++ that is also exposed as an R function.
-
-```{.cpp include="examples/first-cpp/sample.cpp" code-line-numbers="true"}
-```
-
-There are several points of interest to call out. (TBD: needs to be updated)
-
-- Line 1 ensures that this code is linked with the `vws` and `fntl` packages.
-  `fntl` is not used directly in this example, but is needed by `vws`.
-- Line 2 includes the headers for C++ framework in `vws`.
-- Line 3 includes the header for a "helper" class that encapsulates several
-  functions of the $\text{Uniform}(a,b)$ distribution needed by the sampler:
-  the density, CDF, quantile function, and an indicator function for the
-  support.
-- Lines 5-6 define a C++ function and export it for use in R.
-- Lines 9-11 prepare a structure with arguments for rejection sampling. Notice
-  that `rejection_args` (along with other `vws` classes and functions) are in
-  the `vws` namespace.
-- Lines 13-20 define the weight function using C++ lambda syntax.
-- Lines 22-24 construct a specific type of `Region` and build an `FMMProposal`
-  from it. Notice that there are two template arguments specified here: the
-  first `double` specifies the type of the support and the second
-  `RealConstRegion` specifies the type of `Region`.
-- Line 26 refines the proposal `N-1` times so that there are `N` regions.
-- Line 27 carries out rejection sampling with proposal `h`.
-- Line 29-32 extracts the draws and vector rejection counts (where the `i`th
-  element represents the number of rejections for the `i`-th draw) and returns
-  them in an `Rcpp::List`.
-
-We may call the exported R function as follows.
-
-```{r}
-Rcpp::sourceCpp("examples/first-cpp/sampler.cpp")
-sample(n = 10, kappa = 5, d = 4, N = 10)
-```
-
-## Custom Optimization {#sec-user-opt}
-
-**TBD**
-
-- Mention that we use a numerical method by default
-- R version
-- C++ version
-
-```{.cpp include="examples/first-cpp/sample2.cpp" code-line-numbers="true"}
-```
-
-```{r}
-Rcpp::sourceCpp("examples/first-cpp/sampler2.cpp")
-sample2(n = 10, kappa = 5, d = 4, N = 10)
-```
-
-## (STALE) User-Defined Regions {#sec-user-region}
+**TBD:** Discuss regions here at a high level. This is the most important part of the API because it is how users implement problems. They can use `RealConstRegion` or `IntConstRegion` for univariate problems with constant majorizers. They can customize the optimization in these from the default numerical method. They can also subclass the abstract `Region` class to implement other support types.
 
 For targets where the support is not univariate, or where the desired majorizer is something other than a constant, the user may create a subclass `Region` to implement VWS. This new class must implement the methods in Table `?` using `R6`. Here is a skeleton of a such a subclass named `CustomRegion` to illustrate this process. Complete implementations of such subclasses are given in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
 
@@ -506,6 +454,14 @@ print = function() { ... }
 ) # Close public	
 ) # Close class
 ```
+
+## Knot Selection {#sec-overview-knots}
+
+**TBD**
+
+- Our rule of thumb (and greedy option)
+- At specified knots
+
 
 # C++ API {#sec-cpp-api}
 
@@ -706,7 +662,7 @@ void print(unsigned int n = 5) const;  // <2>
 1. Get a data frame with the summary.
 1. Print summary to the console.
 
-## Region {#sec-region}
+## Region Base Class {#sec-cpp-api-region}
 
 `Region` is an abstract base class whose interface represents the
 problem-specific logic that must be coded to implement VWS. Users create a
@@ -762,7 +718,7 @@ on the log-scale.
 
 ## Region on Real-Valued Support with Constant Majorizer {#sec-cpp-api-realconstregion}
 
-This is a subclass of `Region`, defined in @sec-region, specifically for
+This is a subclass of `Region`, defined in @sec-cpp-api-region, specifically for
 univariate problems with continuous support where
 $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind(x \in \mathscr{D}_j)$ is
 constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. Similarly,
@@ -861,7 +817,7 @@ const RealConstRegion& operator=(const RealConstRegion& x);
 
 ## Univariate Helper {#sec-cpp-api-helper}
 
-`UnivariateHelper` is a class which is intended for use with `RealConstRegion`. It contains several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
+`UnivariateHelper` is a class which is intended for use with `RealConstRegion`. It encapsulates several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
 
 
 ```{cpp}
@@ -994,17 +950,14 @@ magnitudes. Users may want to follow this convention when implementing their
 own sampling problems. Several included functions help to avoid explicit
 exponentiation and may be helpful for this purpose.
 
-The following compute $\log\{ \sum_{i=1}^n \exp(x_i) \}$. The first form yields
-a scalar based on a vector $x \in \mathbb{R}^n$. The second form applies the
-computation to the rows of a matrix $X \in \mathbb{R}^{m \times n}$ to yield
-an $m$-dimensional vector.
+The following computes $\log\{ \sum_{i=1}^n \exp(x_i) \}$. It yields
+a scalar based on a vector $x \in \mathbb{R}^n$.
 
 ```{cpp}
 double log_sum_exp(const Rcpp::NumericVector& x);
-Rcpp::NumericVector log_sum_exp_mat(const Rcpp::NumericMatrix& x);
 ```
 
-The following are for addition on the log scale: $\log(e^x + e^y)$. The first
+The following compute addition on the log scale: $\log(e^x + e^y)$. The first
 form takes scalar $x$ and $y$. The second and third forms take
 $x, y \in \mathbb{R}^n$ and produce an $n$-dimensional vector.
 
@@ -1091,11 +1044,6 @@ Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1);
 ```
 
 # Example: Lognormal-Normal Conditional Distribution {#sec-ln-norm}
-
-::: {.callout-caution title="TBD"}
-- [ ] Why are the first two samplers so slow to refine? They seemed much faster
-  before. Did I break something in the code?
-:::
 
 The setting $Z = Y + \gamma$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021 and @DPSimulation2022 where sensitive data are released under a measure of privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondents' data collected by an official statistics agency and $\gamma$ is random noise added for privacy protection. The resulting $Z$ is considered protected and suitable for release. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe recent work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
 
@@ -1714,7 +1662,7 @@ ggplot() +
 	theme_minimal()
 ```
 
-# Example: Bessel Count Distribution
+# Example: Bessel Count Distribution {#sec-bessel}
 
 ::: {.callout-caution title="TBD"}
 Under construction. The example is working, but the writing needs to be fleshed
@@ -1878,7 +1826,7 @@ ggplot(df) +
 	theme_minimal()
 ```
 
-# Example: Von Mises Fisher
+# Example: Von Mises Fisher {#sec-vmf}
 
 ::: {.callout-caution title="TBD"}
 Under construction. Both versions of the sampler are implemented, but writing
@@ -1946,7 +1894,49 @@ source("../inst/examples/vmf/VMFLinearRegion.R")  # VMFLinearRegion class def'n
 TBD: we have to truncate support to something within $[-1,1]$ when $d < 3$
 because $w$ is not finite at the endpoints.
 
-## Constant Majorizer
+## Constant Majorizer with Numerical Optimization
+
+::: {.callout-caution title="TBD"}
+Under construction
+:::
+
+Let us consider an example C++ code making use of this framework. The following
+declares a `sample` function in C++ that is also exposed as an R function.
+
+```{.cpp include="examples/vmf-cpp/sample.cpp" code-line-numbers="true"}
+```
+
+There are several points of interest to call out. (TBD: needs to be updated)
+
+- Line 1 ensures that this code is linked with the `vws` and `fntl` packages.
+  `fntl` is not used directly in this example, but is needed by `vws`.
+- Line 2 includes the headers for C++ framework in `vws`.
+- Line 3 includes the header for a "helper" class that encapsulates several
+  functions of the $\text{Uniform}(a,b)$ distribution needed by the sampler:
+  the density, CDF, quantile function, and an indicator function for the
+  support.
+- Lines 5-6 define a C++ function and export it for use in R.
+- Lines 9-11 prepare a structure with arguments for rejection sampling. Notice
+  that `rejection_args` (along with other `vws` classes and functions) are in
+  the `vws` namespace.
+- Lines 13-20 define the weight function using C++ lambda syntax.
+- Lines 22-24 construct a specific type of `Region` and build an `FMMProposal`
+  from it. Notice that there are two template arguments specified here: the
+  first `double` specifies the type of the support and the second
+  `RealConstRegion` specifies the type of `Region`.
+- Line 26 refines the proposal `N-1` times so that there are `N` regions.
+- Line 27 carries out rejection sampling with proposal `h`.
+- Line 29-32 extracts the draws and vector rejection counts (where the `i`th
+  element represents the number of rejections for the `i`-th draw) and returns
+  them in an `Rcpp::List`.
+
+We may call the exported R function as follows.
+
+```{r}
+Rcpp::sourceCpp("examples/vmf-cpp/sampler.cpp")
+sample(n = 10, kappa = 5, d = 4, N = 10)
+```
+
 
 Define base distribution and weight function.
 
@@ -2038,6 +2028,17 @@ ggplot() +
 	xlab("x") +
 	ylab("Density") +
 	theme_minimal()
+```
+
+## Constant Majorizer with Custom Optimization
+
+
+```{.cpp include="examples/vmf-cpp/sample2.cpp" code-line-numbers="true"}
+```
+
+```{r}
+Rcpp::sourceCpp("examples/vmf-cpp/sampler2.cpp")
+sample2(n = 10, kappa = 5, d = 4, N = 10)
 ```
 
 

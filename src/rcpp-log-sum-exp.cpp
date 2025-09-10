@@ -7,11 +7,6 @@ double log_sum_exp_rcpp(const Rcpp::NumericVector& x)
 	return vws::log_sum_exp(x);
 }
 
-Rcpp::NumericVector log_sum_exp_mat_rcpp(const Rcpp::NumericMatrix& x)
-{
-	return vws::log_sum_exp_mat(x);
-}
-
 Rcpp::NumericVector log_add2_exp_rcpp(const Rcpp::NumericVector& x,
     const Rcpp::NumericVector& y)
 {

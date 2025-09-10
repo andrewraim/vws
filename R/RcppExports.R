@@ -146,12 +146,6 @@ log_sum_exp <- function(x) {
 
 #' @name log_sum_exp
 #' @export
-log_sum_exp_mat <- function(x) {
-    .Call(`_vws_log_sum_exp_mat_rcpp`, x)
-}
-
-#' @name log_sum_exp
-#' @export
 log_add2_exp <- function(x, y) {
     .Call(`_vws_log_add2_exp_rcpp`, x, y)
 }
