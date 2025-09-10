@@ -3,23 +3,23 @@
 
 // [[Rcpp::export]]
 Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
-	double sigma, double lambda, unsigned int N = 10,
-	unsigned int max_rejects = 10000, unsigned int report = 1000)
+    double sigma, double lambda, unsigned int N = 10,
+    unsigned int max_rejects = 10000, unsigned int report = 1000)
 {
-	vws::rejection_args args;
-	args.max_rejects = max_rejects;
-	args.report = report;
-	args.action = vws::error_action::STOP;
-	double sigma2 = sigma*sigma;
+    vws::rejection_args args;
+    args.max_rejects = max_rejects;
+    args.report = report;
+    args.action = vws::error_action::STOP;
+    double sigma2 = sigma*sigma;
 
-	const vws::weight_dfd& w =
+    const vws::weight_dfd& w =
     [&](double x, bool log = true) {
-		double out = R_NegInf;
-		if (x > 0) {
-			out = -std::log(x) - std::pow(std::log(x) - mu, 2) / (2*sigma2);
-		}
-		return log ? out : std::exp(out);
-	};
+        double out = R_NegInf;
+        if (x > 0) {
+            out = -std::log(x) - std::pow(std::log(x) - mu, 2) / (2*sigma2);
+        }
+        return log ? out : std::exp(out);
+    };
 
     fntl::density df = [&](double x, bool log = false) {
         return R::dnorm(x, z, lambda, log);
@@ -32,9 +32,9 @@ Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
     };
 
     const vws::optimizer& maxopt = [&](const vws::weight_dfd& w, double lo,
-    	double hi, bool log)
+        double hi, bool log)
     {
-    	double y_star = exp(mu - sigma2);
+        double y_star = exp(mu - sigma2);
         double out;
 
         if (y_star > hi) {
@@ -49,7 +49,7 @@ Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
     };
 
     const vws::optimizer& minopt = [&](const vws::weight_dfd& w, double lo,
-    	double hi, bool log)
+        double hi, bool log)
     {
         double y_star = exp(mu - sigma2);
         double lwa = w(lo, true);
@@ -59,16 +59,16 @@ Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
     };
 
     vws::UnivariateHelper helper(df, pf, qf);
-	vws::RealConstRegion supp(0, R_PosInf, w, helper, maxopt, minopt);
-	vws::FMMProposal<double, vws::RealConstRegion> h({ supp });
+    vws::RealConstRegion supp(0, R_PosInf, w, helper, maxopt, minopt);
+    vws::FMMProposal<double, vws::RealConstRegion> h({ supp });
 
-	h.refine(N - 1);
-	h.print(5);
+    h.refine(N - 1);
+    h.print(5);
 
-	const vws::rejection_result<double>& out = vws::rejection(h, n, args);
+    const vws::rejection_result<double>& out = vws::rejection(h, n, args);
 
-	return Rcpp::List::create(
-		Rcpp::Named("draws") = out.draws,
-		Rcpp::Named("rejects") = out.rejects
-	);
+    return Rcpp::List::create(
+        Rcpp::Named("draws") = out.draws,
+        Rcpp::Named("rejects") = out.rejects
+    );
 }

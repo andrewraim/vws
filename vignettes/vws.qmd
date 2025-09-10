@@ -50,17 +50,14 @@ callout-icon: false
 
 ```{r}
 #| include: false
-library(R6)
 library(vws)
 library(tidyverse)
 
 set.seed(1234)
 ```
 
-::: {.callout-caution title="TBD"}
-
 # TBD {-}
-
+::: {.callout-caution}
 - Consider suppressing plotting code from the document if it gets too lengthy.
   We can mention to readers that the plotting code can be found with the
   vignette sources, or try to get them installed with the package perhaps.
@@ -68,9 +65,6 @@ set.seed(1234)
 - We should have a separate section where we describe doing stuff: constructing
   the proposal (special cases and general case where we override abstract
   region), refining the proposal, ...
-
-- Make sure to mention that other region types (e.g., multivariate) can be
-  implemented with the API.
 :::
 
 # Introduction
@@ -92,8 +86,11 @@ This section is heavily under construction.
 - We will use `ggplot2`, `dplyr` and other packages of the tidyverse
   [@Tidyverse2019] in the examples.
 - Remark: We don't use Rcpp at the moment because interoperability between C++
-  classes and R becomes more complicated. It is possible with Rcpp Modules
-  though.
+  classes and R becomes more complicated. Therefore, the programming model is to
+  code samplers in C++ and expose them as an R function
+- Remark: Make sure to mention that other region types (e.g., multivariate) can be
+  implemented with the API.
+
 :::
 
 To implement a rejection sampler with the `vws` package, the user must make use
@@ -274,7 +271,7 @@ The `IntConstRegion` and `RealConstRegion` classes have an `optimize` method to 
 region$optimize(maximize = TRUE, log = TRUE)
 ```
 
-The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntConstRegion` or `RealConstRegion` and override the `optimize` method. An example of this is given in [@sec-ln-norm-const-cf].
+The arguments `maximize` and `log` are both indicators: optimization is carried out as a maximization if `maximize = TRUE` and a minimization otherwise; the optimized value is returned on the log-scale if `log = TRUE` and is returned on the original scale otherwise. Numerical optimization is convenient, but can be wasteful if the function $w$ can be maximized and/or minimized in closed-form. For such cases, the user may create a subclass of `IntConstRegion` or `RealConstRegion` and override the `optimize` method. An example of this is given in [@sec-ln-norm-const-custom].
 
 ## Linear Majorizer {#sec-vws-linear}
 
@@ -429,32 +426,6 @@ Also give a reference to the API section.
 
 For targets where the support is not univariate, or where the desired majorizer is something other than a constant, the user may create a subclass `Region` to implement VWS. This new class must implement the methods in Table `?` using `R6`. Here is a skeleton of a such a subclass named `CustomRegion` to illustrate this process. Complete implementations of such subclasses are given in Sections [-@sec-ln-norm-linear] and [-@sec-vws-linear].
 
-```{r}
-#| eval: false
-CustomRegion = R6::R6Class(
-
-classname = "CustomRegion",
-private = list( ... ),
-public = list(
-
-initialize = function(...) { ... },
-d_base = function(x, log = FALSE) { ... },
-w = function(x, log = TRUE) { ... },
-r = function(n) { ... },
-d = function(x, log = FALSE) { ... },
-s = function(x) { ... },
-w_major = function(x, log = TRUE) { ... },
-is_bifurcatable = function() { ... },
-bifurcate = function(x = NULL, ...) { ... },
-xi_upper = function(log = TRUE) { ... },
-xi_lower = function(log = TRUE) { ... },
-description = function() { ... },
-print = function() { ... }
-
-) # Close public	
-) # Close class
-```
-
 ## Knot Selection {#sec-overview-knots}
 
 **TBD**
@@ -465,13 +436,9 @@ print = function() { ... }
 
 # C++ API {#sec-cpp-api}
 
+This section documents functions, classes, and other components in the C++ API. 
+
 ## Typedefs {#sec-cpp-api-typedefs}
-
-**TBD**
-
-- weight function
-- weight_optimization
-- `...`
 
 We define a shorthand for the maximum value of an unsigned integer.
 
@@ -488,14 +455,10 @@ typedef std::function<bool(double x)> indicator;
 The following typedef represents a weight function. 
 
 ```{cpp}
-typedef std::function<double(
-	double x,                  // <1>
-	bool log                   // <2>
-)> weight_dfd;
+typedef std::function<double(double x, bool log)> weight_dfd;
 ```
-1. The argument.
-2. Logical; `log = true` specifies that the result should be returned on the
-log-scale. Otherwise, it should be returned on the original scale.
+
+Here, `x` is the argument of the weight function and `log` determines if the result is returned on the log-scale.
 
 The following typedef represents a function that optimizes (i.e., maximizes or
 minimizes) a weight function on a given interval.
@@ -503,10 +466,10 @@ minimizes) a weight function on a given interval.
 ```{cpp}
 typedef std::function<double(
 	const weight_dfd& w,  // <1>
-	double lo,                    // <2>
-	double hi,                    // <3>
-	bool log                      // <4>
-)> optimize;
+	double lo,            // <2>
+	double hi,            // <3>
+	bool log              // <4>
+)> optimizer;
 ```
 1. A weight function.
 2. Lower bound of the interval; may be `R_NegInf`.
@@ -514,6 +477,23 @@ typedef std::function<double(
 4. Logical; `log = true` specifies that the result should be the optimal value
    $\log w(x^*)$, given on the log-scale. Otherwise, the result should be the
    optimal value $w(x^*)$ on the original scale.
+
+The following enum specifies actions for when error conditions are encountered.
+
+```{cpp}
+enum class error_action {
+	STOP,
+	WARNING,
+	MESSAGE,
+	NONE
+};
+```
+1. Throw an exception.
+2. Emit a warning and proceed.
+3. Print a message and proceed.
+4. Do not take any of the above actions and proceed.
+
+**TBD:** should we try to use `fntl::error_action` instead?
 
 **TBD** Can we pass `optimize_hybrid` to `RealConstRegion` as the default and
 clean up that part of the code?
@@ -575,14 +555,14 @@ value on the log-scale is returned.
 The following accessors are provided.
 
 ```{cpp}
-Rcpp::NumericVector get_xi_upper(bool log = true) const;              // <1>
-Rcpp::NumericVector get_xi_lower(bool log = true) const;              // <2>
-Rcpp::LogicalVector get_bifurcatable() const;                         // <3>
-Rcpp::NumericVector get_pi(bool log = false) const;                   // <4>
+Rcpp::NumericVector xi_upper(bool log = true) const;                  // <1>
+Rcpp::NumericVector xi_lower(bool log = true) const;                  // <2>
+Rcpp::LogicalVector bifurcatable() const;                             // <3>
+Rcpp::NumericVector pi(bool log = false) const;                       // <4>
 Rcpp::NumericVector rejection_bound_regions(bool log = false) const;  // <5>
 double rejection_bound(bool log = false) const;                       // <6>
 double nc(bool log = false) const;                                    // <7>
-unsigned int get_N() const;                                           // <8>
+unsigned int size() const;                                            // <8>
 ```
 1. Get the constants $\overline{\xi}_1, \ldots, \overline{\xi}_N$.
 2. Get the constants $\underline{\xi}_1, \ldots, \underline{\xi}_N$.
@@ -736,26 +716,35 @@ constructors.
 
 ```{cpp}
 RealConstRegion(
-	double a,                       // <1>
-	double b,                       // <2>
-	const weight_dfd& w,    // <3>
-	const UnivariateHelper& helper  // <4>
+	double a,                                 // <1>
+	double b,                                 // <2>
+	const weight_dfd& w,                      // <3>
+	const UnivariateHelper& helper,           // <4>
+    const optimizer& maxopt = maxopt_default, // <5>
+    const optimizer& minopt = minopt_default  // <6>
 );
 
 RealConstRegion(
-	double a,                       // <1>
-	const weight_dfd& w,    // <3>
-	const UnivariateHelper& helper  // <4>
+	double a,                                 // <1>
+	const weight_dfd& w,                      // <3>
+	const UnivariateHelper& helper            // <4>
+    const optimizer& maxopt = maxopt_default, // <5>
+    const optimizer& minopt = minopt_default  // <6>
 );
 ```
 1. Lower limit of interval that defines this region.
 2. Upper limit of interval that defines this region.
 3. Weight function $w$ for the target distribution.
 4. A container with operations of the base distribution $g$.
+5. A function of type `optimizer` that maximizes `w` on the given region.
+5. A function of type `optimizer` that minimizes `w` on the given region.
 
 The first constructor creates a region based on the interval $(a,b]$; the
 second creates a region based on the singleton set $\{a\}$, which is intended
 primarily for internal use.
+
+The default optimizers, `maxopt_default` and `minopt_default`, use the hybrid
+numerical optimization method in @sec-cpp-api-opt to optimize `w`.
 
 ### Methods {.unnumbered .unlisted}
 
@@ -767,6 +756,8 @@ the log-scale. Otherwise, return it on the original scale.
 ```{cpp}
 double optimize(bool maximize = true, bool log = true) const;
 ```
+
+**TBD:** Do we still have the `optimize` method? If so, do we need it?
 
 The `midpoint` method returns a point between endpoints $a$ and $b$ of the
 region. If $a$ and $b$ are both finite, return the standard midpoint. If both
@@ -929,14 +920,6 @@ before all $n$ desired variates are drawn. In this case, the `draws` and
 
 **TBD** here is `error_action`.
 
-```{cpp}
-enum class error_action {
-	STOP,
-	WARNING,
-	MESSAGE,
-	NONE
-};
-```
 
 ## Optimization on an Interval {#sec-cpp-api-opt}
 
@@ -1035,7 +1018,7 @@ Rcpp::NumericVector log_sub2_exp(const Rcpp::NumericVector& x, const Rcpp::Numer
 
 ## Generating from a Discrete Distribution {#sec-cpp-api-discrete}
 
-We make use of the Gumbel trick [e.g., @MaddisonTarlowMinka2014] to draw from a discrete distribution with probabilities $p_1, \ldots, p_k$. This approach allows probabilities to be specified on the log-scale without the need to exponentiate them or normalize so that they sum to one. The Gumbel trick generates a draw $x$ from the desired discrete distribution via
+We make use of the Gumbel trick [e.g., @HuijbenEtAl2023] to draw from a discrete distribution with probabilities $p_1, \ldots, p_k$. This approach allows probabilities to be specified on the log-scale without the need to exponentiate or normalize them so that they sum to one. The Gumbel trick generates a draw $x$ from the desired discrete distribution via
 <!-- -->
 $$
 X = \argmax \{ Z_1 + \log p_1, \ldots, Z_k + \log p_k \},
@@ -1099,6 +1082,319 @@ Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
 Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1);
 ```
 
+# Example: Von Mises Fisher {#sec-vmf}
+
+::: {.callout-caution title="TBD"}
+Under construction. Both versions of the sampler are implemented, but writing
+is needed.
+:::
+
+Suppose $X$ has density
+
+\begin{align}
+f(x) =
+\frac{
+(\kappa / 2)^{d/2 - 1} (1 - x^2)^{(d-3)/2} \exp(\kappa x)
+}{
+\sqrt{\pi} \cdot I_{d/2 - 1}(\kappa) \cdot \Gamma((d-1)/2)
+} \cdot \mathbb{1}_{(-1,1)}(x).
+\label{eqn:vmf-target}
+\end{align}
+
+Let us decompose $f$ into
+
+\begin{align*}
+f(x) \propto
+\underbrace{(1 - x^2)^{(d-3)/2}}_{w(x)}
+\underbrace{\exp(\kappa x) \cdot \mathbb{1}_{(-1,1)}(x)}_{g_0(x)},
+\end{align*}
+
+where $w$ is a nonnegative weight function and $g_0$ is proportional to density
+
+\begin{align*}
+g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \mathbb{1}_{(-1,1)}(x).
+\end{align*}
+
+The CDF corresponding to $g$ is
+
+\begin{align*}
+G(x) = \frac{e^{\kappa x} - e^{-\kappa x}}{e^\kappa - e^{-\kappa}} \cdot,
+\quad x \in (-1, 1)
+\end{align*}
+
+and the quantile function is
+
+\begin{align*}
+G^{-1}(\varphi) = \frac{1}{\kappa} \log\left[e^{\kappa a} + \varphi (e^{\kappa b} - e^{\kappa a}) \right], \quad \varphi \in [0,1].
+\end{align*}
+
+
+Check the manual entry for `Region` to see which methods need to be implemented.
+
+```{r}
+#| eval: false
+#| prompt: true
+?Region
+```
+
+The needed operations for the base and target distributions are defined in the
+following files.
+
+```{r}
+#| prompt: true
+source("../inst/examples/vmf/base.R")             # Functions for base dist'n
+source("../inst/examples/vmf/target.R")           # Functions for target dist'n
+source("../inst/examples/vmf/VMFLinearRegion.R")  # VMFLinearRegion class def'n
+```
+
+TBD: we have to truncate support to something within $[-1,1]$ when $d < 3$
+because $w$ is not finite at the endpoints.
+
+## Constant Majorizer with Numerical Optimization
+
+::: {.callout-caution title="TBD"}
+Under construction
+:::
+
+Let us consider an example C++ code making use of this framework. The following
+declares a sampler in C++ and exposes an R interface function.
+
+```{.cpp include="examples/vmf/vmf-v1.cpp" code-line-numbers="true"}
+```
+
+There are several points of interest to call out. (TBD: needs to be updated)
+
+- Line 1 ensures that this code is linked with the `vws` and `fntl` packages.
+  `fntl` is not used directly in this example, but is needed by `vws`.
+- Line 2 includes the headers for C++ framework in `vws`.
+- Line 3 includes the header for a "helper" class that encapsulates several
+  functions of the $\text{Uniform}(a,b)$ distribution needed by the sampler:
+  the density, CDF, quantile function, and an indicator function for the
+  support.
+- Lines 5-6 define a C++ function and export it for use in R.
+- Lines 9-11 prepare a structure with arguments for rejection sampling. Notice
+  that `rejection_args` (along with other `vws` classes and functions) are in
+  the `vws` namespace.
+- Lines 13-20 define the weight function using C++ lambda syntax.
+- Lines 22-24 construct a specific type of `Region` and build an `FMMProposal`
+  from it. Notice that there are two template arguments specified here: the
+  first `double` specifies the type of the support and the second
+  `RealConstRegion` specifies the type of `Region`.
+- Line 26 refines the proposal `N-1` times so that there are `N` regions.
+- Line 27 carries out rejection sampling with proposal `h`.
+- Line 29-32 extracts the draws and vector rejection counts (where the `i`th
+  element represents the number of rejections for the `i`-th draw) and returns
+  them in an `Rcpp::List`.
+
+We may call the exported R function as follows.
+
+```{r}
+Rcpp::sourceCpp("examples/vmf/vmf-v1.cpp")
+sample(n = 10, kappa = 5, d = 4, N = 10)
+```
+
+
+Define base distribution and weight function.
+
+```{r}
+d = 2
+kappa = 0.2
+
+helper = vmf_base_helper(kappa)
+
+w = function(x, log = FALSE) {
+	out = (d - 3) / 2 * log(1 - x^2)
+	if (log) { return(out) } else { return(exp(out)) }
+}
+```
+
+```{r}
+support = RealConstRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, w = w, g = helper)
+regions = list(support)
+```
+
+Refine the proposal.
+
+```{r}
+h_init = FMMProposal$new(regions)
+refine_out = refine(h_init, N = 100, report = 20)
+h = refine_out$h
+```
+
+Plot the rate of refinement improvement. (TBD: consider making this an object
+that can quickly be plotted. But this might add a dependency if it's ggplot).
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Rate of refine improvement for VMF example with constant majorizer.
+#| label: fig-vmf-const-refine
+
+data.frame(bdd = exp(refine_out$log_bdd_hist)) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = bdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Bound") +
+	theme_minimal()
+```
+
+Generate draws.
+
+```{r}
+ctrl = rejection_control(max_rejects = 10000, report = 5000)
+out = rejection(h, n = 10000, control = ctrl)
+x = unlist(out)
+```
+
+Plot the empirical distribution of the draws with the target density.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Empirical distribution of draws versus target for VMF example with
+#|   constant majorizer.
+#| label: fig-vmf-const-draws
+
+data.frame(x = x) %>%
+	ggplot() +
+	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(kappa = kappa, d = d),
+		lty = 2, xlim = c(1e-2 - 1, 1 - 1e-2)) +
+	ylab("Density") +
+	theme_minimal()
+```
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Proposal versus target on the log-scale for VMF example with constant
+#|   majorizer.
+#| label: fig-vmf-const-proposal
+
+log_h = function(x) { sapply(x, h$d, log = TRUE) }
+log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
+
+ggplot() +
+	geom_function(fun = log_f, col = "orange", lty = 1) +
+	geom_function(fun = log_h, col = "black", lty = 2) +
+	scale_x_continuous(limits = c(1e-2 - 1, 1 - 1e-2)) +
+	xlab("x") +
+	ylab("Density") +
+	theme_minimal()
+```
+
+## Constant Majorizer with Custom Optimization
+
+
+```{.cpp include="examples/vmf/vmf-v2.cpp" code-line-numbers="true"}
+```
+
+```{r}
+Rcpp::sourceCpp("examples/vmfvmf/vmf-v2.cpp")
+sample2(n = 10, kappa = 5, d = 4, N = 10)
+```
+
+
+## Linear Majorizer {#sec-vmf-linear}
+
+For this region:
+
+- $w$ is assumed to be $w(x) = (1 - x^2)^{(d - 3)/2}$
+- $g$ is assumed to be proportional to $\exp(\kappa x)$
+- majorized $w$ is assumed to be of the form $\exp(\beta_0 + \beta_1 x)$
+
+Note that $\log(w(-1)) = \log(w(1)) = \infty$ with this choice when $d < 3$. A
+workaround is to exclude the endpoints from the support.
+
+```{r}
+d = 2
+kappa = 0.2
+```
+
+Create a single region of class `VMFLinearRegion`.
+
+```{r}
+support = VMFLinearRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, kappa = kappa, d = d)
+regions = list(support)
+```
+
+Refine the proposal.
+
+```{r}
+h_init = FMMProposal$new(regions)
+refine_out = refine(h_init, N = 100, report = 20)
+h = refine_out$h
+```
+
+Plot the rate of refinement improvement. Plot on the log-scale; the log-scale helps to see improvement in later steps.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Rate of refine improvement on the log-scale for VMF example with
+#|   linear majorizer.
+#| label: fig-vmf-linear-refine
+
+data.frame(logbdd = refine_out$log_bdd_hist) %>%
+	mutate(step = row_number() - 1) %>%
+	ggplot() +
+	geom_line(aes(x = step, y = logbdd)) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("Step") +
+	ylab("Log of Bound") +
+	theme_minimal()
+```
+
+Generate draws.
+```{r}
+control = rejection_control(max_rejects = 100, report = 5000)
+out = rejection(h, n = 10000, control = control)
+x = unlist(out)
+```
+
+Plot the empirical distribution of the draws with the target density.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Empirical distribution of draws versus target for VMF example with linear
+#|   majorizer.
+#| label: fig-vmf-linear-draws
+
+data.frame(x = x) %>%
+	ggplot() +
+	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
+		fill = NA, bins = 25) +
+	geom_function(fun = d_target, args = list(kappa = kappa, d = d),
+		lty = 2, xlim = c(1e-2 - 1, 1 - 1e-2)) +
+	ylab("Density") +
+	theme_minimal()
+```
+
+Plot proposal versus the target on the log-scale.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Proposal versus target on the log-scale for VMF example with linear
+#|   majorizer.
+#| label: fig-vmf-linear-proposal
+
+log_h = function(x) { sapply(x, h$d, log = TRUE) }
+log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
+
+ggplot() +
+	geom_function(fun = log_f, col = "orange", lty = 1) +
+	geom_function(fun = log_h, col = "black", lty = 2) +
+	scale_x_continuous(limits = c(1e-2 - 1, 1 - 1e-2)) +
+	xlab("x") +
+	ylab("Density") +
+	theme_minimal()
+```
+
 # Example: Lognormal-Normal Conditional Distribution {#sec-ln-norm}
 
 The setting $Z = Y + \gamma$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021 and @DPSimulation2022 where sensitive data are released under a measure of privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondents' data collected by an official statistics agency and $\gamma$ is random noise added for privacy protection. The resulting $Z$ is considered protected and suitable for release. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe recent work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
@@ -1140,7 +1436,7 @@ from the Lognormal component---dropping some of the terms in its normalizing con
 \label{eqn:ln-norm-log-weight-fn}
 \end{align}
 
-We will consider three variations of VWS sampler, which progresses from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const] considers a constant majorizer where the constant for each region is obtained by numerical optimization. [@sec-ln-norm-const-cf] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
+We will consider three variations of VWS sampler, which progresses from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const-default] considers a constant majorizer where the constant for each region is obtained by numerical optimization. [@sec-ln-norm-const-custom] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
 
 Before proceeding, let us fix the following values for the parameters.
 
@@ -1161,7 +1457,7 @@ print(y_true)
 print(z)
 ```
 
-## Constant Majorizer with Numerical Optimization {#sec-ln-norm-const}
+## Constant Majorizer with Numerical Optimization {#sec-ln-norm-const-default}
 
 To implement this version of the sampler, let us first code the weight function. Note that calculations are carried out on the log-scale, and only exponentiated if explicitly requested.
 
@@ -1342,9 +1638,9 @@ ggplot() +
 	theme_minimal()
 ```
 
-## Constant Majorizer with Custom Optimization {#sec-ln-norm-const-cf}
+## Constant Majorizer with Custom Optimization {#sec-ln-norm-const-custom}
 
-The log-weight function $\zeta$ from \eqref{eqn:ln-norm-log-weight-fn} can be both maximized and minimized in closed form. Coding it explicitly may reduce computational overhead and avoid possible convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `RealConstRegion`.
+The log-weight function $\zeta$ from \eqref{eqn:ln-norm-log-weight-fn} can be both maximized and minimized in closed form. Coding it explicitly reduces computational overhead and avoids convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `RealConstRegion`.
 
 We have first derivative
 <!-- -->
@@ -1375,60 +1671,11 @@ ggplot() +
 	theme_minimal()
 ```
 
-We now create a subclass `CustomConstRegion` of `RealConstRegion` and specify an `optimize` method using the closed-form solution. Furthermore, we specify an `initialize` method which simply invokes `initialize` from the superclass `RealConstRegion`. Otherwise, the behavior of `CustomConstRegion` is identical to `RealConstRegion`.
-
-```{r}
-CustomConstRegion = R6::R6Class(
-
-classname = "CustomConstRegion",
-inherit = RealConstRegion,
-
-public = list(
-
-initialize = function(a, b, w, g) {
-	super$initialize(a, b, w, g)
-},
-
-optimize = function(maximize = TRUE, log = TRUE) {
-	a = private$a
-	b = private$b
-	w = self$w
-
-	y_star = exp(mu - sigma2)
-
-	if (maximize) {
-		if (y_star > b) {
-			out = w(b, log = TRUE)
-		} else if (y_star < a) {
-			out = w(a, log = TRUE)
-		} else { 
-			out = w(y_star, log = TRUE)
-		}
-	} else {
-		out = min(w(a, log = TRUE), w(b, log = TRUE))
-	}
-
-	if (log) { return(out) } else { return(exp(out)) }
-}
-
-) # Close public
-) # Close class
+```{.cpp include="examples/ln-norm/ln-norm-v2.cpp" code-line-numbers="true"}
 ```
 
-From here, the code to construct, refine, and sample from a proposal using `CustomConstRegion` is identical to `RealConstRegion`.
 
-```{r}
-support = CustomConstRegion$new(a = 0, b = Inf, w = w, g = helper)
-regions = list(support)
 
-h_init = FMMProposal$new(regions)
-refine_out = refine(h_init, N = 30)
-h = refine_out$h
-
-ctrl = rejection_control(report = 5000)
-out = rejection(h, n = 10000, control = ctrl)
-y = unlist(out)
-```
 
 ## Linear Majorizer {#sec-ln-norm-linear}
 
@@ -1436,7 +1683,7 @@ y = unlist(out)
 We need to pick finite endpoints I think ...
 :::
 
-Sections [-@sec-ln-norm-const] and [-@sec-ln-norm-const-cf] utilized a constant 
+Sections [-@sec-ln-norm-const-default] and [-@sec-ln-norm-const-custom] utilized a constant 
 majorizer $\overline{w}_j = \max_{y \in \mathcal{D}_j} w(y)$ and minorizer $\underline{w}_j = \min_{y \in \mathcal{D}_j} w(y)$ for VWS sampling. Let us now consider a linear majorizer $\log \overline{w}_j(y) = \overline{\beta}_{0j} + \overline{\beta}_{1j} y$ and minorizer $\log \underline{w}_j(y) = \underline{\beta}_{0j} + \underline{\beta}_{1j} y$. This strategy is more involved to derive and implement, but often captures the weight function more effectively than a constant majorizer with fewer mixture components to yield more efficient proposals. We will find appropriate values of $\overline{\beta}_{0j}$, $\overline{\beta}_{1j}$, $\underline{\beta}_{0j}$, and $\underline{\beta}_{1j}$; compute $\overline{\xi}_j$ and $\underline{\xi}_j$ needed for the proposal mixture weights and the bound \eqref{eqn:bound}; and determine how to sample from the reweighted & truncated densities $g_1, \ldots, g_N$.
 
 We first note that with majorizer $\overline{w}_j(y) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}$, the truncated & reweighted density $g_j$ has the form
@@ -1457,7 +1704,7 @@ g_j(y)
 \right\} \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y).
 \end{align*}
 <!-- -->
-This can be recognized as the density of $T_j \sim \text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. Variates of $T_j$ can be generated using the CDF $\Phi(y \mid z + \lambda^2, \lambda^2)$ and its inverse $\Phi^{-1}(p \mid z + \lambda^2, \lambda^2)$ which can be accessed with `pnorm` and `qnorm` in R respectively. Next, it can be seen that $\zeta(y) = \log w(y)$ is either a convex or concave function, depending on the value of $y \in (0, \infty)$. The concavity or convexity of $\zeta$ on a region $\mathcal{D}_j$ can be used to determine a linear majorizing function. Proceeding from $\zeta'(y)$ given in [@sec-ln-norm-const-cf], the second derivative is seen to be
+This can be recognized as the density of $T_j \sim \text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. Variates of $T_j$ can be generated using the CDF $\Phi(y \mid z + \lambda^2, \lambda^2)$ and its inverse $\Phi^{-1}(p \mid z + \lambda^2, \lambda^2)$ which can be accessed with `pnorm` and `qnorm` in R respectively. Next, it can be seen that $\zeta(y) = \log w(y)$ is either a convex or concave function, depending on the value of $y \in (0, \infty)$. The concavity or convexity of $\zeta$ on a region $\mathcal{D}_j$ can be used to determine a linear majorizing function. Proceeding from $\zeta'(y)$ given in [@sec-ln-norm-const-custom], the second derivative is seen to be
 <!-- -->
 \begin{align*}
 &\zeta''(y) = -\frac{1}{y^2}\left(
@@ -1670,7 +1917,7 @@ out = rejection(h, n = 10000, control = ctrl)
 y = unlist(out$draws)
 ```
 
-Print the actual rejection rate. Notice that it is substantially lower than the rate achieved in [@sec-ln-norm-const].
+Print the actual rejection rate. Notice that it is substantially lower than the rate achieved in [@sec-ln-norm-const-default].
 
 ```{r}
 cat("Percent of proposed draws rejected:",
@@ -1899,318 +2146,6 @@ ggplot(df) +
 
 **TBD:** Is it tractable for this problem?
 
-# Example: Von Mises Fisher {#sec-vmf}
-
-::: {.callout-caution title="TBD"}
-Under construction. Both versions of the sampler are implemented, but writing
-is needed.
-:::
-
-Suppose $X$ has density
-
-\begin{align}
-f(x) =
-\frac{
-(\kappa / 2)^{d/2 - 1} (1 - x^2)^{(d-3)/2} \exp(\kappa x)
-}{
-\sqrt{\pi} \cdot I_{d/2 - 1}(\kappa) \cdot \Gamma((d-1)/2)
-} \cdot \mathbb{1}_{(-1,1)}(x).
-\label{eqn:vmf-target}
-\end{align}
-
-Let us decompose $f$ into
-
-\begin{align*}
-f(x) \propto
-\underbrace{(1 - x^2)^{(d-3)/2}}_{w(x)}
-\underbrace{\exp(\kappa x) \cdot \mathbb{1}_{(-1,1)}(x)}_{g_0(x)},
-\end{align*}
-
-where $w$ is a nonnegative weight function and $g_0$ is proportional to density
-
-\begin{align*}
-g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \mathbb{1}_{(-1,1)}(x).
-\end{align*}
-
-The CDF corresponding to $g$ is
-
-\begin{align*}
-G(x) = \frac{e^{\kappa x} - e^{-\kappa x}}{e^\kappa - e^{-\kappa}} \cdot,
-\quad x \in (-1, 1)
-\end{align*}
-
-and the quantile function is
-
-\begin{align*}
-G^{-1}(\varphi) = \frac{1}{\kappa} \log\left[e^{\kappa a} + \varphi (e^{\kappa b} - e^{\kappa a}) \right], \quad \varphi \in [0,1].
-\end{align*}
-
-
-Check the manual entry for `Region` to see which methods need to be implemented.
-
-```{r}
-#| eval: false
-#| prompt: true
-?Region
-```
-
-The needed operations for the base and target distributions are defined in the
-following files.
-
-```{r}
-#| prompt: true
-source("../inst/examples/vmf/base.R")             # Functions for base dist'n
-source("../inst/examples/vmf/target.R")           # Functions for target dist'n
-source("../inst/examples/vmf/VMFLinearRegion.R")  # VMFLinearRegion class def'n
-```
-
-TBD: we have to truncate support to something within $[-1,1]$ when $d < 3$
-because $w$ is not finite at the endpoints.
-
-## Constant Majorizer with Numerical Optimization
-
-::: {.callout-caution title="TBD"}
-Under construction
-:::
-
-Let us consider an example C++ code making use of this framework. The following
-declares a sampler in C++ and exposes an R interface function.
-
-```{.cpp include="examples/vmf/vmf-v1.cpp" code-line-numbers="true"}
-```
-
-There are several points of interest to call out. (TBD: needs to be updated)
-
-- Line 1 ensures that this code is linked with the `vws` and `fntl` packages.
-  `fntl` is not used directly in this example, but is needed by `vws`.
-- Line 2 includes the headers for C++ framework in `vws`.
-- Line 3 includes the header for a "helper" class that encapsulates several
-  functions of the $\text{Uniform}(a,b)$ distribution needed by the sampler:
-  the density, CDF, quantile function, and an indicator function for the
-  support.
-- Lines 5-6 define a C++ function and export it for use in R.
-- Lines 9-11 prepare a structure with arguments for rejection sampling. Notice
-  that `rejection_args` (along with other `vws` classes and functions) are in
-  the `vws` namespace.
-- Lines 13-20 define the weight function using C++ lambda syntax.
-- Lines 22-24 construct a specific type of `Region` and build an `FMMProposal`
-  from it. Notice that there are two template arguments specified here: the
-  first `double` specifies the type of the support and the second
-  `RealConstRegion` specifies the type of `Region`.
-- Line 26 refines the proposal `N-1` times so that there are `N` regions.
-- Line 27 carries out rejection sampling with proposal `h`.
-- Line 29-32 extracts the draws and vector rejection counts (where the `i`th
-  element represents the number of rejections for the `i`-th draw) and returns
-  them in an `Rcpp::List`.
-
-We may call the exported R function as follows.
-
-```{r}
-Rcpp::sourceCpp("examples/vmf/vmf-v1.cpp")
-sample(n = 10, kappa = 5, d = 4, N = 10)
-```
-
-
-Define base distribution and weight function.
-
-```{r}
-d = 2
-kappa = 0.2
-
-helper = vmf_base_helper(kappa)
-
-w = function(x, log = FALSE) {
-	out = (d - 3) / 2 * log(1 - x^2)
-	if (log) { return(out) } else { return(exp(out)) }
-}
-```
-
-```{r}
-support = RealConstRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, w = w, g = helper)
-regions = list(support)
-```
-
-Refine the proposal.
-
-```{r}
-h_init = FMMProposal$new(regions)
-refine_out = refine(h_init, N = 100, report = 20)
-h = refine_out$h
-```
-
-Plot the rate of refinement improvement. (TBD: consider making this an object
-that can quickly be plotted. But this might add a dependency if it's ggplot).
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Rate of refine improvement for VMF example with constant majorizer.
-#| label: fig-vmf-const-refine
-
-data.frame(bdd = exp(refine_out$log_bdd_hist)) %>%
-	mutate(step = row_number() - 1) %>%
-	ggplot() +
-	geom_line(aes(x = step, y = bdd)) +
-	scale_y_continuous(n.breaks = 10) +
-	xlab("Step") +
-	ylab("Bound") +
-	theme_minimal()
-```
-
-Generate draws.
-
-```{r}
-ctrl = rejection_control(max_rejects = 10000, report = 5000)
-out = rejection(h, n = 10000, control = ctrl)
-x = unlist(out)
-```
-
-Plot the empirical distribution of the draws with the target density.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Empirical distribution of draws versus target for VMF example with
-#|   constant majorizer.
-#| label: fig-vmf-const-draws
-
-data.frame(x = x) %>%
-	ggplot() +
-	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
-		fill = NA, bins = 25) +
-	geom_function(fun = d_target, args = list(kappa = kappa, d = d),
-		lty = 2, xlim = c(1e-2 - 1, 1 - 1e-2)) +
-	ylab("Density") +
-	theme_minimal()
-```
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Proposal versus target on the log-scale for VMF example with constant
-#|   majorizer.
-#| label: fig-vmf-const-proposal
-
-log_h = function(x) { sapply(x, h$d, log = TRUE) }
-log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
-
-ggplot() +
-	geom_function(fun = log_f, col = "orange", lty = 1) +
-	geom_function(fun = log_h, col = "black", lty = 2) +
-	scale_x_continuous(limits = c(1e-2 - 1, 1 - 1e-2)) +
-	xlab("x") +
-	ylab("Density") +
-	theme_minimal()
-```
-
-## Constant Majorizer with Custom Optimization
-
-
-```{.cpp include="examples/vmf/vmf-v2.cpp" code-line-numbers="true"}
-```
-
-```{r}
-Rcpp::sourceCpp("examples/vmfvmf/vmf-v2.cpp")
-sample2(n = 10, kappa = 5, d = 4, N = 10)
-```
-
-
-## Linear Majorizer {#sec-vws-linear}
-
-For this region:
-
-- $w$ is assumed to be $w(x) = (1 - x^2)^{(d - 3)/2}$
-- $g$ is assumed to be proportional to $\exp(\kappa x)$
-- majorized $w$ is assumed to be of the form $\exp(\beta_0 + \beta_1 x)$
-
-Note that $\log(w(-1)) = \log(w(1)) = \infty$ with this choice when $d < 3$. A
-workaround is to exclude the endpoints from the support.
-
-```{r}
-d = 2
-kappa = 0.2
-```
-
-Create a single region of class `VMFLinearRegion`.
-
-```{r}
-support = VMFLinearRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, kappa = kappa, d = d)
-regions = list(support)
-```
-
-Refine the proposal.
-
-```{r}
-h_init = FMMProposal$new(regions)
-refine_out = refine(h_init, N = 100, report = 20)
-h = refine_out$h
-```
-
-Plot the rate of refinement improvement. Plot on the log-scale; the log-scale helps to see improvement in later steps.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Rate of refine improvement on the log-scale for VMF example with
-#|   linear majorizer.
-#| label: fig-vmf-linear-refine
-
-data.frame(logbdd = refine_out$log_bdd_hist) %>%
-	mutate(step = row_number() - 1) %>%
-	ggplot() +
-	geom_line(aes(x = step, y = logbdd)) +
-	scale_y_continuous(n.breaks = 10) +
-	xlab("Step") +
-	ylab("Log of Bound") +
-	theme_minimal()
-```
-
-Generate draws.
-```{r}
-control = rejection_control(max_rejects = 100, report = 5000)
-out = rejection(h, n = 10000, control = control)
-x = unlist(out)
-```
-
-Plot the empirical distribution of the draws with the target density.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Empirical distribution of draws versus target for VMF example with linear
-#|   majorizer.
-#| label: fig-vmf-linear-draws
-
-data.frame(x = x) %>%
-	ggplot() +
-	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
-		fill = NA, bins = 25) +
-	geom_function(fun = d_target, args = list(kappa = kappa, d = d),
-		lty = 2, xlim = c(1e-2 - 1, 1 - 1e-2)) +
-	ylab("Density") +
-	theme_minimal()
-```
-
-Plot proposal versus the target on the log-scale.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Proposal versus target on the log-scale for VMF example with linear
-#|   majorizer.
-#| label: fig-vmf-linear-proposal
-
-log_h = function(x) { sapply(x, h$d, log = TRUE) }
-log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
-
-ggplot() +
-	geom_function(fun = log_f, col = "orange", lty = 1) +
-	geom_function(fun = log_h, col = "black", lty = 2) +
-	scale_x_continuous(limits = c(1e-2 - 1, 1 - 1e-2)) +
-	xlab("x") +
-	ylab("Density") +
-	theme_minimal()
-```
 
 # Conclusions
 

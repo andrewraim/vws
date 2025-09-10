@@ -24,11 +24,11 @@ public:
 	* - `a`: Lower and upper limit of interval.
 	* - `w`: Weight function for the target distribution.
 	* - `helper`: contains operations of the base distribution $g$.
-    * - `maxopt`: a function of type `optimizer` that maximizes `w`.
-    * - `minopt`: a function of type `optimizer` that minimizes `w`.
-    *
-    * If `maxopt` and `minopt` are not specified, we use numerical optimization.
-    *
+	* - `maxopt`: a function of type `optimizer` that maximizes `w`.
+	* - `minopt`: a function of type `optimizer` that minimizes `w`.
+	*
+	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
+	*
 	*/
 	//RealConstRegion(double a, const weight_dfd& w,
 	//	const UnivariateHelper& helper);
@@ -43,10 +43,10 @@ public:
 	* - `b` Upper limit of interval.
 	* - `w` Weight function for the target distribution.
 	* - `helper`: contains operations of the base distribution $g$.
-    * - `maxopt`: a function of type `optimizer` that maximizes `w`.
-    * - `minopt`: a function of type `optimizer` that minimizes `w`.
-    *
-    * If `maxopt` and `minopt` are not specified, we use numerical optimization.
+	* - `maxopt`: a function of type `optimizer` that maximizes `w`.
+	* - `minopt`: a function of type `optimizer` that minimizes `w`.
+	*
+	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*/
 	// RealConstRegion(double a, double b, const weight_dfd& w,
 	//	const UnivariateHelper& helper);

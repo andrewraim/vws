@@ -38,24 +38,24 @@ public:
 	* Return vectors which are ordered so that elements correspond to regions
 	* $1, \ldots, N$.
 	*
- 	* - `get_xi_upper`: get $(\overline{\xi}_1, \ldots \overline{\xi}_1)$.
-	* - `get_xi_lower`: get $(\underline{\xi}_1, \ldots \underline{\xi}_1)$.
-	* - `get_bifurcatable`: vector of indicators of whether regions are
+ 	* - `xi_upper`: get $(\overline{\xi}_1, \ldots \overline{\xi}_1)$.
+	* - `xi_lower`: get $(\underline{\xi}_1, \ldots \underline{\xi}_1)$.
+	* - `bifurcatable`: vector of indicators of whether regions are
 	*   bifurcatable.
-	* - `get_pi`: mixing weights $(\pi_1, \ldots, \pi_N)$.
+	* - `pi`: mixing weights $(\pi_1, \ldots, \pi_N)$.
 	* - `rejection_bound_regions`: vector of contributions to the rejection
 	*   bound. These sum to the value of `rejection_bound`.
 	*/
-	Rcpp::NumericVector get_xi_upper(bool log = true) const;
-	Rcpp::NumericVector get_xi_lower(bool log = true) const;
-	Rcpp::LogicalVector get_bifurcatable() const;
-	Rcpp::NumericVector get_pi(bool log = false) const;
+	Rcpp::NumericVector xi_upper(bool log = true) const;
+	Rcpp::NumericVector xi_lower(bool log = true) const;
+	Rcpp::LogicalVector bifurcatable() const;
+	Rcpp::NumericVector pi(bool log = false) const;
 	Rcpp::NumericVector rejection_bound_regions(bool log = false) const;
 
 	/*
 	* Access number of regions.
 	*/
-	unsigned int get_N() const {
+	unsigned int size() const {
 		return _log_xi_upper->size();
 	}
 
@@ -389,28 +389,28 @@ void FMMProposal<T,R>::recache()
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::get_xi_upper(bool log) const
+Rcpp::NumericVector FMMProposal<T,R>::xi_upper(bool log) const
 {
 	Rcpp::NumericVector out(_log_xi_upper->begin(), _log_xi_upper->end());
 	if (log) { return out; } else { return Rcpp::exp(out); }
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::get_xi_lower(bool log) const
+Rcpp::NumericVector FMMProposal<T,R>::xi_lower(bool log) const
 {
 	Rcpp::NumericVector out(_log_xi_lower->begin(), _log_xi_lower->end());
 	if (log) { return out; } else { return Rcpp::exp(out); }
 }
 
 template <class T, class R>
-Rcpp::LogicalVector FMMProposal<T,R>::get_bifurcatable() const
+Rcpp::LogicalVector FMMProposal<T,R>::bifurcatable() const
 {
 	Rcpp::LogicalVector out(_bifurcatable->begin(), _bifurcatable->end());
 	return out;
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::get_pi(bool log) const
+Rcpp::NumericVector FMMProposal<T,R>::pi(bool log) const
 {
 	Rcpp::NumericVector lxu(_log_xi_upper->begin(), _log_xi_upper->end());
 	const Rcpp::NumericVector& out = lxu - vws::log_sum_exp(lxu);

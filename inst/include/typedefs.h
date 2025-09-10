@@ -40,7 +40,7 @@ inline static const optimizer maxopt_default = [](const weight_dfd& w,
 	double lo, double hi, bool log) -> double
 {
 	// Pass the log-weight function to `optimize_hybrid`.
-    const fntl::dfd& f = [&](double x) -> double { return w(x, true); };
+	const fntl::dfd& f = [&](double x) -> double { return w(x, true); };
 	const auto& out = optimize_hybrid(f, 0, lo, hi, true);
 	return log ? out.value : exp(out.value);
 };
@@ -49,7 +49,7 @@ inline static const optimizer minopt_default = [](const weight_dfd& w,
 	double lo, double hi, bool log) -> double
 {
 	// Pass the log-weight function to `optimize_hybrid`.
-    const fntl::dfd& f = [&](double x) -> double { return w(x, true); };
+	const fntl::dfd& f = [&](double x) -> double { return w(x, true); };
 	const auto& out = optimize_hybrid(f, 0, lo, hi, false);
 	return log ? out.value : exp(out.value);
 };
