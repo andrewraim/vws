@@ -29,8 +29,8 @@ Rcpp::List r_vmf_pre_v2(unsigned int n, double kappa, double d, unsigned int N,
         return q_texp(p, kappa, -1, 1, lower, log);
     };
 
-    const vws::optimizer& maxopt = [&](const vws::weight_dfd& w,
-        double lo, double hi, bool log)
+    vws::optimizer opt1 = [&](const vws::weight_dfd& w, double lo, double hi,
+    	bool log)
     {
     	double out;
     	if (lo <= 0 && 0 < hi) {
@@ -40,50 +40,33 @@ Rcpp::List r_vmf_pre_v2(unsigned int n, double kappa, double d, unsigned int N,
     	} else {
     		out = w(lo, true);
     	}
-
-    	/*
-        Rprintf("Begin maxopt\n");
-        double A = 1, B = (d-3) / kappa, C = -1;
-        double x_root1 = ( -B + std::sqrt(B*B - 4*A*C) ) / (2*A);
-        double x_root2 = ( -B - std::sqrt(B*B - 4*A*C) ) / (2*A);
-        double x_root = -1 < x_root1 && x_root1 <= 1 ? x_root1 : x_root2;
-        if (-1 >= x_root || x_root > 1) { Rcpp::stop("Invalid root"); }
-
-        double out;
-        if (x_root < lo) {
-            out = w(lo, true);
-        } else if (x_root > hi) {
-            out = w(hi, true);
-        } else {
-            out = w(x_root, true);
-        }
-
-        Rprintf("End maxopt, out = %g\n", out);
-    	*/
         return log ? out : std::exp(out);
     };
 
-    const vws::optimizer& minopt = [&](const vws::weight_dfd& w,
-        double lo, double hi, bool log)
+    vws::optimizer opt2 = [&](const vws::weight_dfd& w, double lo, double hi,
+    	bool log)
     {
-    	// Rprintf("Begin minopt\n");
     	double w_lo = w(lo, true);
     	double w_hi = w(hi, true);
     	double out = std::min(w_lo, w_hi);
-    	// Rprintf("End minopt, out = %g\n", out);
         return log ? out : std::exp(out);
     };
 
-    vws::UnivariateHelper helper(df, pf, qf);
-    // Rprintf("Begin constructing supp\n");
-    vws::RealConstRegion supp(-1, 1, w, helper, maxopt, minopt);
-    // Rprintf("Begin constructing h\n");
-    vws::FMMProposal<double, vws::RealConstRegion> h({ supp });
-	// Rprintf("Finish constructing h\n");
+    vws::optimizer* maxopt;
+    vws::optimizer* minopt;
+    if (d >= 3) {
+    	maxopt = &opt1;
+    	minopt = &opt2;
+    } else {
+    	minopt = &opt1;
+    	maxopt = &opt2;
+    }
 
-    // Rprintf("Begin refining h\n");
+    vws::UnivariateHelper helper(df, pf, qf);
+    vws::RealConstRegion supp(-1, 1, w, helper, *maxopt, *minopt);
+    vws::FMMProposal<double, vws::RealConstRegion> h({ supp });
+
     auto lbdd = h.refine(N - 1);
-    // Rprintf("Begin rejection\n");
     auto out = vws::rejection(h, n, args);
 
     return Rcpp::List::create(

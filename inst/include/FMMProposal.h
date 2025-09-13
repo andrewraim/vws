@@ -429,6 +429,10 @@ void FMMProposal<T,R>::recache()
 		(*_log_xi_lower)[j] = itr->xi_lower(true);
 		(*_bifurcatable)[j] = itr->is_bifurcatable();
 		j++;
+
+		if (itr->xi_lower(true) > itr->xi_upper(true)) {
+			Rcpp::stop("xi_lower > xi_upper");
+		}
 	}
 }
 
@@ -481,13 +485,6 @@ Rcpp::NumericVector FMMProposal<T,R>::rejection_bound_regions(bool log) const
 	// Each region's contribution to the rejection rate bound.
 	const Rcpp::NumericVector& lxl = *_log_xi_lower;
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
-
-	if (Rcpp::is_true(Rcpp::any(lxl > lxu))) {
-		Rprintf("WARNING: lxl > lxu! Difference:\n");
-		Rcpp::NumericVector diff = lxl - lxu;
-		Rcpp::print(diff);
-	}
-
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
 	if (log) { return out; } else { return exp(out); }
 }
