@@ -4,7 +4,7 @@
 
 // [[Rcpp::export]]
 Rcpp::List r_vmf_pre_v1(unsigned int n, double kappa, double d, unsigned int N,
-    double tol = 0, unsigned int max_rejects = 10000, unsigned int report = 1000)
+    double tol = 0, unsigned int max_rejects = 10000, unsigned int report = 10000)
 {
     vws::rejection_args args;
     args.max_rejects = max_rejects;
@@ -12,10 +12,10 @@ Rcpp::List r_vmf_pre_v1(unsigned int n, double kappa, double d, unsigned int N,
 
     const vws::weight_dfd& w =
     [&](double x, bool log = true) {
-    	double out = R_NegInf;
-    	if (std::fabs(x) < 1){
-        	out = 0.5 * (d - 3) * std::log1p(-std::pow(x, 2));
-    	}
+        double out = R_NegInf;
+        if (std::fabs(x) < 1){
+            out = 0.5 * (d - 3) * std::log1p(-std::pow(x, 2));
+        }
         return log ? out : std::exp(out);
     };
 
@@ -23,10 +23,10 @@ Rcpp::List r_vmf_pre_v1(unsigned int n, double kappa, double d, unsigned int N,
         return d_texp(x, kappa, -1, 1, log);
     };
     fntl::cdf pf = [&](double q, bool lower = true, bool log = false) {
-    	return p_texp(q, kappa, -1, 1, lower, log);
+        return p_texp(q, kappa, -1, 1, lower, log);
     };
     fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
-    	return q_texp(p, kappa, -1, 1, lower, log);
+        return q_texp(p, kappa, -1, 1, lower, log);
     };
 
     vws::UnivariateHelper helper(df, pf, qf);

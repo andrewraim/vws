@@ -1086,11 +1086,6 @@ Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1);
 
 # Example: Von Mises Fisher {#sec-vmf}
 
-::: {.callout-caution title="TBD"}
-Under construction. Both versions of the sampler are implemented, but writing
-is needed.
-:::
-
 Let us consider generating from the von Mises Fisher (VMF) distribution as in @VWS2025. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
 <!-- -->
 \begin{align*}
@@ -1159,7 +1154,7 @@ so that $w$ is the weight function and $g_0$ is proportional to the density of $
 g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \mathbb{1}_{(-1,1)}(x).
 \end{align*}
 <!-- -->
-@sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions.
+@sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions. Codes for this example are in the folder `examples/vmf`.
 
 ## Constant Majorizer with Numerical Optimization {#sec-vmf-const-default}
 
@@ -1167,25 +1162,13 @@ g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \mathbb{1}_{(-1,
 Under construction
 :::
 
-With a constant majorizer for $w$, the expressions used in bound \eqref{eqn:bound} are
-<!-- -->
-\begin{align}
-\overline{\xi}_j = \overline{w}_j \Prob(\alpha_{j-1} < T \leq \alpha_{j})
-\quad \text{and} \quad
-\underline{\xi}_j = \underline{w}_j \Prob(\alpha_{j-1} < T \leq \alpha_{j}),
-\label{eqn:vmf-vws-constant-xi}
-\end{align}
-<!-- -->
-where $T \sim \text{Exp}_{(\alpha_{0}, \alpha_N)}(\kappa)$, $\alpha_{0} = -1$,
-and $\alpha_{N} = 1$.
 
-Let us consider an example C++ code making use of this framework. The following
-declares a sampler in C++ and exposes an R interface function.
+Let us first consider a constant majorizer for $w$. Because this is our first example, the main source file for the sampler (`examples/vmf/vmf-v1.cpp`) is given below.
 
 ```{.cpp include="examples/vmf/vmf-v1.cpp" code-line-numbers="true"}
 ```
 
-There are several points of interest to call out. (TBD: needs to be updated)
+There are several points of interest to call out. (**TBD:** needs to be updated)
 
 - Line 1 ensures that this code is linked with the `vws` and `fntl` packages.
   `fntl` is not used directly in this example, but is needed by `vws`.
@@ -1208,6 +1191,10 @@ There are several points of interest to call out. (TBD: needs to be updated)
 - Line 29-32 extracts the draws and vector rejection counts (where the `i`th
   element represents the number of rejections for the `i`-th draw) and returns
   them in an `Rcpp::List`.
+
+Note that the file `examples/vmf/texp.h` defines functions for the doubly truncated exponential distribution which are used above; this includes the density, CDF, and quantile function.
+
+**TBD:** maybe just include the point above in the bulleted list.
 
 We may invoke the exported R function as follows.
 
@@ -1247,8 +1234,6 @@ data.frame(bdd = exp(out$lbdd)) %>%
 #| label: fig-vmf-const-draws
 #| echo: false
 
-Rcpp::sourceCpp("examples/vmf/vmf-v3.cpp")
-
 data.frame(x = out$draws) %>%
 	ggplot() +
 	geom_density(aes(x = x), col = "black") +
@@ -1269,14 +1254,55 @@ We have
 &\frac{d^2}{dx^2} \log w(x) = -(d-3) \frac{1 + x^2}{(1 - x^2)^2},
 \end{align*}
 <!-- -->
-where it is seen that $\log w(x)$ is concave when $d > 3$, convex when $d = 2$, and constant otherwise. When $d > 3$, $\frac{d}{dx} \log w(x)$ is positive for $x \in (-1, 0)$, negative for $x \in (0, 1)$, and has root $x = 0$; therefore,  $\log w(x)$ is unimodal on $(-1, 1)$ with a maximum at $x = 0$. When $d = 2$, the point $x = 0$ is instead a minimum of $\log w(x)$. Finally, $w$ is a constant in the case $d = 3$.
+where it is seen that $\log w(x)$ is concave when $d > 3$, convex when $d = 2$, and constant otherwise. When $d > 3$, $\frac{d}{dx} \log w(x)$ is positive for $x \in (-1, 0)$, negative for $x \in (0, 1)$, and has root $x = 0$; therefore,  $\log w(x)$ is unimodal on $(-1, 1)$ with a maximum at $x = 0$. When $d = 2$, the point $x = 0$ is instead a minimum of $\log w(x)$. Finally, $w$ is a constant in the case $d = 3$. We can code these two optimizations as lambdas.
 
-**TBD:** One of the extrema comes from find the root of a quadratic and the other one ... we have the form for it.
-
-
-
-```{.cpp include="examples/vmf/vmf-v2.cpp" code-line-numbers="true"}
+```{cpp}
+vws::optimizer opt1 = [&](const vws::weight_dfd& w, double lo, double hi, bool log)
+{
+	double out;
+	if (lo <= 0 && 0 < hi) {
+		out = w(0, true);
+	} else if (hi < 0) {
+		out = w(hi, true);
+	} else {
+		out = w(lo, true);
+	}
+	return log ? out : std::exp(out);
+};
 ```
+
+```{cpp}
+vws::optimizer opt2 = [&](const vws::weight_dfd& w, double lo, double hi, bool log)
+{
+	double w_lo = w(lo, true);
+	double w_hi = w(hi, true);
+	double out = std::min(w_lo, w_hi);
+	return log ? out : std::exp(out);
+};
+```
+
+The following snippet creates pointers `maxopt` and `minopt` for the maximizer and minimizer functions. We check if $d > 3$ to determine which is which.
+
+```{cpp}
+vws::optimizer* maxopt;
+vws::optimizer* minopt;
+if (d >= 3) {
+	maxopt = &opt1;
+	minopt = &opt2;
+} else {
+	minopt = &opt1;
+	maxopt = &opt2;
+}
+```
+
+Finally, we create the initial region `supp` with the custom optimization functions.
+
+```{cpp}
+vws::UnivariateHelper helper(df, pf, qf);
+vws::RealConstRegion supp(-1, 1, w, helper, *maxopt, *minopt);
+```
+
+The complete example is given in `examples/vmf/vmf-v2.cpp`.
 
 ```{r}
 Rcpp::sourceCpp("examples/vmf/vmf-v2.cpp")
@@ -1284,8 +1310,11 @@ out = r_vmf_pre_v2(n = 1000, kappa = 5, d = 4, N = 10)
 head(out$draws)
 ```
 
-
 ## Linear Majorizer {#sec-vmf-linear}
+
+::: {.callout-caution title="TBD"}
+Under construction
+:::
 
 For this region:
 
@@ -1336,6 +1365,7 @@ data.frame(logbdd = refine_out$log_bdd_hist) %>%
 ```
 
 Generate draws.
+
 ```{r}
 control = rejection_control(max_rejects = 100, report = 5000)
 out = rejection(h, n = 10000, control = control)
