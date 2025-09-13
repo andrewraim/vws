@@ -283,33 +283,56 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 		Rcpp::stop("tol must be nonnegative");
 	}
 
+	// Rprintf("refine checkpoint 0\n");
+
 	std::vector<double> lbdd_hist;
+
+	// Rprintf("refine checkpoint 1\n");
 
 	lbdd_hist.push_back(rejection_bound(true));
 
+	// Rprintf("refine checkpoint 2\n");
+
 	for (unsigned int j = 0; j < N; j++) {
+		// Rprintf("refine checkpoint 2.1\n");
+
 		// If we can beat the tolerance before we reach N steps, return now
 		if (lbdd_hist[j] <= std::log(tol)) {
 			break;
 		}
 
+		// Rprintf("refine checkpoint 2.2\n");
+
 		unsigned int L = _regions.size();
 
+		// Rprintf("refine checkpoint 2.3\n");
+
 		// Each region's contribution to the rejection rate
-		Rcpp::NumericVector log_volume = rejection_bound_regions(true);
+		const Rcpp::NumericVector& log_volume0 = rejection_bound_regions(true);
+		Rcpp::NumericVector log_volume(log_volume0.size());
+
+		// Rprintf("refine checkpoint 2.4\n");
 
 		// Identify the regions which are bifurcatable; for the rest, we set
 		// their log-volume to -inf so they will not be selected.
 		unsigned int n_bif = 0;
 		for (unsigned int l = 0; l < L; l++) {
-			log_volume(l) = (*_bifurcatable)(l) ? log_volume(l) : R_NegInf;
+			if (std::isnan(log_volume0(l))) {
+				Rcpp::stop("nan found in log_volume(%d)", l);
+			}
+
+			log_volume(l) = (*_bifurcatable)(l) ? log_volume0(l) : R_NegInf;
 			n_bif += (*_bifurcatable)(l);
 		}
+
+		// Rprintf("refine checkpoint 2.5\n");
 
 		if (n_bif == 0) {
 			Rcpp::warning("No regions left to bifurcate");
 			break;
 		}
+
+		// Rprintf("refine checkpoint 2.5\n");
 
 		unsigned int jdx;
 		if (greedy) {
@@ -318,7 +341,13 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 			jdx = r_categ(log_volume, true);
 		}
 
+		// Rprintf("refine checkpoint 2.5, jdx = %d\n", jdx);
+
 		const R& r = _regions_vec[jdx];
+
+		// Rprintf("refine checkpoint 2.6\n");
+
+		// Rprintf("%s", r.description().c_str());
 
 		// Rcpp::print(log_volume);
 
@@ -327,24 +356,39 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 		// TBD: we may not need to recache each time through the loop.
 		// Perhaps we can insert into the end and zero out the removed entries?
 		const std::pair<R,R>& bif_out = r.bifurcate();
+		// Rprintf("refine checkpoint 2.6.1\n");
 		typename std::set<R>::iterator itr = _regions.find(r);
+		// Rprintf("refine checkpoint 2.6.2\n");
 		_regions.erase(itr);
+		// Rprintf("refine checkpoint 2.6.3\n");
 		_regions.insert(bif_out.first);
+		// Rprintf("refine checkpoint 2.6.4\n");
 		_regions.insert(bif_out.second);
+		// Rprintf("refine checkpoint 2.6.5\n");
 		recache();
+
+		// Rprintf("refine checkpoint 2.7\n");
 
 		// Rprintf("Make a bifurcation at %d\n", jdx);
 
 		lbdd_hist.push_back(rejection_bound(true));
+
+		// Rprintf("refine checkpoint 2.8\n");
 
 		// Rprintf("Pushed back\n");
 
 		if (j % report == 0 && report < uint_max) {
 			logger("After %d steps log Pr{rejection} <= %g\n", j, lbdd_hist[j+1]);
 		}
+
+		// Rprintf("refine checkpoint 2.9\n");
 	}
 
+	// Rprintf("refine checkpoint 3\n");
+
 	Rcpp::NumericVector out(lbdd_hist.begin(), lbdd_hist.end());
+
+	// Rprintf("refine checkpoint 4\n");
 
 	// Rprintf("Almost finished adapt\n");
 	// Rcpp::print(out);
@@ -437,6 +481,13 @@ Rcpp::NumericVector FMMProposal<T,R>::rejection_bound_regions(bool log) const
 	// Each region's contribution to the rejection rate bound.
 	const Rcpp::NumericVector& lxl = *_log_xi_lower;
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
+
+	if (Rcpp::is_true(Rcpp::any(lxl > lxu))) {
+		Rprintf("WARNING: lxl > lxu! Difference:\n");
+		Rcpp::NumericVector diff = lxl - lxu;
+		Rcpp::print(diff);
+	}
+
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
 	if (log) { return out; } else { return exp(out); }
 }

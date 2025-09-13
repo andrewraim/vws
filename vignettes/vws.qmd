@@ -48,6 +48,8 @@ filters:
 callout-icon: false
 ---
 
+\renewcommand{\vec}[1]{\symbfit{#1}}
+
 ```{r}
 #| include: false
 library(vws)
@@ -1089,46 +1091,83 @@ Under construction. Both versions of the sampler are implemented, but writing
 is needed.
 :::
 
-Suppose $X$ has density
-
+Let us consider generating from the von Mises Fisher (VMF) distribution as in @VWS2025. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
+<!-- -->
+\begin{align*}
+f_{\text{VMF}}(\vec{v}) = \frac{
+\kappa^{d / 2 - 1}
+}{
+(2 \pi)^{d/2} I_{d/2 - 1}(\kappa)
+} \exp(\kappa \cdot \vec{\mu}^\top \vec{v}) \cdot \ind(\vec{v} \in \mathbb{S}^{d-1}),
+\end{align*}
+<!-- -->
+with modified Bessel function of the first kind
+<!-- -->
+\begin{math}
+I_{\nu}(x) = \sum_{m=0}^\infty \{m! \cdot \Gamma(m + \nu + 1)\}^{-1} (\frac{x}{2})^{2m + \nu}
+\end{math}
+<!-- -->
+and gamma function $\Gamma(x) = \int_0^\infty t^{x-1} e^{-t} dt$. Parameters $\vec{\mu} \in \mathbb{S}^{d-1}$ and $\kappa > 0$ determine the orientation on the sphere and the concentration, respectively. First consider $\vec{\mu}_0 = (1, 0, \ldots, 0)$. A random variable $\vec{V}_0 \sim \text{VMF}_d(\vec{\mu}_0, \kappa)$ can be obtained from the transformation
+<!-- -->
+\begin{align}
+\vec{V}_0 = \left( X, \sqrt{1 - X^2} \cdot \vec{U} \right),
+\label{eqn:vmf-tx}
+\end{align}
+<!-- -->
+where $\vec{U}$ is a uniform random variable on the sphere $\mathbb{S}^{d-2}$ and $X$ has density
+<!-- -->
 \begin{align}
 f(x) =
 \frac{
 (\kappa / 2)^{d/2 - 1} (1 - x^2)^{(d-3)/2} \exp(\kappa x)
 }{
 \sqrt{\pi} \cdot I_{d/2 - 1}(\kappa) \cdot \Gamma((d-1)/2)
-} \cdot \mathbb{1}_{(-1,1)}(x).
+} \cdot \ind(-1 < x < 1).
 \label{eqn:vmf-target}
 \end{align}
+<!-- -->
+To obtain a draw from $\vec{V} \sim \text{VMF}_d(\vec{\mu}, \kappa)$ with an arbitrary $\vec{\mu}$, we can rotate $\vec{V} = \vec{Q} \vec{V}_0$ using an orthonormal matrix $\vec{Q}$ whose first column is $\vec{\mu}$. In the construction $\vec{V}_0$ from \eqref{eqn:vmf-tx}, we may draw $\vec{U} = \vec{Z} / \sqrt{\vec{Z}^\top \vec{Z}}$ from $\vec{Z} \sim \text{N}(\vec{0}, \vec{I}_{d-1})$ and $X$ independently from \eqref{eqn:vmf-target}. In the following, we consider the use of VWS to draw the univariate random variable $X$. Before proceeding, we give a notation to a useful distribution.
 
-Let us decompose $f$ into
+::: {#def-line}
+Denote $X \sim \text{Exp}_{(a,b)}(\kappa)$ to as a doubly truncated Exponential random variable with density
+<!-- -->
+\begin{align*}
+g(x) = \frac{\kappa e^{\kappa x}}{e^{\kappa b} - e^{\kappa a}} \cdot \ind(a < x < b),
+\end{align*}
+<!-- -->
+where $-\infty < a < b < \infty$ and rate $\kappa$ may be any real number. The CDF and quantile function corresponding to $g$ are
+<!-- -->
+\begin{align*}
+&G(x) = \frac{e^{\kappa x} - e^{\kappa a}}{e^{\kappa b} - e^{\kappa a}} \cdot,
+\quad x \in (a, b), \\
+%
+&G^{-1}(\varphi) = \frac{1}{\kappa} \log\left[e^{\kappa a} + \varphi (e^{\kappa b} - e^{\kappa a}) \right], \quad \varphi \in [0,1].
+\end{align*}
+:::
 
+Returning to target \eqref{eqn:vmf-target}, let us decompose $f$ into
+<!-- -->
 \begin{align*}
 f(x) \propto
 \underbrace{(1 - x^2)^{(d-3)/2}}_{w(x)}
 \underbrace{\exp(\kappa x) \cdot \mathbb{1}_{(-1,1)}(x)}_{g_0(x)},
 \end{align*}
-
-where $w$ is a nonnegative weight function and $g_0$ is proportional to density
-
+<!-- -->
+so that $w$ is the weight function and $g_0$ is proportional to the density of $\text{Exp}_{(-1,1)}(\kappa)$,
+<!-- -->
 \begin{align*}
 g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \mathbb{1}_{(-1,1)}(x).
 \end{align*}
+<!-- -->
+@sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions.
 
-The CDF corresponding to $g$ is
+## Constant Majorizer with Numerical Optimization {#sec-vmf-const-default}
 
-\begin{align*}
-G(x) = \frac{e^{\kappa x} - e^{-\kappa x}}{e^\kappa - e^{-\kappa}} \cdot,
-\quad x \in (-1, 1)
-\end{align*}
+::: {.callout-caution title="TBD"}
+Under construction
+:::
 
-and the quantile function is
-
-\begin{align*}
-G^{-1}(\varphi) = \frac{1}{\kappa} \log\left[e^{\kappa a} + \varphi (e^{\kappa b} - e^{\kappa a}) \right], \quad \varphi \in [0,1].
-\end{align*}
-
-The constants used in bound \eqref{eqn:bound} are
+With a constant majorizer for $w$, the expressions used in bound \eqref{eqn:bound} are
 <!-- -->
 \begin{align}
 \overline{\xi}_j = \overline{w}_j \Prob(\alpha_{j-1} < T \leq \alpha_{j})
@@ -1137,14 +1176,8 @@ The constants used in bound \eqref{eqn:bound} are
 \label{eqn:vmf-vws-constant-xi}
 \end{align}
 <!-- -->
-where $T \sim \text{Exp}_{(\alpha_{0}, \alpha_N)}(\kappa)$.
-
-
-## Constant Majorizer with Numerical Optimization
-
-::: {.callout-caution title="TBD"}
-Under construction
-:::
+where $T \sim \text{Exp}_{(\alpha_{0}, \alpha_N)}(\kappa)$, $\alpha_{0} = -1$,
+and $\alpha_{N} = 1$.
 
 Let us consider an example C++ code making use of this framework. The following
 declares a sampler in C++ and exposes an R interface function.
@@ -1224,7 +1257,7 @@ data.frame(x = out$draws) %>%
 	theme_minimal()
 ```
 
-## Constant Majorizer with Custom Optimization
+## Constant Majorizer with Custom Optimization {#sec-vmf-const-custom}
 
 It is not difficult to find the min and max of the function $w$ on a given interval for this example. We can reduce some of the computational burden by providing functions to compute them.
 
@@ -1233,10 +1266,10 @@ We have
 \begin{align*}
 &\log w(x) = \frac{d-3}{2} \log(1 - x^2), \\
 &\frac{d}{dx} \log w(x) = -(d-3) \frac{x}{1 - x^2}, \\
-&\frac{d^2}{dx^2} \log w(x) = -(d-3) \frac{1 + x^2}{(1 - x^2)^2}
+&\frac{d^2}{dx^2} \log w(x) = -(d-3) \frac{1 + x^2}{(1 - x^2)^2},
 \end{align*}
 <!-- -->
-which is concave when $d > 3$, convex when $d = 2$, and constant otherwise. When $d > 3$, $\frac{d}{dx} \log w(x)$ is positive for $x \in (-1, 0)$, negative for $x \in (0, 1)$, and has root $x = 0$; therefore,  $\log w(x)$ is unimodal on $(-1, 1)$ with a maximum at $x = 0$. When $d = 2$, the point $x = 0$ is instead a minimum of $\log w(x)$. Finally, $w$ is a constant in the case $d = 3$.
+where it is seen that $\log w(x)$ is concave when $d > 3$, convex when $d = 2$, and constant otherwise. When $d > 3$, $\frac{d}{dx} \log w(x)$ is positive for $x \in (-1, 0)$, negative for $x \in (0, 1)$, and has root $x = 0$; therefore,  $\log w(x)$ is unimodal on $(-1, 1)$ with a maximum at $x = 0$. When $d = 2$, the point $x = 0$ is instead a minimum of $\log w(x)$. Finally, $w$ is a constant in the case $d = 3$.
 
 **TBD:** One of the extrema comes from find the root of a quadratic and the other one ... we have the form for it.
 

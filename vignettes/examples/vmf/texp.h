@@ -20,7 +20,7 @@
 *
 * Returns value of normalizing constant.
 */
-inline double n_texp(double kappa, double lo, double hi, bool log = false)
+double n_texp(double kappa, double lo, double hi, bool log = false)
 {
 	double out;
 
@@ -45,7 +45,7 @@ inline double n_texp(double kappa, double lo, double hi, bool log = false)
 *
 * Returns value of density.
 */
-inline double d_texp(double x, double kappa, double lo, double hi,
+double d_texp(double x, double kappa, double lo, double hi,
 	bool log = false)
 {
 	double out = kappa*x - n_texp(kappa, lo, hi, true) + std::log(lo <= x && x <= hi);
@@ -65,7 +65,7 @@ inline double d_texp(double x, double kappa, double lo, double hi,
 *
 * Returns value of CDF.
 */
-inline double p_texp(double q, double kappa, double lo, double hi,
+double p_texp(double q, double kappa, double lo, double hi,
 	bool lower = true, bool log = false)
 {
 	double out;
@@ -100,7 +100,7 @@ inline double p_texp(double q, double kappa, double lo, double hi,
 *
 * Returns value of quantile.
 */
-inline double q_texp(double p, double kappa, double lo, double hi,
+double q_texp(double p, double kappa, double lo, double hi,
 	bool lower = true, bool log = false)
 {
 	double lp = log ? p : std::log(p);
@@ -128,7 +128,7 @@ inline double q_texp(double p, double kappa, double lo, double hi,
 *
 * Returns a draw.
 */
-inline double r_texp(double kappa, double lo, double hi)
+double r_texp(double kappa, double lo, double hi)
 {
 	double u = R::runif(0, 1);
 	return q_texp(u, kappa, lo, hi);
@@ -146,7 +146,7 @@ inline double r_texp(double kappa, double lo, double hi)
 *
 * Returns value of MGF.
 */
-inline double mgf_texp(double s, double kappa, double lo, double hi, bool log)
+double mgf_texp(double s, double kappa, double lo, double hi, bool log)
 {
 	double out;
 	double sk = s + kappa;
@@ -180,7 +180,8 @@ inline double mgf_texp(double s, double kappa, double lo, double hi, bool log)
 * `p_texp` calls. (Even if those are computed on the log-scale, there can be
 * a loss of precision which may be avoided here).
 */
-inline double integrate_texp(double a, double b, double kappa, double lo,
+// [[Rcpp::export]]
+double integrate_texp(double a, double b, double kappa, double lo,
 	double hi, bool log = false)
 {
 	double out;
@@ -216,7 +217,8 @@ inline double integrate_texp(double a, double b, double kappa, double lo,
 *
 * Returns a vector of $n$ values.
 */
-inline Rcpp::NumericVector d_texp(const Rcpp::NumericVector& x, double kappa,
+// [[Rcpp::export]]
+Rcpp::NumericVector d_texp(const Rcpp::NumericVector& x, double kappa,
 	double lo, double hi, bool log = false)
 {
 	unsigned int n = x.length();
@@ -242,7 +244,8 @@ inline Rcpp::NumericVector d_texp(const Rcpp::NumericVector& x, double kappa,
 *
 * Returns a vector of $n$ values.
 */
-inline Rcpp::NumericVector p_texp(const Rcpp::NumericVector& q, double kappa,
+// [[Rcpp::export]]
+Rcpp::NumericVector p_texp(const Rcpp::NumericVector& q, double kappa,
 	double lo, double hi, bool lower = true, bool log = false)
 {
 	unsigned int n = q.length();
@@ -268,7 +271,8 @@ inline Rcpp::NumericVector p_texp(const Rcpp::NumericVector& q, double kappa,
 *
 * Returns a vector of $n$ values.
 */
-inline Rcpp::NumericVector q_texp(const Rcpp::NumericVector& p, double kappa,
+// [[Rcpp::export]]
+Rcpp::NumericVector q_texp(const Rcpp::NumericVector& p, double kappa,
 	double lo, double hi, bool lower = true, bool log = false)
 {
 	unsigned int n = p.length();
@@ -291,7 +295,8 @@ inline Rcpp::NumericVector q_texp(const Rcpp::NumericVector& p, double kappa,
 *
 * Returns a vector of $n$ iid draws.
 */
-inline Rcpp::NumericVector r_texp(unsigned int n, double kappa, double lo,
+// [[Rcpp::export]]
+Rcpp::NumericVector r_texp(unsigned int n, double kappa, double lo,
 	double hi)
 {
 	const Rcpp::NumericVector& u = Rcpp::runif(n);
@@ -310,7 +315,8 @@ inline Rcpp::NumericVector r_texp(unsigned int n, double kappa, double lo,
 *
 * Returns a vector of $n$ values.
 */
-inline Rcpp::NumericVector mgf_texp(const Rcpp::NumericVector& s, double kappa,
+// [[Rcpp::export]]
+Rcpp::NumericVector mgf_texp(const Rcpp::NumericVector& s, double kappa,
 	double lo, double hi, bool log = false)
 {
 	unsigned int n = s.length();
