@@ -1,3 +1,4 @@
 *.html
 examples_files
 /.quarto/
+xpatch.sty
