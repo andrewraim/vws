@@ -3,6 +3,7 @@ title: "`vws`: Vertical Weighted Strips in R using C++"
 author: Andrew M. Raim, James A. Livsey, and Kyle M. Irimata
 format:
   pdf:
+    mathspec: true
     fontsize: 10pt
     indent: false
     toc: true
@@ -15,6 +16,7 @@ format:
     include-in-header:
       text: |
         \usepackage{common}
+pdf-engine: pdflatex
 vignette: >
   %\VignetteIndexEntry{vws}
   %\VignetteEncoding{UTF-8}
@@ -47,8 +49,6 @@ filters:
   - include-code-files
 callout-icon: false
 ---
-
-\renewcommand{\vec}[1]{\symbfit{#1}}
 
 ```{r}
 #| include: false

@@ -5,10 +5,10 @@
 % portability).
 \renewcommand{\sfdefault}{\rmdefault}
 
-\usepackage{amsmath}
-%\usepackage{bm}
-\usepackage{unicode-math}
-
+% Make vectors render as bold symbols rather than symbols with arrows above
+% them. This seems to require the option `mathspec: true` in the Quarto YAML.
+\renewcommand{\vec}{\boldsymbol}
+\usepackage{mathrsfs}
 
 % Math operators
 \DeclareMathOperator{\E}{E}
