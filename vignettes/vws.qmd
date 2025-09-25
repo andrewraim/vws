@@ -1172,6 +1172,12 @@ g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \ind\{x \in (-1,
 <!-- -->
 @sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions. Codes for this example are in the folder `examples/vmf`. C++ functions for the $\text{Exp}_{(a,b)}(\kappa)$ distribution from @def-texp are given in the file `examples/vmf/texp.h`.
 
+::: {#rem-vmf-caveat}
+A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \infty$ as $x$ approaches $\pm 1$. One way to avoid this is by truncating the support to $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for a small $\epsilon > 0$. Rejection sampling can proceed using the truncated support if the exclusion of $(-1, -1 + \epsilon] \cup (1 - \epsilon, 1]$ is known to have a negligible impact on the result. Otherwise, @VWS2025 mention another strategy where the support is gradually expanded as rejections are encountered.
+
+**TBD: left off here**
+:::
+
 ## Constant Majorizer with Numerical Optimization {#sec-vmf-const-default}
 
 We now give our first example demonstrating the `vws` package. We consider a constant majorizer for $w$ which uses the default numerical optimization routine to identify appropriate constants $\overline{w}_j$ and $\underline{w}_j$. Because this is our first example, the source file for the sampler (`examples/vmf/vmf-v1.cpp`) is displayed in its entirety as follows.
@@ -1340,6 +1346,14 @@ head(out$draws)
 ```
 
 ## Linear Majorizer {#sec-vmf-linear}
+
+We noted in @sec-vmf-const-custom that $w$ is log-convex when $d < 3$, log-concave when $d > 3$, and a constant otherwise. Therefore, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} x \}$. 
+
+
+
+
+
+
 
 ::: {.callout-caution title="TBD"}
 Under construction
