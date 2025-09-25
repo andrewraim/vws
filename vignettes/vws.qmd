@@ -11,8 +11,6 @@ format:
     colorlinks: true
     link-citations: true
     prompt: false
-    # template-partials: 
-    #  - title.tex
     include-in-header:
       text: |
         \usepackage{common}
@@ -42,7 +40,6 @@ geometry:
   - bottom=1.00in
 execute:
   eval: false
-#  eval: true
 code-block-bg: true
 code-block-border-left: "#B2DEED"
 filters:
@@ -84,7 +81,7 @@ This section is heavily under construction.
   the console.
 - For the first example, we should explain things in a lot of detail. After
   that, we can give less detail, except any new aspects.
-- Let $\mathbb{1}_{A}(x)$ be the indicator function for the event $[x \in A]$.
+- Let $\ind\{ x \in A \}$ be the indicator function for the event $[x \in A]$.
   Make sure we're consistent about using either this notation or something else.
 - We will use `ggplot2`, `dplyr` and other packages of the tidyverse
   [@Tidyverse2019] in the examples.
@@ -133,13 +130,13 @@ h_0(x) = \overline{w}(x) g(x), \quad
 \psi_N = \int_\Omega h_0(x) d\nu(x).
 \end{align*}
 <!-- -->
-The construction assumes that $\Omega$ is partitioned into regions $\mathcal{D}_1, \ldots, \mathcal{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathcal{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \mathbb{1}_{\mathcal{D}_j}(x)$, the unnormalized proposal becomes
+The construction assumes that $\Omega$ is partitioned into regions $\mathcal{D}_1, \ldots, \mathcal{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathcal{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathcal{D}_j\}$, the unnormalized proposal becomes
 <!-- -->
 \begin{align*}
-h_0(x) = g(x) \sum_{j=1}^N \overline{w}_j(x) \mathbb{1}_{\mathcal{D}_j}(x).
+h_0(x) = g(x) \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathcal{D}_j\}.
 \end{align*}
 <!-- -->
-With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. The normalized $h$ can be obtained by defining $\overline{\xi}_j = \E[\overline{w}_j(T) \mathbb{1}_{\mathcal{D}_j}(T)]$ with $T \sim g$ and $\psi_N = \sum_{j=1}^N \overline{\xi}_j$, giving the finite mixture
+With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. The normalized $h$ can be obtained by defining $\overline{\xi}_j = \E[\overline{w}_j(T) \ind\{T \in \mathcal{D}_j\}]$ with $T \sim g$ and $\psi_N = \sum_{j=1}^N \overline{\xi}_j$, giving the finite mixture
 <!-- -->
 \begin{align}
 h(x)
@@ -152,12 +149,12 @@ Equation \eqref{eqn:fmm-proposal} is seen to be a finite mixture with mixing wei
 <!-- -->
 \begin{align*}
 g_j(x) = 
-\overline{w}_j(x) g(x) \mathbb{1}_{\mathcal{D}_j}(x) / \overline{\xi}_j,
+\overline{w}_j(x) g(x) \ind\{x \in \mathcal{D}_j\} / \overline{\xi}_j,
 \end{align*}
 <!-- -->
 which are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a minorizer of $w$ so that
 $0 \leq \underline{w}_j(x) \leq w(x)$ for all $x \in \mathcal{D}_j$,
-and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind(T \in \mathcal{D}_j)]$ with $T \sim g$. When $h$ is used as a proposal in rejection sampling, an upper bound for the probability of rejection is
+and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind\{T \in \mathcal{D}_j\}]$ with $T \sim g$. When $h$ is used as a proposal in rejection sampling, an upper bound for the probability of rejection is
 <!-- -->
 \begin{align}
 1 - \frac{\sum_{j=1}^N \underline{\xi}_j}{\sum_{j=1}^N \overline{\xi}_j}.
@@ -171,7 +168,7 @@ This bound can be used to quickly determine whether the proposal will be viable 
 **TBD: Make this only about the method. Code will be elsewhere**
 
 `RealConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Furthermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
-$g_j(x) = g(x) \ind(x \in \mathcal{D}_j) / \Prob(T \in \mathcal{D}_j)$
+$g_j(x) = g(x) \ind\{x \in \mathcal{D}_j\} / \Prob(T \in \mathcal{D}_j)$
 along with the quantities
 $\overline{\xi}_j = \overline{w}_j \Prob(T \in \mathcal{D}_j)$ and
 $\underline{\xi}_j = \underline{w}_j \Prob(T \in \mathcal{D}_j)$.
@@ -702,10 +699,10 @@ on the log-scale.
 
 This is a subclass of `Region`, defined in @sec-cpp-api-region, specifically for
 univariate problems with continuous support where
-$\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind(x \in \mathscr{D}_j)$ is
+$\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is
 constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. Similarly,
 a minorizer
-$\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind(x \in \mathscr{D}_j)$
+$\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$
 is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$.
 The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical
 optimization; however, if a closed-form solution is known, the user may
@@ -1093,7 +1090,7 @@ f_{\text{VMF}}(\vec{v}) = \frac{
 \kappa^{d / 2 - 1}
 }{
 (2 \pi)^{d/2} I_{d/2 - 1}(\kappa)
-} \exp(\kappa \cdot \vec{\mu}^\top \vec{v}) \cdot \ind(\vec{v} \in \mathbb{S}^{d-1}),
+} \exp(\kappa \cdot \vec{\mu}^\top \vec{v}) \cdot \ind\{\vec{v} \in \mathbb{S}^{d-1}\},
 \end{align*}
 <!-- -->
 with modified Bessel function of the first kind
@@ -1117,7 +1114,7 @@ f(x) =
 (\kappa / 2)^{d/2 - 1} (1 - x^2)^{(d-3)/2} \exp(\kappa x)
 }{
 \sqrt{\pi} \cdot I_{d/2 - 1}(\kappa) \cdot \Gamma((d-1)/2)
-} \cdot \ind(-1 < x < 1).
+} \cdot \ind\{-1 < x < 1\}.
 \label{eqn:vmf-target}
 \end{align}
 <!-- -->
@@ -1127,7 +1124,7 @@ To obtain a draw from $\vec{V} \sim \text{VMF}_d(\vec{\mu}, \kappa)$ with an arb
 Denote $X \sim \text{Exp}_{(a,b)}(\kappa)$ to as a doubly truncated Exponential random variable with density
 <!-- -->
 \begin{align*}
-g(x) = \frac{\kappa e^{\kappa x}}{e^{\kappa b} - e^{\kappa a}} \cdot \ind(a < x < b),
+g(x) = \frac{\kappa e^{\kappa x}}{e^{\kappa b} - e^{\kappa a}} \cdot \ind\{a < x < b\},
 \end{align*}
 <!-- -->
 where $-\infty < a < b < \infty$ and rate $\kappa$ may be any real number. The CDF and quantile function corresponding to $g$ are
@@ -1138,6 +1135,8 @@ where $-\infty < a < b < \infty$ and rate $\kappa$ may be any real number. The C
 %
 &G^{-1}(\varphi) = \frac{1}{\kappa} \log\left[e^{\kappa a} + \varphi (e^{\kappa b} - e^{\kappa a}) \right], \quad \varphi \in [0,1].
 \end{align*}
+<!-- -->
+C++ code for $\text{Exp}_{(a,b)}(\kappa)$ distribution functions is given in the file `examples/vmf/texp.h`.
 :::
 
 Returning to target \eqref{eqn:vmf-target}, let us decompose $f$ into
@@ -1145,13 +1144,13 @@ Returning to target \eqref{eqn:vmf-target}, let us decompose $f$ into
 \begin{align*}
 f(x) \propto
 \underbrace{(1 - x^2)^{(d-3)/2}}_{w(x)}
-\underbrace{\exp(\kappa x) \cdot \mathbb{1}_{(-1,1)}(x)}_{g_0(x)},
+\underbrace{\exp(\kappa x) \cdot \ind\{x \in (-1,1)\}}_{g_0(x)},
 \end{align*}
 <!-- -->
 so that $w$ is the weight function and $g_0$ is proportional to the density of $\text{Exp}_{(-1,1)}(\kappa)$,
 <!-- -->
 \begin{align*}
-g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \mathbb{1}_{(-1,1)}(x).
+g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \ind\{x \in (-1,1)\}.
 \end{align*}
 <!-- -->
 @sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions. Codes for this example are in the folder `examples/vmf`.
@@ -1163,38 +1162,57 @@ Under construction
 :::
 
 
-Let us first consider a constant majorizer for $w$. Because this is our first example, the main source file for the sampler (`examples/vmf/vmf-v1.cpp`) is given below.
+We now give our first example demonstrating the `vws` package. We consider a constant majorizer for $w$ which uses the default numerical optimization routine to identify appropriate constants $\overline{w}_j$ and $\underline{w}_j$. Because this is our first example, the source file for the sampler (`examples/vmf/vmf-v1.cpp`) is displayed in its entirety as follows.
 
 ```{.cpp include="examples/vmf/vmf-v1.cpp" code-line-numbers="true"}
 ```
 
-There are several points of interest to call out. (**TBD:** needs to be updated)
+There are several points of interest to call out.
 
-- Line 1 ensures that this code is linked with the `vws` and `fntl` packages.
-  `fntl` is not used directly in this example, but is needed by `vws`.
-- Line 2 includes the headers for C++ framework in `vws`.
-- Line 3 includes the header for a "helper" class that encapsulates several
-  functions of the $\text{Uniform}(a,b)$ distribution needed by the sampler:
-  the density, CDF, quantile function, and an indicator function for the
-  support.
-- Lines 5-6 define a C++ function and export it for use in R.
-- Lines 9-11 prepare a structure with arguments for rejection sampling. Notice
-  that `rejection_args` (along with other `vws` classes and functions) are in
-  the `vws` namespace.
-- Lines 13-20 define the weight function using C++ lambda syntax.
-- Lines 22-24 construct a specific type of `Region` and build an `FMMProposal`
-  from it. Notice that there are two template arguments specified here: the
-  first `double` specifies the type of the support and the second
-  `RealConstRegion` specifies the type of `Region`.
-- Line 26 refines the proposal `N-1` times so that there are `N` regions.
-- Line 27 carries out rejection sampling with proposal `h`.
-- Line 29-32 extracts the draws and vector rejection counts (where the `i`th
-  element represents the number of rejections for the `i`-th draw) and returns
-  them in an `Rcpp::List`.
+- Line 1 ensures that this code links with the `vws` and `fntl` packages during
+  compilation.
+- Line 2 includes the header for C++ framework in `vws`.
+- Line 3 includes `texp.h`, which provides functions described in @def-line.
+- Lines 5-7 define a C++ function which invokes the sampler and exports it for
+  use in R.
+- Lines 9-11 prepare a struct with extra arguments for rejection sampling.
+  Notice that `rejection_args`, along with other `vws` classes and functions,
+  are in the `vws` namespace.
+- Lines 13-20 define the weight function using C++ lambda syntax. We are
+  careful to avoid `nan` values that can occur when $x = \pm 1$.
+- Lines 22-31 specify the density, CDF, and quantile function of the base
+  distribution $\text{Exp}_{(-1,1)}(\kappa)$. These are defined as lambdas
+  whose signatures are defined in the `fntl` package. For example, a function
+  of type `fntl::density` takes two inputs: a double `x` which is the the
+  argument and `log` which is a boolean that specifies whether the value should
+  be returned on the log-scale.
+- Line 32 creates a "helper" object as a container for the distribution
+  functions.
+- Line 33 constructs a specific type of `Region`, which contains all
+  problem-specific logic of the sampler. In this case, it is a
+  `RealConstRegion` which facilitates construction for continuous univariate
+  distributions and constant majorizers. We construct one region here which
+  contains the entire support $(-1,1]$.
+- Line 34 constructs a `FMMProposal` based on our initial region `supp`.
+  The syntax `{supp}` represents a vector of one region.
+  Notice that there are two template arguments specified here: the
+  first specifies that the data type of the support is `double`; the second
+  specifies that regions (which include the logic of the sampler) are of type
+  `RealConstRegion`.
+- Line 36 requests the proposal `h` to refine itself `N-1` times so that there
+  are `N` regions.
+- Line 37 carries out rejection sampling with proposal `h`.
+- Lines 39-43 assemble an `Rcpp::List` to return to the called. It contains 
+  the draws (`draws`), a vector of rejection counts `rejects` where the `i`-th
+  element represents the number of rejections for the `i`-th draw, and a vector
+  (`lbdd`) with the $N-1$ bounds \eqref{eqn:bound-components} achieved at each
+  of the refinement steps (returned the log-scale).
 
-Note that the file `examples/vmf/texp.h` defines functions for the doubly truncated exponential distribution which are used above; this includes the density, CDF, and quantile function.
+**TBD:** add another constructor for `FMMProposal` that takes one region. This
+is the most common usage so it would be nice to have a function.
 
-**TBD:** maybe just include the point above in the bulleted list.
+**TBD**: maybe `refine` should take a `log` argument or just return on the
+original scale?
 
 We may invoke the exported R function as follows.
 
@@ -1428,7 +1446,7 @@ f(y \mid z)
 \right\} \cdot
 \frac{1}{y\sigma \sqrt{2\pi}} \exp\left\{
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
-\right\} \mathbb{1}_{(0,\infty)}(y) \\
+\right\} \ind\{y \in (0,\infty)\} \\
 %
 &\propto
 \underbrace{\frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
@@ -1436,20 +1454,21 @@ f(y \mid z)
 \right\}}_{g(y)} \cdot
 \underbrace{\frac{1}{y} \exp\left\{
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
-\right\} \mathbb{1}_{(0,\infty)}(y)}_{w(y)}.
+\right\} \ind\{y \in (0,\infty)\}}_{w(y)}.
 \end{align*}
 <!-- -->
 Here we have decomposed $f$ into weight function
 <!-- -->
 \begin{math}
-w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(y),
+w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
+\ind\{ y \in (0,\infty) \},
 \end{math}
 <!-- -->
 from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution $g$ as $\text{N}(z, \lambda^2)$. It will sometimes be more convenient or numerically stable to work with $w$ on the log-scale; therefore, define
 <!-- -->
 \begin{align}
 \zeta(y) = \log w(y)
-= -\log y - \frac{(\log y - \mu)^2}{2 \sigma^2} + \log \mathbb{1}_{(0,\infty)}(y).
+= -\log y - \frac{(\log y - \mu)^2}{2 \sigma^2} + \log \ind\{ y \in (0,\infty) \}.
 \label{eqn:ln-norm-log-weight-fn}
 \end{align}
 
@@ -1479,7 +1498,7 @@ Before proceeding with the sampler, let us code the target density to assist in 
 \begin{align*}
 \psi &= \int_{-\infty}^\infty w(y) g(y) dy \\
 %
-&= \int_{-\infty}^\infty \ind(y > 0) \cdot \frac{1}{y}
+&= \int_{-\infty}^\infty \ind\{y > 0\} \cdot \frac{1}{y}
 \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
 \frac{1}{\lambda \sqrt{2\pi}} \exp\left\{ -\frac{1}{2\lambda^2} (z - y)^2 \right\} dy \\
 %
@@ -1693,18 +1712,19 @@ We first note that with majorizer $\overline{w}_j(y) = \exp\{ \overline{\beta}_{
 <!-- -->
 \begin{align*}
 g_j(y)
-&\propto \overline{w}_j(y) g(y) \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y) \\
+&\propto \overline{w}_j(y) g(y) \ind\{ y \in (\alpha_{j-1}, \alpha_j] \} \\
 %
 &= \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}
-\phi(y \mid z, \lambda^2) \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y) \\
+\phi(y \mid z, \lambda^2) \ind\{ y \in (\alpha_{j-1}, \alpha_j] \} \\
 %
 &\propto \exp\{ \overline{\beta}_{1j} y\} \exp\left\{
 -\frac{1}{2 \lambda^2} (y^2 - 2yz)
-\right\} \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y) \\
+\right\} 
+\ind\{ y \in (\alpha_{j-1}, \alpha_j] \} \\
 %
 &\propto \exp\left\{
 -\frac{1}{2 \lambda^2} \left[ y^2 - 2(z + \lambda^2 \overline{\beta}_{1j}) y \right]
-\right\} \mathbb{1}_{(\alpha_{j-1}, \alpha_j]}(y).
+\right\} \ind\{ y \in (\alpha_{j-1}, \alpha_j] \}.
 \end{align*}
 <!-- -->
 This can be recognized as the density of $T_j \sim \text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. Variates of $T_j$ can be generated using the CDF $\Phi(y \mid z + \lambda^2, \lambda^2)$ and its inverse $\Phi^{-1}(p \mid z + \lambda^2, \lambda^2)$ which can be accessed with `pnorm` and `qnorm` in R respectively. Next, it can be seen that $\zeta(y) = \log w(y)$ is either a convex or concave function, depending on the value of $y \in (0, \infty)$. The concavity or convexity of $\zeta$ on a region $\mathcal{D}_j$ can be used to determine a linear majorizing function. Proceeding from $\zeta'(y)$ given in [@sec-ln-norm-const-custom], the second derivative is seen to be
@@ -1850,7 +1870,7 @@ source("../inst/examples/lnorm-norm-linear/CustomLinearRegion.R")
 Method            Description
 -----             -----
 `w`               $w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2}
-                  (\log y - \mu)^2 \right\} \mathbb{1}_{(0,\infty)}(y)$.
+                  (\log y - \mu)^2 \right\} \ind\{ y \in (0,\infty) \}$.
 
 `w_major`         $\overline{w}_j(y) = \exp\{
                   \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}$.
@@ -1865,7 +1885,7 @@ Method            Description
                   $\text{N}(z + \lambda^2 \overline{\beta}_{1j},
                   \lambda^2)$ truncated to $(\alpha_{j-1}, \alpha_j]$.
 
-`s`               $\mathbb{1}_{\alpha_{j-1}, \alpha_j}(y)$.
+`s`               $\ind\{ y \in (\alpha_{j-1}, \alpha_j] \}$.
 
 `xi_upper`        Compute $\overline{\xi}_j$ via \eqref{eqn:ln-norm-xi-upper}.
 
@@ -1987,7 +2007,7 @@ In this example, we consider generating from the Bessel density described by
 <!-- -->
 \begin{align*}
 f(x) = \frac{(a/2)^{2x+\nu}}{I_v(a) \cdot x! \cdot \Gamma(x + \nu + 1)}
-\cdot \mathbb{1}_{\mathbb{N}}(x), \quad
+\cdot \ind\{ x \in \mathbb{N} \}, \quad
 \nu > -1, \quad
 a > 0,
 \end{align*}
@@ -2012,16 +2032,16 @@ Our approach is to decompose the density into
 \begin{align*}
 f(x)
 &= \frac{(a/2)^{2x+\nu}}{I_v(a) \cdot x! \cdot \Gamma(x + \nu + 1)}
-\cdot \mathbb{1}_{\mathbb{N}}(x) \\
+\cdot \ind\{ x \in \mathbb{N} \} \\
 %
 &\propto 
 \frac{e^{a^2/4} (a/2)^\nu}{\Gamma(x + \nu + 1)}
-\frac{(a/2)^{2x} e^{-a^2/4}}{x!} \mathbb{1}_{\mathbb{N}}(x) \\
+\frac{(a/2)^{2x} e^{-a^2/4}}{x!} \ind\{ x \in \mathbb{N} \} \\
 %
 &\propto w(x) g(x),
 \end{align*}
 <!-- -->
-where $g(x) = (a^2/4)^x e^{-a^2/4} \cdot \mathbb{1}_{\mathbb{N}}(x) / x!$
+where $g(x) = (a^2/4)^x e^{-a^2/4} \cdot \ind\{ x \in \mathbb{N} \} / x!$
 represents a $\text{Poisson}(a^2/4)$ base distribution and weight function
 specified on the log scale as by $\log w(x) = -\log \Gamma(x + \nu + 1)$.
 Notice that we can disregard many of the normalizing constants with this
