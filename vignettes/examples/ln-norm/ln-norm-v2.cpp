@@ -60,7 +60,7 @@ Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
 
     vws::UnivariateHelper helper(df, pf, qf);
     vws::RealConstRegion supp(0, R_PosInf, w, helper, maxopt, minopt);
-    vws::FMMProposal<double, vws::RealConstRegion> h({ supp });
+    vws::FMMProposal<double, vws::RealConstRegion> h(supp);
 
     auto lbdd = h.refine(N - 1);
     const vws::rejection_result<double>& out = vws::rejection(h, n, args);

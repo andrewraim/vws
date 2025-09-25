@@ -12,7 +12,7 @@ Rcpp::List r_vmf_pre_v3(unsigned int n, double kappa, double d, unsigned int N,
 	args.action = vws::error_action::STOP;
 
 	LinearVWSRegion supp(-1, 1, kappa, d);
-	vws::FMMProposal<double, LinearVWSRegion> h({ supp });
+	vws::FMMProposal<double, LinearVWSRegion> h(supp);
 
 	auto lbdd = h.refine(N - 1, tol);
 	auto out = vws::rejection(h, n, args);

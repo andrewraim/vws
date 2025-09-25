@@ -49,7 +49,7 @@ Rcpp::List r_bessel_v2(unsigned int n, double a, double nu, unsigned int N,
 
     vws::UnivariateHelper helper(df, pf, qf);
     vws::IntConstRegion supp(R_NegInf, R_PosInf, w, helper, maxopt, minopt);
-    vws::FMMProposal<double, vws::IntConstRegion> h({ supp });
+    vws::FMMProposal<double, vws::IntConstRegion> h(supp);
 
     auto lbdd = h.refine(N - 1);
     auto out = vws::rejection(h, n, args);

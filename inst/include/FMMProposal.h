@@ -30,6 +30,12 @@ public:
 	FMMProposal(const std::vector<R>& regions);
 
 	/*
+	* Constructor for FMMProposal based on a single Region. This is for
+	* convenience in this commonly used special case.
+	*/
+	FMMProposal(const R& region);
+
+	/*
 	* Access region characteristics
 	*
 	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
@@ -165,11 +171,12 @@ public:
 	*
 	* This function modifies the proposal object in place.
 	*
-	* It returns a vector of $N+1$ values that represent rejection bounds (on
-	* the log-scale) corresponding to the bifurcations from `knots`: the
-	* element with index `j` is the bound after applying the first $j$ `knots`.
+	* It returns a vector of $N+1$ values that represent rejection bounds
+	* corresponding to the bifurcations from `knots`: the element with index
+	* `j` is the bound after applying the first $j$ `knots`. The values are
+	* returned on the log-scale if `log = true`.
 	*/
-	Rcpp::NumericVector refine(const std::vector<T>& knots);
+	Rcpp::NumericVector refine(const std::vector<T>& knots, bool log = true);
 
 	/*
 	* Refine the proposal.
@@ -196,10 +203,10 @@ public:
 	* This function returns a vector of up to $N+1$ values that represent
 	* rejection bounds (on the log-scale) that correspond to the bifurcation
 	* steps: the element with index `j` corresponds to the bound at the $j$th
-	* step.
+	* step. The values are returned on the log-scale if `log = true`.
 	*/
 	Rcpp::NumericVector refine(unsigned int N, double tol = 0,
-		bool greedy = false, unsigned int report = uint_max);
+		bool greedy = false, unsigned int report = uint_max, bool log = true);
 
 private:
 
@@ -224,7 +231,7 @@ private:
 };
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots)
+Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots, bool log)
 {
 	unsigned int N = knots.size() + 1;
 
@@ -272,12 +279,13 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots)
 		log_bdd_hist.push_back(rejection_bound(true));
 	}
 
-	return Rcpp::NumericVector(log_bdd_hist.begin(), log_bdd_hist.end());
+	Rcpp::NumericVector out(log_bdd_hist.begin(), log_bdd_hist.end());
+	if (log) { return out; } else { return Rcpp::exp(out); }
 }
 
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
-	bool greedy, unsigned int report)
+	bool greedy, unsigned int report, bool log)
 {
 	if (tol < 0) {
 		Rcpp::stop("tol must be nonnegative");
@@ -397,7 +405,7 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 
 	// print(1000);
 	// Rcpp::stop("PAUSE!");
-	return out;
+	if (log) { return out; } else { return Rcpp::exp(out); }
 }
 
 template <class T, class R>
@@ -405,6 +413,14 @@ FMMProposal<T,R>::FMMProposal(const std::vector<R>& regions)
 : _regions(), _regions_vec()
 {
 	_regions.insert(regions.begin(), regions.end());
+	recache();
+}
+
+template <class T, class R>
+FMMProposal<T,R>::FMMProposal(const R& region)
+: _regions(), _regions_vec()
+{
+	_regions.insert(region);
 	recache();
 }
 

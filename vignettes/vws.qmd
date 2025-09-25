@@ -516,12 +516,19 @@ class FMMProposal {
 
 ### Constructor {.unnumbered .unlisted}
 
-There is a single constructor that take a vector of regions of type `R`. There
-must be at least one region in the vector, and these regions are expected to be
-a partition of the support $\Omega$.
+The primary constructors takes a vector of regions of type `R`. There must be
+at least one region in the vector, and these regions are expected to be a
+partition of the support $\Omega$.
 
 ```{cpp}
 FMMProposal(const std::vector<R>& regions);
+```
+
+A second constructor takes a single region. This is a special case of the
+previous one which is provided for convenience.
+
+```{cpp}
+FMMProposal(const R& region);
 ```
 
 ### Distribution Methods {.unnumbered .unlisted}
@@ -603,32 +610,44 @@ $\underline{\xi}_1, \ldots, \underline{\xi}_N$.
 
 ### Methods to Refine the Proposal {.unnumbered .unlisted}
 
-Two functions are provided to refine the proposal from
-$\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition.
+Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition. Both variants return a vector which represents values of the bound \eqref{eqn:bound} at each refinement step; the vector is of length $N_0 + 1$ where $N_0$ are the number of steps taken, the $j$th element represents the value at refinement $j = 0, \ldots, N_0$, and the element with index $j = 0$ represents the initial value. The first variant partitions at a given vector of knots. 
 
 ```{cpp}
-Rcpp::NumericVector refine(const std::vector<T>& knots);    // <1>
-Rcpp::NumericVector refine(unsigned int N, double tol = 0,  // <2>
-	bool greedy = false, unsigned int report = uint_max);
+Rcpp::NumericVector refine(
+	const std::vector<T>& knots, // <1>
+	bool log = true              // <2>
+);
 ```
-1. Partition at the given vector of knots.
-2. Refine the proposal using rule of thumb for sequential knot selection
+1. A vector of knots.
+2. If `log = true` return bound values on the log-scale.
+
+The second variant uses the rule of thumb for sequential knot selection
 from @VWS2025. Refining will halt when \eqref{eqn:bound} reduces below `tol`;
 this has an effect when `tol` is positive. Otherwise, `N` is the maximum number
-of partition steps taken. If `greedy = true`, the region with the largest
-$\rho_\ell$ is always selected for partitioning; otherwise, regions are
-selected with probabilities proportional to $\rho_1, \ldots, \rho_N$. The
-argument `report` represents the period that progress is written to the
-console.
+of partition steps taken.
 
-The `seq` function is provided to generate equally-spaced knots for univariate
-real-valued intervals.
+```{cpp}
+Rcpp::NumericVector refine(
+	unsigned int N,                  // <1>
+	double tol = 0,                  // <2>
+	bool greedy = false,             // <3>
+	unsigned int report = uint_max,  // <4>
+	bool log = true                  // <5>
+);
+```
+1. Number of refinements to make.
+2. Tolerance for \eqref{eqn:bound}; refinement will halt if this is reached.
+3. If `greedy = true`, the region with the largest $\rho_\ell$ is always selected for partitioning; otherwise, regions are selected with probabilities proportional to $\rho_1, \ldots, \rho_N$.
+4. If `log = true` return bound values on the log-scale.
+5. The period at which progress is written to the console. E.g., use `period = 2` to report progress every two selections.
+
+The `seq` function is provided as a convenience to generate equally-spaced knots for univariate real-valued intervals.
 
 ```{cpp}
 std::vector<double> seq(double lo, double hi, unsigned int N, bool endpoints = false);
 ```
 
-**TBD:** Should the first refine function take a vector of ints for `IntConstRegion` regions?
+**TBD:** Should the first refine function take a vector of ints for `IntConstRegion` regions? Seems okay to leave it as is ...
 
 ### Summary Methods {.unnumbered .unlisted}
 
@@ -1120,7 +1139,7 @@ f(x) =
 <!-- -->
 To obtain a draw from $\vec{V} \sim \text{VMF}_d(\vec{\mu}, \kappa)$ with an arbitrary $\vec{\mu}$, we can rotate $\vec{V} = \vec{Q} \vec{V}_0$ using an orthonormal matrix $\vec{Q}$ whose first column is $\vec{\mu}$. In the construction $\vec{V}_0$ from \eqref{eqn:vmf-tx}, we may draw $\vec{U} = \vec{Z} / \sqrt{\vec{Z}^\top \vec{Z}}$ from $\vec{Z} \sim \text{N}(\vec{0}, \vec{I}_{d-1})$ and $X$ independently from \eqref{eqn:vmf-target}. In the following, we consider the use of VWS to draw the univariate random variable $X$. Before proceeding, we give a notation to a useful distribution.
 
-::: {#def-line}
+::: {#def-texp}
 Denote $X \sim \text{Exp}_{(a,b)}(\kappa)$ to as a doubly truncated Exponential random variable with density
 <!-- -->
 \begin{align*}
@@ -1135,8 +1154,6 @@ where $-\infty < a < b < \infty$ and rate $\kappa$ may be any real number. The C
 %
 &G^{-1}(\varphi) = \frac{1}{\kappa} \log\left[e^{\kappa a} + \varphi (e^{\kappa b} - e^{\kappa a}) \right], \quad \varphi \in [0,1].
 \end{align*}
-<!-- -->
-C++ code for $\text{Exp}_{(a,b)}(\kappa)$ distribution functions is given in the file `examples/vmf/texp.h`.
 :::
 
 Returning to target \eqref{eqn:vmf-target}, let us decompose $f$ into
@@ -1153,14 +1170,9 @@ so that $w$ is the weight function and $g_0$ is proportional to the density of $
 g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \ind\{x \in (-1,1)\}.
 \end{align*}
 <!-- -->
-@sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions. Codes for this example are in the folder `examples/vmf`.
+@sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions. Codes for this example are in the folder `examples/vmf`. C++ functions for the $\text{Exp}_{(a,b)}(\kappa)$ distribution from @def-texp are given in the file `examples/vmf/texp.h`.
 
 ## Constant Majorizer with Numerical Optimization {#sec-vmf-const-default}
-
-::: {.callout-caution title="TBD"}
-Under construction
-:::
-
 
 We now give our first example demonstrating the `vws` package. We consider a constant majorizer for $w$ which uses the default numerical optimization routine to identify appropriate constants $\overline{w}_j$ and $\underline{w}_j$. Because this is our first example, the source file for the sampler (`examples/vmf/vmf-v1.cpp`) is displayed in its entirety as follows.
 
@@ -1172,14 +1184,15 @@ There are several points of interest to call out.
 - Line 1 ensures that this code links with the `vws` and `fntl` packages during
   compilation.
 - Line 2 includes the header for C++ framework in `vws`.
-- Line 3 includes `texp.h`, which provides functions described in @def-line.
+- Line 3 includes `texp.h`, which provides functions described in @def-texp.
 - Lines 5-7 define a C++ function which invokes the sampler and exports it for
   use in R.
 - Lines 9-11 prepare a struct with extra arguments for rejection sampling.
   Notice that `rejection_args`, along with other `vws` classes and functions,
   are in the `vws` namespace.
 - Lines 13-20 define the weight function using C++ lambda syntax. We are
-  careful to avoid `nan` values that can occur when $x = \pm 1$.
+  careful to avoid `nan` values that can occur when $x = \pm 1$. Computations
+  are carried out on the log-scale to avoid numerical loss of precision.
 - Lines 22-31 specify the density, CDF, and quantile function of the base
   distribution $\text{Exp}_{(-1,1)}(\kappa)$. These are defined as lambdas
   whose signatures are defined in the `fntl` package. For example, a function
@@ -1194,7 +1207,6 @@ There are several points of interest to call out.
   distributions and constant majorizers. We construct one region here which
   contains the entire support $(-1,1]$.
 - Line 34 constructs a `FMMProposal` based on our initial region `supp`.
-  The syntax `{supp}` represents a vector of one region.
   Notice that there are two template arguments specified here: the
   first specifies that the data type of the support is `double`; the second
   specifies that regions (which include the logic of the sampler) are of type
@@ -1203,16 +1215,11 @@ There are several points of interest to call out.
   are `N` regions.
 - Line 37 carries out rejection sampling with proposal `h`.
 - Lines 39-43 assemble an `Rcpp::List` to return to the called. It contains 
-  the draws (`draws`), a vector of rejection counts `rejects` where the `i`-th
-  element represents the number of rejections for the `i`-th draw, and a vector
-  (`lbdd`) with the $N-1$ bounds \eqref{eqn:bound-components} achieved at each
-  of the refinement steps (returned the log-scale).
-
-**TBD:** add another constructor for `FMMProposal` that takes one region. This
-is the most common usage so it would be nice to have a function.
-
-**TBD**: maybe `refine` should take a `log` argument or just return on the
-original scale?
+  the draws in element `draws`, a vector of rejection counts in `rejects` where
+  the `i`-th element represents the number of rejections for the `i`-th draw,
+  and a vector in element `lbdd` with the $N-1$ bounds
+  \eqref{eqn:bound-components} achieved at each of the refinement steps
+  (returned on the log-scale).
 
 We may invoke the exported R function as follows.
 
@@ -1241,7 +1248,8 @@ data.frame(bdd = exp(out$lbdd)) %>%
 	theme_minimal()
 ```
 
-@fig-vmf-const-draws plots the empirical distribution of the draws.
+@fig-vmf-const-draws plots the empirical distribution of the draws and compares
+them to the density.
 
 ```{r}
 #| out-width: 60%
@@ -1262,17 +1270,17 @@ data.frame(x = out$draws) %>%
 
 ## Constant Majorizer with Custom Optimization {#sec-vmf-const-custom}
 
-It is not difficult to find the min and max of the function $w$ on a given interval for this example. We can reduce some of the computational burden by providing functions to compute them.
+It is not difficult to find the min and max of the function $w$ on a given interval for this example. We can reduce some of the computational burden by providing functions to compute these two values.
 
 We have
 <!-- -->
 \begin{align*}
 &\log w(x) = \frac{d-3}{2} \log(1 - x^2), \\
 &\frac{d}{dx} \log w(x) = -(d-3) \frac{x}{1 - x^2}, \\
-&\frac{d^2}{dx^2} \log w(x) = -(d-3) \frac{1 + x^2}{(1 - x^2)^2},
+&\frac{d^2}{dx^2} \log w(x) = -(d-3) \frac{1 + x^2}{(1 - x^2)^2}.
 \end{align*}
 <!-- -->
-where it is seen that $\log w(x)$ is concave when $d > 3$, convex when $d = 2$, and constant otherwise. When $d > 3$, $\frac{d}{dx} \log w(x)$ is positive for $x \in (-1, 0)$, negative for $x \in (0, 1)$, and has root $x = 0$; therefore,  $\log w(x)$ is unimodal on $(-1, 1)$ with a maximum at $x = 0$. When $d = 2$, the point $x = 0$ is instead a minimum of $\log w(x)$. Finally, $w$ is a constant in the case $d = 3$. We can code these two optimizations as lambdas.
+Therefore, it is seen that $\log w(x)$ is concave when $d > 3$, convex when $d = 2$, and constant otherwise. When $d > 3$, $\frac{d}{dx} \log w(x)$ is positive for $x \in (-1, 0)$, negative for $x \in (0, 1)$, and has root $x = 0$; therefore,  $\log w(x)$ is unimodal on $(-1, 1)$ with a maximum at $x = 0$. When $d = 2$, the point $x = 0$ is instead a minimum of $\log w(x)$. Finally, $w$ is a constant in the case $d = 3$. We can code these maximization and minimization routines as lambdas.
 
 ```{cpp}
 vws::optimizer opt1 = [&](const vws::weight_dfd& w, double lo, double hi, bool log)
@@ -1299,7 +1307,7 @@ vws::optimizer opt2 = [&](const vws::weight_dfd& w, double lo, double hi, bool l
 };
 ```
 
-The following snippet creates pointers `maxopt` and `minopt` for the maximizer and minimizer functions. We check if $d > 3$ to determine which is which.
+The following snippet creates pointers `maxopt` and `minopt` for the maximizer and minimizer functions. The condition $d > 3$ is checked to determine which is the maximizer and which is the minimizer.
 
 ```{cpp}
 vws::optimizer* maxopt;
@@ -1313,7 +1321,10 @@ if (d >= 3) {
 }
 ```
 
-Finally, we create the initial region `supp` with the custom optimization functions.
+Finally, we create the initial region `supp`. The `maxopt` and `minopt`
+functions are provided to the constructor as additional arguments. Note that
+we dereference our pointers and pass the function objects themselves (which
+are used as references by the constructor).
 
 ```{cpp}
 vws::UnivariateHelper helper(df, pf, qf);
