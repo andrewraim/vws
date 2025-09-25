@@ -1225,7 +1225,7 @@ We may invoke the exported R function as follows.
 
 ```{r}
 Rcpp::sourceCpp("examples/vmf/vmf-v1.cpp")
-out = r_vmf_pre_v1(n = 1000, kappa = 5, d = 4, N = 10)
+out = r_vmf_pre_v1(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
 head(out$draws)
 ```
 
@@ -1443,21 +1443,22 @@ ggplot() +
 
 # Example: Lognormal-Normal Conditional Distribution {#sec-ln-norm}
 
-The setting $Z = Y + \gamma$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021 and @DPSimulation2022 where sensitive data are released under a measure of privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondents' data collected by an official statistics agency and $\gamma$ is random noise added for privacy protection. The resulting $Z$ is considered protected and suitable for release. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe recent work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
+The setting $Z = Y + \gamma$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025 where sensitive data are released under a measure of privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondents' data collected by an official statistics agency and $\gamma$ is random noise added for privacy protection. The resulting $Z$ is considered protected and suitable for release. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
 
-Suppose $Y$ and $\gamma$ are independently distributed with $Y \sim \text{Lognormal}(\mu, \sigma^2)$ and $\gamma \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ of the noise mechanism is often known and provided with the noisy data under differential privacy. We will also assume that $\mu$ and $\sigma^2$ are known, though in practice these would need to be learned from an observed sample $z_1, \ldots, z_n$.
+Suppose $Y$ and $\gamma$ are independently distributed with $Y \sim \text{Lognormal}(\mu, \sigma^2)$ and $\gamma \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ is assumed to be known and provided with the noisy data. Such transparency into the noise mechanism is often a feature of differential privacy.
 
-Suppose the target distribution is the conditional of $[Y \mid Z = z]$ which is given by
+Suppose the target distribution is the conditional $[Y \mid Z = z, \mu, \sigma^2]$ whose density is given by
 <!-- -->
-\begin{align*}
-f(y \mid z)
+\begin{align}
+f(y \mid z, \mu, \sigma^2)
 %
 &\propto \frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
 -\frac{1}{2\lambda^2} (z - y)^2
 \right\} \cdot
 \frac{1}{y\sigma \sqrt{2\pi}} \exp\left\{
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
-\right\} \ind\{y \in (0,\infty)\} \\
+\right\} \ind\{y \in (0,\infty)\}
+\nonumber \\
 %
 &\propto
 \underbrace{\frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
@@ -1466,16 +1467,18 @@ f(y \mid z)
 \underbrace{\frac{1}{y} \exp\left\{
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
 \right\} \ind\{y \in (0,\infty)\}}_{w(y)}.
-\end{align*}
+\label{eqn:ln-norm}
+\end{align}
 <!-- -->
-Here we have decomposed $f$ into weight function
+
+This conditional would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:ln-norm}. We have decomposed $f$ into weight function
 <!-- -->
 \begin{math}
 w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
 \ind\{ y \in (0,\infty) \},
 \end{math}
 <!-- -->
-from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution $g$ as $\text{N}(z, \lambda^2)$. It will sometimes be more convenient or numerically stable to work with $w$ on the log-scale; therefore, define
+from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution $g$ as $\text{N}(z, \lambda^2)$. It will sometimes be more convenient (e.g., more numerically stable) to work with $w$ on the log-scale; therefore, define
 <!-- -->
 \begin{align}
 \zeta(y) = \log w(y)
@@ -1483,23 +1486,23 @@ from the Lognormal component---dropping some of the terms in its normalizing con
 \label{eqn:ln-norm-log-weight-fn}
 \end{align}
 
-We will consider three variations of VWS sampler, which progresses from easier to implement to more computationally efficient. Section [-@sec-ln-norm-const-default] considers a constant majorizer where the constant for each region is obtained by numerical optimization. [@sec-ln-norm-const-custom] replaces numerical optimization with code for a closed-form solution. Section [-@sec-ln-norm-linear] makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
+We will consider three variations of a VWS sampler, progressing from easier-to-implement to more computationally efficient. @sec-ln-norm-const-default considers a constant majorizer where the constant for each region is obtained by numerical optimization. @sec-ln-norm-const-custom replaces numerical optimization with code for a closed-form solution. @sec-ln-norm-linear makes use of a linear majorizer; this is somewhat more involved as it requires implementing a custom `Region`.
 
 Before proceeding, let us fix the following values for the parameters.
 
 ```{r}
 #| prompt: true
 mu = 5
-sigma2 = 0.5
-lambda2 = 100
+sigma = sqrt(0.5)
+lambda = 10
 ```
 
 Jointly draw values $Y$ and $Z$ from the model; $Z$ is considered observed while $Y$ is latent and the objective for inference.
 
 ```{r}
 set.seed(1234)
-y_true = rlnorm(1, mu, sqrt(sigma2))
-z = rnorm(1, y_true, sqrt(lambda2))
+y_true = rlnorm(1, mu, sigma)
+z = rnorm(1, y_true, lambda)
 print(y_true)
 print(z)
 ```
@@ -1528,56 +1531,57 @@ q(x) = \ind\left( z > \sqrt{2} \lambda x \right)
 \frac{1}{\sqrt{\pi}}.
 \end{align*}
 <!-- -->
-The function `d_target` defined in `examples/ln-norm/functions.R` computes the target density using this method.
+The function `d_target` defined in `examples/ln-norm/functions.R` computes the target density using this method. All other codes for this example are in the folder `examples/ln-norm`.
 
 ## Constant Majorizer with Numerical Optimization {#sec-ln-norm-const-default}
 
-```{.cpp include="examples/ln-norm/ln-norm-v1.cpp" code-line-numbers="true"}
+We may adapt the code from @sec-vmf-const-default to target density in the present problem. Now the weight function may be coded as follows.
+
+```{cpp}
+const vws::weight_dfd& w = [&](double x, bool log = true) {
+	double out = R_NegInf;
+	if (x > 0) {
+		out = -std::log(x) - std::pow(std::log(x) - mu, 2) / (2*sigma*sigma);
+	}
+	return log ? out : std::exp(out);
+};
 ```
 
+The base distribution's density, CDF, and quantile function are coded as lambdas and packaged into a `UnivariateHelper` object. Here we can make use of the implementations of the normal distribution in R's API.
 
-**TBD:** Do we need anything below?
+```{cpp}
+fntl::density df = [&](double x, bool log = false) {
+	return R::dnorm(x, z, lambda, log);
+};
+fntl::cdf pf = [&](double q, bool lower = true, bool log = false) {
+	return R::pnorm(q, z, lambda, lower, log);
+};
+fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
+	return R::qnorm(p, z, lambda, lower, log);
+};
 
-To implement this version of the sampler, let us first code the weight function. Note that calculations are carried out on the log-scale, and only exponentiated if explicitly requested.
+vws::UnivariateHelper helper(df, pf, qf);
+```
+
+The complete code is given in `examples/ln-norm/ln-norm-v1.cpp`. We may export and invoke the R function as follows.
 
 ```{r}
-w = function(y, log = TRUE) {
-	out = -log(y) - (log(y) - mu)^2 / (2*sigma2) + log(y > 0)
-	out[y == 0] = -Inf
-	if (log) { return(out) } else { return(exp(out)) }
-}
+Rcpp::sourceCpp("examples/ln-norm/ln-norm-v1.cpp")
+out = r_ln_norm_v1(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
+head(out$draws)
 ```
 
-Recall from [@sec-cpp-api-realconstregion] that a `univariate_helper` structure is used to construct an object of class `RealConstRegion` to provide necessary functions of the base distribution $g$. The `vws` package contains a built-in variant of `univariate_helper` named `normal_helper` for the normal distribution with mean and standard deviation parameters, which is appropriate for use in this problem.
-
-```{r}
-helper = normal_helper(mean = z, sd = sqrt(lambda2))
-```
-
-Let us instantiate a single region that consists of the full support $\Omega$ and construct a proposal based on it.
-
-```{r}
-support = RealConstRegion$new(a = 0, b = Inf, w = w, g = helper)
-regions = list(support)
-h_init = FMMProposal$new(regions)
-```
-
-We now refine the proposal using the `refine` function.
-
-```{r}
-refine_out = refine(h_init, N = 30, report = 10)
-h = refine_out$h
-```
-
-The following plot shows the rate of decrease in bound \eqref{eqn:bound} over `N` steps of the refine call.
+@fig-ln-norm-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of refine improvement for Lognormal-Normal example with
-#|   constant majorizer.
-#| label: fig-ln-norm-refine
-data.frame(bdd = exp(refine_out$log_bdd_hist)) %>%
+#|   Rate of refine improvement for lognormal-normal example with constant
+#|   majorizer.
+#| label: fig-ln-norm-const-refine
+#| echo: false
+
+data.frame(bdd = exp(out$lbdd)) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
 	geom_line(aes(x = step, y = bdd)) +
@@ -1587,45 +1591,24 @@ data.frame(bdd = exp(refine_out$log_bdd_hist)) %>%
 	theme_minimal()
 ```
 
-Let us also print the final bound that was obtained.
-
-```{r}
-bdd = tail(exp(refine_out$log_bdd_hist), 1)
-cat("Upper bound for percent of rejections:", 100 * bdd)
-```
-
-Now proceed with rejection sampling.
-
-```{r}
-ctrl = rejection_control(report = 5000, extra_outputs = TRUE)
-out = rejection(h, n = 10000, control = ctrl)
-y = unlist(out$draws)
-```
-
-Let us compute the actual rejection rate.
-
-```{r}
-cat("Percent of proposed draws which were rejected:", 
-	sum(out$rejects) / (length(y) + sum(out$rejects)) * 100)
-```
-
-Here is a plot comparing the empirical distribution of the sample to the target
-density to ensure we have generated from the correct distribution.
+@fig-ln-norm-const-draws plots the empirical distribution of the draws and compares
+them to the density.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Empirical distribution of draws versus target for Lognormal-Normal example
-#|   with constant majorizer.
-#| label: fig-ln-norm-constant-draws
+#|   Empirical distribution of draws versus target for lognormal-normal example
+#|   with constant majorizer. The target density is displayed for reference as
+#|   the dashed curve.
+#| label: fig-ln-norm-const-draws
+#| echo: false
 
-gg = data.frame(y = y) %>%
+gg = data.frame(x = out$draws) %>%
 	ggplot() +
-	geom_histogram(aes(x = y, y = after_stat(density)), col = "black",
-		fill = NA, bins = 25) +
-	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
-	xlab("y") +
-	ylab("Density") +
+	geom_density(aes(x = x), col = "black") +
+	geom_function(fun = d_target, lty = 2,
+		args = list(mu = mu, sigma = sigma, z = z, lambda = lambda)) +
+	ylab("Empirical Density") +
 	theme_minimal()
 print(gg)
 ```
@@ -1641,34 +1624,12 @@ Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $
 #|   based on draws from $[Y \mid Z = z]$.
 #| label: fig-ln-norm-interval
 
-interval_lo = quantile(y, probs = 0.025)
-interval_hi = quantile(y, probs = 0.975)
+interval_lo = quantile(out$draws, probs = 0.025)
+interval_hi = quantile(out$draws, probs = 0.975)
 gg + annotate("rect", xmin = interval_lo, xmax = interval_hi, ymin = 0,
 		ymax = Inf, alpha = 0.1, fill = "blue") +
 	geom_vline(xintercept = z, col = "blue", lwd = 1.05) +
 	geom_vline(xintercept = y_true, col = "red", lwd = 1.05)
-```
-
-Plotting the proposal $h$ versus the target $f$ on the log-scale, the two distributions are seen to be very similar.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Proposal versus target on the log-scale for Lognormal-Normal example with
-#|   constant majorizer.
-#| label: fig-ln-norm-const-proposal
-
-log_h = function(y) { sapply(y, h$d, log = TRUE) }
-log_f = function(y) { d_target(y, log = TRUE) }
-
-xlim = range(y)
-ggplot() +
-	geom_function(fun = log_f, col = "orange", lty = 1) +
-	geom_function(fun = log_h, col = "black", lty = 2) +
-	scale_x_continuous(limits = xlim) +
-	xlab("y") +
-	ylab("Density") +
-	theme_minimal()
 ```
 
 ## Constant Majorizer with Custom Optimization {#sec-ln-norm-const-custom}

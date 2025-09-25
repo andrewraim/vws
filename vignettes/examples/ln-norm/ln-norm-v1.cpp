@@ -3,8 +3,8 @@
 
 // [[Rcpp::export]]
 Rcpp::List r_ln_norm_v1(unsigned int n, double z, double mu,
-    double sigma, double lambda, unsigned int N = 10,
-    unsigned int max_rejects = 10000, unsigned int report = 1000)
+    double sigma, double lambda, unsigned int N, double tol = 0,
+    unsigned int max_rejects = 10000, unsigned int report = 10000)
 {
     vws::rejection_args args;
     args.max_rejects = max_rejects;
@@ -34,7 +34,7 @@ Rcpp::List r_ln_norm_v1(unsigned int n, double z, double mu,
     vws::RealConstRegion supp(0, R_PosInf, w, helper);
     vws::FMMProposal<double, vws::RealConstRegion> h(supp);
 
-    auto lbdd = h.refine(N - 1);
+    auto lbdd = h.refine(N - 1, tol);
     const vws::rejection_result<double>& out = vws::rejection(h, n, args);
 
     return Rcpp::List::create(

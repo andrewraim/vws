@@ -3,7 +3,7 @@
 
 // [[Rcpp::export]]
 Rcpp::List r_bessel_v1(unsigned int n, double a, double nu, unsigned int N,
-	unsigned int max_rejects = 10000, unsigned int report = 1000)
+	double tol = 0, unsigned int max_rejects = 10000, unsigned int report = 10000)
 {
     vws::rejection_args args;
     args.max_rejects = max_rejects;
@@ -31,7 +31,7 @@ Rcpp::List r_bessel_v1(unsigned int n, double a, double nu, unsigned int N,
     vws::IntConstRegion supp(R_NegInf, R_PosInf, w, helper);
     vws::FMMProposal<double, vws::IntConstRegion> h(supp);
 
-    auto lbdd = h.refine(N - 1);
+    auto lbdd = h.refine(N - 1, tol);
     auto out = vws::rejection(h, n, args);
 
     return Rcpp::List::create(

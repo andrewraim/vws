@@ -33,7 +33,7 @@ Rcpp::List r_vmf_pre_v1(unsigned int n, double kappa, double d, unsigned int N,
     vws::RealConstRegion supp(-1, 1, w, helper);
     vws::FMMProposal<double, vws::RealConstRegion> h(supp);
 
-    auto lbdd = h.refine(N - 1);
+    auto lbdd = h.refine(N - 1, tol);
     auto out = vws::rejection(h, n, args);
 
     return Rcpp::List::create(
