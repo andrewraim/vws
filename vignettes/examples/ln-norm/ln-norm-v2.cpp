@@ -51,7 +51,6 @@ Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
     const vws::optimizer& minopt = [&](const vws::weight_dfd& w, double lo,
         double hi, bool log)
     {
-        double y_star = exp(mu - sigma2);
         double lwa = w(lo, true);
         double lwb = w(hi, true);
         double out = std::min(lwa, lwb);

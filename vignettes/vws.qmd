@@ -1331,7 +1331,7 @@ vws::UnivariateHelper helper(df, pf, qf);
 vws::RealConstRegion supp(-1, 1, w, helper, *maxopt, *minopt);
 ```
 
-The complete example is given in `examples/vmf/vmf-v2.cpp`.
+The following code builds the complete example and invokes the sampler.
 
 ```{r}
 Rcpp::sourceCpp("examples/vmf/vmf-v2.cpp")
@@ -1470,15 +1470,14 @@ f(y \mid z, \mu, \sigma^2)
 \label{eqn:ln-norm}
 \end{align}
 <!-- -->
-
-This conditional would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:ln-norm}. We have decomposed $f$ into weight function
+We have decomposed $f$ into weight function
 <!-- -->
 \begin{math}
 w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
 \ind\{ y \in (0,\infty) \},
 \end{math}
 <!-- -->
-from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution $g$ as $\text{N}(z, \lambda^2)$. It will sometimes be more convenient (e.g., more numerically stable) to work with $w$ on the log-scale; therefore, define
+from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution $g$ as $\text{N}(z, \lambda^2)$. The conditional $[\vec{y} \mid \sigma^2, \vec{\mu}, \vec{z}]$ in \eqref{eqn:ln-norm} would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:ln-norm}. It will sometimes be more convenient (and more numerically stable) to work with $w$ on the log-scale; therefore, define
 <!-- -->
 \begin{align}
 \zeta(y) = \log w(y)
@@ -1563,7 +1562,7 @@ fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
 vws::UnivariateHelper helper(df, pf, qf);
 ```
 
-The complete code is given in `examples/ln-norm/ln-norm-v1.cpp`. We may export and invoke the R function as follows.
+The following code builds the complete example and invokes the sampler.
 
 ```{r}
 Rcpp::sourceCpp("examples/ln-norm/ln-norm-v1.cpp")
@@ -1649,27 +1648,83 @@ for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zet
 Here is a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
 
 ```{r}
+x_star = exp(mu - sigma^2)
+w_star = sigma^2 / 2 - mu
+printf("Maximizer x = %g obtains value log w(%g).\n", x_star, w_star)
+```
+
+```{r}
 #| out-width: 60%
 #| fig-cap: |
 #|   Weight function for Lognormal-Normal example on the log-scale, with the
-#|   maximizer $x^* = exp(mu - sigma2)$ highlighted.
+#|   maximizer $x^* = \exp(\mu - \sigma^2)$ highlighted.
 #| label: fig-ln-norm-weight
+#| echo: false
 
-xlim = exp(mu - sigma2) + c(-10,10)
+xlim = x_star + c(-10,10)
+w_one = function(x, log = T) {
+	out = -Inf
+	if (x > 0) { out = -log(x) - (log(x) - mu)^2 / (2*sigma^2) }
+	if (log) { return(out) } else { return(exp(out)) }
+}
+w = Vectorize(w_one, vectorize.args = "x")
 ggplot() +
 	geom_function(fun = w, xlim = xlim) +
-	geom_vline(xintercept = exp(mu - sigma2), lty = 2) +
-	geom_hline(yintercept = sigma2 / 2 - mu, lty = 2) +
-	xlab("y") +
-	ylab(expression("log w(y)")) +
+	geom_vline(xintercept = x_star, lty = 2) +
+	geom_hline(yintercept = w_star, lty = 2) +
+	xlab("x") +
+	ylab(expression("log w(x)")) +
 	theme_minimal()
 ```
 
-```{.cpp include="examples/ln-norm/ln-norm-v2.cpp" code-line-numbers="true"}
+The maximizer may be coded as follows.
+
+```{cpp}
+const vws::optimizer& maxopt = [&](const vws::weight_dfd& w, double lo,
+	double hi, bool log)
+{
+	double y_star = exp(mu - sigma2);
+	double out;
+
+	if (y_star > hi) {
+		out = w(hi, true);
+	} else if (y_star < lo) {
+		out = w(lo, true);
+	} else {
+		out = w(y_star, true);
+	}
+
+	return log ? out : exp(out);
+};
 ```
 
+Here is code for the minimizer.
 
+```{cpp}
+const vws::optimizer& minopt = [&](const vws::weight_dfd& w, double lo,
+	double hi, bool log)
+{
+	double lwa = w(lo, true);
+	double lwb = w(hi, true);
+	double out = std::min(lwa, lwb);
+	return log ? out : exp(out);
+};
+```
 
+We can construct the proposal using a single `RealConstRegion` that represents
+the support; the `maxopt` and `minopt` arguments are specified here.
+
+```{cpp}
+vws::RealConstRegion supp(0, R_PosInf, w, helper, maxopt, minopt);
+```
+
+The following code builds the complete example and invokes the sampler.
+
+```{r}
+Rcpp::sourceCpp("examples/ln-norm/ln-norm-v2.cpp")
+out = r_ln_norm_v2(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
+head(out$draws)
+```
 
 ## Linear Majorizer {#sec-ln-norm-linear}
 
@@ -1984,7 +2039,7 @@ f(x) = \frac{(a/2)^{2x+\nu}}{I_v(a) \cdot x! \cdot \Gamma(x + \nu + 1)}
 a > 0,
 \end{align*}
 <!-- -->
-where we denote the positive integers as $\mathbb{N} = \{ 0, 1, 2, \ldots \}$
+where $\mathbb{N} = \{ 0, 1, 2, \ldots \}$ is the set of nonnegative integers
 and
 <!-- -->
 \begin{align*}
@@ -2007,17 +2062,11 @@ f(x)
 \cdot \ind\{ x \in \mathbb{N} \} \\
 %
 &\propto 
-\frac{e^{a^2/4} (a/2)^\nu}{\Gamma(x + \nu + 1)}
-\frac{(a/2)^{2x} e^{-a^2/4}}{x!} \ind\{ x \in \mathbb{N} \} \\
-%
-&\propto w(x) g(x),
+\underbrace{\frac{1}{\Gamma(x + \nu + 1)}}_{w(x)}
+\underbrace{\frac{(a/2)^{2x} e^{-a^2/4}}{x!} \ind\{ x \in \mathbb{N} \}}_{g(x)},
 \end{align*}
 <!-- -->
-where $g(x) = (a^2/4)^x e^{-a^2/4} \cdot \ind\{ x \in \mathbb{N} \} / x!$
-represents a $\text{Poisson}(a^2/4)$ base distribution and weight function
-specified on the log scale as by $\log w(x) = -\log \Gamma(x + \nu + 1)$.
-Notice that we can disregard many of the normalizing constants with this
-sampler.
+so that $g$ is the density of a $\text{Poisson}(a^2/4)$ distribution and the weight function is specified by $\log w(x) = -\log \Gamma(x + \nu + 1)$. Notice that we have disregarded many of the normalizing constants in this formulation.
 
 We can explicitly describe computations involved in the sampler.
 
