@@ -1,4 +1,5 @@
 *.html
 examples_files
 /.quarto/
+fontawesome5.sty
 xpatch.sty

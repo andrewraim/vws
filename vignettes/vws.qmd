@@ -82,7 +82,6 @@ This section is heavily under construction.
 - For the first example, we should explain things in a lot of detail. After
   that, we can give less detail, except any new aspects.
 - Let $\ind\{ x \in A \}$ be the indicator function for the event $[x \in A]$.
-  Make sure we're consistent about using either this notation or something else.
 - We will use `ggplot2`, `dplyr` and other packages of the tidyverse
   [@Tidyverse2019] in the examples.
 - Remark: We don't use Rcpp at the moment because interoperability between C++
@@ -501,7 +500,7 @@ clean up that part of the code?
 
 The class `FMMProposal` represents a VWS proposal. 
 
-### Class Definition {.unnumbered .unlisted}
+### Class Definition {.unlisted}
 
 `FMMProposal` has two template arguments: `T` is the data type for the
 underlying distribution (e.g., `T = double` for univariate and real-valued) and
@@ -514,7 +513,7 @@ class FMMProposal {
 }
 ```
 
-### Constructor {.unnumbered .unlisted}
+### Constructor {.unlisted}
 
 The primary constructors takes a vector of regions of type `R`. There must be
 at least one region in the vector, and these regions are expected to be a
@@ -531,7 +530,7 @@ previous one which is provided for convenience.
 FMMProposal(const R& region);
 ```
 
-### Distribution Methods {.unnumbered .unlisted}
+### Distribution Methods {.unlisted}
 
 The following functions make use of the proposal as a distribution. They are
 especially utilized in rejection sampling.
@@ -556,7 +555,7 @@ results are returned on the log-scale.
 5. Evaluate the unnormalized target $f_0(x) = w(x) g(x)$. If `log = true`, the
 value on the log-scale is returned.
 
-### Accessors {.unnumbered .unlisted}
+### Accessors {.unlisted}
 
 The following accessors are provided.
 
@@ -586,7 +585,7 @@ for each region.
 Methods above with the a `log` argument return values on the log-scale when
 `log = true`.
 
-### Iterator Methods {.unnumbered .unlisted}
+### Iterator Methods {.unlisted}
 
 The following methods can be used to get (read-only) iterators to internal data structures. These can be more efficient than the accessors above because they
 do not make a copy of the data.
@@ -601,14 +600,14 @@ Rcpp::NumericVector::const_iterator log_xi_lower_end() const;
 Rcpp::LogicalVector::const_iterator bifurcatable_begin() const;  // <4>
 Rcpp::LogicalVector::const_iterator bifurcatable_end() const;
 ```
-1. The start and end of the set of regions (of type `R`) in the proposal.
+1. The start and end of the set of regions (of template type `R`) in the proposal.
 2. The start and end of the vector
-$\overline{\xi}_1, \ldots, \overline{\xi}_N$.
+$(\overline{\xi}_1, \ldots, \overline{\xi}_N)$.
 3. The start and end of the vector
-$\underline{\xi}_1, \ldots, \underline{\xi}_N$.
-4. The start and end of the vector of bifurcatable indicators.
+$(\underline{\xi}_1, \ldots, \underline{\xi}_N)$.
+4. The start and end of the vector of indicators for whether regions are bifurcatable.
 
-### Methods to Refine the Proposal {.unnumbered .unlisted}
+### Methods to Refine the Proposal {.unlisted}
 
 Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition. Both variants return a vector which represents values of the bound \eqref{eqn:bound} at each refinement step; the vector is of length $N_0 + 1$ where $N_0$ are the number of steps taken, the $j$th element represents the value at refinement $j = 0, \ldots, N_0$, and the element with index $j = 0$ represents the initial value. The first variant partitions at a given vector of knots. 
 
@@ -649,7 +648,7 @@ std::vector<double> seq(double lo, double hi, unsigned int N, bool endpoints = f
 
 **TBD:** Should the first refine function take a vector of ints for `IntConstRegion` regions? Seems okay to leave it as is ...
 
-### Summary Methods {.unnumbered .unlisted}
+### Summary Methods {.unlisted}
 
 Several methods are provided to summarize the regions in the proposal.
 
@@ -672,7 +671,7 @@ Sections [-@sec-cpp-api-realconstregion] and [-@sec-cpp-api-intconstregion].
 **TBD**: mention that bifurcated objects inherit values of the original such
 as `w` and the optimization functions.
 
-### Class Definition {.unnumbered .unlisted}
+### Class Definition {.unlisted}
 
 The class has one template argument `T`, which is the data type for the
 underlying distribution.
@@ -682,7 +681,7 @@ template <class T>
 class Region { ... }
 ```
 
-### Public Methods {.unnumbered .unlisted}
+### Public Methods {.unlisted}
 
 The interface consists of the following public methods. These are abstract and
 must be implemented in a subclass.
@@ -727,7 +726,7 @@ The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical
 optimization; however, if a closed-form solution is known, the user may
 create a subclass and override the optimization method.
 
-### Constructors {.unnumbered .unlisted}
+### Constructors {.unlisted}
 
 In addition to the methods defined in `Region`, we have the following
 constructors.
@@ -764,7 +763,7 @@ primarily for internal use.
 The default optimizers, `maxopt_default` and `minopt_default`, use the hybrid
 numerical optimization method in @sec-cpp-api-opt to optimize `w`.
 
-### Methods {.unnumbered .unlisted}
+### Methods {.unlisted}
 
 The `optimize` method maximizes or minimizes the weight function $w$ over the
 given region. The the optimized value of $w$ is returned. If `maximize = true`
@@ -1047,6 +1046,8 @@ where $\text{Gumbel}(0,1)$ is a standard Gumbel distribution with density
 $f(x) = e^{-(x + e^{x})}$. A benefit of this method is that the probabilities
 can be given on the log-scale and do not necessarily need to be exponentiated.
 
+### Categorical Distribution {.unlisted} 
+
 The following functions generate a draw of $X$. The first form generates a
 single variate and the second form generates a sample of size $n$.
 
@@ -1072,6 +1073,8 @@ $p_1, \ldots, p_k$ on the original scale.
 length of the given `p`. Otherwise it is assumed to be $0, \ldots, k-1$. The
 former is useful to generate indices in C++ while the latter is useful for
 indices in R.
+
+### Gumbel Distribution {.unlisted}
 
 The following functions are provided for the Gumbel distribution with location
 parameter $\mu$ and scale $\sigma$. They provide density, CDF, quantile, and
@@ -1173,7 +1176,7 @@ g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \ind\{x \in (-1,
 @sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions. Codes for this example are in the folder `examples/vmf`. C++ functions for the $\text{Exp}_{(a,b)}(\kappa)$ distribution from @def-texp are given in the file `examples/vmf/texp.h`.
 
 ::: {#rem-vmf-caveat}
-A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \infty$ as $x$ approaches $\pm 1$. One way to avoid this is by truncating the support to $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for a small $\epsilon > 0$. Rejection sampling can proceed using the truncated support if the exclusion of $(-1, -1 + \epsilon] \cup (1 - \epsilon, 1]$ is known to have a negligible impact on the result. Otherwise, @VWS2025 mention another strategy where the support is gradually expanded as rejections are encountered.
+A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \infty$ as $x$ approaches $\pm 1$. One way to avoid this is by truncating the support to $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for a small $\epsilon > 0$. Rejection sampling can proceed using the truncated support if the exclusion of $(-1, -1 + \epsilon] \cup (1 - \epsilon, 1]$ is known to have a negligible impact on the result. Otherwise, @VWS2025 mention another strategy where the support is initially truncated and gradually expanded as rejections are encountered. In this document, we assume $(\alpha_0, \alpha_N] = (-1, 1]$ for $d > 3$ and a fixed truncation $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for $d < 3$.
 
 **TBD: left off here**
 :::
@@ -1227,7 +1230,7 @@ There are several points of interest to call out.
   \eqref{eqn:bound-components} achieved at each of the refinement steps
   (returned on the log-scale).
 
-We may invoke the exported R function as follows.
+The name of the function `r_vmf_pre_v1` reflects that this is our first version of the sampler for target \eqref{eqn:vmf-target}, which is a precursor to transformation \eqref{eqn:vmf-tx} to obtain a VMF random variable. We may invoke the exported R function as follows.
 
 ```{r}
 Rcpp::sourceCpp("examples/vmf/vmf-v1.cpp")
@@ -1337,121 +1340,107 @@ vws::UnivariateHelper helper(df, pf, qf);
 vws::RealConstRegion supp(-1, 1, w, helper, *maxopt, *minopt);
 ```
 
-The following code builds the complete example and invokes the sampler.
+The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
 Rcpp::sourceCpp("examples/vmf/vmf-v2.cpp")
-out = r_vmf_pre_v2(n = 1000, kappa = 5, d = 4, N = 10)
+out = r_vmf_pre_v2(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
 head(out$draws)
 ```
 
 ## Linear Majorizer {#sec-vmf-linear}
 
-We noted in @sec-vmf-const-custom that $w$ is log-convex when $d < 3$, log-concave when $d > 3$, and a constant otherwise. Therefore, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} x \}$. 
+**TBD: explain the construction of linear coefficients and the choice of $c$ in the background material at the top of the document.**
 
+We noted in @sec-vmf-const-custom that $w$ is log-convex when $d < 3$, log-concave when $d > 3$, and a constant otherwise. Therefore, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j(x) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} x \}$. This yields the expression
+<!-- -->
+\begin{align*}
+\overline{\xi}_j
+= \int_{\alpha_{j-1}}^{\alpha_j} \overline{w}_j(x) g(x) dx
+= \frac{\kappa \exp\{ \overline{\beta}_{j0} \}}{(\kappa + \overline{\beta}_{j1}) (e^{\kappa \alpha_N} - e^{\kappa \alpha_0})} \left\{
+\exp\{(\kappa + \overline{\beta}_{j1}) \alpha_j\} - \exp\{(\kappa + \overline{\beta}_{j1}) \alpha_{j-1} \}
+\right\}.
+\end{align*}
+<!-- -->
+The proposal $h$ is then a finite mixture $h(x) = \sum_{j=1}^N \pi_j g_j(x)$ with
+<!-- -->
+\begin{align*}
+g_j(x)
+&= \overline{w}_j(x) g(x) \ind\{ x \in \mathcal{D}_j \} / \overline{\xi}_j \\
+&= \frac{
+(\kappa + \overline{\beta}_{j1}) \exp\{(\kappa + \overline{\beta}_{j1}) x\}
+}{
+\exp\{(\kappa + \overline{\beta}_{j1}) \alpha_j\} - \exp\{(\kappa + \overline{\beta}_{j1}) \alpha_{j-1} \}
+}
+\cdot \ind(\alpha_{j-1} < x \leq \alpha_j),
+\end{align*}
+<!-- -->
+the density of $\text{Exp}_{(\alpha_{j-1}, \alpha_j]}(\kappa + \overline{\beta}_{j1})$. To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (**TBD**) using the expression
+<!-- -->
+\begin{align*}
+M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) dx
+= \frac{e^{s\alpha_j} - e^{s\alpha_{j-1}}}{s(\alpha_j - \alpha_{j-1})}.
+\end{align*}
+<!-- -->
+To compute \eqref{eqn:bound}, we assume the "trivial" minorizer $\underline{w}_j(x) = w(x)$ so that
+<!-- -->
+\begin{align*}
+\underline{\xi}_j
+= \int_{\alpha_{j-1}}^{\alpha_j} w(x) g(x) dx
+= \int_{\alpha_{j-1}}^{\alpha_j} \frac{(1-x^2)^{(d-3)/2} \kappa e^{\kappa x}}{e^{\kappa \alpha_N} - e^{\kappa \alpha_0}} dx.
+\end{align*}
 
+The proposal is implemented with the `vws` package by inheriting from the abstract `Region` base class (@sec-cpp-api-region) and implementing each of the functions using the expressions above. We name this subclass `LinearVWSRegion`; its complete code is given in `examples/vmf/LinearVWSRegion.h`. The code in `examples/vmf/vmf-v3.cpp` instantiates a proposal with regions of type `LinearVWSRegion`, invokes rejection sampling, and returns an `Rcpp::List` with the results. This code is displayed below.
 
-
-
-
-
-::: {.callout-caution title="TBD"}
-Under construction
-:::
-
-For this region:
-
-- $w$ is assumed to be $w(x) = (1 - x^2)^{(d - 3)/2}$
-- $g$ is assumed to be proportional to $\exp(\kappa x)$
-- majorized $w$ is assumed to be of the form $\exp(\beta_0 + \beta_1 x)$
-
-Note that $\log(w(-1)) = \log(w(1)) = \infty$ with this choice when $d < 3$. A
-workaround is to exclude the endpoints from the support.
-
-```{r}
-d = 2
-kappa = 0.2
+```{.cpp include="examples/vmf/vmf-v3.cpp" code-line-numbers="true"}
 ```
 
-Create a single region of class `VMFLinearRegion`.
+The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
-support = VMFLinearRegion$new(a = 1e-4 - 1, b = 1 - 1e-4, kappa = kappa, d = d)
-regions = list(support)
+Rcpp::sourceCpp("examples/vmf/vmf-v3.cpp")
+out = r_vmf_pre_v3(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
+head(out$draws)
 ```
 
-Refine the proposal.
+**TBD: do we need to truncate our (-1,1) support in the code? Check the implementation in VWS paper!!**
 
-```{r}
-h_init = FMMProposal$new(regions)
-refine_out = refine(h_init, N = 100, report = 20)
-h = refine_out$h
-```
-
-Plot the rate of refinement improvement. Plot on the log-scale; the log-scale helps to see improvement in later steps.
+@fig-vmf-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of refine improvement on the log-scale for VMF example with
-#|   linear majorizer.
+#|   Rate of refine improvement for VMF example with linear majorizer.
 #| label: fig-vmf-linear-refine
+#| echo: false
 
-data.frame(logbdd = refine_out$log_bdd_hist) %>%
+data.frame(bdd = exp(out$lbdd)) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
-	geom_line(aes(x = step, y = logbdd)) +
+	geom_line(aes(x = step, y = bdd)) +
 	scale_y_continuous(n.breaks = 10) +
 	xlab("Step") +
-	ylab("Log of Bound") +
+	ylab("Bound") +
 	theme_minimal()
 ```
 
-Generate draws.
-
-```{r}
-control = rejection_control(max_rejects = 100, report = 5000)
-out = rejection(h, n = 10000, control = control)
-x = unlist(out)
-```
-
-Plot the empirical distribution of the draws with the target density.
+@fig-vmf-const-draws plots the empirical distribution of the draws and compares
+them to the density.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Empirical distribution of draws versus target for VMF example with linear
-#|   majorizer.
+#|   Empirical distribution of draws versus target for VMF example with
+#|   linear majorizer. The target density is displayed for reference as the
+#|   dashed curve.
 #| label: fig-vmf-linear-draws
+#| echo: false
 
-data.frame(x = x) %>%
+data.frame(x = out$draws) %>%
 	ggplot() +
-	geom_histogram(aes(x = x, y = after_stat(density)), col = "black",
-		fill = NA, bins = 25) +
-	geom_function(fun = d_target, args = list(kappa = kappa, d = d),
-		lty = 2, xlim = c(1e-2 - 1, 1 - 1e-2)) +
-	ylab("Density") +
-	theme_minimal()
-```
-
-Plot proposal versus the target on the log-scale.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Proposal versus target on the log-scale for VMF example with linear
-#|   majorizer.
-#| label: fig-vmf-linear-proposal
-
-log_h = function(x) { sapply(x, h$d, log = TRUE) }
-log_f = function(x) { d_target(x, kappa = kappa, d = d, log = TRUE) }
-
-ggplot() +
-	geom_function(fun = log_f, col = "orange", lty = 1) +
-	geom_function(fun = log_h, col = "black", lty = 2) +
-	scale_x_continuous(limits = c(1e-2 - 1, 1 - 1e-2)) +
-	xlab("x") +
-	ylab("Density") +
+	geom_density(aes(x = x), col = "black") +
+	geom_function(fun = d_target, args = list(kappa = 5, d = 4), lty = 2) +
+	ylab("Empirical Density") +
 	theme_minimal()
 ```
 
@@ -1576,7 +1565,7 @@ fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
 vws::UnivariateHelper helper(df, pf, qf);
 ```
 
-The following code builds the complete example and invokes the sampler.
+The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
 Rcpp::sourceCpp("examples/ln-norm/ln-norm-v1.cpp")
@@ -1732,7 +1721,7 @@ the support; the `maxopt` and `minopt` arguments are specified here.
 vws::RealConstRegion supp(0, R_PosInf, w, helper, maxopt, minopt);
 ```
 
-The following code builds the complete example and invokes the sampler.
+The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
 Rcpp::sourceCpp("examples/ln-norm/ln-norm-v2.cpp")
@@ -2211,7 +2200,7 @@ ggplot(df) +
 Content needed
 :::
 
-# Acknowledgments {.unnumbered .unlisted}
+# Acknowledgments {.unlisted}
 
 ::: {.callout-caution title="TBD"}
 Content needed
