@@ -1509,7 +1509,7 @@ print(y_true)
 print(z)
 ```
 
-Before proceeding with the sampler, let us code the target density to assist in evaluating the distribution of the draws. To compute the normalizing constant, we will use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
+Let us code the target density to assist in evaluating the distribution of the draws. To compute the normalizing constant, we will use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
 <!-- -->
 \begin{align*}
 \psi &= \int_{-\infty}^\infty w(y) g(y) dy \\
@@ -1533,7 +1533,9 @@ q(x) = \ind\left( z > \sqrt{2} \lambda x \right)
 \frac{1}{\sqrt{\pi}}.
 \end{align*}
 <!-- -->
-The function `d_target` defined in `examples/ln-norm/functions.R` computes the target density using this method. All other codes for this example are in the folder `examples/ln-norm`.
+The function `d_target` defined in `examples/ln-norm/functions.R` computes the target density using this method. 
+
+All codes for this example are in the folder `examples/ln-norm`.
 
 ## Constant Majorizer with Numerical Optimization {#sec-ln-norm-const-default}
 
@@ -1543,7 +1545,7 @@ We may adapt the code from @sec-vmf-const-default to target density in the prese
 const vws::weight_dfd& w = [&](double x, bool log = true) {
 	double out = R_NegInf;
 	if (x > 0) {
-		out = -std::log(x) - std::pow(std::log(x) - mu, 2) / (2*sigma*sigma);
+		out = -std::log(x) - std::pow(std::log(x) - mu, 2) / (2 * std::pow(sigma, 2));
 	}
 	return log ? out : std::exp(out);
 };
@@ -1646,37 +1648,46 @@ We have first derivative
 \right),
 \end{align*}
 <!-- -->
-for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(y)$ is positive when $y < y^*$, negative when $y > y^*$, and takes value zero at $y = y^*$. Then $y^*$ maximizes $\zeta(y)$ with maximum value $\zeta(y^*) = \sigma^2 / 2 - \mu$. Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
+for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(y)$ is positive when $y < y^*$, negative when $y > y^*$, and takes value zero at $y = y^*$. Therefore, $\zeta$ is unimodal and $y^*$ maximizes $\zeta$ with 
+<!-- -->
+\begin{align*}
+\zeta(y^*)
+&= -\log[\exp(\mu - \sigma^2)]  - \frac{(\log [\exp(\mu - \sigma^2)] - \mu)^2}{2 \sigma^2} \\
+&= -\mu + \sigma^2 - \frac{(\sigma^2)^2}{2 \sigma^2} \\
+&= -\mu + \sigma^2 / 2.
+\end{align*}
+<!-- -->
+Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
 
 Here is a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
 
 ```{r}
-x_star = exp(mu - sigma^2)
-w_star = sigma^2 / 2 - mu
-printf("Maximizer x = %g obtains value log w(%g).\n", x_star, w_star)
+y_star = exp(mu - sigma^2)
+w_star = -mu + sigma^2 / 2
+printf("Maximizer y = %g obtains value log w(%g) = %g.\n", y_star, y_star, w_star)
 ```
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
 #|   Weight function for Lognormal-Normal example on the log-scale, with the
-#|   maximizer $x^* = \exp(\mu - \sigma^2)$ highlighted.
+#|   maximizer $y^* = \exp(\mu - \sigma^2)$ highlighted.
 #| label: fig-ln-norm-weight
 #| echo: false
 
-xlim = x_star + c(-10,10)
-w_one = function(x, log = T) {
+xlim = y_star + c(-10,10)
+w_one = function(y, log = T) {
 	out = -Inf
-	if (x > 0) { out = -log(x) - (log(x) - mu)^2 / (2*sigma^2) }
+	if (y > 0) { out = -log(y) - (log(y) - mu)^2 / (2*sigma^2) }
 	if (log) { return(out) } else { return(exp(out)) }
 }
-w = Vectorize(w_one, vectorize.args = "x")
+w = Vectorize(w_one, vectorize.args = "y")
 ggplot() +
 	geom_function(fun = w, xlim = xlim) +
-	geom_vline(xintercept = x_star, lty = 2) +
+	geom_vline(xintercept = y_star, lty = 2) +
 	geom_hline(yintercept = w_star, lty = 2) +
-	xlab("x") +
-	ylab(expression("log w(x)")) +
+	xlab("y") +
+	ylab(expression("log w(y)")) +
 	theme_minimal()
 ```
 
@@ -1731,8 +1742,151 @@ head(out$draws)
 
 ## Linear Majorizer {#sec-ln-norm-linear}
 
+We can obtain a linear majorizer by noting the convexity of $\zeta$. Its second derivative is seen to be
+<!-- -->
+\begin{align*}
+&\zeta''(y) = -\frac{1}{y^2} \left(
+1 + \frac{\log y - \mu - 1}{\sigma^2}
+\right),
+\end{align*}
+<!-- -->
+which has root $y^0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y^0$ and log-convex for $y > y^0$. This is plotted in @fig-ln-norm-weight-convexity.
+
+```{r}
+y0 = exp(mu - sigma^2 + 1)
+printf("Convexity changes at y = %g.\n", y0)
+```
+
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Weight function for Lognormal-Normal example on the log-scale,
+#|   highlighting $y^0 = \exp(\mu - \sigma^2 + 1)$ where there is a change in
+#|   convexity.
+#| label: fig-ln-norm-weight-convexity
+#| echo: false
+
+xlim = c(0, 2000)
+ggplot() +
+	geom_function(fun = w, xlim = xlim) +
+	geom_vline(xintercept = y0, lty = 2) +
+	xlab("y") +
+	ylab(expression("log w(y)")) +
+	theme_minimal()
+```
+
+As in @sec-vmf-linear, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j(y) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} y \}$. Here, we also assume a minorizer of the form $\underline{w}_j(y) = \exp\{ \underline{\beta}_{j0} + \underline{\beta}_{j1} y \}$. Before proceeding, the following integral is stated as a remark as it will be used several times.
+
+::: {#rem-normal-mgf-integral}
+Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the density and CDF of $Y \sim \text{N}(\mu, \sigma^2)$, respectively. If $a < b$ are scalars (possibly infinite), then 
+<!-- -->
+\begin{align*}
+\int_a^b e^{ty} \phi(y \mid \mu, \sigma^2) dy
+= \exp(\mu t + t^2 \sigma^2 / 2) \left\{ 
+\Phi(b \mid \mu + t \sigma^2, \sigma^2) - \Phi(a \mid \mu + t \sigma^2, \sigma^2)
+\right\}.
+\end{align*}
+<!-- -->
+The special case $a = -\infty$ and $b = \infty$ yields the moment-generating function $M(t) = \exp(\mu t + t^2 \sigma^2 / 2)$ of $Y$.
+:::
+
+@rem-normal-mgf-integral yields the expression
+<!-- -->
+\begin{align*}
+\overline{\xi}_j
+&= \int_{\alpha_{j-1}}^{\alpha_j} \overline{w}_j(y) g(y) dy \\
+%
+&= \exp\{ \overline{\beta}_{j0} \} \int_{\alpha_{j-1}}^{\alpha_j} 
+\exp\{ \overline{\beta}_{j1} y \}
+\frac{1}{\lambda \sqrt{2\pi}}
+\exp\left\{ -\frac{1}{2 \lambda^2} (y - z)^2 \right\} dy \\
+%
+&= \exp\left\{
+\overline{\beta}_{0j} + z \overline{\beta}_{1j}
++ \frac{1}{2} \overline{\beta}_{1j}^2 \lambda^2
+\right\}
+\left\{
+\Phi(\alpha_j \mid z + \overline{\beta}_{1j} \lambda^2, \lambda^2)
+- \Phi(\alpha_{j-1} \mid z + \overline{\beta}_{1j} \lambda^2, \lambda^2)
+\right\},
+%\label{eqn:ln-norm-xi-upper}
+\end{align*}
+<!-- -->
+Similarly,
+<!-- -->
+\begin{align*}
+\underline{\xi}_j
+&= \int_{\alpha_{j-1}}^{\alpha_j} \underline{w}_j(y) g(y) dy \\
+&= \exp\left\{
+\underline{\beta}_{0j} + z \underline{\beta}_{1j}
++ \frac{1}{2} \underline{\beta}_{1j}^2 \lambda^2
+\right\}
+\left\{
+\Phi(\alpha_j \mid z + \underline{\beta}_{1j} \lambda^2, \lambda^2)
+- \Phi(\alpha_{j-1} \mid z + \underline{\beta}_{1j} \lambda^2, \lambda^2)
+\right\}.
+%\label{eqn:ln-norm-xi-lower}
+\end{align*}
+<!-- -->
+The proposal $h$ is a finite mixture $h(y) = \sum_{j=1}^N \pi_j g_j(y)$ with
+<!-- -->
+\begin{align*}
+g_j(y)
+&= \overline{w}_j(y) g(y) \ind\{ y \in \mathcal{D}_j \} / \overline{\xi}_j \\
+%
+&= \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} y \}
+\frac{1}{\lambda \sqrt{2\pi}}
+\exp\left\{ -\frac{1}{2 \lambda^2} (y - z)^2 \right\}
+\cdot \ind(\alpha_{j-1} < y \leq \alpha_j) / \overline{\xi}_j  \\
+%
+&= \frac{
+\frac{1}{\lambda \sqrt{2\pi}}
+\exp\left\{ -\frac{1}{2 \lambda^2} (y - \lambda^2 \overline{\beta}_{1j})^2 \right\}
+}{
+\Phi(\alpha_j \mid z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)
+- \Phi(\alpha_{j-1} \mid z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)
+}
+\cdot \ind(\alpha_{j-1} < y \leq \alpha_j),
+\end{align*}
+<!-- -->
+which is the density of $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1} ,\alpha_j]$.
+
+
+(**TBD: LEFT OFF HERE! ALSO NEED TO CODE THE SAMPLER!**)
+To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method using the expression
+<!-- -->
+\begin{align*}
+M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) dx
+= \frac{e^{s\alpha_j} - e^{s\alpha_{j-1}}}{s(\alpha_j - \alpha_{j-1})}.
+\end{align*}
+<!-- -->
+To compute \eqref{eqn:bound}, we assume the "trivial" minorizer $\underline{w}_j(x) = w(x)$ so that
+<!-- -->
+\begin{align*}
+\underline{\xi}_j
+= \int_{\alpha_{j-1}}^{\alpha_j} w(x) g(x) dx
+= \int_{\alpha_{j-1}}^{\alpha_j} \frac{(1-x^2)^{(d-3)/2} \kappa e^{\kappa x}}{e^{\kappa \alpha_N} - e^{\kappa \alpha_0}} dx.
+\end{align*}
+
+The proposal is implemented with the `vws` package by inheriting from the abstract `Region` base class (@sec-cpp-api-region) and implementing each of the functions using the expressions above. We name this subclass `LinearVWSRegion`; its complete code is given in `examples/vmf/LinearVWSRegion.h`. The code in `examples/vmf/vmf-v3.cpp` instantiates a proposal with regions of type `LinearVWSRegion`, invokes rejection sampling, and returns an `Rcpp::List` with the results. This code is displayed below.
+
+```{.cpp include="examples/ln-norm/ln-norm-v3.cpp" code-line-numbers="true"}
+```
+
+The following R code builds the complete example and invokes the sampling function.
+
+```{r}
+Rcpp::sourceCpp("examples/ln-norm/ln-norm-v3.cpp")
+out = r_ln_norm_v3(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
+head(out$draws)
+```
+
+
 ::: {.callout-caution title="TBD"}
-We need to pick finite endpoints I think ...
+Everything after this point is old material ...
+
+We need to pick finite endpoints I think ... 
 :::
 
 Sections [-@sec-ln-norm-const-default] and [-@sec-ln-norm-const-custom] utilized a constant 
@@ -1775,20 +1929,7 @@ with
 <!-- -->
 Therefore, $\zeta$ is concave when $y < \exp(\mu - \sigma^2 + 1)$ and convex when $y > \exp(\mu - \sigma^2 + 1)$. Let us assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will ensure so that all partitions considered thereafter will consist of regions on which $\zeta$ is entirely concave or convex.
 
-Before proceeding, the following integral is stated as a remark as it will be used several times.
 
-::: {.callout-note #rem-normal-mgf-kernel}
-Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the density and CDF of $X \sim \text{N}(\mu, \sigma^2)$, respectively. If $a < b$ are scalars (possibly infinite), then 
-<!-- -->
-\begin{align*}
-\int_a^b e^{tx} \phi(x \mid \mu, \sigma^2) dx
-= \exp(\mu t + t^2 \sigma^2 / 2) \left\{ 
-\Phi(b \mid \mu + t \sigma^2, \sigma^2) - \Phi(a \mid \mu + t \sigma^2, \sigma^2)
-\right\}.
-\end{align*}
-<!-- -->
-The special case $a = -\infty$ and $b = \infty$ yields the moment-generating function $M_X(t) = \exp(\mu t + t^2 \sigma^2 / 2)$ of $X$.
-:::
 
 The following construction assumes that $\zeta$ is finite and concave on the interval $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$. A majorizer is obtained from
 <!-- -->
@@ -2021,19 +2162,17 @@ ggplot() +
 # Example: Bessel Count Distribution {#sec-bessel}
 
 ::: {.callout-caution title="TBD"}
-Under construction. The example is working, but the writing needs to be fleshed
-out.
+Under construction. The example is working, but the writing needs to be fleshed out.
 :::
 
 TBD: this sampling problem comes up in @Devroye2002.
 
 ```{r}
 #| prompt: true
-source("../inst/examples/bessel/functions.R")
+source("examples/bessel/bessel.R")
 ```
 
-In this example, we consider generating from the Bessel density described by
-@Devroye2002 as
+In this example, we consider generating from the Bessel density described by @Devroye2002 as
 <!-- -->
 \begin{align*}
 f(x) = \frac{(a/2)^{2x+\nu}}{I_v(a) \cdot x! \cdot \Gamma(x + \nu + 1)}
@@ -2052,10 +2191,7 @@ I_v(a) = \sum_{x=0}^\infty \frac{(a/2)^{2x+\nu}}{x! \cdot \Gamma(x + \nu + 1)}
 is a modified Bessel function of the first kind.
 
 At the time the paper was written, @Devroye2002 considered it difficult to
-generate exact draws from this distribution. He develops what appears to be a
-customized accept-reject method after establishing properties of the
-distribution. We can draw from this distribution fairly easily without such an
-in-depth analysis.
+generate exact draws from this distribution. He develops what appears to be a customized accept-reject method after establishing properties of the distribution. We can draw from this distribution fairly easily without such an in-depth analysis.
 
 Our approach is to decompose the density into
 <!-- -->
@@ -2083,18 +2219,12 @@ We can explicitly describe computations involved in the sampler.
 We can also show some displays of how the sampler performs.
 
 - Volume and/or log volume as we increase $N$ with refining.
-- The exact density versus the proposal density for several values of $N$ along
-  the refinement path.
-- The number of draws rejected in practice along the refinement path (say, if
-  we request a large number such as $n = 10^7$).
+- The exact density versus the proposal density for several values of $N$ along the refinement path.
+- The number of draws rejected in practice along the refinement path (say, if we request a large number such as $n = 10^7$).
 
-It looks like we can capture the distribution almost exactly by covering the
-entire support with a not-too-large choice of $N$, but this will depend on the
-parameters $a$ and $\nu$. When we have refined to this point, it becomes
-extremely rare to reject any candidates.
+It looks like we can capture the distribution almost exactly by covering the entire support with a not-too-large choice of $N$, but this will depend on the parameters $a$ and $\nu$. When we have refined to this point, it becomes extremely rare to reject any candidates.
 
-Consider giving background information about the Bessel distribution to show
-why it was of special interest to Devroye.
+Consider giving background information about the Bessel distribution to show why it was of special interest to Devroye.
 
 ```{r}
 #| out-width: 60%
