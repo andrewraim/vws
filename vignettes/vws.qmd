@@ -1234,7 +1234,7 @@ The name of the function `r_vmf_pre_v1` reflects that this is our first version 
 
 ```{r}
 Rcpp::sourceCpp("examples/vmf/vmf-v1.cpp")
-out = r_vmf_pre_v1(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
+out1 = r_vmf_pre_v1(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
 head(out$draws)
 ```
 
@@ -1247,7 +1247,7 @@ head(out$draws)
 #| label: fig-vmf-const-refine
 #| echo: false
 
-data.frame(bdd = exp(out$lbdd)) %>%
+data.frame(bdd = exp(out1$lbdd)) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
 	geom_line(aes(x = step, y = bdd)) +
@@ -1269,7 +1269,7 @@ them to the density.
 #| label: fig-vmf-const-draws
 #| echo: false
 
-data.frame(x = out$draws) %>%
+data.frame(x = out1$draws) %>%
 	ggplot() +
 	geom_density(aes(x = x), col = "black") +
 	geom_function(fun = d_target, args = list(kappa = 5, d = 4), lty = 2) +
@@ -1344,8 +1344,8 @@ The following R code builds the complete example and invokes the sampling functi
 
 ```{r}
 Rcpp::sourceCpp("examples/vmf/vmf-v2.cpp")
-out = r_vmf_pre_v2(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
-head(out$draws)
+out2 = r_vmf_pre_v2(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
+head(out2$draws)
 ```
 
 ## Linear Majorizer {#sec-vmf-linear}
@@ -1399,30 +1399,11 @@ The following R code builds the complete example and invokes the sampling functi
 
 ```{r}
 Rcpp::sourceCpp("examples/vmf/vmf-v3.cpp")
-out = r_vmf_pre_v3(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
-head(out$draws)
+out3 = r_vmf_pre_v3(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.01)
+head(out3$draws)
 ```
 
 **TBD: do we need to truncate our (-1,1) support in the code? Check the implementation in VWS paper!!**
-
-@fig-vmf-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Rate of refine improvement for VMF example with linear majorizer.
-#| label: fig-vmf-linear-refine
-#| echo: false
-
-data.frame(bdd = exp(out$lbdd)) %>%
-	mutate(step = row_number() - 1) %>%
-	ggplot() +
-	geom_line(aes(x = step, y = bdd)) +
-	scale_y_continuous(n.breaks = 10) +
-	xlab("Step") +
-	ylab("Bound") +
-	theme_minimal()
-```
 
 @fig-vmf-const-draws plots the empirical distribution of the draws and compares
 them to the density.
@@ -1436,11 +1417,39 @@ them to the density.
 #| label: fig-vmf-linear-draws
 #| echo: false
 
-data.frame(x = out$draws) %>%
+data.frame(x = out3$draws) %>%
 	ggplot() +
 	geom_density(aes(x = x), col = "black") +
 	geom_function(fun = d_target, args = list(kappa = 5, d = 4), lty = 2) +
 	ylab("Empirical Density") +
+	theme_minimal()
+```
+
+@fig-vmf-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Rate of refine improvement for VMF example with constant majorizer.
+#| label: fig-vmf-refine
+#| echo: false
+
+df1 = data.frame(sampler = "v1", bdd = exp(out1$lbdd)) %>% 
+	mutate(N = row_number())
+df2 = data.frame(sampler = "v2", bdd = exp(out2$lbdd)) %>% 
+	mutate(N = row_number())
+df3 = data.frame(sampler = "v3", bdd = exp(out3$lbdd)) %>% 
+	mutate(N = row_number() + 1)
+df = bind_rows(df1, df2, df3) %>% mutate(N = as.integer(N))
+
+ggplot(df) +
+	geom_line(aes(x = N, y = bdd, color = sampler), lwd = 1.02, alpha = 1) +
+	geom_point(aes(x = N, y = bdd, pch = sampler, color = sampler),
+		cex = 3, alpha = 1) +
+	scale_x_continuous(breaks = seq(0, max(df$N))) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("N") +
+	ylab("Bound") +
 	theme_minimal()
 ```
 
@@ -1758,6 +1767,9 @@ printf("Convexity changes at y = %g.\n", y0)
 ```
 
 
+**TBD: MGF, code snippets**
+
+
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
@@ -1882,7 +1894,7 @@ data.frame(x = out1$draws) %>%
 	theme_minimal()
 ```
 
-@fig-ln-norm-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability.
+@fig-ln-norm-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
 
 ```{r}
 #| out-width: 60%
@@ -2098,118 +2110,7 @@ and
 \end{align}
 <!-- -->
 The results obtained thus far can be used to implement the necessary operations
-of a `Region` which are listed in Table `?`. We name the resulting
-class `CustomLinearRegion`. Operations for `CustomLinearRegion` are summarized
-in [@tbl-ln-norm-custom-region-methods] and the complete code may be found in
-the following file.
-
-```{r}
-source("../inst/examples/lnorm-norm-linear/CustomLinearRegion.R")
-```
-
-: Methods of the `CustomLinearRegion` class. {#tbl-ln-norm-custom-region-methods tbl-colwidths="[20,80]"}
-
--------------------------------------------------------------------------------
-Method            Description
------             -----
-`w`               $w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2}
-                  (\log y - \mu)^2 \right\} \ind\{ y \in (0,\infty) \}$.
-
-`w_major`         $\overline{w}_j(y) = \exp\{
-                  \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}$.
-
-`d_base`          Density of $\text{N}(z, \lambda^2)$.
-
-`r`               Generate draws from
-                  $\text{N}(z + \lambda^2 \overline{\beta}_{1j},
-                  \lambda^2)$ truncated to $(\alpha_{j-1}, \alpha_j]$.
-
-`d`               Compute the density of
-                  $\text{N}(z + \lambda^2 \overline{\beta}_{1j},
-                  \lambda^2)$ truncated to $(\alpha_{j-1}, \alpha_j]$.
-
-`s`               $\ind\{ y \in (\alpha_{j-1}, \alpha_j] \}$.
-
-`xi_upper`        Compute $\overline{\xi}_j$ via \eqref{eqn:ln-norm-xi-upper}.
-
-`xi_lower`        Compute $\underline{\xi}_j$ via \eqref{eqn:ln-norm-xi-lower}.
-
-`bifurcate`       Midpoint rule from [@sec-cpp-api-realconstregion].
-
-`is_bifurcatable` Return `TRUE`.
--------------------------------------------------------------------------------
-
-Let us proceed with a demonstration of the VWS sampler based on `CustomLinearRegion`. First create two initial regions around the point $\exp(\mu - \sigma^2 + 1)$, where $w(y)$ switches from log-concave to log-convex.
- 
-```{r}
-y_star = exp(mu - sigma2 + 1)
-region1 = CustomLinearRegion$new(a = 1e-6, b = y_star, mu, sigma2, z, lambda2)
-region2 = CustomLinearRegion$new(a = y_star, b = 1e6, mu, sigma2, z, lambda2)
-regions = list(region1, region2)
-```
-
-Construct the proposal and refine it.
-
-```{r}
-h_init = FMMProposal$new(regions)
-refine_out = refine(h_init, N = 30)
-h = refine_out$h
-```
-
-Plot the rate of refinement over the steps.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Rate of refine improvement on the log-scale for Lognormal-Normal
-#|   example with linear majorizer.
-#| label: fig-ln-norm-linear-refine
-
-data.frame(bdd = refine_out$log_bdd_hist) %>%
-	mutate(step = row_number() - 1) %>%
-	ggplot() +
-	geom_line(aes(x = step, y = bdd)) +
-	scale_y_continuous(n.breaks = 10) +
-	xlab("Step") +
-	ylab("Log of Bound") +
-	theme_minimal()
-```
-
-Proceed with rejection sampling using the resulting proposal.
-
-```{r}
-ctrl = rejection_control(report = 5000, extra_outputs = TRUE)
-out = rejection(h, n = 10000, control = ctrl)
-y = unlist(out$draws)
-```
-
-Print the actual rejection rate. Notice that it is substantially lower than the rate achieved in [@sec-ln-norm-const-default].
-
-```{r}
-cat("Percent of proposed draws rejected:",
-	sum(out$rejects) / (length(y) + sum(out$rejects)) * 100)
-```
-Finally, comparing the unnormalized proposal $h$ and target density $f$ on the log-scale, we notice that visually they are almost indistinguishable.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Proposal versus target on the log-scale for Lognormal-Normal example with
-#|   linear majorizer.
-#| label: fig-ln-norm-proposal
-
-log_h = function(y) { sapply(y, h$d, log = TRUE) }
-log_f = function(y) { d_target(y, log = TRUE) }
-
-xlim = range(y)
-ggplot() +
-	geom_function(fun = log_f, lty = 1, col = "orange", lwd = 1.2) +
-	geom_function(fun = log_h, lty = 2, col = "black", lwd = 1.2) +
-	scale_x_continuous(limits = xlim) +
-	xlab("y") +
-	ylab("Density") +
-	theme_minimal()
-```
+of a `Region` which are listed in Table `?`.
 
 # Example: Bessel Count Distribution {#sec-bessel}
 
