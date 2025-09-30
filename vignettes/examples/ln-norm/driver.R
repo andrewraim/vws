@@ -5,6 +5,7 @@ source("../common/plots.R")
 source("functions.R")
 Rcpp::sourceCpp("ln-norm-v1.cpp")
 Rcpp::sourceCpp("ln-norm-v2.cpp")
+Rcpp::sourceCpp("ln-norm-v3.cpp")
 
 set.seed(1234)
 
@@ -44,3 +45,12 @@ plot_density(out$draws) +
 	geom_function(fun = d_target, args = args, lty = 2)
 plot_bounds(out$lbdd)
 
+# ----- Version 3 -----
+out = r_ln_norm_v3(n = n, z = z, mu = mu, sigma = sigma,
+	lambda = lambda, N = 10, max_rejects = n * 10, report = n / 10)
+vws::printf("Empirical rejection rate: %g%%\n",
+	100 * sum(out$rejects) / (sum(out$rejects) + n))
+
+plot_density(out$draws) +
+	geom_function(fun = d_target, args = args, lty = 2)
+plot_bounds(out$lbdd)

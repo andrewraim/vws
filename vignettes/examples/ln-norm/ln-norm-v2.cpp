@@ -9,7 +9,6 @@ Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
     vws::rejection_args args;
     args.max_rejects = max_rejects;
     args.report = report;
-    args.action = vws::error_action::STOP;
     double sigma2 = sigma*sigma;
 
     const vws::weight_dfd& w =
