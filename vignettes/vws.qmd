@@ -1759,7 +1759,7 @@ We can obtain a linear majorizer by noting the convexity of $\zeta$. Its second 
 \right),
 \end{align*}
 <!-- -->
-which has root $y^0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y^0$ and log-convex for $y > y^0$. This is plotted in @fig-ln-norm-weight-convexity.
+which has root $y^0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y^0$ and log-convex for $y > y^0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will to ensure that all partitions considered thereafter consist of regions on which $\zeta$ is entirely concave or convex.
 
 ```{r}
 y0 = exp(mu - sigma^2 + 1)
@@ -1768,6 +1768,8 @@ printf("Convexity changes at y = %g.\n", y0)
 
 
 **TBD: MGF, code snippets**
+
+
 
 
 ```{r}
@@ -1973,45 +1975,7 @@ Everything after this point is old material ...
 We need to pick finite endpoints I think ... 
 :::
 
-Sections [-@sec-ln-norm-const-default] and [-@sec-ln-norm-const-custom] utilized a constant 
-majorizer $\overline{w}_j = \max_{y \in \mathcal{D}_j} w(y)$ and minorizer $\underline{w}_j = \min_{y \in \mathcal{D}_j} w(y)$ for VWS sampling. Let us now consider a linear majorizer $\log \overline{w}_j(y) = \overline{\beta}_{0j} + \overline{\beta}_{1j} y$ and minorizer $\log \underline{w}_j(y) = \underline{\beta}_{0j} + \underline{\beta}_{1j} y$. This strategy is more involved to derive and implement, but often captures the weight function more effectively than a constant majorizer with fewer mixture components to yield more efficient proposals. We will find appropriate values of $\overline{\beta}_{0j}$, $\overline{\beta}_{1j}$, $\underline{\beta}_{0j}$, and $\underline{\beta}_{1j}$; compute $\overline{\xi}_j$ and $\underline{\xi}_j$ needed for the proposal mixture weights and the bound \eqref{eqn:bound}; and determine how to sample from the reweighted & truncated densities $g_1, \ldots, g_N$.
 
-We first note that with majorizer $\overline{w}_j(y) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}$, the truncated & reweighted density $g_j$ has the form
-<!-- -->
-\begin{align*}
-g_j(y)
-&\propto \overline{w}_j(y) g(y) \ind\{ y \in (\alpha_{j-1}, \alpha_j] \} \\
-%
-&= \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y\}
-\phi(y \mid z, \lambda^2) \ind\{ y \in (\alpha_{j-1}, \alpha_j] \} \\
-%
-&\propto \exp\{ \overline{\beta}_{1j} y\} \exp\left\{
--\frac{1}{2 \lambda^2} (y^2 - 2yz)
-\right\} 
-\ind\{ y \in (\alpha_{j-1}, \alpha_j] \} \\
-%
-&\propto \exp\left\{
--\frac{1}{2 \lambda^2} \left[ y^2 - 2(z + \lambda^2 \overline{\beta}_{1j}) y \right]
-\right\} \ind\{ y \in (\alpha_{j-1}, \alpha_j] \}.
-\end{align*}
-<!-- -->
-This can be recognized as the density of $T_j \sim \text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. Variates of $T_j$ can be generated using the CDF $\Phi(y \mid z + \lambda^2, \lambda^2)$ and its inverse $\Phi^{-1}(p \mid z + \lambda^2, \lambda^2)$ which can be accessed with `pnorm` and `qnorm` in R respectively. Next, it can be seen that $\zeta(y) = \log w(y)$ is either a convex or concave function, depending on the value of $y \in (0, \infty)$. The concavity or convexity of $\zeta$ on a region $\mathcal{D}_j$ can be used to determine a linear majorizing function. Proceeding from $\zeta'(y)$ given in [@sec-ln-norm-const-custom], the second derivative is seen to be
-<!-- -->
-\begin{align*}
-&\zeta''(y) = -\frac{1}{y^2}\left(
-\frac{\log y - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2}
-\right),
-\end{align*}
-<!-- -->
-with
-<!-- -->
-\begin{align*}
-\zeta''(y) < 0
-&\iff \frac{\log y - \mu}{\sigma^2} + 1  - \frac{1}{\sigma^2} > 0 \\
-&\iff y < \exp(\mu - \sigma^2 + 1).
-\end{align*}
-<!-- -->
-Therefore, $\zeta$ is concave when $y < \exp(\mu - \sigma^2 + 1)$ and convex when $y > \exp(\mu - \sigma^2 + 1)$. Let us assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will ensure so that all partitions considered thereafter will consist of regions on which $\zeta$ is entirely concave or convex.
 
 
 
@@ -2072,45 +2036,6 @@ with
 \end{align*}
 <!-- -->
 If $\zeta$ is convex on $\mathcal{D}_j$ rather than concave, the roles of \eqref{eqn:ln-norm-linear-majorizer} and \eqref{eqn:ln-norm-linear-minorizer} are switched so that \eqref{eqn:ln-norm-linear-majorizer} is minorizer and \eqref{eqn:ln-norm-linear-minorizer} is majorizer.
-
-Using [@rem-normal-mgf-kernel], we have
-<!-- -->
-\begin{align}
-\overline{\xi}_j
-&= \int_{\alpha_{j-1}}^{\alpha_j}
-\exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y \}
-\phi(y \mid z, \lambda^2) dy
-\nonumber \\
-&= \exp\left\{
-\overline{\beta}_{0j} + z \overline{\beta}_{1j} + \overline{\beta}_{1j}^2 \lambda^2 / 2
-\right\}
-\left\{ 
-\Phi(\alpha_j \mid z + \overline{\beta}_{1j} \lambda^2, \lambda^2)
-- \Phi(\alpha_{j-1} \mid z + \overline{\beta}_{1j} \lambda^2, \lambda^2)
-\right\}
-\label{eqn:ln-norm-xi-upper}
-\end{align}
-<!-- -->
-and
-<!-- -->
-\begin{align}
-\underline{\xi}_j
-&= \int_{\alpha_{j-1}}^{\alpha_j}
-\exp\{ \underline{\beta}_{0j} + \underline{\beta}_{1j} y \}
-\phi(y \mid z, \lambda^2) dy
-\nonumber \\
-&= \exp\left\{
-\underline{\beta}_{0j} + z \underline{\beta}_{1j} + \underline{\beta}_{1j}^2 \lambda^2 / 2
-\right\}
-\left\{ 
-\Phi(\alpha_j \mid z + \underline{\beta}_{1j} \lambda^2, \lambda^2)
-- \Phi(\alpha_{j-1} \mid z + \underline{\beta}_{1j} \lambda^2, \lambda^2)
-\right\}.
-\label{eqn:ln-norm-xi-lower}
-\end{align}
-<!-- -->
-The results obtained thus far can be used to implement the necessary operations
-of a `Region` which are listed in Table `?`.
 
 # Example: Bessel Count Distribution {#sec-bessel}
 
