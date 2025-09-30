@@ -531,16 +531,24 @@ FMMProposal<T,R>::r_ext(unsigned int n) const
 {
 	// Draw from the mixing weights, which are given on the log scale and not
 	// normalized.
+	// Rprintf("r_ext: checkpoint 1\n");
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
+	// Rprintf("r_ext: checkpoint 2\n");
 	const Rcpp::IntegerVector& idx = r_categ(n, lxu, true);
+	// Rprintf("r_ext: checkpoint 3\n");
 
 	// Draw the values from the respective mixture components.
 	std::vector<T> x;
 	for (unsigned int i = 0; i < n; i++) {
+		// Rprintf("r_ext: checkpoint 3.1, idx(%d) = %d, _regions_vec.size() = %d\n",
+		// 	i, idx(i), _regions_vec.size());
+		// _regions_vec[idx(i)].print();
 		const std::vector<T>& draws = _regions_vec[idx(i)].r(1);
+		// Rprintf("r_ext: checkpoint 3.2\n");
 		x.push_back(draws[0]);
 	}
 
+	// Rprintf("r_ext: checkpoint 5\n");
 	return std::make_pair(x, Rcpp::as<std::vector<unsigned int>>(idx));
 }
 

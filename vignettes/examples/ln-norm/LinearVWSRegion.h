@@ -99,19 +99,20 @@ inline double LinearVWSRegion::w(const double& x, bool log) const
 
 inline double LinearVWSRegion::d_base(const double& x, bool log) const
 {
-	return R::dnorm(x, _z, _sigma, log);
+	return R::dnorm(x, _z, _lambda, log);
 }
 
 inline double LinearVWSRegion::d(const double& x, bool log) const
 {
-	double mean_j = _z + std::pow(_lambda, 2) * _beta1_max;
+	double lambda2 = _lambda * _lambda;
+	double mean_j = _z + lambda2 * _beta1_max;
 
 	const fntl::density& f = [&](double x, bool log) {
-		return R::dnorm(x, mean_j, _sigma, log);
+		return R::dnorm(x, mean_j, _lambda, log);
 	};
 
 	const fntl::cdf& F = [&](double x, bool lower, bool log) {
-		return R::pnorm(x, mean_j, _sigma, lower, log);
+		return R::pnorm(x, mean_j, _lambda, lower, log);
 	};
 
 	return fntl::d_trunc(x, _a, _b, f, F, log);
@@ -122,14 +123,16 @@ inline std::vector<double> LinearVWSRegion::r(unsigned int n) const
 	double mean_j = _z + std::pow(_lambda, 2) * _beta1_max;
 
 	const fntl::cdf& F = [&](double x, bool lower, bool log) {
-		return R::pnorm(x, mean_j, _sigma, lower, log);
+		return R::pnorm(x, mean_j, _lambda, lower, log);
 	};
 
 	const fntl::quantile& Finv = [&](double x, bool lower, bool log) {
-		return R::qnorm(x, mean_j, _sigma, lower, log);
+		return R::qnorm(x, mean_j, _lambda, lower, log);
 	};
 
-	const auto& out = fntl::r_trunc(n, _a, _b, F, Finv);
+	const Rcpp::NumericVector& a = Rcpp::rep(_a, n);
+	const Rcpp::NumericVector& b = Rcpp::rep(_b, n);
+	const auto& out = fntl::r_trunc(n, a, b, F, Finv);
 	return Rcpp::as<std::vector<double>>(out);
 }
 
@@ -189,26 +192,35 @@ inline void LinearVWSRegion::init()
 		Rcpp::stop("a >= b: %g >= %g", _a, _b);
 	}
 
+	if (_a == _b) {
+		// Special handling for singleton sets, since truncated MGF is not
+		// defined for these.
+		_beta0_min = NAN;
+		_beta1_min = NAN;
+		_beta0_max = NAN;
+		_beta1_max = NAN;
+		return;
+	}
+
 	// First derivative of log-weight function
-	const std::function<double(double)>& d_log_w =
-	[&](double x) -> double {
-		if (x > 0 && std::isinf(x)) {
-			return 0;
-		}
+	const std::function<double(double)>& d_log_w = [&](double x) -> double
+	{
+		if (x > 0 && std::isinf(x)) { return 0; }
 		return -1/x * (1 + (std::log(x) - _mu) / sigma2);
 	};
 
-	Rprintf("init checkpoint 1\n");
+	// Rprintf("init checkpoint 1\n");
 
-	const std::function<double(double)>& obj =
-	[&](double x) -> double {
+	const std::function<double(double)>& obj = [&](double x) -> double
+	{
 		double dx = d_log_w(x);
 		double lmgf = mgf_truncnorm(dx, _a, _b, _z, _lambda, true);
-		Rprintf("x = %g, dx = %g, w(x, true) = %g, lmgf = %g\n", x, dx, w(x, true), lmgf);
+		// Rprintf("x = %g, z = %g, _lambda = %g, dx = %g, w(x, true) = %g, lmgf = %g\n",
+		// 	x, _z, _lambda, dx, w(x, true), lmgf);
 		return w(x, true) - x * dx + lmgf;
 	};
 
-	Rprintf("init checkpoint 2\n");
+	// Rprintf("init checkpoint 2\n");
 
 	bool l_concave = std::log(_a) < _mu - sigma2 + 1;
 	bool r_convex = std::log(_b) > _mu - sigma2 + 1;
@@ -217,7 +229,7 @@ inline void LinearVWSRegion::init()
 			std::exp(_mu - sigma2 + 1), "is not in the interior");
 	}
 
-	Rprintf("init checkpoint 3\n");
+	// Rprintf("init checkpoint 3\n");
 
 	bool is_concave = l_concave;
 	bool is_convex = r_convex;
@@ -235,49 +247,44 @@ inline void LinearVWSRegion::init()
 		_beta0_max = w(c_star, true) - c_star*d_log_w(c_star);
 		_beta1_max = d_log_w(c_star);
 
-		Rprintf("init checkpoint 3.1.2\n");
+		// Rprintf("init checkpoint 3.1.2\n");
 
 		// For the minorizer
        _beta1_min = (w(_b, true) - w(_a, true)) / (_b - _a);
        _beta0_min = w(_a, true) - _a*_beta1_min;
 
-       Rprintf("init checkpoint 3.1.3\n");
+		// Rprintf("init checkpoint 3.1.3\n");
 	} else if (is_convex) {
 		// log(w(x)) is convex. Make a line that passes through a and b.
-		Rprintf("init checkpoint 3.2.1\n");
+		// Rprintf("init checkpoint 3.2.1\n");
 
 		// For the majorizer
        _beta1_max = (w(_b, true) - w(_a, true)) / (_b - _a);
        _beta0_max = w(_a, true) - _a*_beta1_max;
 
-		Rprintf("init checkpoint 3.2.2\n");
+		// Rprintf("init checkpoint 3.2.2\n");
 
 		// For the minorizer, solve a maximization problem
 		double init = midpoint();
-		const auto& opt_out = vws::optimize_hybrid(obj, init, _a, _b, true);
+		const auto& opt_out = vws::optimize_hybrid(obj, init, _a, _b, false);
 		double c_star = opt_out.par;
 
-		// fntl::optimize_args args;
-		// args.fnscale = -1;
-		// args.report_period = 1;
-		// args.maxiter = 10;
-		// Rprintf("init checkpoint 3.2.3\n");
-		// const auto& opt_out = fntl::optimize_brent(obj, _a, _b, args);
-		// Rprintf("init checkpoint 3.2.4\n");
-		// double c_star = opt_out.par;
-		Rprintf("init checkpoint 3.2.5\n");
+		// Rprintf("init checkpoint 3.2.5\n");
 		_beta0_min = w(c_star, true) - c_star*d_log_w(c_star);
-		Rprintf("init checkpoint 3.2.6\n");
+		// Rprintf("init checkpoint 3.2.6\n");
 		_beta1_min = d_log_w(c_star);
-		Rprintf("init checkpoint 3.2.7\n");
+		// Rprintf("init checkpoint 3.2.7\n");
 	} else {
 		// log(w(x)) is constant with value zero
-		Rprintf("init checkpoint 3.3\n");
+		// Rprintf("init checkpoint 3.3\n");
 		_beta0_max = 0;
 		_beta1_max = 0;
 		_beta0_min = 0;
 		_beta1_min = 0;
 	}
+
+	// Rprintf("beta0_min = %g, beta1_min = %g, beta0_max = %g, beta1_max = %g\n",
+	// 	_beta0_min, _beta1_min, _beta0_max, _beta1_max);
 }
 
 inline double LinearVWSRegion::xi_upper(bool log) const
@@ -285,10 +292,10 @@ inline double LinearVWSRegion::xi_upper(bool log) const
 	// Compute the probability using both lower or upper tail CDF. If one is
 	// unstable, it will return a -Inf and the other will be used.
 	double mean_j = _z + std::pow(_lambda, 2) * _beta1_max;
-	double lpb = R::pnorm(_b, mean_j, _sigma, true, true);
-	double lpa = R::pnorm(_a, mean_j, _sigma, true, true);
-	double clpb = R::pnorm(_b, mean_j, _sigma, false, true);
-	double clpa = R::pnorm(_a, mean_j, _sigma, false, true);
+	double lpa = R::pnorm(_a, mean_j, _lambda, true, true);
+	double lpb = R::pnorm(_b, mean_j, _lambda, true, true);
+	double clpa = R::pnorm(_a, mean_j, _lambda, false, true);
+	double clpb = R::pnorm(_b, mean_j, _lambda, false, true);
 	double lp = vws::log_sub2_exp(lpb, lpa);
 	double clp = vws::log_sub2_exp(clpa, clpb);
 	double lm = std::max(lp, clp);
@@ -303,10 +310,10 @@ inline double LinearVWSRegion::xi_lower(bool log) const
 	// Compute the probability using both lower or upper tail CDF. If one is
 	// unstable, it will return a -Inf and the other will be used.
 	double mean_j = _z + std::pow(_lambda, 2) * _beta1_min;
-	double lpb = R::pnorm(_b, mean_j, _sigma, true, true);
-	double lpa = R::pnorm(_a, mean_j, _sigma, true, true);
-	double clpb = R::pnorm(_b, mean_j, _sigma, false, true);
-	double clpa = R::pnorm(_a, mean_j, _sigma, false, true);
+	double lpa = R::pnorm(_a, mean_j, _lambda, true, true);
+	double lpb = R::pnorm(_b, mean_j, _lambda, true, true);
+	double clpa = R::pnorm(_a, mean_j, _lambda, false, true);
+	double clpb = R::pnorm(_b, mean_j, _lambda, false, true);
 	double lp = vws::log_sub2_exp(lpb, lpa);
 	double clp = vws::log_sub2_exp(clpa, clpb);
 	double lm = std::max(lp, clp);

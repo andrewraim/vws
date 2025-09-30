@@ -1571,8 +1571,8 @@ The following R code builds the complete example and invokes the sampling functi
 
 ```{r}
 Rcpp::sourceCpp("examples/ln-norm/ln-norm-v1.cpp")
-out = r_ln_norm_v1(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
-head(out$draws)
+out1 = r_ln_norm_v1(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
+head(out1$draws)
 ```
 
 @fig-ln-norm-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`.
@@ -1585,7 +1585,7 @@ head(out$draws)
 #| label: fig-ln-norm-const-refine
 #| echo: false
 
-data.frame(bdd = exp(out$lbdd)) %>%
+data.frame(bdd = exp(out1$lbdd)) %>%
 	mutate(step = row_number() - 1) %>%
 	ggplot() +
 	geom_line(aes(x = step, y = bdd)) +
@@ -1607,7 +1607,7 @@ them to the density.
 #| label: fig-ln-norm-const-draws
 #| echo: false
 
-gg = data.frame(x = out$draws) %>%
+gg = data.frame(x = out1$draws) %>%
 	ggplot() +
 	geom_density(aes(x = x), col = "black") +
 	geom_function(fun = d_target, lty = 2,
@@ -1628,8 +1628,8 @@ Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $
 #|   based on draws from $[Y \mid Z = z]$.
 #| label: fig-ln-norm-interval
 
-interval_lo = quantile(out$draws, probs = 0.025)
-interval_hi = quantile(out$draws, probs = 0.975)
+interval_lo = quantile(out1$draws, probs = 0.025)
+interval_hi = quantile(out1$draws, probs = 0.975)
 gg + annotate("rect", xmin = interval_lo, xmax = interval_hi, ymin = 0,
 		ymax = Inf, alpha = 0.1, fill = "blue") +
 	geom_vline(xintercept = z, col = "blue", lwd = 1.05) +
@@ -1736,8 +1736,8 @@ The following R code builds the complete example and invokes the sampling functi
 
 ```{r}
 Rcpp::sourceCpp("examples/ln-norm/ln-norm-v2.cpp")
-out = r_ln_norm_v2(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
-head(out$draws)
+out2 = r_ln_norm_v2(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
+head(out2$draws)
 ```
 
 ## Linear Majorizer {#sec-ln-norm-linear}
@@ -1851,6 +1851,78 @@ g_j(y)
 \end{align*}
 <!-- -->
 which is the density of $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1} ,\alpha_j]$.
+
+The following R code builds the complete example and invokes the sampling function.
+
+```{r}
+Rcpp::sourceCpp("examples/ln-norm/ln-norm-v3.cpp")
+out3 = r_ln_norm_v3(n = 1000, z, mu, sigma, lambda, lo = 1e-8, 1e8,
+	N = 50, tol = 0.10)
+head(out3$draws)
+```
+
+@fig-ln-norm-linear-draws plots the empirical distribution of the draws and compares
+them to the density.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Empirical distribution of draws versus target for lognormal-normal example
+#|   with constant majorizer. The target density is displayed for reference as
+#|   the dashed curve.
+#| label: fig-ln-norm-linear-draws
+#| echo: false
+
+data.frame(x = out1$draws) %>%
+	ggplot() +
+	geom_density(aes(x = x), col = "black") +
+	geom_function(fun = d_target, lty = 2,
+		args = list(mu = mu, sigma = sigma, z = z, lambda = lambda)) +
+	ylab("Empirical Density") +
+	theme_minimal()
+```
+
+@fig-ln-norm-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Rate of refine improvement for lognormal-normal example with constant
+#|   majorizer.
+#| label: fig-ln-norm-refine
+#| echo: false
+
+df1 = data.frame(sampler = "v1", bdd = exp(out1$lbdd)) %>% 
+	mutate(N = row_number())
+df2 = data.frame(sampler = "v2", bdd = exp(out2$lbdd)) %>% 
+	mutate(N = row_number())
+df3 = data.frame(sampler = "v3", bdd = exp(out3$lbdd)) %>% 
+	mutate(N = row_number() + 1)
+df = bind_rows(df1, df2, df3) %>% mutate(N = as.integer(N))
+
+ggplot(df) +
+	geom_line(aes(x = N, y = bdd, color = sampler), lwd = 1.02, alpha = 1) +
+	geom_point(aes(x = N, y = bdd, pch = sampler, color = sampler),
+		cex = 3, alpha = 1) +
+	scale_x_continuous(breaks = seq(0, max(df$N))) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("N") +
+	ylab("Bound") +
+	theme_minimal()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 (**TBD: LEFT OFF HERE! ALSO NEED TO CODE THE SAMPLER!**)
@@ -2117,26 +2189,6 @@ Print the actual rejection rate. Notice that it is substantially lower than the 
 cat("Percent of proposed draws rejected:",
 	sum(out$rejects) / (length(y) + sum(out$rejects)) * 100)
 ```
-
-Plot the empirical distribution of the draws overlaid with the target density.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Empirical distribution of draws versus target for Lognormal-Normal example
-#|   with linear majorizer.
-#| label: fig-ln-norm-linear-draws
-
-data.frame(y = y) %>%
-	ggplot() +
-	geom_histogram(aes(x = y, y = after_stat(density)), col = "black",
-		fill = NA, bins = 25) +
-	geom_function(fun = d_target, args = list(log = FALSE), lty = 2) +
-	ylab("y") +
-	ylab("Density") +
-	theme_minimal()
-```
-
 Finally, comparing the unnormalized proposal $h$ and target density $f$ on the log-scale, we notice that visually they are almost indistinguishable.
 
 ```{r}

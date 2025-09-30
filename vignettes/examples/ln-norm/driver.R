@@ -14,13 +14,13 @@ n = 10000
 # ----- Generate data -----
 mu = 5
 sigma = sqrt(0.5)
-lambda = 100
+lambda = 10
 
 y_true = rlnorm(1, mu, sigma)
 z = rnorm(1, y_true, lambda)
 
 # ----- Compute the (normalized) target density -----
-d_target = get_target_density(mu, sigma, z, lambda)
+#### d_target = get_target_density(mu, sigma, z, lambda)
 
 # List of args for density
 args = list(mu = mu, sigma = sigma, z = z, lambda = lambda, log = FALSE)
@@ -47,7 +47,8 @@ plot_bounds(out$lbdd)
 
 # ----- Version 3 -----
 out = r_ln_norm_v3(n = n, z = z, mu = mu, sigma = sigma,
-	lambda = lambda, N = 10, max_rejects = n * 10, report = n / 10)
+	lambda = lambda, lo = 1e-6, hi = 1e6, N = 10, max_rejects = n * 10,
+	report = n / 10)
 vws::printf("Empirical rejection rate: %g%%\n",
 	100 * sum(out$rejects) / (sum(out$rejects) + n))
 
