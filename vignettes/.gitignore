@@ -1,4 +1,6 @@
 *.html
+*.log
+*.tex
 examples_files
 /.quarto/
 fontawesome5.sty
