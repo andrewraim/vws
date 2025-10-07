@@ -87,7 +87,7 @@ public:
 
 inline double LinearVWSRegion::w(const double& x, bool log) const
 {
-	double out = 0.5 * (_d - 3) * log1p(-std::pow(x, 2)) + std::log(-1 < x && x < 1);
+	double out = 0.5 * (_d - 3) * log1p(-x*x)) + std::log(-1 < x && x < 1);
 	return log ? out : exp(out);
 }
 
@@ -98,14 +98,14 @@ inline double LinearVWSRegion::d_base(const double& x, bool log) const
 
 inline double LinearVWSRegion::d(const double& x, bool log) const
 {
-	double kappa_j = _kappa + _beta1_max;
-	return d_texp(x, kappa_j, _a, _b, log);
+	double rate = _kappa + _beta1_max;
+	return d_texp(x, rate, _a, _b, log);
 }
 
 inline std::vector<double> LinearVWSRegion::r(unsigned int n) const
 {
-	double kappa_j = _kappa + _beta1_max;
-	const auto& out = r_texp(n, kappa_j, _a, _b);
+	double rate = _kappa + _beta1_max;
+	const auto& out = r_texp(n, rate, _a, _b);
 	return Rcpp::as<std::vector<double>>(out);
 }
 
@@ -212,9 +212,9 @@ inline void LinearVWSRegion::init()
 
 inline double LinearVWSRegion::xi_upper(bool log) const
 {
-	double kappa_j = _kappa + _beta1_max;
+	double rate = _kappa + _beta1_max;
 	double lnc0 = n_texp(_kappa, -1, 1, true);
-	double lncj = n_texp(kappa_j, _a, _b, true);
+	double lncj = n_texp(rate, _a, _b, true);
 	double out = _beta0_max + lncj - lnc0;
 	return log ? out : exp(out);
 }
