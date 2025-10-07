@@ -1759,7 +1759,7 @@ We can obtain a linear majorizer by noting the convexity of $\zeta$. Its second 
 \right),
 \end{align*}
 <!-- -->
-which has root $y^0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y^0$ and log-convex for $y > y^0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will to ensure that all partitions considered thereafter consist of regions on which $\zeta$ is entirely concave or convex.
+which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will to ensure that all partitions considered thereafter consist of regions on which $\zeta$ is entirely concave or convex.
 
 ```{r}
 y0 = exp(mu - sigma^2 + 1)
@@ -1776,7 +1776,7 @@ printf("Convexity changes at y = %g.\n", y0)
 #| out-width: 60%
 #| fig-cap: |
 #|   Weight function for Lognormal-Normal example on the log-scale,
-#|   highlighting $y^0 = \exp(\mu - \sigma^2 + 1)$ where there is a change in
+#|   highlighting $y_0 = \exp(\mu - \sigma^2 + 1)$ where there is a change in
 #|   convexity.
 #| label: fig-ln-norm-weight-convexity
 #| echo: false
