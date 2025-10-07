@@ -10,7 +10,7 @@ Rcpp::List r_bessel_v3(unsigned int n, double lambda, double nu, unsigned int N,
 	args.max_rejects = max_rejects;
 	args.report = report;
 
-	LinearVWSRegion supp(0, R_PosInf, lambda, nu);
+	LinearVWSRegion supp(1e-6, 1e6, lambda, nu);
 	vws::FMMProposal<double, LinearVWSRegion> h(supp);
 
 	auto lbdd = h.refine(N - 2, tol);

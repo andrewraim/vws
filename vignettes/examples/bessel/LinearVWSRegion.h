@@ -4,9 +4,9 @@
 #include <Rcpp.h>
 #include "vws.h"
 #include "fntl.h"
-#include "mgf-truncnorm.h"
+#include "functions.h"
 
-class LinearVWSRegion : public vws::Region<int>
+class LinearVWSRegion : public vws::Region<double>
 {
 private:
 	double _a;
@@ -19,8 +19,8 @@ private:
 	double _beta1_max;
 
 public:
-	LinearVWSRegion(double a, double b, double z, double mu, double sigma, double lambda);
-	LinearVWSRegion(double a, double z, double mu, double sigma, double lambda);
+	LinearVWSRegion(double a, double b, double lambda, double nu);
+	LinearVWSRegion(double a, double lambda, double nu);
 	void init();
 
 	double midpoint() const;
@@ -32,10 +32,8 @@ public:
 
 	double get_lower() const { return _a; }
 	double get_upper() const { return _b; }
-	double get_z() const { return _z; }
-	double get_mu() const { return _mu; }
-	double get_sigma() const { return _sigma; }
 	double get_lambda() const { return _lambda; }
+	double get_nu() const { return _nu; }
 	double get_beta0_min() const { return _beta0_min; }
 	double get_beta1_min() const { return _beta1_min; }
 	double get_beta0_max() const { return _beta0_max; }
@@ -46,8 +44,10 @@ public:
 	}
 
 	bool is_bifurcatable() const {
-		double x = midpoint();
-		return x > _a && x < _b;
+		// Return true if the distance between a and b allows for two or more
+		// integers.
+		// return std::ceil(_a) <= std::floor(_b);
+		return _b - _a >= 2;
 	}
 
 	double w_major(const double& x, bool log = true) const;
@@ -68,7 +68,7 @@ public:
 	}
 
 	LinearVWSRegion singleton(const double& x) const {
-		return LinearVWSRegion(x, _z, _mu, _sigma, _lambda);
+		return LinearVWSRegion(x, _lambda, _nu);
 	}
 
 	void print() const {
@@ -88,14 +88,14 @@ public:
 
 inline double LinearVWSRegion::w(const double& x, bool log) const
 {
-	double out = R::lgamma(x + _nu + 1);
-}	return log ? out : std::exp(out);
+	double out = std::lgamma(x + _nu + 1);
+	return log ? out : std::exp(out);
 }
 
 inline double LinearVWSRegion::d_base(const double& x, bool log) const
 {
 	double lambda2 = _lambda * _lambda;
-	return R::dpois(x, _z, lambda2 / 4, log);
+	return R::dpois(x, lambda2 / 4, log);
 }
 
 inline double LinearVWSRegion::d(const double& x, bool log) const
@@ -108,7 +108,7 @@ inline double LinearVWSRegion::d(const double& x, bool log) const
 	};
 
 	const fntl::cdf& F = [&](double x, bool lower, bool log) {
-		return R::pnorm(x, mean, lower, log);
+		return R::ppois(x, mean, lower, log);
 	};
 
 	return fntl::d_trunc(x, _a, _b, f, F, log);
@@ -159,17 +159,15 @@ inline double LinearVWSRegion::midpoint() const
 	return out;
 }
 
-inline LinearVWSRegion::LinearVWSRegion(double a, double b, double z,
-	double mu, double sigma, double lambda)
-: _a(a), _b(b), _z(z), _mu(mu), _sigma(sigma), _lambda(lambda),
+inline LinearVWSRegion::LinearVWSRegion(double a, double b, double lambda, double nu)
+: _a(a), _b(b), _lambda(lambda), _nu(nu),
 	_beta0_min(), _beta1_min(), _beta0_max(), _beta1_max()
 {
 	init();
 }
 
-inline LinearVWSRegion::LinearVWSRegion(double a, double z,
-	double mu, double sigma, double lambda)
-: _a(a), _b(a), _z(z), _mu(mu), _sigma(sigma), _lambda(lambda),
+inline LinearVWSRegion::LinearVWSRegion(double a, double lambda, double nu)
+: _a(a), _b(a), _lambda(lambda), _nu(nu),
 	_beta0_min(), _beta1_min(), _beta0_max(), _beta1_max()
 {
 	// Special handling for singleton sets.
@@ -182,8 +180,6 @@ inline LinearVWSRegion::LinearVWSRegion(double a, double z,
 inline void LinearVWSRegion::init()
 {
 	Rprintf("init checkpoint 0\n");
-
-	double sigma2 = _sigma * _sigma;
 
 	if (_a >= _b) {
 		Rcpp::stop("a >= b: %g >= %g", _a, _b);
@@ -210,7 +206,7 @@ inline void LinearVWSRegion::init()
 	const std::function<double(double)>& obj = [&](double x) -> double
 	{
 		double dx = d_log_w(x);
-		double lmgf = mgf_truncnorm(dx, _a, _b, _z, _lambda, true);
+		double lmgf = mgf_truncpois(dx, _a, _b, _lambda, true);
 		// Rprintf("x = %g, z = %g, _lambda = %g, dx = %g, w(x, true) = %g, lmgf = %g\n",
 		// 	x, _z, _lambda, dx, w(x, true), lmgf);
 		return w(x, true) - x * dx + lmgf;
@@ -228,16 +224,16 @@ inline void LinearVWSRegion::init()
 	_beta0_max = w(c_star, true) - c_star*d_log_w(c_star);
 	_beta1_max = d_log_w(c_star);
 
-	// Rprintf("init checkpoint 3.1.2\n");
+	Rprintf("init checkpoint 3.1.2\n");
 
 	// For the minorizer
 	_beta1_min = (w(_b, true) - w(_a, true)) / (_b - _a);
 	_beta0_min = w(_a, true) - _a*_beta1_min;
 
-	// Rprintf("init checkpoint 3.1.3\n");
+	Rprintf("init checkpoint 3.1.3\n");
 
-	// Rprintf("beta0_min = %g, beta1_min = %g, beta0_max = %g, beta1_max = %g\n",
-	// 	_beta0_min, _beta1_min, _beta0_max, _beta1_max);
+	Rprintf("beta0_min = %g, beta1_min = %g, beta0_max = %g, beta1_max = %g\n",
+		_beta0_min, _beta1_min, _beta0_max, _beta1_max);
 }
 
 inline double LinearVWSRegion::xi_upper(bool log) const
@@ -246,16 +242,21 @@ inline double LinearVWSRegion::xi_upper(bool log) const
 	// unstable, it will return a -Inf and the other will be used.
 	double lambda2 = _lambda * _lambda;
 	double mean = lambda2 * std::exp(_beta1_max) / 4;
-	double lpa = R::pnorm(_a, mean, _lambda, true, true);
-	double lpb = R::pnorm(_b, mean, _lambda, true, true);
-	double clpa = R::pnorm(_a, mean, _lambda, false, true);
-	double clpb = R::pnorm(_b, mean, _lambda, false, true);
-	double lp = vws::log_sub2_exp(lpb, lpa);
-	double clp = vws::log_sub2_exp(clpa, clpb);
-	double lm = std::max(lp, clp);
+	// double lpa = R::ppois(_a, mean, true, true);
+	// double lpb = R::ppois(_b, mean, true, true);
+	// double clpa = R::ppois(_a, mean, false, true);
+	// double clpb = R::ppois(_b, mean, false, true);
+	// double lp = vws::log_sub2_exp(lpb, lpa);
+	// double clp = vws::log_sub2_exp(clpa, clpb);
+	// double lm = std::max(lp, clp);
 
-	double out = _beta0_max + _z * _beta1_max +
-		0.5 * std::pow(_beta1_max, 2) * lambda2 + lm;
+	double lg1 = incgamma(std::floor(_b) + 1, mean, false, true);
+	double lg2 = incgamma(std::floor(_b) + 1, 0, false, true);
+	double lg3 = incgamma(std::ceil(_a), mean, false, true);
+	double lg4 = incgamma(std::ceil(_a), 0, false, true);
+	double lm = vws::log_sub2_exp(lg1 - lg2, lg3 - lg4);
+
+	double out = _beta0_max + lambda2 / 4 * std::expm1(_beta1_max) + lm;
 	return log ? out : exp(out);
 }
 
@@ -265,16 +266,21 @@ inline double LinearVWSRegion::xi_lower(bool log) const
 	// unstable, it will return a -Inf and the other will be used.
 	double lambda2 = _lambda * _lambda;
 	double mean = lambda2 * std::exp(_beta1_min) / 4;
-	double lpa = R::pnorm(_a, mean, _lambda, true, true);
-	double lpb = R::pnorm(_b, mean, _lambda, true, true);
-	double clpa = R::pnorm(_a, mean, _lambda, false, true);
-	double clpb = R::pnorm(_b, mean, _lambda, false, true);
-	double lp = vws::log_sub2_exp(lpb, lpa);
-	double clp = vws::log_sub2_exp(clpa, clpb);
-	double lm = std::max(lp, clp);
+	// double lpa = R::ppois(_a, mean, true, true);
+	// double lpb = R::ppois(_b, mean, true, true);
+	// double clpa = R::ppois(_a, mean, false, true);
+	// double clpb = R::ppois(_b, mean, false, true);
+	// double lp = vws::log_sub2_exp(lpb, lpa);
+	// double clp = vws::log_sub2_exp(clpa, clpb);
+	// double lm = std::max(lp, clp);
 
-	double out = _beta0_min + _z * _beta1_min +
-		0.5 * std::pow(_beta1_min, 2) * lambda2 + lm;
+	double lg1 = incgamma(std::floor(_b) + 1, mean, false, true);
+	double lg2 = incgamma(std::floor(_b) + 1, 0, false, true);
+	double lg3 = incgamma(std::ceil(_a), mean, false, true);
+	double lg4 = incgamma(std::ceil(_a), 0, false, true);
+	double lm = vws::log_sub2_exp(lg1 - lg2, lg3 - lg4);
+
+	double out = _beta0_min + lambda2 / 4 * std::expm1(_beta1_min) + lm;
 
 	// Ensure that xi_lower is <= xi_upper. Even if they are both coded
 	// correctly, this can happen numerically. If it does happen, just take

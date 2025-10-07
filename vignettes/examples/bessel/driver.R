@@ -8,12 +8,13 @@ n = 20000
 lambda = 5
 nu = 2
 N = 20
+tol = 0.01
 max_rejects = 50000
 report = 10000
 
 # ----- Version 1 -----
 # Use numerical optimization to compute constants in majorizer
-out = r_bessel_v1(n, lambda, nu, N, max_rejects, report)
+out = r_bessel_v1(n, lambda, nu, N, tol, max_rejects, report)
 
 xseq = seq(0, max(out$draws))
 fseq = d_bessel(xseq, lambda, nu)
@@ -24,7 +25,7 @@ plot_bounds(out$lbdd)
 
 # ----- Version 2 -----
 # Use custom optimization routine to compute constants in majorizer
-out = r_bessel_v2(n, lambda, nu, N, max_rejects, report)
+out = r_bessel_v2(n, lambda, nu, N, tol, max_rejects, report)
 
 xseq = seq(0, max(out$draws))
 fseq = d_bessel(xseq, lambda, nu)
@@ -35,7 +36,7 @@ plot_bounds(out$lbdd)
 
 # ----- Version 3 -----
 # Use custom optimization routine to compute constants in majorizer
-out = r_bessel_v2(n, lambda, nu, N, max_rejects, report)
+out = r_bessel_v3(n, lambda, nu, N, tol, max_rejects, report)
 
 xseq = seq(0, max(out$draws))
 fseq = d_bessel(xseq, lambda, nu)

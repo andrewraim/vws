@@ -329,11 +329,14 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 				Rcpp::stop("nan found in log_volume(%d)", l);
 			}
 
+			// Rprintf("Region %d (%s) has _bifurcatable(%d) = %d\n",
+			// 	l, _regions_vec[l].description().c_str(), l, (*_bifurcatable)(l));
+
 			log_volume(l) = (*_bifurcatable)(l) ? log_volume0(l) : R_NegInf;
-			n_bif += (*_bifurcatable)(l);
+			n_bif += (log_volume(l) > R_NegInf);
 		}
 
-		// Rprintf("refine checkpoint 2.5\n");
+		Rprintf("refine checkpoint 2.5, n_bif = %d\n", n_bif);
 
 		if (n_bif == 0) {
 			Rcpp::warning("No regions left to bifurcate");
@@ -349,15 +352,15 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 			jdx = r_categ(log_volume, true);
 		}
 
-		// Rprintf("refine checkpoint 2.5, jdx = %d\n", jdx);
+		Rcpp::print(log_volume);
+
+		Rprintf("refine checkpoint 2.5, jdx = %d\n", jdx);
 
 		const R& r = _regions_vec[jdx];
 
-		// Rprintf("refine checkpoint 2.6\n");
+		Rprintf("refine checkpoint 2.6\n");
 
-		// Rprintf("%s", r.description().c_str());
-
-		// Rcpp::print(log_volume);
+		Rprintf("Partitioning region %s\n", r.description().c_str());
 
 		// Split the target region and make another proposal with it.
 		//

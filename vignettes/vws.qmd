@@ -1179,6 +1179,7 @@ g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \ind\{x \in (-1,
 A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \infty$ as $x$ approaches $\pm 1$. One way to avoid this is by truncating the support to $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for a small $\epsilon > 0$. Rejection sampling can proceed using the truncated support if the exclusion of $(-1, -1 + \epsilon] \cup (1 - \epsilon, 1]$ is known to have a negligible impact on the result. Otherwise, @VWS2025 mention another strategy where the support is initially truncated and gradually expanded as rejections are encountered. In this document, we assume $(\alpha_0, \alpha_N] = (-1, 1]$ for $d > 3$ and a fixed truncation $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for $d < 3$.
 
 **TBD: left off here**
+\remarkqed
 :::
 
 ## Constant Majorizer with Numerical Optimization {#sec-vmf-const-default}
@@ -1803,6 +1804,7 @@ Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the
 \end{align*}
 <!-- -->
 The special case $a = -\infty$ and $b = \infty$ yields the moment-generating function $M(t) = \exp(\mu t + t^2 \sigma^2 / 2)$ of $Y$.
+\remarkqed
 :::
 
 @rem-normal-mgf-integral yields the expression
@@ -1940,7 +1942,7 @@ ggplot(df) +
 
 
 (**TBD: LEFT OFF HERE! ALSO NEED TO CODE THE SAMPLER!**)
-To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method using the expression
+To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (TBD) using the expression
 <!-- -->
 \begin{align*}
 M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) dx
@@ -2104,87 +2106,6 @@ It looks like we can capture the distribution almost exactly by covering the ent
 
 Consider giving background information about the Bessel distribution to show why it was of special interest to Devroye.
 
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Rate of refine improvement on the log-scale for Bessel example.
-#| label: fig-bessel-refine
-
-nu = -0.5
-lambda = 10
-
-helper = poisson_helper(lambda^2 / 4)
-
-w = function(x, log = TRUE) {
-	out = -lgamma(x + nu + 1) + lambda^2 / 4 + nu * log(lambda / 2)
-	if (log) { return(out) } else { return(exp(out)) }
-}
-
-support = IntConstRegion$new(a = -1, b = Inf, w = w, g = helper)
-regions = list(support)
-
-h_init = FMMProposal$new(regions)
-refine_out = refine(h_init, N = 30, report = 10)
-h = refine_out$h
-
-data.frame(logbdd = refine_out$log_bdd_hist) %>%
-	mutate(step = row_number() - 1) %>%
-	ggplot() +
-	geom_line(aes(x = step, y = logbdd)) +
-	scale_y_continuous(n.breaks = 10) +
-	xlab("Step") +
-	ylab("Log of Bound") +
-	theme_minimal()
-
-ctrl = rejection_control(max_rejects = 10000, report = 5000)
-out = rejection(h, n = 10000, control = ctrl)
-x = unlist(out)
-```
-
-Plot the empirical distribution of the draws with the target density.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: Empirical distribution of draws versus target for Bessel example.
-#| label: fig-bessel-draws
-
-n = length(x)
-tab_out = factor(x, levels = seq(0, 11)) |> table()
-x_vals = tab_out |> names() |> as.integer()
-d_vals_emp = (tab_out / n) |> as.numeric()
-d_vals = d_bessel(x_vals, a = lambda, nu = nu)
-
-data.frame(x = x_vals, d_emp = d_vals_emp, d = d_vals) %>%
-	ggplot() +
-	geom_point(aes(x = x, y = d), pch = 1) +
-	geom_point(aes(x = x, y = d_emp), pch = 3) +
-	ylab("Probability") +
-	theme_minimal()
-```
-
-Plot proposal versus the target on the log-scale.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: Proposal versus target on the log-scale for Bessel example.
-#| label: fig-bessel-proposal
-
-log_h = function(x) { sapply(x, h$d, log = TRUE) }
-log_f = function(x) { d_bessel(x, a = lambda, nu = nu, log = TRUE) }
-
-df = data.frame(x = x_vals) %>%
-	mutate(log_h_vals = log_h(x)) %>%
-	mutate(log_f_vals = log_f(x))
-
-ggplot(df) +
-	geom_point(aes(x, log_h_vals), pch = 1) +
-	geom_point(aes(x, log_f_vals), pch = 3) +
-	xlab("x") +
-	ylab("Density") +
-	theme_minimal()
-```
-
-
 ## Constant Majorizer with Numerical Optimization {#sec-bessel-const-default}
 
 ```{.cpp include="examples/bessel/bessel-v1.cpp" code-line-numbers="true"}
@@ -2200,6 +2121,225 @@ ggplot(df) +
 ## Linear Majorizer {#sec-bessel-linear}
 
 **TBD:** Is it tractable for this problem?
+
+The following remark is useful to formulate the linear majorizer.
+
+::: {#rem-incgamma}
+Equation 6.5.13 of @AbramowitzStegun1972 can be rewritten as
+<!-- -->
+\begin{displaymath}
+\sum_{k=0}^{n-1} \frac{x^k}{k!} = e^x \frac{\Gamma(n,x)}{\Gamma(n)},
+\quad n \in \{ 1, 2, \ldots \},
+\end{displaymath}
+<!-- -->
+where $\Gamma(a,x) = \int_x^\infty t^{a-1} e^{-t} dt$ and $\Gamma(a) = \Gamma(a,0)$. Therefore, for nonnegative integers $1 \leq r \leq s$,
+<!-- -->
+\begin{align*}
+\sum_{k = r}^{s} \frac{x^k}{k!}
+&= \sum_{k = 0}^{s} \frac{x^k}{k!} - \sum_{k = 0}^{r-1} \frac{x^k}{k!} \\
+&= e^x \frac{\Gamma(s+1,x)}{\Gamma(s)}
+- e^x \frac{\Gamma(r,x)}{\Gamma(r)}.
+\end{align*}
+\remarkqed
+:::
+
+@rem-incgamma yields the expression
+<!-- -->
+\begin{align*}
+\overline{\xi}_j
+&= \int_{\alpha_{j-1}}^{\alpha_j} \overline{w}_j(x) g(x) d\nu(x) \\
+%
+&= \exp\{ \overline{\beta}_{j0} \}
+\sum_{k = \lceil \alpha_{j-1} \rceil}^{\lfloor \alpha_j \rfloor}
+\exp\{ \overline{\beta}_{j1} x \}
+\frac{(\lambda^2 / 4)^x e^{-\lambda^2 / 4} }{x!} \\
+%
+&= \exp\{ \overline{\beta}_{j0} \}
+e^{-\lambda^2 / 4}
+\sum_{k = \lceil \alpha_{j-1} \rceil}^{\lfloor \alpha_j \rfloor}
+\frac{1}{x!}
+\left[ e^{ \frac{\lambda^2}{4}\overline{\beta}_{j1} } \right]^x \\
+%
+&= \exp\left(
+\overline{\beta}_{j0} - \frac{\lambda^2}{4}
++ \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)
+\left\{
+\frac{
+\Gamma(\lfloor \alpha_j \rfloor + 1, \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})
+}{
+\Gamma(\lfloor \alpha_j \rfloor + 1)
+}
+-
+\frac{
+\Gamma(\lceil \alpha_{j-1} \rceil, \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})
+}{
+\Gamma(\lceil \alpha_{j-1} \rceil)
+}
+\right\}
+\end{align*}
+<!-- -->
+Similarly,
+<!-- -->
+\begin{align*}
+\underline{\xi}_j
+&= \int_{\alpha_{j-1}}^{\alpha_j} \underline{w}_j(x) g(x) d\nu(x) \\
+%
+&= \exp\left(
+\underline{\beta}_{j0} - \frac{\lambda^2}{4}
++ \frac{\lambda^2}{4} e^{ \underline{\beta}_{j1} } \right)
+\left\{
+\frac{
+\Gamma(\lfloor \alpha_j \rfloor + 1, \frac{\lambda^2}{4} e^{ \underline{\beta}_{j1}})
+}{
+\Gamma(\lfloor \alpha_j \rfloor + 1)
+}
+-
+\frac{
+\Gamma(\lceil \alpha_{j-1} \rceil, \frac{\lambda^2}{4} e^{ \underline{\beta}_{j1}})
+}{
+\Gamma(\lceil \alpha_{j-1} \rceil)
+}
+\right\}.
+\end{align*}
+<!-- -->
+The proposal $h$ is a finite mixture $h(x) = \sum_{j=1}^N \pi_j g_j(x)$ with
+<!-- -->
+\begin{align*}
+g_j(x)
+&= \overline{w}_j(x) g(x) \ind\{ x \in \mathcal{D}_j \} / \overline{\xi}_j \\
+%
+&= 
+\frac{
+\exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} x \}
+\frac{1}{x!} (\lambda^2 / 4)^x e^{-\lambda^2 / 4}
+\ind\{ x \in \mathcal{D}_j \}
+}{
+\exp\left(
+\overline{\beta}_{j0} - \frac{\lambda^2}{4}
++ \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)
+\left\{
+\frac{
+\Gamma(\lfloor \alpha_j \rfloor + 1, \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})
+}{
+\Gamma(\lfloor \alpha_j \rfloor + 1)
+}
+-
+\frac{
+\Gamma(\lceil \alpha_{j-1} \rceil, \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})
+}{
+\Gamma(\lceil \alpha_{j-1} \rceil)
+}
+\right\}
+} \\
+%
+&=
+\frac{1}{x!}
+\left(\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)^x
+\exp\left( -\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)
+\left\{
+\frac{
+\Gamma(\lfloor \alpha_j \rfloor + 1, \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})
+}{
+\Gamma(\lfloor \alpha_j \rfloor + 1)
+}
+-
+\frac{
+\Gamma(\lceil \alpha_{j-1} \rceil, \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})
+}{
+\Gamma(\lceil \alpha_{j-1} \rceil)
+}
+\right\}^{-1}
+\ind(\lceil \alpha_{j-1} \rceil < x \leq \lfloor \alpha_j \rfloor)
+\end{align*}
+<!-- -->
+which is the density of $\text{Poisson}(\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})$ truncated to the interval $(\lceil \alpha_{j-1} \rceil, \lfloor \alpha_j \rfloor]$.
+
+To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (TBD) using the expression
+<!-- -->
+\begin{align*}
+M_j(s)
+&= \sum_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) d\nu(x) \\
+&= \exp( -\lambda^2 / 4 )
+\sum_{x = \lceil \alpha_{j-1} \rceil}^{\lfloor \alpha_j \rfloor}
+\frac{(e^{s} \lambda^2 / 4)^x}{x!} \\
+%
+&= \exp\left\{ \frac{\lambda^2}{4} (e^{s} - 1) \right\}
+\left\{
+\frac{
+\Gamma(\lfloor \alpha_j \rfloor + 1, \frac{\lambda^2}{4} e^s)
+}{
+\Gamma(\lfloor \alpha_j \rfloor + 1)
+}
+-
+\frac{
+\Gamma(\lceil \alpha_{j-1} \rceil, \frac{\lambda^2}{4} e^s)
+}{
+\Gamma(\lceil \alpha_{j-1} \rceil)
+}
+\right\}.
+\end{align*}
+<!-- -->
+where the last line is obtained using @rem-incgamma.
+
+The following R code builds the complete example and invokes the sampling function.
+
+```{r}
+Rcpp::sourceCpp("examples/bessel/bessel-v3.cpp")
+out3 = r_bessel_v3(n = 1000, z, mu, sigma, lambda, lo = 1e-8, 1e8,
+	N = 50, tol = 0.10)
+head(out3$draws)
+```
+
+@fig-bessel-linear-draws plots the empirical distribution of the draws and compares
+them to the density.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Empirical distribution of draws versus target for lognormal-normal example
+#|   with constant majorizer. The target density is displayed for reference as
+#|   the dashed curve.
+#| label: fig-bessel-linear-draws
+#| echo: false
+
+data.frame(x = out1$draws) %>%
+	ggplot() +
+	geom_density(aes(x = x), col = "black") +
+	geom_function(fun = d_target, lty = 2,
+		args = list(mu = mu, sigma = sigma, z = z, lambda = lambda)) +
+	ylab("Empirical Density") +
+	theme_minimal()
+```
+
+@fig-bessel-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
+
+```{r}
+#| out-width: 60%
+#| fig-cap: |
+#|   Rate of refine improvement for lognormal-normal example with constant
+#|   majorizer.
+#| label: fig-bessel-refine
+#| echo: false
+
+df1 = data.frame(sampler = "v1", bdd = exp(out1$lbdd)) %>% 
+	mutate(N = row_number())
+df2 = data.frame(sampler = "v2", bdd = exp(out2$lbdd)) %>% 
+	mutate(N = row_number())
+df3 = data.frame(sampler = "v3", bdd = exp(out3$lbdd)) %>% 
+	mutate(N = row_number() + 1)
+df = bind_rows(df1, df2, df3) %>% mutate(N = as.integer(N))
+
+ggplot(df) +
+	geom_line(aes(x = N, y = bdd, color = sampler), lwd = 1.02, alpha = 1) +
+	geom_point(aes(x = N, y = bdd, pch = sampler, color = sampler),
+		cex = 3, alpha = 1) +
+	scale_x_continuous(breaks = seq(0, max(df$N))) +
+	scale_y_continuous(n.breaks = 10) +
+	xlab("N") +
+	ylab("Bound") +
+	theme_minimal()
+```
+
 
 
 # Conclusions
