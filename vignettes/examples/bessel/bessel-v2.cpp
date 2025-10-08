@@ -29,13 +29,15 @@ Rcpp::List r_bessel_v2(unsigned int n, double lambda, double nu, unsigned int N,
 
 	// Note that w is a decreasing function in x. We can get maximize it if
 	// we evaluate w at the smallest integer in the region, and minimize it
-	// at the largest integer.
+	// at the largest integer. We can also ensure that only integer values
+	// are considered, which is more awkward with numerical optimization.
 
     const vws::optimizer& maxopt = [](const vws::weight_dfd& w,
     	double lo, double hi, bool log)
     {
     	if (lo < 0 && hi < 0) { Rcpp::stop("Did not code this case"); }
-    	double out = (lo < 0) ? w(0, true) : w(std::floor(lo), true);
+    	double x = (lo < 0) ? 0 : std::floor(lo) + 1;
+    	double out = w(x, true);
     	return log ? out : std::exp(out);
     };
 
@@ -43,20 +45,31 @@ Rcpp::List r_bessel_v2(unsigned int n, double lambda, double nu, unsigned int N,
     	double lo, double hi, bool log)
     {
     	if (lo < 0 && hi < 0) { Rcpp::stop("Did not code this case"); }
-    	double out = std::isinf(hi) ? w(hi, true) : w(std::ceil(hi), true);
+    	double x = std::isinf(hi) ? hi : std::floor(hi);
+    	double out = w(x, true);
     	return log ? out : std::exp(out);
     };
 
     vws::UnivariateHelper helper(df, pf, qf);
-    vws::IntConstRegion supp(R_NegInf, R_PosInf, w, helper, maxopt, minopt);
+    vws::IntConstRegion supp(-1, R_PosInf, w, helper, maxopt, minopt);
     vws::FMMProposal<double, vws::IntConstRegion> h(supp);
 
     auto lbdd = h.refine(N - 1, tol);
     auto out = vws::rejection(h, n, args);
 
+    // Debugging
+    Rcpp::NumericVector hseq(11);
+    Rcpp::NumericVector wmajseq(11);
+    for (unsigned int i = 0; i < 11; i++) {
+        hseq(i) = h.d(i);
+        wmajseq(i) = h.w_major(i);
+    }
+
     return Rcpp::List::create(
         Rcpp::Named("draws") = out.draws,
         Rcpp::Named("rejects") = out.rejects,
-        Rcpp::Named("lbdd") = lbdd
+        Rcpp::Named("lbdd") = lbdd,
+        Rcpp::Named("hseq") = hseq,
+        Rcpp::Named("wmajseq") = wmajseq
     );
 }

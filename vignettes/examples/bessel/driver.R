@@ -24,7 +24,7 @@ plot_pmf(out$draws) +
 plot_bounds(out$lbdd)
 
 # ----- Version 2 -----
-# Use custom optimization routine to compute constants in majorizer
+# Use custom optimization routine to compute constants in majorizer.
 out = r_bessel_v2(n, lambda, nu, N, tol, max_rejects, report)
 
 xseq = seq(0, max(out$draws))
@@ -36,7 +36,7 @@ plot_bounds(out$lbdd)
 
 # ----- Version 3 -----
 # Use custom optimization routine to compute constants in majorizer
-out = r_bessel_v3(n, lambda, nu, N, lo = -0.5, hi = 1e5, tol, max_rejects, report)
+out = r_bessel_v3(n, lambda, nu, N, lo = -0.5, hi = 1e8, tol, max_rejects, report)
 
 xseq = seq(0, max(out$draws))
 fseq = d_bessel(xseq, lambda, nu)
@@ -45,8 +45,7 @@ plot_pmf(out$draws) +
 	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y))
 plot_bounds(out$lbdd)
 
-
-#### DEBUG
+# Debugging
 xseq = 0:30
 
 fseq1 = dpois(xseq, lambda = 10)
@@ -57,7 +56,6 @@ sum(fseq2)
 
 plot(xseq, fseq2)
 points(xseq, fseq1, pch = 4)
-
 
 incgamma(a = 0, x = 0, lower = F, log = T)
 
@@ -76,8 +74,9 @@ w_minor = function(x, log = TRUE) {
 	if (log) { return(out) } else { return(exp(out)) }
 }
 
-
 curve(w(x), xlim = c(0, 100))
 curve(w_major(x), add = T, col = "blue")
 curve(w_minor(x), add = T, col = "red")
+
+
 

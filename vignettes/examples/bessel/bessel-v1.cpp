@@ -32,13 +32,21 @@ Rcpp::List r_bessel_v1(unsigned int n, double lambda, double nu, unsigned int N,
     vws::FMMProposal<double, vws::IntConstRegion> h(supp);
 
     auto lbdd = h.refine(N - 1, tol);
-    h.print(N);
-
     auto out = vws::rejection(h, n, args);
+
+    // Debugging
+    Rcpp::NumericVector hseq(11);
+    Rcpp::NumericVector wmajseq(11);
+    for (unsigned int i = 0; i < 11; i++) {
+        hseq(i) = h.d(i);
+        wmajseq(i) = h.w_major(i);
+    }
 
     return Rcpp::List::create(
         Rcpp::Named("draws") = out.draws,
         Rcpp::Named("rejects") = out.rejects,
-        Rcpp::Named("lbdd") = lbdd
+        Rcpp::Named("lbdd") = lbdd,
+        Rcpp::Named("hseq") = hseq,
+        Rcpp::Named("wmajseq") = wmajseq
     );
 }
