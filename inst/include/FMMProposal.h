@@ -505,6 +505,8 @@ Rcpp::NumericVector FMMProposal<T,R>::rejection_bound_regions(bool log) const
 	const Rcpp::NumericVector& lxl = *_log_xi_lower;
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
+	Rcpp::print(lxl);
+	Rcpp::print(lxu);
 	if (log) { return out; } else { return exp(out); }
 }
 

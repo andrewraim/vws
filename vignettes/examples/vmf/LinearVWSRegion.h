@@ -185,14 +185,14 @@ inline void LinearVWSRegion::init()
 		_beta1_max = d_log_w(c_star);
 
 		// For the minorizer
-       _beta1_min = (w(_b, true) - w(_a, true)) / (_b - _a);
-       _beta0_min = w(_a, true) - _a*_beta1_min;
+		_beta1_min = (w(_b, true) - w(_a, true)) / (_b - _a);
+		_beta0_min = w(_a, true) - _a*_beta1_min;
 	} else if (_d < 3) {
 		// log(w(x)) is convex. Make a line that passes through a and b.
 
 		// For the majorizer
-       _beta1_max = (w(_b, true) - w(_a, true)) / (_b - _a);
-       _beta0_max = w(_a, true) - _a*_beta1_max;
+		_beta1_max = (w(_b, true) - w(_a, true)) / (_b - _a);
+		_beta0_max = w(_a, true) - _a*_beta1_max;
 
 		// For the minorizer, solve a maximization problem
 		fntl::optimize_args args;

@@ -88,7 +88,7 @@ public:
 
 inline double LinearVWSRegion::w(const double& x, bool log) const
 {
-	double out = std::lgamma(x + _nu + 1);
+	double out = -std::lgamma(x + _nu + 1);
 	return log ? out : std::exp(out);
 }
 
@@ -198,7 +198,7 @@ inline void LinearVWSRegion::init()
 	// First derivative of log-weight function
 	const std::function<double(double)>& d_log_w = [&](double x) -> double
 	{
-		return (x > 0) ? -R::digamma(x + _nu + 1) : R_PosInf;
+		return (x + _nu + 1 > 0) ? -R::digamma(x + _nu + 1) : R_PosInf;
 	};
 
 	// Rprintf("init checkpoint 1\n");
@@ -206,7 +206,7 @@ inline void LinearVWSRegion::init()
 	const std::function<double(double)>& obj = [&](double x) -> double
 	{
 		double dx = d_log_w(x);
-		double lmgf = mgf_truncpois(dx, _a, _b, _lambda, true);
+		double lmgf = mgf_truncpois(dx, _lambda, _a, _b, true);
 		// Rprintf("x = %g, z = %g, _lambda = %g, dx = %g, w(x, true) = %g, lmgf = %g\n",
 		// 	x, _z, _lambda, dx, w(x, true), lmgf);
 		return w(x, true) - x * dx + lmgf;
@@ -232,6 +232,7 @@ inline void LinearVWSRegion::init()
 
 	Rprintf("init checkpoint 3.1.3\n");
 
+	Rprintf("a = %g, b = %g\n", _a, _b);
 	Rprintf("beta0_min = %g, beta1_min = %g, beta0_max = %g, beta1_max = %g\n",
 		_beta0_min, _beta1_min, _beta0_max, _beta1_max);
 }
@@ -240,23 +241,31 @@ inline double LinearVWSRegion::xi_upper(bool log) const
 {
 	// Compute the probability using both lower or upper tail CDF. If one is
 	// unstable, it will return a -Inf and the other will be used.
+	double lo = std::max(_a, 0.0);
+	double hi = std::max(_b, 0.0);
 	double lambda2 = _lambda * _lambda;
 	double mean = lambda2 * std::exp(_beta1_max) / 4;
-	// double lpa = R::ppois(_a, mean, true, true);
-	// double lpb = R::ppois(_b, mean, true, true);
-	// double clpa = R::ppois(_a, mean, false, true);
-	// double clpb = R::ppois(_b, mean, false, true);
-	// double lp = vws::log_sub2_exp(lpb, lpa);
-	// double clp = vws::log_sub2_exp(clpa, clpb);
-	// double lm = std::max(lp, clp);
 
-	double lg1 = incgamma(std::floor(_b) + 1, mean, false, true);
-	double lg2 = incgamma(std::floor(_b) + 1, 0, false, true);
-	double lg3 = incgamma(std::ceil(_a), mean, false, true);
-	double lg4 = incgamma(std::ceil(_a), 0, false, true);
-	double lm = vws::log_sub2_exp(lg1 - lg2, lg3 - lg4);
+	double lpa = R::ppois(lo, mean, true, true);
+	double lpb = R::ppois(hi, mean, true, true);
+	double clpa = R::ppois(lo, mean, false, true);
+	double clpb = R::ppois(hi, mean, false, true);
+	double lp = vws::log_sub2_exp(lpb, lpa);
+	double clp = vws::log_sub2_exp(clpa, clpb);
+	double lm = std::max(lp, clp);
 
-	double out = _beta0_max + lambda2 / 4 * std::expm1(_beta1_max) + lm;
+	// double lg1 = incgamma(std::floor(_b) + 1, mean, false, true);
+	// double lg2 = incgamma(std::floor(_b) + 1, 0, false, true);
+	// double lg3 = incgamma(std::ceil(_a), mean, false, true);
+	// double lg4 = incgamma(std::ceil(_a), 0, false, true);
+	// double lm = vws::log_sub2_exp(lg1 - lg2, lg3 - lg4);
+
+	// Rprintf("xi_upper: a = %g, b = %g\n", _a, _b);
+	// Rprintf("xi_upper: lg1 = %g, lg2 = %g, lg3 = %g, lg4 = %g, beta1_max = %g, lm = %g\n",
+	// 	lg1, lg2, lg3, lg4, _beta1_max, lm);
+
+	// double out = _beta0_max + lambda2 / 4 * std::expm1(_beta1_max) + lm;
+	double out = _beta0_max - lambda2 / 4 + mean + lm;
 	return log ? out : exp(out);
 }
 
@@ -264,23 +273,27 @@ inline double LinearVWSRegion::xi_lower(bool log) const
 {
 	// Compute the probability using both lower or upper tail CDF. If one is
 	// unstable, it will return a -Inf and the other will be used.
+	double lo = std::max(_a, 0.0);
+	double hi = std::max(_b, 0.0);
 	double lambda2 = _lambda * _lambda;
 	double mean = lambda2 * std::exp(_beta1_min) / 4;
-	// double lpa = R::ppois(_a, mean, true, true);
-	// double lpb = R::ppois(_b, mean, true, true);
-	// double clpa = R::ppois(_a, mean, false, true);
-	// double clpb = R::ppois(_b, mean, false, true);
-	// double lp = vws::log_sub2_exp(lpb, lpa);
-	// double clp = vws::log_sub2_exp(clpa, clpb);
-	// double lm = std::max(lp, clp);
 
-	double lg1 = incgamma(std::floor(_b) + 1, mean, false, true);
-	double lg2 = incgamma(std::floor(_b) + 1, 0, false, true);
-	double lg3 = incgamma(std::ceil(_a), mean, false, true);
-	double lg4 = incgamma(std::ceil(_a), 0, false, true);
-	double lm = vws::log_sub2_exp(lg1 - lg2, lg3 - lg4);
+	double lpa = R::ppois(lo, mean, true, true);
+	double lpb = R::ppois(hi, mean, true, true);
+	double clpa = R::ppois(lo, mean, false, true);
+	double clpb = R::ppois(hi, mean, false, true);
+	double lp = vws::log_sub2_exp(lpb, lpa);
+	double clp = vws::log_sub2_exp(clpa, clpb);
+	double lm = std::max(lp, clp);
 
-	double out = _beta0_min + lambda2 / 4 * std::expm1(_beta1_min) + lm;
+	// double lg1 = incgamma(std::floor(_b) + 1, mean, false, true);
+	// double lg2 = incgamma(std::floor(_b) + 1, 0, false, true);
+	// double lg3 = incgamma(std::ceil(_a), mean, false, true);
+	// double lg4 = incgamma(std::ceil(_a), 0, false, true);
+	// double lm = vws::log_sub2_exp(lg1 - lg2, lg3 - lg4);
+
+	// double out = _beta0_min + lambda2 / 4 * std::expm1(_beta1_min) + lm;
+	double out = _beta0_min - lambda2 / 4 + mean + lm;
 
 	// Ensure that xi_lower is <= xi_upper. Even if they are both coded
 	// correctly, this can happen numerically. If it does happen, just take
