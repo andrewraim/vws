@@ -2137,9 +2137,17 @@ where $\Gamma(a,x) = \int_x^\infty t^{a-1} e^{-t} dt$ and $\Gamma(a) = \Gamma(a,
 \begin{align*}
 \sum_{k = r}^{s} \frac{x^k}{k!}
 &= \sum_{k = 0}^{s} \frac{x^k}{k!} - \sum_{k = 0}^{r-1} \frac{x^k}{k!} \\
-&= e^x \frac{\Gamma(s+1,x)}{\Gamma(s)}
+&= e^x \frac{\Gamma(s+1,x)}{\Gamma(s+1)}
 - e^x \frac{\Gamma(r,x)}{\Gamma(r)}.
 \end{align*}
+<!-- -->
+If $X \sim \text{Poisson}(\lambda)$, then
+<!-- -->
+\begin{math}
+\Prob(r < X \leq s) =
+\Gamma(s+1, \lambda) / \Gamma(s+1)
+-\Gamma(r+1, \lambda) / \Gamma(r+1).
+\end{math}
 \remarkqed
 :::
 

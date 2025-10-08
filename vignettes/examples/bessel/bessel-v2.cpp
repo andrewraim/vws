@@ -35,7 +35,7 @@ Rcpp::List r_bessel_v2(unsigned int n, double lambda, double nu, unsigned int N,
     	double lo, double hi, bool log)
     {
     	if (lo < 0 && hi < 0) { Rcpp::stop("Did not code this case"); }
-    	double out = (lo < 0) ? w(0, true) : w(std::ceil(lo), true);
+    	double out = (lo < 0) ? w(0, true) : w(std::floor(lo), true);
     	return log ? out : std::exp(out);
     };
 
@@ -43,7 +43,7 @@ Rcpp::List r_bessel_v2(unsigned int n, double lambda, double nu, unsigned int N,
     	double lo, double hi, bool log)
     {
     	if (lo < 0 && hi < 0) { Rcpp::stop("Did not code this case"); }
-    	double out = std::isinf(hi) ? w(hi, true) : w(std::floor(hi), true);
+    	double out = std::isinf(hi) ? w(hi, true) : w(std::ceil(hi), true);
     	return log ? out : std::exp(out);
     };
 

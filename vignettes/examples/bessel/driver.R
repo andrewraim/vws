@@ -36,7 +36,7 @@ plot_bounds(out$lbdd)
 
 # ----- Version 3 -----
 # Use custom optimization routine to compute constants in majorizer
-out = r_bessel_v3(n, lambda, nu, N, lo = -0.5, hi = 1e8, tol, max_rejects, report)
+out = r_bessel_v3(n, lambda, nu, N, lo = -0.5, hi = 1e5, tol, max_rejects, report)
 
 xseq = seq(0, max(out$draws))
 fseq = d_bessel(xseq, lambda, nu)
