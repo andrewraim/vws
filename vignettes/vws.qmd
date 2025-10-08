@@ -2106,6 +2106,8 @@ It looks like we can capture the distribution almost exactly by covering the ent
 
 Consider giving background information about the Bessel distribution to show why it was of special interest to Devroye.
 
+**TBD:** for the majorizers, let's get the actual parameters for the constant or linear functions so we can plot them as functions rather than points.
+
 ## Constant Majorizer with Numerical Optimization {#sec-bessel-const-default}
 
 ```{.cpp include="examples/bessel/bessel-v1.cpp" code-line-numbers="true"}

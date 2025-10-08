@@ -12,38 +12,73 @@ tol = 0.01
 max_rejects = 50000
 report = 10000
 
+xseq = seq(0, 15)
+fseq = d_bessel(xseq, lambda, nu)
+wseq = w(xseq, log = F)
+
 # ----- Version 1 -----
 # Use numerical optimization to compute constants in majorizer
-out = r_bessel_v1(n, lambda, nu, N, tol, max_rejects, report)
-
-xseq = seq(0, max(out$draws))
-fseq = d_bessel(xseq, lambda, nu)
+out = r_bessel_v1(n, lambda, nu, N, tol, max_rejects, report, x = xseq)
 
 plot_pmf(out$draws) +
 	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y))
+
 plot_bounds(out$lbdd)
+
+data.frame(x = xseq, h = out$hx) %>%
+	ggplot() +
+	geom_point(aes(x, h), pch = 1) +
+	geom_point(aes(x, fseq), pch = 4) +
+	theme_minimal()
+
+data.frame(x = xseq, wmaj = exp(out$wmajx)) %>%
+	ggplot() +
+	geom_point(aes(x, wmaj), pch = 1) +
+	geom_point(aes(x, wseq), pch = 4) +
+	theme_minimal()
 
 # ----- Version 2 -----
 # Use custom optimization routine to compute constants in majorizer.
-out = r_bessel_v2(n, lambda, nu, N, tol, max_rejects, report)
-
-xseq = seq(0, max(out$draws))
-fseq = d_bessel(xseq, lambda, nu)
+out = r_bessel_v2(n, lambda, nu, N, tol, max_rejects, report, x = xseq)
 
 plot_pmf(out$draws) +
 	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y))
+
 plot_bounds(out$lbdd)
+
+data.frame(x = xseq, h = out$hx) %>%
+	ggplot() +
+	geom_point(aes(x, h), pch = 1) +
+	geom_point(aes(x, fseq), pch = 4) +
+	theme_minimal()
+
+data.frame(x = xseq, wmaj = exp(out$wmajx)) %>%
+	ggplot() +
+	geom_point(aes(x, wmaj), pch = 1) +
+	geom_point(aes(x, wseq), pch = 4) +
+	theme_minimal()
 
 # ----- Version 3 -----
 # Use custom optimization routine to compute constants in majorizer
-out = r_bessel_v3(n, lambda, nu, N, lo = -0.5, hi = 1e8, tol, max_rejects, report)
-
-xseq = seq(0, max(out$draws))
-fseq = d_bessel(xseq, lambda, nu)
+out = r_bessel_v3(n, lambda, nu, N, lo = -0.5, hi = 1e8, tol, max_rejects,
+	report, x = xseq)
 
 plot_pmf(out$draws) +
 	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y))
+
 plot_bounds(out$lbdd)
+
+data.frame(x = xseq, h = out$hx) %>%
+	ggplot() +
+	geom_point(aes(x, h), pch = 1) +
+	geom_point(aes(x, fseq), pch = 4) +
+	theme_minimal()
+
+data.frame(x = xseq, wmaj = exp(out$wmajx)) %>%
+	ggplot() +
+	geom_point(aes(x, wmaj), pch = 1) +
+	geom_point(aes(x, wseq), pch = 4) +
+	theme_minimal()
 
 # Debugging
 xseq = 0:30
@@ -58,11 +93,6 @@ plot(xseq, fseq2)
 points(xseq, fseq1, pch = 4)
 
 incgamma(a = 0, x = 0, lower = F, log = T)
-
-w = function(x, log = TRUE) {
-	out = -lgamma(x + nu + 1)
-	if (log) { return(out) } else { return(exp(out)) }
-}
 
 w_major = function(x, log = TRUE) {
 	out = 0.693149 - 0.922785 * x

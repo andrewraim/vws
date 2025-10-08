@@ -1,3 +1,8 @@
+w = function(x, log = TRUE) {
+	out = -lgamma(x + nu + 1)
+	if (log) { return(out) } else { return(exp(out)) }
+}
+
 d_bessel = function(x, a, nu, normalize = T, log = F)
 {
 	lnc = ifelse(normalize, log(besselI(a, nu)), 0)
