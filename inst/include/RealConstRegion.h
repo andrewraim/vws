@@ -64,6 +64,7 @@ public:
 	bool s(const double& x) const;
 	double w(const double& x, bool log = true) const;
 	double w_major(const double& x, bool log = true) const;
+	double w_minor(const double& x, bool log = true) const;
 	bool is_bifurcatable() const;
 	double lower() const { return _a; }
 	double upper() const { return _b; }
@@ -214,6 +215,12 @@ inline double RealConstRegion::w(const double& x, bool log) const
 inline double RealConstRegion::w_major(const double& x, bool log) const
 {
 	double out = _log_w_max;
+	return log ? out : exp(out);
+}
+
+inline double RealConstRegion::w_minor(const double& x, bool log) const
+{
+	double out = _log_w_min;
 	return log ? out : exp(out);
 }
 

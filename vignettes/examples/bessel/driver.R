@@ -5,9 +5,9 @@ Rcpp::sourceCpp("bessel-v2.cpp")
 Rcpp::sourceCpp("bessel-v3.cpp")
 
 n = 20000
-lambda = 5
+lambda = 10
 nu = 2
-N = 20
+N = 10
 tol = 0.01
 max_rejects = 50000
 report = 10000
@@ -18,7 +18,7 @@ wseq = w(xseq, log = F)
 
 # ----- Version 1 -----
 # Use numerical optimization to compute constants in majorizer
-out = r_bessel_v1(n, lambda, nu, N, tol, max_rejects, report, x = xseq)
+out = r_bessel_v1(n, lambda, nu, N, tol, max_rejects*50, report, x = xseq)
 
 plot_pmf(out$draws) +
 	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y))
@@ -29,12 +29,17 @@ data.frame(x = xseq, h = out$hx) %>%
 	ggplot() +
 	geom_point(aes(x, h), pch = 1) +
 	geom_point(aes(x, fseq), pch = 4) +
+	xlab("x") +
+	ylab("Density") +
 	theme_minimal()
 
-data.frame(x = xseq, wmaj = exp(out$wmajx)) %>%
-	ggplot() +
-	geom_point(aes(x, wmaj), pch = 1) +
-	geom_point(aes(x, wseq), pch = 4) +
+ggplot(out$df_weight) +
+	geom_segment(aes(x = lo, xend = hi, y = exp(wmax)), col = "blue") +
+	# geom_segment(aes(x = lo, xend = hi, y = exp(wmin)), col = "red") +
+	coord_cartesian(xlim = c(NA, 15)) +
+	# geom_function(fun = w, args = list(log = FALSE), xlim = c(0,15)) +
+	geom_point(data = data.frame(x = xseq, w = wseq), aes(x, w)) +
+	ylab("Weight") +
 	theme_minimal()
 
 # ----- Version 2 -----
@@ -50,17 +55,22 @@ data.frame(x = xseq, h = out$hx) %>%
 	ggplot() +
 	geom_point(aes(x, h), pch = 1) +
 	geom_point(aes(x, fseq), pch = 4) +
+	xlab("x") +
+	ylab("Density") +
 	theme_minimal()
 
-data.frame(x = xseq, wmaj = exp(out$wmajx)) %>%
-	ggplot() +
-	geom_point(aes(x, wmaj), pch = 1) +
-	geom_point(aes(x, wseq), pch = 4) +
+ggplot(out$df_weight) +
+	geom_segment(aes(x = lo, xend = hi, y = exp(wmax)), col = "blue") +
+	# geom_segment(aes(x = lo, xend = hi, y = exp(wmin)), col = "red") +
+	coord_cartesian(xlim = c(NA, 15)) +
+	# geom_function(fun = w, args = list(log = FALSE), xlim = c(0,15)) +
+	geom_point(data = data.frame(x = xseq, w = wseq), aes(x, w)) +
+	ylab("Weight") +
 	theme_minimal()
 
 # ----- Version 3 -----
 # Use custom optimization routine to compute constants in majorizer
-out = r_bessel_v3(n, lambda, nu, N, lo = -0.5, hi = 1e8, tol, max_rejects,
+out = r_bessel_v3(n, lambda, nu, N, lo = -0.1, hi = 100, tol, max_rejects,
 	report, x = xseq)
 
 plot_pmf(out$draws) +
@@ -72,15 +82,25 @@ data.frame(x = xseq, h = out$hx) %>%
 	ggplot() +
 	geom_point(aes(x, h), pch = 1) +
 	geom_point(aes(x, fseq), pch = 4) +
+	xlab("x") +
+	ylab("Density") +
 	theme_minimal()
 
-data.frame(x = xseq, wmaj = exp(out$wmajx)) %>%
+out$df_weight %>%
+	mutate(w_lo = exp(beta0_max + beta1_max * lo)) %>%
+	mutate(w_hi = exp(beta0_max + beta1_max * hi)) %>%
 	ggplot() +
-	geom_point(aes(x, wmaj), pch = 1) +
-	geom_point(aes(x, wseq), pch = 4) +
+	geom_segment(aes(x = lo, xend = hi, y = w_lo, yend = w_hi), col = "blue") +
+	geom_point(data = data.frame(x = xseq, w = wseq), aes(x, w)) +
+	coord_cartesian(xlim = c(NA, 15)) +
+	xlab("x") +
+	ylab("Weight") +
 	theme_minimal()
 
-# Debugging
+
+
+
+# ----- Debugging -----
 xseq = 0:30
 
 fseq1 = dpois(xseq, lambda = 10)

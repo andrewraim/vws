@@ -29,7 +29,7 @@ Rcpp::List r_bessel_v1(unsigned int n, double lambda, double nu, unsigned int N,
     };
 
     vws::UnivariateHelper helper(df, pf, qf);
-    vws::IntConstRegion supp(-1, R_PosInf, w, helper);
+    vws::IntConstRegion supp(-0.1, R_PosInf, w, helper);
     vws::FMMProposal<double, vws::IntConstRegion> h(supp);
 
     auto lbdd = h.refine(N - 1, tol);
@@ -45,11 +45,34 @@ Rcpp::List r_bessel_v1(unsigned int n, double lambda, double nu, unsigned int N,
         wmajx(i) = h.w_major(x(i));
     }
 
+    Rcpp::NumericVector lo(N);
+    Rcpp::NumericVector hi(N);
+    Rcpp::NumericVector wmin(N);
+    Rcpp::NumericVector wmax(N);
+
+    std::set<vws::IntConstRegion>::const_iterator itr = h.regions_begin();
+    unsigned int i = 0;
+    for (; itr != h.regions_end(); itr++) {
+		lo(i) = itr->lower();
+    	hi(i) = itr->upper();
+    	wmin(i) = itr->w_minor(itr->midpoint());
+    	wmax(i) = itr->w_major(itr->midpoint());
+    	i++;
+    }
+
+    const Rcpp::DataFrame& df_weight = Rcpp::DataFrame::create(
+    	Rcpp::Named("lo") = lo,
+    	Rcpp::Named("hi") = hi,
+    	Rcpp::Named("wmin") = wmin,
+    	Rcpp::Named("wmax") = wmax
+    );
+
     return Rcpp::List::create(
         Rcpp::Named("draws") = out.draws,
         Rcpp::Named("rejects") = out.rejects,
         Rcpp::Named("lbdd") = lbdd,
         Rcpp::Named("hx") = hx,
-        Rcpp::Named("wmajx") = wmajx
+        Rcpp::Named("wmajx") = wmajx,
+        Rcpp::Named("df_weight") = df_weight
     );
 }
