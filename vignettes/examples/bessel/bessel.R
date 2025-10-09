@@ -3,10 +3,15 @@ w = function(x, log = TRUE) {
 	if (log) { return(out) } else { return(exp(out)) }
 }
 
-d_bessel = function(x, a, nu, normalize = T, log = F)
+d_bessel = function(x, lambda, nu, normalize = T, log = F)
 {
-	lnc = ifelse(normalize, log(besselI(a, nu)), 0)
-	out = (2*x + nu) * log(a/2) - lfactorial(x) - lgamma(x + nu + 1) - lnc
+	# lnc = ifelse(normalize, log(besselI(lambda, nu)), 0)
+	# out = (2*x + nu) * (log(lambda) - log(2)) - lfactorial(x) - lgamma(x + nu + 1) - lnc
+	lnc = 0
+	if (normalize) {
+		lnc = -nu * log(lambda) + nu * log(2) - lambda^2 / 4 + log(besselI(lambda, nu))
+	}
+	out = dpois(x, lambda^2 / 4, log = TRUE) - lgamma(x + nu + 1) - lnc
 	if (log) { return(out) } else { return(exp(out)) }
 }
 

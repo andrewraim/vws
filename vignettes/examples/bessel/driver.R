@@ -27,18 +27,16 @@ plot_bounds(out$lbdd)
 
 data.frame(x = xseq, h = out$hx) %>%
 	ggplot() +
-	geom_point(aes(x, h), pch = 1) +
-	geom_point(aes(x, fseq), pch = 4) +
+	geom_bar(aes(x, h), stat = "identity", fill = NA, col = "black") +
+	geom_point(aes(x, fseq), pch = 2) +
 	xlab("x") +
 	ylab("Density") +
 	theme_minimal()
 
 ggplot(out$df_weight) +
-	geom_segment(aes(x = lo, xend = hi, y = wmax), col = "blue") +
-	geom_point(aes(x = hi, y = wmax), col = "blue") +
-	# geom_segment(aes(x = lo, xend = hi, y = exp(wmin)), col = "red") +
-	# geom_function(fun = w, args = list(log = FALSE), xlim = c(0,15)) +
-	geom_point(data = data.frame(x = xseq, w = lwseq), aes(x, w), pch = 4) +
+	geom_segment(aes(x = lo, xend = hi, y = lwmax), col = "blue") +
+	geom_point(aes(x = hi, y = lwmax), col = "blue") +
+	geom_point(data = data.frame(x = xseq, w = lwseq), aes(x, w), pch = 2) +
 	coord_cartesian(xlim = c(NA, 15), ylim = c(min(lwseq), NA)) +
 	xlab("x") +
 	ylab("Weight") +
@@ -55,18 +53,16 @@ plot_bounds(out$lbdd)
 
 data.frame(x = xseq, h = out$hx) %>%
 	ggplot() +
-	geom_point(aes(x, h), pch = 1) +
-	geom_point(aes(x, fseq), pch = 4) +
+	geom_bar(aes(x, h), stat = "identity", fill = NA, col = "black") +
+	geom_point(aes(x, fseq), pch = 2) +
 	xlab("x") +
 	ylab("Density") +
 	theme_minimal()
 
 ggplot(out$df_weight) +
-	geom_segment(aes(x = lo, xend = hi, y = wmax), col = "blue") +
-	geom_point(aes(x = hi, y = wmax), col = "blue") +
-	# geom_segment(aes(x = lo, xend = hi, y = exp(wmin)), col = "red") +
-	# geom_function(fun = w, args = list(log = FALSE), xlim = c(0,15)) +
-	geom_point(data = data.frame(x = xseq, w = lwseq), aes(x, w), pch = 4) +
+	geom_segment(aes(x = lo, xend = hi, y = lwmax), col = "blue") +
+	geom_point(aes(x = hi, y = lwmax), col = "blue") +
+	geom_point(data = data.frame(x = xseq, w = lwseq), aes(x, w), pch = 2) +
 	coord_cartesian(xlim = c(NA, 15), ylim = c(min(lwseq), NA)) +
 	xlab("x") +
 	ylab("Weight") +
@@ -74,7 +70,7 @@ ggplot(out$df_weight) +
 
 # ----- Version 3 -----
 # Use custom optimization routine to compute constants in majorizer
-out = r_bessel_v3(n, lambda, nu, N, lo = -0.1, hi = 100, tol, max_rejects,
+out = r_bessel_v3(n, lambda, nu, lo = -0.1, hi = 1e5, N, tol, max_rejects,
 	report, x = xseq)
 
 plot_pmf(out$draws) +
@@ -84,8 +80,8 @@ plot_bounds(out$lbdd)
 
 data.frame(x = xseq, h = out$hx) %>%
 	ggplot() +
-	geom_point(aes(x, h), pch = 1) +
-	geom_point(aes(x, fseq), pch = 4) +
+	geom_bar(aes(x, h), stat = "identity", fill = NA, col = "black") +
+	geom_point(aes(x, fseq), pch = 2) +
 	xlab("x") +
 	ylab("Density") +
 	theme_minimal()
@@ -96,7 +92,7 @@ out$df_weight %>%
 	ggplot() +
 	geom_segment(aes(x = lo, xend = hi, y = w_lo, yend = w_hi), col = "blue") +
 	geom_point(aes(x = hi, y = w_hi), col = "blue") +
-	geom_point(data = data.frame(x = xseq, y = lwseq), aes(x, y), pch = 4) +
+	geom_point(data = data.frame(x = xseq, y = lwseq), aes(x, y), pch = 2) +
 	coord_cartesian(xlim = c(NA, 15), ylim = c(min(lwseq), NA)) +
 	xlab("x") +
 	ylab("Weight") +

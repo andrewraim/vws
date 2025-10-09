@@ -70,24 +70,24 @@ Rcpp::List r_bessel_v2(unsigned int n, double lambda, double nu, unsigned int N,
 
     Rcpp::NumericVector lower(N);
     Rcpp::NumericVector upper(N);
-    Rcpp::NumericVector wmin(N);
-    Rcpp::NumericVector wmax(N);
+    Rcpp::NumericVector lwmin(N);
+    Rcpp::NumericVector lwmax(N);
 
     std::set<vws::IntConstRegion>::const_iterator itr = h.regions_begin();
     unsigned int i = 0;
     for (; itr != h.regions_end(); itr++) {
 		lower(i) = itr->lower();
     	upper(i) = itr->upper();
-    	wmin(i) = itr->w_minor(itr->midpoint());
-    	wmax(i) = itr->w_major(itr->midpoint());
+    	lwmin(i) = itr->w_minor(itr->midpoint());
+    	lwmax(i) = itr->w_major(itr->midpoint());
     	i++;
     }
 
     const Rcpp::DataFrame& df_weight = Rcpp::DataFrame::create(
     	Rcpp::Named("lo") = lower,
     	Rcpp::Named("hi") = upper,
-    	Rcpp::Named("wmin") = wmin,
-    	Rcpp::Named("wmax") = wmax
+    	Rcpp::Named("lwmin") = lwmin,
+    	Rcpp::Named("lwmax") = lwmax
     );
 
     return Rcpp::List::create(
