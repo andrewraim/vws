@@ -2130,26 +2130,24 @@ The following remark is useful to formulate the linear majorizer.
 Equation 6.5.13 of @AbramowitzStegun1972 can be rewritten as
 <!-- -->
 \begin{displaymath}
-\sum_{k=0}^{n-1} \frac{x^k}{k!} = e^x \frac{\Gamma(n,x)}{\Gamma(n)},
+e^{-\lambda} \sum_{x=0}^{n-1} \frac{\lambda^x}{x!}
+= \frac{\Gamma(n, \lambda)}{\Gamma(n)},
 \quad n \in \{ 1, 2, \ldots \},
 \end{displaymath}
 <!-- -->
-where $\Gamma(a,x) = \int_x^\infty t^{a-1} e^{-t} dt$ and $\Gamma(a) = \Gamma(a,0)$. Therefore, for nonnegative integers $1 \leq r \leq s$,
+where $\Gamma(c,z) = \int_z^\infty t^{c-1} e^{-t} dt$ and $\Gamma(c) = \Gamma(c,0)$. Therefore, for $a, b \in \mathbb{R}$ with $0 \leq a \leq b$ and $X \sim \text{Poisson}(\lambda)$,
 <!-- -->
 \begin{align*}
-\sum_{k = r}^{s} \frac{x^k}{k!}
-&= \sum_{k = 0}^{s} \frac{x^k}{k!} - \sum_{k = 0}^{r-1} \frac{x^k}{k!} \\
-&= e^x \frac{\Gamma(s+1,x)}{\Gamma(s+1)}
-- e^x \frac{\Gamma(r,x)}{\Gamma(r)}.
+\Prob(a < X \leq b)
+&= \Prob(\lfloor a \rfloor + 1 \leq X \leq \lfloor b \rfloor) \\
+&= \sum_{x = \lfloor a \rfloor + 1}^{\lfloor b \rfloor}
+\frac{e^{-\lambda} \lambda^x}{x!} \\
+&= \sum_{x = 0}^{\lfloor b \rfloor} \frac{e^{-\lambda} \lambda^x}{x!}
+- \sum_{x = 0}^{\lfloor a \rfloor} \frac{e^{-\lambda} \lambda^x}{x!} \\
+&= \frac{\Gamma(\lfloor b \rfloor + 1, \lambda)}{\Gamma(\lfloor b \rfloor + 1)}
+- \frac{\Gamma(\lfloor a \rfloor + 1, \lambda)}{\Gamma(\lfloor a \rfloor + 1)}.
 \end{align*}
 <!-- -->
-If $X \sim \text{Poisson}(\lambda)$, then
-<!-- -->
-\begin{math}
-\Prob(r < X \leq s) =
-\Gamma(s+1, \lambda) / \Gamma(s+1)
--\Gamma(r+1, \lambda) / \Gamma(r+1).
-\end{math}
 \remarkqed
 :::
 

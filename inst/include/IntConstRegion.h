@@ -121,7 +121,7 @@ inline bool IntConstRegion::is_bifurcatable() const
 {
 	// Return true if the distance between a and b allows for two or more
 	// integers
-	return _b - _a >= 2;
+	return _b - _a > 1;
 }
 
 inline bool IntConstRegion::operator<(const IntConstRegion& x) const

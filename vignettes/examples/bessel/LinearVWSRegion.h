@@ -47,7 +47,7 @@ public:
 		// Return true if the distance between a and b allows for two or more
 		// integers.
 		// return std::ceil(_a) <= std::floor(_b);
-		return _b - _a >= 2;
+		return _b - _a > 1;
 	}
 
 	double w_major(const double& x, bool log = true) const;
@@ -179,7 +179,7 @@ inline LinearVWSRegion::LinearVWSRegion(double a, double lambda, double nu)
 
 inline void LinearVWSRegion::init()
 {
-	Rprintf("init checkpoint 0\n");
+	// Rprintf("init checkpoint 0\n");
 
 	if (_a >= _b) {
 		Rcpp::stop("a >= b: %g >= %g", _a, _b);
@@ -215,7 +215,7 @@ inline void LinearVWSRegion::init()
 	// Rprintf("init checkpoint 2\n");
 
 	// log(w(x)) is concave. Any tangent line will lie above the curve.
-	Rprintf("init checkpoint 3.1.1\n");
+	// Rprintf("init checkpoint 3.1.1\n");
 
 	// For the majorizer, solve a minimization problem
 	double init = midpoint();
@@ -224,17 +224,17 @@ inline void LinearVWSRegion::init()
 	_beta0_max = w(c_star, true) - c_star*d_log_w(c_star);
 	_beta1_max = d_log_w(c_star);
 
-	Rprintf("init checkpoint 3.1.2\n");
+	// Rprintf("init checkpoint 3.1.2\n");
 
 	// For the minorizer
 	_beta1_min = (w(_b, true) - w(_a, true)) / (_b - _a);
 	_beta0_min = w(_a, true) - _a*_beta1_min;
 
-	Rprintf("init checkpoint 3.1.3\n");
+	// Rprintf("init checkpoint 3.1.3\n");
 
-	Rprintf("a = %g, b = %g\n", _a, _b);
-	Rprintf("beta0_min = %g, beta1_min = %g, beta0_max = %g, beta1_max = %g\n",
-		_beta0_min, _beta1_min, _beta0_max, _beta1_max);
+	// Rprintf("a = %g, b = %g\n", _a, _b);
+	// Rprintf("beta0_min = %g, beta1_min = %g, beta0_max = %g, beta1_max = %g\n",
+	// 	_beta0_min, _beta1_min, _beta0_max, _beta1_max);
 }
 
 inline double LinearVWSRegion::xi_upper(bool log) const

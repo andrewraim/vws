@@ -336,7 +336,7 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 			n_bif += (log_volume(l) > R_NegInf);
 		}
 
-		Rprintf("refine checkpoint 2.5, n_bif = %d\n", n_bif);
+		// Rprintf("refine checkpoint 2.5, n_bif = %d\n", n_bif);
 
 		if (n_bif == 0) {
 			Rcpp::warning("No regions left to bifurcate");
@@ -352,15 +352,15 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 			jdx = r_categ(log_volume, true);
 		}
 
-		Rcpp::print(log_volume);
+		// Rcpp::print(log_volume);
 
-		Rprintf("refine checkpoint 2.5, jdx = %d\n", jdx);
+		// Rprintf("refine checkpoint 2.5, jdx = %d\n", jdx);
 
 		const R& r = _regions_vec[jdx];
 
-		Rprintf("refine checkpoint 2.6\n");
+		// Rprintf("refine checkpoint 2.6\n");
 
-		Rprintf("Partitioning region %s\n", r.description().c_str());
+		// Rprintf("Partitioning region %s\n", r.description().c_str());
 
 		// Split the target region and make another proposal with it.
 		//
@@ -505,8 +505,8 @@ Rcpp::NumericVector FMMProposal<T,R>::rejection_bound_regions(bool log) const
 	const Rcpp::NumericVector& lxl = *_log_xi_lower;
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
-	Rcpp::print(lxl);
-	Rcpp::print(lxu);
+	// Rcpp::print(lxl);
+	// Rcpp::print(lxu);
 	if (log) { return out; } else { return exp(out); }
 }
 
