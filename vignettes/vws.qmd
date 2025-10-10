@@ -4,7 +4,7 @@ author: Andrew M. Raim, James A. Livsey, and Kyle M. Irimata
 format:
   pdf:
     mathspec: true
-    fontsize: 10pt
+    fontsize: 12pt
     indent: false
     toc: true
     number-sections: true
@@ -60,9 +60,13 @@ set.seed(1234)
 - We should have a separate section where we describe doing stuff: constructing
   the proposal (special cases and general case where we override abstract
   region), refining the proposal, ...
-
-- Let $\ind\{ x \in A \}$ be the indicator function for the event $[x \in A]$.
 :::
+
+# Disclaimer and Acknowledgments {-}
+
+This document is released to inform interested parties of ongoing research and to encourage discussion of work in progress. Any views expressed are those of the author and not those of the U.S. Census Bureau.
+
+Although there are no guarantees of correctness of the `vws` package, reasonable efforts will be made to address shortcomings. Comments, questions, corrections, and possible improvements can be communicated through the project’s Github repository (<https://github.com/andrewraim/vws>).
 
 # Introduction
 
@@ -78,26 +82,6 @@ file.path(path.package("vws"), "doc", "examples")
 (TBD: where did they go?!). Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described in the most detail. Code for the `vws` package is maintained in the GitHub repository at <https://github.com/andrewraim/vws>. 
 
 The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-prelim gives some preliminaries on programming which are useful for `vws` package users. @sec-overview gives an overview of the package and its major components. @sec-cpp-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von-Mises Fisher (VMF) distribution which was considered in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting considered by @DirectSamplingDAS2021 and others. @sec-bessel develops VWS samplers for the Bessel count distribution; variate generation via rejection sampling has been considered in this setting by @Devroye2002.
-
-::: {.callout-caution title="TBD: move this"}
-To implement a rejection sampler with the `vws` package, the user must make use
-of an existing subclass of `Region` or implement a new one. Two such subclasses
-included in the package implement the univariate "constant VWS" method described
-by @VWS2025:
-
-- `RealConstRegion`: constant VWS with a continuous support.
-- `IntConstRegion`: constant VWS with an integer support.
-
-These two regions
-are somewhat flexible and can be refined to a variety of problems. In this
-vignette, we will describe the process of coding a customized region. We will
-give one univariate example that makes use of the linear VWS method for
-improved efficiency, and one multivariate example where the regions go beyond
-intervals.
-:::
-
-**TBD**: The example sections illustrate VWS samplers implemented using the `vws` package. The first example in [@sec-ln-norm] is described in the most explicit level of detail.
-
 
 # A Brief Review of Vertical Weighted Strips {#sec-vws}
 
@@ -118,13 +102,25 @@ h_0(x) = \overline{w}(x) g(x), \quad
 \psi_N = \int_\Omega h_0(x) d\nu(x).
 \end{align*}
 <!-- -->
-The construction assumes that $\Omega$ is partitioned into regions $\mathcal{D}_1, \ldots, \mathcal{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathcal{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathcal{D}_j\}$, the unnormalized proposal becomes
+The construction assumes that $\Omega$ is partitioned into regions $\mathcal{D}_1, \ldots, \mathcal{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathcal{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Let $\ind\{ x \in A \}$ denote the indicator function for $x \in A$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathcal{D}_j\}$, the unnormalized proposal becomes
 <!-- -->
 \begin{align*}
 h_0(x) = g(x) \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathcal{D}_j\}.
 \end{align*}
 <!-- -->
-With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. The normalized $h$ can be obtained by defining $\overline{\xi}_j = \E[\overline{w}_j(T) \ind\{T \in \mathcal{D}_j\}]$ with $T \sim g$ and $\psi_N = \sum_{j=1}^N \overline{\xi}_j$, giving the finite mixture
+With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. The normalized $h$ can be obtained by defining
+<!-- -->
+\begin{align*}
+\overline{\xi}_j = \E[\overline{w}_j(T) \ind\{T \in \mathcal{D}_j\}], \quad T \sim g,
+\end{align*}
+<!-- -->
+and
+<!-- -->
+\begin{align*}
+\psi_N = \sum_{j=1}^N \overline{\xi}_j,
+\end{align*}
+<!-- -->
+giving the finite mixture
 <!-- -->
 \begin{align}
 h(x)
@@ -133,34 +129,39 @@ h(x)
 \label{eqn:fmm-proposal}
 \end{align}
 <!-- -->
-Equation \eqref{eqn:fmm-proposal} is seen to be a finite mixture with mixing weights $\pi_j = \overline{\xi}_j / \{ \sum_{\ell=1}^N \overline{\xi}_\ell \}$, and component densities
+a finite mixture with mixing weights and component densities,
 <!-- -->
 \begin{align*}
+\pi_j = \frac{\overline{\xi}_j}{\sum_{\ell=1}^N \overline{\xi}_\ell},
+\quad \text{and} \quad
 g_j(x) = 
 \overline{w}_j(x) g(x) \ind\{x \in \mathcal{D}_j\} / \overline{\xi}_j,
 \end{align*}
 <!-- -->
-which are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a minorizer of $w$ so that
+respectively. The $g_j$ are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a minorizer of $w$ so that
 $0 \leq \underline{w}_j(x) \leq w(x)$ for all $x \in \mathcal{D}_j$,
 and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind\{T \in \mathcal{D}_j\}]$ with $T \sim g$. When $h$ is used as a proposal in rejection sampling, an upper bound for the probability of rejection is
 <!-- -->
 \begin{align}
-1 - \frac{\sum_{j=1}^N \underline{\xi}_j}{\sum_{j=1}^N \overline{\xi}_j}.
+\rho_+ = \sum_{j=1}^N \rho_j,
+\quad \text{where} \quad
+\rho_j = \frac{
+\overline{\xi}_j - \underline{\xi}_j
+}{
+\sum_{j=1}^N \overline{\xi}_\ell
+}.
 \label{eqn:bound}
 \end{align}
 <!-- -->
-This bound can be used to quickly determine whether the proposal will be viable for rejection sampling. If the bound is seen to be large, the proposal may be refined by altering the partition or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in the present document. [@sec-vws-constant] discusses the use of a constant function. A linear function is discussed in @sec-vws-linear.
+The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to \eqref{eqn:bound}. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling. If the bound is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in remainder of this section. [@sec-vws-constant] discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear.
 
 ## Constant Majorizer {#sec-vws-constant}
 
-**TBD: Make this only about the method. Code will be elsewhere**
-
-`RealConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way. Suppose $\Omega = (a,b]$ is an interval whose endpoints may or may not be finite. Furthermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j = \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j = \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
+Suppose $\Omega = (\alpha_0, \alpha_N]$ is an interval whose endpoints may or may not be finite. Furthermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j \geq \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j \leq \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities
 $g_j(x) = g(x) \ind\{x \in \mathcal{D}_j\} / \Prob(T \in \mathcal{D}_j)$
 along with the quantities
 $\overline{\xi}_j = \overline{w}_j \Prob(T \in \mathcal{D}_j)$ and
 $\underline{\xi}_j = \underline{w}_j \Prob(T \in \mathcal{D}_j)$.
-
 
 ## Linear Majorizer {#sec-vws-linear}
 
@@ -168,62 +169,29 @@ $\underline{\xi}_j = \underline{w}_j \Prob(T \in \mathcal{D}_j)$.
 
 ## Knot Selection {#sec-vws-knots}
 
-**TBD**
+After selecting a decomposition of the target into weighted form \eqref{eqn:weighted-target}, the choice of knots is important to obtaining an efficient proposal distribution. One option is to specify knots at known locations. For example, we can consider using evenly spaced points on a given interval within the support; however, this may not take into account important features of the target and add wasteful mixture components which do not contribute much to the quality of the approximation. An automated option that often achieves much better results is the rule of thumb proposed in @VWS2025. This is shown here as Algorithm \ref{alg:refine}. This method sequentially refines an initial partitioning of the support; this may be a single region that contains the entire support. At least step a region is selected and bifurcated at its midpoint. The selection is probabilistic, with probability proportional to $\rho_\ell$. A deterministic greedy method can be considered instead by always selecting a region $\ell$ whose value $\rho_\ell$ is largest.
 
-- Our rule of thumb (and greedy option)
-- At specified knots
+Bifurcation at a midpoint is mostly straightforward in univariate settings where the support is a subset of the real line. However, there may be multiple ways to characterize this operation when the support is multivariate or structured like a multinomial sample space. These operations can be defined for such settings within the `vws` framework; however, this document does not consider such cases in detail.
 
 
-The `refine` function refines a given proposal, which is based on partition $\mathcal{D}_1, \ldots, \mathcal{D}_{N}$, by sequentially selecting and bifurcating regions $N'$ times to obtain a new partition $\mathcal{D}_1^*, \ldots, \mathcal{D}_{N + N'}^*$. The following rule of thumb seeks to reduce \eqref{eqn:bound}. Let
-<!-- -->
-\begin{align}
-\rho_1 = \frac{
-\overline{\xi}_1 - \underline{\xi}_1
-}{
-\sum_{j=1}^N \overline{\xi}_j
-},
-\quad \ldots, \quad
-\rho_N = \frac{
-\overline{\xi}_N - \underline{\xi}_N
-}{
-\sum_{j=1}^N \overline{\xi}_j
-}
-\label{eqn:bound-components}
-\end{align}
-<!-- -->
-be the contribution of each region to \eqref{eqn:bound} when there are $N$ regions. We draw index $\ell$ from $(1, \ldots, N)$ with probabilities proportional to $\rho_1, \ldots, \rho_N$, then bifurcate region $\ell$ into regions $\mathcal{D}_\ell^{(1)}$ and $\mathcal{D}_\ell^{(2)}$. There may be a number of ways to define bifurcation when $\Omega$ is a multivariate set. For a given subclass of `Region`, the bifurcation approach is to be implemented in the `bifurcate` method. Additionally, each subclass of `Region` should implement the `is_bifurcatable` method which returns `FALSE` if a `Region` object should not be further bifurcated; otherwise it returns `TRUE`.
-
-In the following example, a proposal `h_init` is refined `N = 10` times
-to yield an improved proposal `h`.
-
-```{R}
-#| eval: false
-#| prompt: true
-h_init = FMMProposal$new(regions)
-out = refine(h_init, N = 10)
-h = out$h
-```
-
-In addition to the element `h` in the return value which represents the refined
-proposal, the element `log_bdd_hist` contains a vector with values
-<!-- -->
-\begin{align*}
-\log\left\{
-1 - \frac{\sum_{j=1}^{N+t} \underline{\xi}_j^{(t)}}{\sum_{j=1}^{N+t} \overline{\xi}_j^{(t)}}
-\right\}
-\end{align*}
-<!-- -->
-computed at steps $t = 0, 1, \ldots, N'$ of the refinement process. Here, $\overline{\xi}_j^{(t)}$ and $\underline{\xi}_j^{(t)}$ respectively represent $\overline{\xi}_j$ and $\underline{\xi}_j$ at step $t$. Effectiveness of a call to `refine` can be evaluated by examining `log_bdd_hist`.
-
-```{r}
-#| eval: false
-#| prompt: true
-step = seq_along(out$log_bdd_hist) - 1  ## Make sequence 0, 1, ..., N
-bdd = exp(out$log_bdd_hist)             ## Exponentiate to probability scale
-plot(step, bdd, type = "l")
-```
-
-If the bound can be reduced to a sufficiently small probability, the user can be assured that the proportion of rejections will be relatively small during sampling. Note that the same call to `refine` may result in different `h` and `log_bdd_hist` outputs due to randomness in the refinement method.
+\begin{algorithm}
+\caption{Probabilistic rule of thumb for sequential knot selection.}
+\label{alg:refine}
+\hspace*{\algorithmicindent}\textbf{Input}: maximum number of knots to add $N$. \\
+\hspace*{\algorithmicindent}\textbf{Input}: initial vector of internal knots $\alpha_1, \ldots, \alpha_{N_0-1}$; may be empty with $N_0 = 0$. \\
+\hspace*{\algorithmicindent}\textbf{Input}: tolerance $\epsilon > 0$.
+\begin{algorithmic}[1]
+\State $j \leftarrow 0$ 
+\While{$j \leq N$}
+\State Let $\mathscr{D}_\ell$ with $\rho_\ell$ for $\ell \in \{ 1, \ldots, N_0 + j \}$ be current regions.
+\State If $\sum_{\ell=1}^{N_0 + j} \rho_\ell < \epsilon$, break from the loop.
+\State Draw $\ell \in \{ 1, \ldots N_0 + j \}$ from $\text{Discrete}(\rho_1, \ldots, \rho_{N_0 + j})$. \label{line:selection}
+\State Let $\alpha^*$ be midpoint of $\mathscr{D}_\ell$; add $\alpha^*$ to vector of knots.
+\State Let $j \leftarrow j + 1$. \label{line:midpoint}
+\EndWhile
+\State \Return $(\alpha_0, \ldots, \alpha_{N_0 + j})$.
+\end{algorithmic}
+\end{algorithm}
 
 # Preliminaries {#sec-prelim}
 
@@ -252,6 +220,7 @@ is coming up in @sec-vmf or another example.
 - Mention that we use a numerical method by default
 - R version
 - C++ version
+- `RealConstRegion` is a subclass of `Region` for a particular setting where operations can be coded in a relatively problem-agnostic way.
 
 # Overview of Package {#sec-overview}
 
@@ -267,6 +236,21 @@ Misc
   one) to see the basic usage pattern, then jump back up here to see the
   components described in more detail. May want to say this before we start
   going into any detail.
+
+To implement a rejection sampler with the `vws` package, the user must make use
+of an existing subclass of `Region` or implement a new one. Two such subclasses
+included in the package implement the univariate "constant VWS" method described
+by @VWS2025:
+
+- `RealConstRegion`: constant VWS with a continuous support.
+- `IntConstRegion`: constant VWS with an integer support.
+
+These two regions
+are somewhat flexible and can be refined to a variety of problems. In this
+vignette, we will describe the process of coding a customized region. We will
+give one univariate example that makes use of the linear VWS method for
+improved efficiency, and one multivariate example where the regions go beyond
+intervals.
 :::
 
 Use of the package focuses on two `R6` classes. The `FMMProposal` class represents finite mixture \eqref{eqn:fmm-proposal} and encapsulates operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations that must be supported on it for VWS; i.e., all problem-specific logic is coded within a `Region`. An `FMMProposal` object is created from a list of one or more `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
@@ -1956,11 +1940,7 @@ If $\zeta$ is convex on $\mathcal{D}_j$ rather than concave, the roles of \eqref
 
 # Example: Bessel Count Distribution {#sec-bessel}
 
-::: {.callout-caution title="TBD"}
-Under construction. The example is working, but the writing needs to be fleshed out.
-:::
-
-In this example, we consider generating from the Bessel density described by @Devroye2002 as
+While Sections [-@sec-vmf] and [-@sec-ln-norm] considered continuous distributions, we now demonstrate generation from a discrete target. Consider generating from the Bessel distribution with density
 <!-- -->
 \begin{align*}
 f(x) = \frac{(\lambda/2)^{2x+\nu}}{I_v(\lambda) \cdot x! \cdot \Gamma(x + \nu + 1)}
@@ -1969,19 +1949,13 @@ f(x) = \frac{(\lambda/2)^{2x+\nu}}{I_v(\lambda) \cdot x! \cdot \Gamma(x + \nu + 
 \lambda > 0,
 \end{align*}
 <!-- -->
-where $\mathbb{N} = \{ 0, 1, 2, \ldots \}$ is the set of nonnegative integers
-and
+where $\mathbb{N} = \{ 0, 1, 2, \ldots \}$ is the set of nonnegative integers and where
 <!-- -->
 \begin{align*}
 I_v(\lambda) = \sum_{x=0}^\infty \frac{(\lambda/2)^{2x+\nu}}{x! \cdot \Gamma(x + \nu + 1)}
 \end{align*}
 <!-- -->
-is a modified Bessel function of the first kind.
-
-At the time the paper was written, @Devroye2002 considered it difficult to
-generate exact draws from this distribution. He develops what appears to be a customized accept-reject method after establishing properties of the distribution. We can draw from this distribution fairly easily without such an in-depth analysis.
-
-Our approach is to decompose the density into
+is a modified Bessel function of the first kind. Let $X \sim \text{Bessel}(\lambda, \nu)$ denote a random variable with density $f$. @Devroye2002 develops a rejection sampling method to generate draws of $X$ after establishing properties of the distribution. Here we implement several VWS samplers which do not require as much insight. Our approach is to decompose the density into
 <!-- -->
 \begin{align*}
 f(x)
@@ -1994,8 +1968,6 @@ f(x)
 \end{align*}
 <!-- -->
 so that $g$ is the density of a $\text{Poisson}(\lambda^2 / 4)$ distribution and the weight function is specified by $\log w(x) = -\log \Gamma(x + \nu + 1)$. Notice that we have disregarded many of the normalizing constants in this formulation.
-
-It looks like we can capture the distribution almost exactly by covering the entire support with a not-too-large choice of $N$, but this will depend on the parameters $\lambda$ and $\nu$. When we have refined to this point, it becomes extremely rare to reject any candidates.
 
 Before proceeding, let us fix values of $\lambda$ and $\nu$ and compute values of $\log w(x)$ and $f(x)$; these will be useful for illustration.
 
@@ -2374,17 +2346,6 @@ data.frame(x = xseq, h = out3$hx) %>%
 	theme_minimal()
 ```
 
-
-# Conclusions
-
-::: {.callout-caution title="TBD"}
-Content needed
-:::
-
-# Acknowledgments {.unlisted}
-
-::: {.callout-caution title="TBD"}
-Content needed
-:::
+**TBD:** Because the mass of this particular $\text{Bessel}(\lambda, \nu)$ distribution is focused on a small set of integers, the proposal can be made practically equivalent to the target with a sufficient number of regions. After being refined to this point, it becomes extremely rare in rejection sampling to reject any candidates.
 
 # References
