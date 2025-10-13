@@ -1,7 +1,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
-notes.md
 ^doc$
 ^Meta$
 ^_pkgdown\.yml$
@@ -9,3 +8,4 @@ notes.md
 ^pkgdown$
 vignettes/bak
 vignettes/.quarto
+^.*.o$

@@ -52,11 +52,11 @@ set.seed(1234)
 ```
 
 ::: {.callout-caution title="TBD"}
-1. Examples are not being migrated to the installed package anymore ...
 1. Write out the formulation for the linear majorizer.
 1. Need an abstract.
 1. Need material for `IntConstRegion` in API section.
 1. Make sure to check for other TBDs that may be scattered throughout.
+1. Clean out stale example code in `inst` folder.
 
 **Is this still relevant:** We should have a separate section where we describe doing stuff: constructing the proposal (special cases and general case where we override abstract region), refining the proposal, ...
 :::
@@ -79,8 +79,6 @@ This vignette presents an overview of the package, the application programming i
 #| eval: false
 file.path(path.package("vws"), "doc", "examples")
 ```
-
-**(TBD: where did they go?!)**.
 
 The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-cpp-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von-Mises Fisher (VMF) distribution following the application example in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002].
 
@@ -610,8 +608,8 @@ virtual bool s(const T& x) const = 0;                          // <3>
 virtual double w(const T& x, bool log = true) const = 0;       // <4>
 virtual double w_major(const T& x, bool log = true) const = 0; // <5>
 virtual bool is_bifurcatable() const = 0;                      // <6>
-virtual double xi_upper(bool log = true) const = 0;        // <7>
-virtual double xi_lower(bool log = true) const = 0;        // <8>
+virtual double xi_upper(bool log = true) const = 0;            // <7>
+virtual double xi_lower(bool log = true) const = 0;            // <8>
 virtual std::string description() const = 0;                   // <9>
 ```
 1. Evaluate the density function $g$ of the base distribution.
