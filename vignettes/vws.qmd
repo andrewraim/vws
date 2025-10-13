@@ -53,11 +53,9 @@ set.seed(1234)
 
 ::: {.callout-caution title="TBD"}
 1. Examples are not being migrated to the installed package anymore ...
-
 1. Write out the formulation for the linear majorizer.
-
 1. Need an abstract.
-
+1. Need material for `IntConstRegion` in API section.
 1. Make sure to check for other TBDs that may be scattered throughout.
 
 **Is this still relevant:** We should have a separate section where we describe doing stuff: constructing the proposal (special cases and general case where we override abstract region), refining the proposal, ...
@@ -302,7 +300,7 @@ Rcpp::List sample(unsigned int n)
 7. Carry out rejection sampling with the refined proposal `h`. 
 8. Pack elements of the struct `out` into an `Rcpp::List` and return them to the caller.
 
-Note that `FMMProposal` class, the `rejection` function, and other elements of the `vws` API are in the `vws` namespace. Details for the API are given in @sec-cpp-api. A complete working example is given in @sec-vmf-const-default. Once the `sample` function is successfully exported as an R function, we may invoke it as usual.
+Note that `FMMProposal` class, the `rejection` function, and other elements of the `vws` API are in the `vws` namespace. Details for the API are given in @sec-cpp-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual.
 
 ```{r}
 #| eval: false
@@ -311,6 +309,10 @@ out = sample(n = 100)
 head(out$draws)
 head(out$rejects)
 ```
+
+::: {.callout-tip title="Working Examples"}
+A complete VWS example is given in @sec-vmf-const-default; this demonstrates the use of `RealConstRegion` to implement a sampler with a minimal amount of coding. @sec-vmf-const-custom is an improvement which requires more coding; here we provide functions to determine values of the constant majorizer and minorizer which can be computed analytically. Finally, @sec-vmf-linear demonstrates how to subclass `Region` to implement a linear majorizer. This requires more intricate coding and a basic level of familiarity with object-oriented programming in C++. Subsequent examples are given in @sec-ln-norm and @sec-bessel, but with less explanation.
+:::
 
 It is useful to mention several other preliminaries for the `vws` package; see the following remarks.
 
@@ -630,16 +632,7 @@ on the log-scale.
 
 ## Region on Real-Valued Support with Constant Majorizer {#sec-cpp-api-realconstregion}
 
-This is a subclass of `Region`, defined in @sec-cpp-api-region, specifically for
-univariate problems with continuous support where
-$\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is
-constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. Similarly,
-a minorizer
-$\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$
-is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$.
-The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical
-optimization; however, if a closed-form solution is known, the user may
-create a subclass and override the optimization method.
+`RealConstRegion` is a subclass of `Region`, defined in @sec-cpp-api-region, specifically for univariate problems with continuous support where $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. Similarly, a minorizer $\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$. The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical optimization by default; however, user-supplied methods can be supplied to identify these values when possible.
 
 ### Constructors {.unlisted}
 
