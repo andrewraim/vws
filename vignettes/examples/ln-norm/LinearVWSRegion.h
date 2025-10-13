@@ -185,8 +185,6 @@ inline LinearVWSRegion::LinearVWSRegion(double a, double z,
 
 inline void LinearVWSRegion::init()
 {
-	Rprintf("init checkpoint 0\n");
-
 	double sigma2 = _sigma * _sigma;
 
 	if (_a >= _b) {
@@ -216,8 +214,6 @@ inline void LinearVWSRegion::init()
 	{
 		double dx = d_log_w(x);
 		double lmgf = mgf_truncnorm(dx, _a, _b, _z, _lambda, true);
-		// Rprintf("x = %g, z = %g, _lambda = %g, dx = %g, w(x, true) = %g, lmgf = %g\n",
-		// 	x, _z, _lambda, dx, w(x, true), lmgf);
 		return w(x, true) - x * dx + lmgf;
 	};
 
@@ -239,7 +235,6 @@ inline void LinearVWSRegion::init()
 	// and minorization choices will depend on this.
 	if (is_concave) {
 		// log(w(x)) is concave. Any tangent line will lie above the curve.
-		Rprintf("init checkpoint 3.1.1\n");
 
 		// For the majorizer, solve a minimization problem
 		double init = midpoint();
@@ -248,8 +243,6 @@ inline void LinearVWSRegion::init()
 		_beta0_max = w(c_star, true) - c_star*d_log_w(c_star);
 		_beta1_max = d_log_w(c_star);
 
-		// Rprintf("init checkpoint 3.1.2\n");
-
 		// For the minorizer
        _beta1_min = (w(_b, true) - w(_a, true)) / (_b - _a);
        _beta0_min = w(_a, true) - _a*_beta1_min;
@@ -257,35 +250,25 @@ inline void LinearVWSRegion::init()
 		// Rprintf("init checkpoint 3.1.3\n");
 	} else if (is_convex) {
 		// log(w(x)) is convex. Make a line that passes through a and b.
-		// Rprintf("init checkpoint 3.2.1\n");
 
 		// For the majorizer
        _beta1_max = (w(_b, true) - w(_a, true)) / (_b - _a);
        _beta0_max = w(_a, true) - _a*_beta1_max;
-
-		// Rprintf("init checkpoint 3.2.2\n");
 
 		// For the minorizer, solve a maximization problem
 		double init = midpoint();
 		const auto& opt_out = vws::optimize_hybrid(obj, init, _a, _b, false);
 		double c_star = opt_out.par;
 
-		// Rprintf("init checkpoint 3.2.5\n");
 		_beta0_min = w(c_star, true) - c_star*d_log_w(c_star);
-		// Rprintf("init checkpoint 3.2.6\n");
 		_beta1_min = d_log_w(c_star);
-		// Rprintf("init checkpoint 3.2.7\n");
 	} else {
 		// log(w(x)) is constant with value zero
-		// Rprintf("init checkpoint 3.3\n");
 		_beta0_max = 0;
 		_beta1_max = 0;
 		_beta0_min = 0;
 		_beta1_min = 0;
 	}
-
-	// Rprintf("beta0_min = %g, beta1_min = %g, beta0_max = %g, beta1_max = %g\n",
-	// 	_beta0_min, _beta1_min, _beta0_max, _beta1_max);
 }
 
 inline double LinearVWSRegion::xi_upper(bool log) const

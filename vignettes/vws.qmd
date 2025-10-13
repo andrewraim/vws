@@ -28,10 +28,6 @@ thanks: |
   Center for Statistical Research & Methodology, U.S. Census Bureau,
   Washington, DC, 20233, U.S.A.
   **For correspondence**`:` <andrew.raim@gmail.com>.
-  **Disclaimer**`:` This document is released to inform interested parties
-  of ongoing research and to encourage discussion of work in progress. Any
-  views expressed are those of the authors and not those of the U.S. Census
-  Bureau.
   Document was compiled `{r} format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")`.
 geometry:
   - left=0.5in
@@ -39,7 +35,7 @@ geometry:
   - top=0.75in
   - bottom=1.00in
 execute:
-  eval: false
+  eval: true
 code-block-bg: true
 code-block-border-left: "#B2DEED"
 filters:
@@ -64,7 +60,7 @@ set.seed(1234)
 
 # Disclaimer and Acknowledgments {-}
 
-This document is released to inform interested parties of ongoing research and to encourage discussion of work in progress. Any views expressed are those of the author and not those of the U.S. Census Bureau.
+This document is released to inform interested parties of ongoing research and to encourage discussion of work in progress. Any views expressed are those of the authors and not those of the U.S. Census Bureau.
 
 Although there are no guarantees of correctness of the `vws` package, reasonable efforts will be made to address shortcomings. Comments, questions, corrections, and possible improvements can be communicated through the project’s Github repository (<https://github.com/andrewraim/vws>).
 
@@ -79,7 +75,7 @@ This vignette presents an overview of the package, the application programming i
 file.path(path.package("vws"), "doc", "examples")
 ```
 
-(TBD: where did they go?!). Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described in the most detail. Code for the `vws` package is maintained in the GitHub repository at <https://github.com/andrewraim/vws>. 
+**(TBD: where did they go?!)**. Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described in the most detail. Code for the `vws` package is maintained in the GitHub repository at <https://github.com/andrewraim/vws>. 
 
 The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-prelim gives some preliminaries on programming which are useful for `vws` package users. @sec-overview gives an overview of the package and its major components. @sec-cpp-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von-Mises Fisher (VMF) distribution which was considered in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting considered by @DirectSamplingDAS2021 and others. @sec-bessel develops VWS samplers for the Bessel count distribution; variate generation via rejection sampling has been considered in this setting by @Devroye2002.
 
@@ -165,11 +161,72 @@ $\underline{\xi}_j = \underline{w}_j \Prob(T \in \mathcal{D}_j)$.
 
 ## Linear Majorizer {#sec-vws-linear}
 
-**TBD**: write about linear majorizer
+::: {.callout-caution title="TBD"}
+This is old material. We should rethink how we present the linear majorizer details here.
+:::
+
+
+The following construction assumes that $\zeta$ is finite and concave on the interval $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$. A majorizer is obtained from
+<!-- -->
+\begin{align}
+\zeta(y) &\leq \zeta(c) + (y - c) \nabla(c)
+= \overline{\beta}_{j0} + \overline{\beta}_{j1} y,
+\quad 
+\overline{\beta}_{j0} = \zeta(c) - c \cdot \zeta'(c), \quad
+\overline{\beta}_{j1} = \zeta'(c),
+\label{eqn:ln-norm-linear-majorizer}
+\end{align}
+<!-- -->
+where $c$ is a point in $\mathcal{D}_j$. In particular, let us consider the value of $c$ as
+<!-- -->
+\begin{align*}
+c^* &= \argmin_{c \in \mathcal{D}_j} \int_{\mathcal{D}_j} | h_0(y) - f_0(y) | dy
+\nonumber \\
+%
+&\equiv \argmin_{c \in \mathcal{D}_j} \Big\{ \log w(c) - c \nabla(c) + \log M_j(\nabla(c)) \Big\}.
+\end{align*}
+<!-- -->
+Here, $M_j(s)$ is the moment generating function of random variable $T \sim g$ with support truncated to $(\alpha_{j-1}, \alpha_j]$:
+<!-- -->
+\begin{align*}
+M_j(s)
+%
+&= \int_{\alpha_{j-1}}^{\alpha^j} e^{sy} \frac{
+\phi(y \mid z, \lambda^2)
+}{
+\Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
+} dy \\
+%
+&= \exp(z s + s^2 \lambda^2 / 2) 
+\frac{
+\Phi(\alpha_j \mid z + s \lambda^2, \lambda^2) - \Phi(\alpha_{j-1} \mid z + s \lambda^2, \lambda^2)
+}{
+\Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
+},
+\end{align*}
+<!-- -->
+using [@rem-normal-mgf-integral]. A minorizer can be obtained by expressing $y = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$ for $\lambda \in [0,1]$ so that $\lambda = (y - \alpha_{j-1}) / (\alpha_j - \alpha_{j-1})$ and
+<!-- -->
+\begin{align}
+\zeta(y) &\geq (1-\lambda) \zeta(\alpha_{j-1}) + \lambda \zeta(\alpha_j) \nonumber \\
+&= \zeta(\alpha_{j-1}) + \frac{y - \alpha_{j-1}}{\alpha_j - \alpha_{j-1}} [ \zeta(\alpha_j) - \zeta(\alpha_{j-1})]
+= \underline{\beta}_{j0} + \underline{\beta}_{j1} y,
+\label{eqn:ln-norm-linear-minorizer}
+\end{align}
+<!-- -->
+with
+<!-- -->
+\begin{align*}
+\underline{\beta}_{j0} = \zeta(\alpha_{j-1}) - \alpha_{j-1} \underline{\beta}_{j1}
+\quad \text{and} \quad
+\underline{\beta}_{j1} = \frac{\zeta(\alpha_j) - \zeta(\alpha_{j-1}) }{ \alpha_j - \alpha_{j-1} }.
+\end{align*}
+<!-- -->
+If $\zeta$ is convex on $\mathcal{D}_j$ rather than concave, the roles of \eqref{eqn:ln-norm-linear-majorizer} and \eqref{eqn:ln-norm-linear-minorizer} are switched so that \eqref{eqn:ln-norm-linear-majorizer} is minorizer and \eqref{eqn:ln-norm-linear-minorizer} is majorizer.
 
 ## Knot Selection {#sec-vws-knots}
 
-After selecting a decomposition of the target into weighted form \eqref{eqn:weighted-target}, the choice of knots is important to obtaining an efficient proposal distribution. One option is to specify knots at known locations. For example, we can consider using evenly spaced points on a given interval within the support; however, this may not take into account important features of the target and add wasteful mixture components which do not contribute much to the quality of the approximation. An automated option that often achieves much better results is the rule of thumb proposed in @VWS2025. This is shown here as Algorithm \ref{alg:refine}. This method sequentially refines an initial partitioning of the support; this may be a single region that contains the entire support. At least step a region is selected and bifurcated at its midpoint. The selection is probabilistic, with probability proportional to $\rho_\ell$. A deterministic greedy method can be considered instead by always selecting a region $\ell$ whose value $\rho_\ell$ is largest.
+After selecting a decomposition of the target into weighted form \eqref{eqn:weighted-target}, the choice of knots is important to obtaining an efficient proposal distribution. One option is to specify knots at known locations. For example, we can consider using evenly spaced points on a given interval within the support; however, this may not take into account important features of the target and add wasteful mixture components which do not contribute much to the quality of the approximation. An automated option that often achieves much better results is the rule of thumb proposed in @VWS2025. This is shown here as Algorithm \ref{alg:refine}. This method sequentially refines an initial partitioning of the support; this may be a single region that contains the entire support. At least step a region is selected and bifurcated at its midpoint. The selection is probabilistic, with probability proportional to $\rho_\ell$. A deterministic ("greedy") variation can be considered by instead always selecting a region $\ell$ whose value $\rho_\ell$ is largest.
 
 Bifurcation at a midpoint is mostly straightforward in univariate settings where the support is a subset of the real line. However, there may be multiple ways to characterize this operation when the support is multivariate or structured like a multinomial sample space. These operations can be defined for such settings within the `vws` framework; however, this document does not consider such cases in detail.
 
@@ -259,7 +316,7 @@ The `rejection` function takes an object `h` of class `FMMProposal` and carries 
 the rejection sampling algorithm to obtain `n` draws. The return value of `rejection` is a list where each element represents an accepted draw. Optional arguments may be passed
 through a `rejection_control` (S3) object, including: a count of rejections to be tolerated before halting, and whether to return additional information about rejections which occurred during sampling. The following display gives a typical workflow for sampling.
 
-```{R}
+```{r}
 #| eval: false
 #| prompt: true
 regions = list(region1, region2)
@@ -269,6 +326,7 @@ rejection(h, n = 1000, control = ctrl)
 ```
 
 ```{r}
+#| eval: false
 #| include: false
 # If the interface has changed, catch it and bail out
 actual = names(formals(rejection_control))
@@ -1009,7 +1067,7 @@ Rcpp::NumericVector q_gumbel(const Rcpp::NumericVector& p, double mu = 0,
 Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1);
 ```
 
-# Example: Von Mises Fisher {#sec-vmf}
+# Example: Von Mises Fisher Distribution {#sec-vmf}
 
 Let us consider generating from the von Mises Fisher (VMF) distribution as in @VWS2025. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
 <!-- -->
@@ -1088,6 +1146,11 @@ A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \
 \remarkqed
 :::
 
+```{r}
+#| echo: false
+Rcpp::sourceCpp("examples/vmf/functions.cpp")
+```
+
 ## Constant Majorizer with Numerical Optimization {#sec-vmf-const-default}
 
 We now give our first example demonstrating the `vws` package. We consider a constant majorizer for $w$ which uses the default numerical optimization routine to identify appropriate constants $\overline{w}_j$ and $\underline{w}_j$. Because this is our first example, the source file for the sampler (`examples/vmf/vmf-v1.cpp`) is displayed in its entirety as follows.
@@ -1140,12 +1203,14 @@ There are several points of interest to call out.
 The name of the function `r_vmf_pre_v1` reflects that this is our first version of the sampler for target \eqref{eqn:vmf-target}, which is a precursor to transformation \eqref{eqn:vmf-tx} to obtain a VMF random variable. We may invoke the exported R function as follows.
 
 ```{r}
+#| prompt: true
 Rcpp::sourceCpp("examples/vmf/vmf-v1.cpp")
 out1 = r_vmf_pre_v1(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
-head(out$draws)
+head(out1$draws)
 ```
 
-@fig-vmf-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`.
+@fig-vmf-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`. @fig-vmf-const-draws plots the empirical distribution of the draws and compares them to the density.
+
 
 ```{r}
 #| out-width: 60%
@@ -1163,9 +1228,6 @@ data.frame(bdd = exp(out1$lbdd)) %>%
 	ylab("Bound") +
 	theme_minimal()
 ```
-
-@fig-vmf-const-draws plots the empirical distribution of the draws and compares
-them to the density.
 
 ```{r}
 #| out-width: 60%
@@ -1250,6 +1312,7 @@ vws::RealConstRegion supp(-1, 1, w, helper, *maxopt, *minopt);
 The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
+#| prompt: true
 Rcpp::sourceCpp("examples/vmf/vmf-v2.cpp")
 out2 = r_vmf_pre_v2(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
 head(out2$draws)
@@ -1305,6 +1368,7 @@ The proposal is implemented with the `vws` package by inheriting from the abstra
 The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
+#| prompt: true
 Rcpp::sourceCpp("examples/vmf/vmf-v3.cpp")
 out3 = r_vmf_pre_v3(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.01)
 head(out3$draws)
@@ -1313,7 +1377,8 @@ head(out3$draws)
 **TBD: do we need to truncate our (-1,1) support in the code? Check the implementation in VWS paper!!**
 
 @fig-vmf-const-draws plots the empirical distribution of the draws and compares
-them to the density.
+them to the density. @fig-vmf-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
+
 
 ```{r}
 #| out-width: 60%
@@ -1331,8 +1396,6 @@ data.frame(x = out3$draws) %>%
 	ylab("Empirical Density") +
 	theme_minimal()
 ```
-
-@fig-vmf-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
 
 ```{r}
 #| out-width: 60%
@@ -1418,7 +1481,7 @@ lambda = 10
 Jointly draw values $Y$ and $Z$ from the model; $Z$ is considered observed while $Y$ is latent and the objective for inference.
 
 ```{r}
-set.seed(1234)
+source("examples/ln-norm/functions.R")
 y_true = rlnorm(1, mu, sigma)
 z = rnorm(1, y_true, lambda)
 print(y_true)
@@ -1486,12 +1549,13 @@ vws::UnivariateHelper helper(df, pf, qf);
 The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
+#| prompt: true
 Rcpp::sourceCpp("examples/ln-norm/ln-norm-v1.cpp")
 out1 = r_ln_norm_v1(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
 head(out1$draws)
 ```
 
-@fig-ln-norm-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`.
+@fig-ln-norm-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`. @fig-ln-norm-const-draws plots the empirical distribution of the draws and compares them to the density. It displays an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
 
 ```{r}
 #| out-width: 60%
@@ -1511,46 +1575,31 @@ data.frame(bdd = exp(out1$lbdd)) %>%
 	theme_minimal()
 ```
 
-@fig-ln-norm-const-draws plots the empirical distribution of the draws and compares
-them to the density.
-
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
 #|   Empirical distribution of draws versus target for lognormal-normal example
 #|   with constant majorizer. The target density is displayed for reference as
-#|   the dashed curve.
-#| label: fig-ln-norm-const-draws
-#| echo: false
-
-gg = data.frame(x = out1$draws) %>%
-	ggplot() +
-	geom_density(aes(x = x), col = "black") +
-	geom_function(fun = d_target, lty = 2,
-		args = list(mu = mu, sigma = sigma, z = z, lambda = lambda)) +
-	ylab("Empirical Density") +
-	theme_minimal()
-print(gg)
-```
-
-Add an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Empirical distribution of draws versus target for Lognormal-Normal example
-#|   with constant majorizer. Observed value of $z$ (blue line) and latent value
+#|   the dashed curve. Observed value of $z$ (blue line) and latent value
 #|   of $y$ (red line) are displayed along with a 95\% interval (blue ribbon)
 #|   based on draws from $[Y \mid Z = z]$.
-#| label: fig-ln-norm-interval
+#| label: fig-ln-norm-const-draws
 #| echo: false
 
 interval_lo = quantile(out1$draws, probs = 0.025)
 interval_hi = quantile(out1$draws, probs = 0.975)
-gg + annotate("rect", xmin = interval_lo, xmax = interval_hi, ymin = 0,
+
+data.frame(x = out1$draws) %>%
+	ggplot() +
+	geom_density(aes(x = x), col = "black") +
+	geom_function(fun = d_target, lty = 2,
+		args = list(mu = mu, sigma = sigma, z = z, lambda = lambda)) +
+	annotate("rect", xmin = interval_lo, xmax = interval_hi, ymin = 0,
 		ymax = Inf, alpha = 0.1, fill = "blue") +
 	geom_vline(xintercept = z, col = "blue", lwd = 1.05) +
-	geom_vline(xintercept = y_true, col = "red", lwd = 1.05)
+	geom_vline(xintercept = y_true, col = "red", lwd = 1.05) +
+	ylab("Empirical Density") +
+	theme_minimal()
 ```
 
 ## Constant Majorizer with Custom Optimization {#sec-ln-norm-const-custom}
@@ -1574,9 +1623,7 @@ for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zet
 &= -\mu + \sigma^2 / 2.
 \end{align*}
 <!-- -->
-Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$.
-
-Here is a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
+Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$. @fig-ln-norm-weight displays a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
 
 ```{r}
 y_star = exp(mu - sigma^2)
@@ -1652,6 +1699,7 @@ vws::RealConstRegion supp(0, R_PosInf, w, helper, maxopt, minopt);
 The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
+#| prompt: true
 Rcpp::sourceCpp("examples/ln-norm/ln-norm-v2.cpp")
 out2 = r_ln_norm_v2(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
 head(out2$draws)
@@ -1765,11 +1813,32 @@ g_j(y)
 \cdot \ind(\alpha_{j-1} < y \leq \alpha_j),
 \end{align*}
 <!-- -->
-which is the density of $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1} ,\alpha_j]$.
+which is the density of $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$.
+
+To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (**TBD**) using the expression
+<!-- -->
+\begin{align*}
+M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) dx
+= \frac{e^{s\alpha_j} - e^{s\alpha_{j-1}}}{s(\alpha_j - \alpha_{j-1})}.
+\end{align*}
+<!-- -->
+To compute \eqref{eqn:bound}, we assume the "trivial" minorizer $\underline{w}_j(x) = w(x)$ so that
+<!-- -->
+\begin{align*}
+\underline{\xi}_j
+= \int_{\alpha_{j-1}}^{\alpha_j} w(x) g(x) dx
+= \int_{\alpha_{j-1}}^{\alpha_j} \frac{(1-x^2)^{(d-3)/2} \kappa e^{\kappa x}}{e^{\kappa \alpha_N} - e^{\kappa \alpha_0}} dx.
+\end{align*}
+
+Adapting the code from @sec-vmf-linear to the present problem, we implement `LinearVWSRegion` as a subclass of the abstract `Region` base class (@sec-cpp-api-region). See the file `examples/ln-norm/LinearVWSRegion.h`. The code in `examples/ln-norm/ln-norm-v3.cpp` instantiates a proposal from this region type and proceeds with rejection sampling. This code is displayed below.
+
+```{.cpp include="examples/ln-norm/ln-norm-v3.cpp" code-line-numbers="true"}
+```
 
 The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
+#| prompt: true
 Rcpp::sourceCpp("examples/ln-norm/ln-norm-v3.cpp")
 out3 = r_ln_norm_v3(n = 1000, z, mu, sigma, lambda, lo = 1e-8, 1e8,
 	N = 50, tol = 0.10)
@@ -1777,7 +1846,8 @@ head(out3$draws)
 ```
 
 @fig-ln-norm-linear-draws plots the empirical distribution of the draws and compares
-them to the density.
+them to the density. @fig-ln-norm-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
+
 
 ```{r}
 #| out-width: 60%
@@ -1796,8 +1866,6 @@ data.frame(x = out1$draws) %>%
 	ylab("Empirical Density") +
 	theme_minimal()
 ```
-
-@fig-ln-norm-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
 
 ```{r}
 #| out-width: 60%
@@ -1825,118 +1893,6 @@ ggplot(df) +
 	ylab("Bound") +
 	theme_minimal()
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-(**TBD: LEFT OFF HERE! ALSO NEED TO CODE THE SAMPLER!**)
-To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (TBD) using the expression
-<!-- -->
-\begin{align*}
-M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) dx
-= \frac{e^{s\alpha_j} - e^{s\alpha_{j-1}}}{s(\alpha_j - \alpha_{j-1})}.
-\end{align*}
-<!-- -->
-To compute \eqref{eqn:bound}, we assume the "trivial" minorizer $\underline{w}_j(x) = w(x)$ so that
-<!-- -->
-\begin{align*}
-\underline{\xi}_j
-= \int_{\alpha_{j-1}}^{\alpha_j} w(x) g(x) dx
-= \int_{\alpha_{j-1}}^{\alpha_j} \frac{(1-x^2)^{(d-3)/2} \kappa e^{\kappa x}}{e^{\kappa \alpha_N} - e^{\kappa \alpha_0}} dx.
-\end{align*}
-
-The proposal is implemented with the `vws` package by inheriting from the abstract `Region` base class (@sec-cpp-api-region) and implementing each of the functions using the expressions above. We name this subclass `LinearVWSRegion`; its complete code is given in `examples/vmf/LinearVWSRegion.h`. The code in `examples/vmf/vmf-v3.cpp` instantiates a proposal with regions of type `LinearVWSRegion`, invokes rejection sampling, and returns an `Rcpp::List` with the results. This code is displayed below.
-
-```{.cpp include="examples/ln-norm/ln-norm-v3.cpp" code-line-numbers="true"}
-```
-
-The following R code builds the complete example and invokes the sampling function.
-
-```{r}
-Rcpp::sourceCpp("examples/ln-norm/ln-norm-v3.cpp")
-out = r_ln_norm_v3(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.10)
-head(out$draws)
-```
-
-
-::: {.callout-caution title="TBD"}
-Everything after this point is old material ...
-
-We need to pick finite endpoints I think ... 
-:::
-
-
-
-
-
-The following construction assumes that $\zeta$ is finite and concave on the interval $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$. A majorizer is obtained from
-<!-- -->
-\begin{align}
-\zeta(y) &\leq \zeta(c) + (y - c) \nabla(c)
-= \overline{\beta}_{j0} + \overline{\beta}_{j1} y,
-\quad 
-\overline{\beta}_{j0} = \zeta(c) - c \cdot \zeta'(c), \quad
-\overline{\beta}_{j1} = \zeta'(c),
-\label{eqn:ln-norm-linear-majorizer}
-\end{align}
-<!-- -->
-where $c$ is a point in $\mathcal{D}_j$. In particular, let us consider the value of $c$ as
-<!-- -->
-\begin{align*}
-c^* &= \argmin_{c \in \mathcal{D}_j} \int_{\mathcal{D}_j} | h_0(y) - f_0(y) | dy
-\nonumber \\
-%
-&\equiv \argmin_{c \in \mathcal{D}_j} \Big\{ \log w(c) - c \nabla(c) + \log M_j(\nabla(c)) \Big\}.
-\end{align*}
-<!-- -->
-Here, $M_j(s)$ is the moment generating function of random variable $T \sim g$ with support truncated to $(\alpha_{j-1}, \alpha_j]$:
-<!-- -->
-\begin{align*}
-M_j(s)
-%
-&= \int_{\alpha_{j-1}}^{\alpha^j} e^{sy} \frac{
-\phi(y \mid z, \lambda^2)
-}{
-\Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
-} dy \\
-%
-&= \exp(z s + s^2 \lambda^2 / 2) 
-\frac{
-\Phi(\alpha_j \mid z + s \lambda^2, \lambda^2) - \Phi(\alpha_{j-1} \mid z + s \lambda^2, \lambda^2)
-}{
-\Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
-},
-\end{align*}
-<!-- -->
-using [@rem-normal-mgf-kernel]. A minorizer can be obtained by expressing $y = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$ for $\lambda \in [0,1]$ so that $\lambda = (y - \alpha_{j-1}) / (\alpha_j - \alpha_{j-1})$ and
-<!-- -->
-\begin{align}
-\zeta(y) &\geq (1-\lambda) \zeta(\alpha_{j-1}) + \lambda \zeta(\alpha_j) \nonumber \\
-&= \zeta(\alpha_{j-1}) + \frac{y - \alpha_{j-1}}{\alpha_j - \alpha_{j-1}} [ \zeta(\alpha_j) - \zeta(\alpha_{j-1})]
-= \underline{\beta}_{j0} + \underline{\beta}_{j1} y,
-\label{eqn:ln-norm-linear-minorizer}
-\end{align}
-<!-- -->
-with
-<!-- -->
-\begin{align*}
-\underline{\beta}_{j0} = \zeta(\alpha_{j-1}) - \alpha_{j-1} \underline{\beta}_{j1}
-\quad \text{and} \quad
-\underline{\beta}_{j1} = \frac{\zeta(\alpha_j) - \zeta(\alpha_{j-1}) }{ \alpha_j - \alpha_{j-1} }.
-\end{align*}
-<!-- -->
-If $\zeta$ is convex on $\mathcal{D}_j$ rather than concave, the roles of \eqref{eqn:ln-norm-linear-majorizer} and \eqref{eqn:ln-norm-linear-minorizer} are switched so that \eqref{eqn:ln-norm-linear-majorizer} is minorizer and \eqref{eqn:ln-norm-linear-minorizer} is majorizer.
 
 # Example: Bessel Count Distribution {#sec-bessel}
 
@@ -1969,7 +1925,7 @@ f(x)
 <!-- -->
 so that $g$ is the density of a $\text{Poisson}(\lambda^2 / 4)$ distribution and the weight function is specified by $\log w(x) = -\log \Gamma(x + \nu + 1)$. Notice that we have disregarded many of the normalizing constants in this formulation.
 
-Before proceeding, let us fix values of $\lambda$ and $\nu$ and compute values of $\log w(x)$ and $f(x)$; these will be useful for illustration.
+Before proceeding, let us fix values of $\lambda$ and $\nu$ and compute values of $\log w(x)$ and $f(x)$; these will be useful for illustration. Let us also load some useful R functions from the script `examples/bessel/bessel.R`; primarily, `d_bessel` computes the target density.
 
 ```{r}
 #| prompt: true
@@ -1980,6 +1936,7 @@ nu = 2
 
 ```{r}
 #| echo: false
+source("examples/common/plots.R")
 xseq = seq(0, 15)
 fseq = d_bessel(xseq, lambda, nu)
 lwseq = w(xseq, log = T)
@@ -2023,7 +1980,7 @@ out1 = r_bessel_v1(n = 1000, lambda, nu, N = 50, tol = 0.10)
 head(out1$draws)
 ```
 
-@fig-bessel-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`.
+@fig-bessel-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`. @fig-bessel-const-draws plots the empirical distribution of the draws and compares them to the target probability mass function (pmf).
 
 ```{r}
 #| out-width: 60%
@@ -2043,9 +2000,6 @@ data.frame(bdd = exp(out1$lbdd)) %>%
 	theme_minimal()
 ```
 
-@fig-bessel-const-draws plots the empirical distribution of the draws and compares
-them to the target probability mass function (pmf).
-
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
@@ -2056,7 +2010,8 @@ them to the target probability mass function (pmf).
 #| echo: false
 
 plot_pmf(out1$draws) +
-	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y))
+	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y)) +
+	scale_x_continuous(breaks = xseq[xseq %% 2 == 0])
 ```
 
 ## Constant Majorizer with Custom Optimization {#sec-bessel-const-custom}
@@ -2208,13 +2163,16 @@ where $T \sim \text{Poisson}(e^s \lambda^2 / 4)$.
 The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
+#| prompt: true
 Rcpp::sourceCpp("examples/bessel/bessel-v3.cpp")
 out3 = r_bessel_v3(n = 1000, lambda, nu, lo = -0.1, hi = 1e5, N = 50, tol = 0.10)
 head(out3$draws)
 ```
 
 @fig-bessel-linear-draws plots the empirical distribution of the draws and compares
-them to the density.
+them to the density. @fig-bessel-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
+
+**TBD: describe the final figure**
 
 ```{r}
 #| out-width: 60%
@@ -2226,10 +2184,9 @@ them to the density.
 #| echo: false
 
 plot_pmf(out3$draws) +
-	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y))
+	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y)) +
+	scale_x_continuous(breaks = xseq[xseq %% 2 == 0])
 ```
-
-@fig-bessel-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
 
 ```{r}
 #| out-width: 60%
@@ -2259,13 +2216,19 @@ ggplot(df) +
 
 
 ```{r}
-#| out-width: 60%
 #| fig-cap: |
-#|   Majorizers (on the log-scale) for Bessel example for versions 1 (left),
-#|   2 (center), and 3 (right). The blue curve with is the majorizer with a
-#|   blue dot marking the right endpoint of each region. The black triangle
-#|   displays the value of $log w$ at integers $0, 1, \ldots$.
+#|   Majorizers (on the log-scale) for Bessel example for three sampler
+#|   versions. The blue curve with is the majorizer with a blue dot marking the
+#|   right endpoint of each region. The black triangle displays the value of
+#|   $\log w$ at integers $0, 1, \ldots$.
+#| fig-subcap:
+#|   - v1.
+#|   - v2.
+#|   - v3.
 #| label: fig-bessel-majorizers
+#| layout-ncol: 3
+#| fig-width: 3
+#| fig-height: 2.5
 #| echo: false
 
 ggplot(out1$df_weight) +
@@ -2273,6 +2236,7 @@ ggplot(out1$df_weight) +
 	geom_point(aes(x = hi, y = lwmax), col = "blue") +
 	geom_point(data = data.frame(x = xseq, w = lwseq), aes(x, w), pch = 2) +
 	coord_cartesian(xlim = c(NA, 15), ylim = c(min(lwseq), NA)) +
+	scale_x_continuous(breaks = xseq[xseq %% 2 == 0]) +
 	xlab("x") +
 	ylab("Logarithm of Weight") +
 	theme_minimal()
@@ -2282,11 +2246,12 @@ ggplot(out2$df_weight) +
 	geom_point(aes(x = hi, y = lwmax), col = "blue") +
 	geom_point(data = data.frame(x = xseq, w = lwseq), aes(x, w), pch = 2) +
 	coord_cartesian(xlim = c(NA, 15), ylim = c(min(lwseq), NA)) +
+	scale_x_continuous(breaks = xseq[xseq %% 2 == 0]) +
 	xlab("x") +
 	ylab("Logarithm of Weight") +
 	theme_minimal()
 
-out$df_weight %>%
+out3$df_weight %>%
 	mutate(w_lo = beta0_max + beta1_max * lo) %>%
 	mutate(w_hi = beta0_max + beta1_max * hi) %>%
 	ggplot() +
@@ -2294,6 +2259,7 @@ out$df_weight %>%
 	geom_point(aes(x = hi, y = w_hi), col = "blue") +
 	geom_point(data = data.frame(x = xseq, y = lwseq), aes(x, y), pch = 2) +
 	coord_cartesian(xlim = c(NA, 15), ylim = c(min(lwseq), NA)) +
+	scale_x_continuous(breaks = xseq[xseq %% 2 == 0]) +
 	xlab("x") +
 	ylab("Logarithm of Weight") +
 	theme_minimal()
@@ -2304,25 +2270,32 @@ out$df_weight %>%
 
 
 
+
+
+
 ```{r}
-#| out-width: 60%
 #| fig-cap: |
-#|   Proposal density (bars) for Bessel example for versions 1 (left),
-#|   2 (center), and 3 (right). Triangles display the values of
-#|   $f(0), f(1), \ldots$.
+#|   Proposal density (bars) for Bessel example for three sampler versions.
+#|   Triangles display the values of $f(0), f(1), \ldots$.
+#| fig-subcap:
+#|   - v1.
+#|   - v2.
+#|   - v3.
 #| label: fig-bessel-proposals
+#| layout-ncol: 3
+#| fig-width: 3
+#| fig-height: 2
 #| echo: false
 
-out1 = r_bessel_v1(0, lambda, nu, N, tol, max_rejects*50, report, x = xseq)
-out2 = r_bessel_v2(0, lambda, nu, N, tol, max_rejects*50, report, x = xseq)
-out3 = r_bessel_v3(0, lambda, nu, lo = -0.1, hi = 1e5, N, tol, max_rejects,
-	report, x = xseq)
+out1 = r_bessel_v1(0, lambda, nu, N = 50, tol = 0.1, x = xseq)
+out2 = r_bessel_v2(0, lambda, nu, N = 50, tol = 0.1, x = xseq)
+out3 = r_bessel_v3(0, lambda, nu, lo = -0.1, hi = 1e5, N = 50, tol = 0.1, x = xseq)
 
 data.frame(x = xseq, h = out1$hx) %>%
 	ggplot() +
 	geom_bar(aes(x, h), stat = "identity", fill = NA, col = "black") +
 	geom_point(aes(x, fseq), pch = 2) +
-	scale_x_continuous(breaks = xseq) +
+	scale_x_continuous(breaks = xseq[xseq %% 2 == 0]) +
 	xlab("x") +
 	ylab("Density") +
 	theme_minimal()
@@ -2331,7 +2304,7 @@ data.frame(x = xseq, h = out2$hx) %>%
 	ggplot() +
 	geom_bar(aes(x, h), stat = "identity", fill = NA, col = "black") +
 	geom_point(aes(x, fseq), pch = 2) +
-	scale_x_continuous(breaks = xseq) +
+	scale_x_continuous(breaks = xseq[xseq %% 2 == 0]) +
 	xlab("x") +
 	ylab("Density") +
 	theme_minimal()
@@ -2340,7 +2313,7 @@ data.frame(x = xseq, h = out3$hx) %>%
 	ggplot() +
 	geom_bar(aes(x, h), stat = "identity", fill = NA, col = "black") +
 	geom_point(aes(x, fseq), pch = 2) +
-	scale_x_continuous(breaks = xseq) +
+	scale_x_continuous(breaks = xseq[xseq %% 2 == 0]) +
 	xlab("x") +
 	ylab("Density") +
 	theme_minimal()

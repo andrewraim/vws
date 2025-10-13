@@ -87,7 +87,7 @@ public:
 
 inline double LinearVWSRegion::w(const double& x, bool log) const
 {
-	double out = 0.5 * (_d - 3) * log1p(-x*x)) + std::log(-1 < x && x < 1);
+	double out = 0.5 * (_d - 3) * log1p(-x*x) + std::log(-1 < x && x < 1);
 	return log ? out : exp(out);
 }
 

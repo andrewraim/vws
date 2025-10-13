@@ -53,7 +53,7 @@ inline double integrate_target(double a, double b, double kappa, double d,
 	return log ? out : std::exp(out);
 }
 
-// [[Rcpp::export(name = "d_target")]]
+// [[Rcpp::export]]
 inline Rcpp::NumericVector d_target(const Rcpp::NumericVector& x, double kappa,
 	double d, bool log = false, bool normalize = true)
 {
@@ -67,7 +67,7 @@ inline Rcpp::NumericVector d_target(const Rcpp::NumericVector& x, double kappa,
 	return out;
 }
 
-// [[Rcpp::export(name = "p_target")]]
+// [[Rcpp::export]]
 inline Rcpp::NumericVector p_target(const Rcpp::NumericVector& q, double kappa,
 	double d, bool lower = true, bool log = false)
 {
