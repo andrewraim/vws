@@ -636,8 +636,7 @@ on the log-scale.
 
 ### Constructors {.unlisted}
 
-In addition to the methods defined in `Region`, we have the following
-constructors.
+In addition to the methods defined in `Region`, we have the following constructors.
 
 ```{cpp}
 RealConstRegion(
