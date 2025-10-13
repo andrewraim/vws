@@ -13,7 +13,6 @@ plot_pmf = function(x) {
 	data.frame(x = x) %>%
 		ggplot() +
 		geom_bar(aes(x, y = after_stat(count / sum(count))), fill = "white", col = "black") +
-		# geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y)) +
 		xlab("x") +
 		ylab("Empirical Probability") +
 		theme_light()

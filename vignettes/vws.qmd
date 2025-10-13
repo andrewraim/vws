@@ -937,31 +937,24 @@ struct optimize_hybrid_result {
 ```
 1. Final value of the optimization variable $x$.
 2. Final value of the objective function $f(x)$.
-3. Description of the method used to find the result; see below.
+3. Description of the method used to find the result; see @tbl-method for possible values.
 4. Corresponds to a code from BFGS if it is used as `method`; otherwise zero.
 5. Return an `Rcpp::List` from a `optimize_hybrid_result` struct.
 
-The `method` field can take on the following (string) values:
+| Message | Description |
+|----- | -----|
+| `"Brent"` | Brent optimization method was used. |
+| `"BFGS"` | BFGS method was used. |
+| `"Lower Limit Inf"`| For maximization problem, lower limit taken as `par` because its value `= inf`. |
+| `"Upper Limit Inf"`| For maximization problem, upper limit taken as `par` because its value `= inf`. |
+| `"Lower Limit NegInf"`| For minimization problem, lower limit taken as `par` because its value `= -inf`. |
+| `"Upper Limit NegInf"`| For minimization problem, upper limit taken as `par` because its value `= -inf`. |
+| `"Max at Lower Limit"`| Numerical maximization used, but a larger value was found at lower limit. |
+| `"Max at Upper Limit"`| Numerical maximization used, but a larger value was found at upper limit. |
+| `"Min at Lower Limit"`| Numerical minimization used, but a smaller value was found at lower limit. |
+| `"Min at Upper Limit"`| Numerical minimization used, but a smaller value was found at upper limit. |
 
-- `"Brent"`: Brent optimization method was used.
-- `"BFGS"`: BFGS method was used.
-- `"Lower Limit Inf"`: For a maximization problem, the lower limit was taken
-  as `par` because it had value `inf`.
-- `"Upper Limit Inf"`: For a maximization problem, the upper limit was taken
-  as `par` because it had value `inf`.
-- `"Lower Limit NegInf"`: For a minimization problem, the lower limit was
-  taken as `par` because it had value `-inf`.
-- `"Upper Limit NegInf"`: For a minimization problem, the upper limit was
-  taken as `par` because it had value `-inf`.
-- `"Max at Lower Limit"`: numerical maximization was used, but a larger value
-  was found at the lower limit.
-- `"Max at Upper Limit"`: numerical maximization was used, but a larger value
-  was found at the upper limit.
-- `"Min at Lower Limit"`: numerical minimization was used, but a smaller value
-  was found at the lower limit.
-- `"Min at Upper Limit"`: numerical minimization was used, but a smaller value
-  was found at the upper limit.
-
+: Possible values for `method` field of `optimize_hybrid_result` struct. {#tbl-method tbl-colwidths="[25,75]"}
 
 ## Log-Scale Arithmetic {#sec-cpp-api-logscale}
 
@@ -983,8 +976,14 @@ $x, y \in \mathbb{R}^n$ and produce an $n$-dimensional vector.
 
 ```{cpp}
 double log_add2_exp(double x, double y);
-std::vector<double> log_add2_exp(const std::vector<double>& x, const std::vector<double>& y);
-Rcpp::NumericVector log_add2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y);
+std::vector<double> log_add2_exp(
+	const std::vector<double>& x,
+	const std::vector<double>& y
+);
+Rcpp::NumericVector log_add2_exp(
+	const Rcpp::NumericVector& x,
+	const Rcpp::NumericVector& y
+);
 ```
 
 The following carry out subtraction on the log scale: $\log(e^x - e^y)$. The
@@ -993,8 +992,14 @@ $x, y \in \mathbb{R}^n$ and produce an $n$-dimensional vector. Here, elements of
 
 ```{cpp}
 double log_sub2_exp(double x, double y);
-std::vector<double> log_sub2_exp(const std::vector<double>& x, const std::vector<double>& y);
-Rcpp::NumericVector log_sub2_exp(const Rcpp::NumericVector& x, const Rcpp::NumericVector& y);
+std::vector<double> log_sub2_exp(
+	const std::vector<double>& x,
+	const std::vector<double>& y
+);
+Rcpp::NumericVector log_sub2_exp(
+	const Rcpp::NumericVector& x,
+	const Rcpp::NumericVector& y
+);
 ```
 
 ## Generating from a Discrete Distribution {#sec-cpp-api-discrete}
@@ -2320,5 +2325,7 @@ data.frame(x = xseq, h = out3$hx) %>%
 ```
 
 **TBD:** Because the mass of this particular $\text{Bessel}(\lambda, \nu)$ distribution is focused on a small set of integers, the proposal can be made practically equivalent to the target with a sufficient number of regions. After being refined to this point, it becomes extremely rare in rejection sampling to reject any candidates.
+
+\clearpage
 
 # References
