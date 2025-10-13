@@ -30,9 +30,7 @@ public:
 	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*
 	*/
-	//RealConstRegion(double a, const weight_dfd& w,
-	//	const UnivariateHelper& helper);
-	RealConstRegion(double a, const weight_dfd& w,
+	RealConstRegion(double a, const dfdb& w,
 		const UnivariateHelper& helper,
 		const optimizer& maxopt = maxopt_default,
 		const optimizer& minopt = minopt_default);
@@ -48,9 +46,7 @@ public:
 	*
 	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
 	*/
-	// RealConstRegion(double a, double b, const weight_dfd& w,
-	//	const UnivariateHelper& helper);
-	RealConstRegion(double a, double b, const weight_dfd& w,
+	RealConstRegion(double a, double b, const dfdb& w,
 		const UnivariateHelper& helper,
 		const optimizer& maxopt = maxopt_default,
 		const optimizer& minopt = minopt_default);
@@ -129,7 +125,7 @@ protected:
 	void init();
 	double _a;
 	double _b;
-	const weight_dfd* _w;
+	const dfdb* _w;
 	const UnivariateHelper* _helper;
 	double _log_w_max;
 	double _log_w_min;
@@ -139,7 +135,7 @@ protected:
 };
 
 inline RealConstRegion::RealConstRegion(double a,
-	const weight_dfd& w, const UnivariateHelper& helper,
+	const dfdb& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt)
 : _a(a), _b(a), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt)
@@ -148,7 +144,7 @@ inline RealConstRegion::RealConstRegion(double a,
 }
 
 inline RealConstRegion::RealConstRegion(double a, double b,
-	const weight_dfd& w, const UnivariateHelper& helper,
+	const dfdb& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt)
 : _a(a), _b(b), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt)
@@ -226,41 +222,33 @@ inline double RealConstRegion::w_minor(const double& x, bool log) const
 
 inline double RealConstRegion::midpoint() const
 {
-	// Rprintf("inside midpoint fn with _a = %g and _b = %g\n", _a, _b);
 	double out;
 
 	if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
-		// Rprintf("case 1\n");
 		// In this case, we have an interval (-inf, inf). Make a split at zero.
 		out = 0;
 	} else if (std::isinf(_a) && _a < 0) {
-		// Rprintf("case 2\n");
 		// Left endpoint is -inf. Split based on right endpoint.
 		out = _b - std::fabs(_b) - 1;
 	} else if (std::isinf(_b) && _b > 0) {
-		// Rprintf("case 3\n");
 		// Right endpoint is inf. Split based on left endpoint.
 		out = _a + std::fabs(_a) + 1;
 	} else {
-		// Rprintf("case 4\n");
 		out = (_a + _b) / 2;
 	}
 
-	// Rprintf("midpoint = %g\n", out);
 	return out;
 }
 
 inline std::pair<RealConstRegion,RealConstRegion>
 RealConstRegion::bifurcate() const
 {
-	// Rprintf("bifurcate\n");
 	return bifurcate(midpoint());
 }
 
 inline std::pair<RealConstRegion,RealConstRegion>
 RealConstRegion::bifurcate(const double& x) const
 {
-	// Rprintf("bifurcate at %g\n", x);
 	RealConstRegion r1(_a, x, *_w, *_helper, _maxopt, _minopt);
 	RealConstRegion r2(x, _b, *_w, *_helper, _maxopt, _minopt);
 	return std::make_pair(r1, r2);
@@ -279,16 +267,12 @@ inline bool RealConstRegion::is_bifurcatable() const
 inline double RealConstRegion::xi_upper(bool log) const
 {
 	double log_xi_upper = _log_w_max + _log_prob;
-	// Rprintf("For [%g,%g], _log_w_max = %g, _log_prob = %g, log_xi_upper = %g\n",
-	// 	_a, _b, _log_w_max, _log_prob, log_xi_upper);
 	return log ? log_xi_upper : exp(log_xi_upper);
 }
 
 inline double RealConstRegion::xi_lower(bool log) const
 {
 	double log_xi_lower = _log_w_min + _log_prob;
-	// Rprintf("For [%g,%g], _log_w_max = %g, _log_prob = %g, log_xi_upper = %g\n",
-	// 	_a, _b, _log_w_min, _log_prob, log_xi_lower);
 	return log ? log_xi_lower : exp(log_xi_lower);
 }
 

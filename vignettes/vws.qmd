@@ -52,11 +52,15 @@ set.seed(1234)
 ```
 
 ::: {.callout-caution title="TBD"}
-1. We should have a separate section where we describe doing stuff: constructing the proposal (special cases and general case where we override abstract region), refining the proposal, ...
-
 1. Examples are not being migrated to the installed package anymore ...
 
 1. Write out the formulation for the linear majorizer.
+
+1. Need an abstract.
+
+1. Make sure to check for other TBDs that may be scattered throughout.
+
+**Is this still relevant:** We should have a separate section where we describe doing stuff: constructing the proposal (special cases and general case where we override abstract region), refining the proposal, ...
 :::
 
 # Disclaimer and Acknowledgments {-}
@@ -83,7 +87,7 @@ file.path(path.package("vws"), "doc", "examples")
 The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-cpp-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von-Mises Fisher (VMF) distribution following the application example in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002].
 
 ::: {.callout-tip title="Quick Start"}
-Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described in the highest level detail. Code for the `vws` package is maintained in the GitHub repository at <https://github.com/andrewraim/vws>. 
+Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described with the highest amount of detail.
 :::
 
 # A Brief Review of Vertical Weighted Strips {#sec-vws}
@@ -364,23 +368,20 @@ The following typedef represents an indicator function.
 typedef std::function<bool(double x)> indicator;
 ```
 
-The following typedef represents a weight function. 
+The following typedef is used to represent weight functions. Here, `x` is the argument of the weight function and `log` determines if the result is returned on the log-scale.
 
 ```{cpp}
-typedef std::function<double(double x, bool log)> weight_dfd;
+typedef std::function<double(double x, bool log)> dfdb;
 ```
 
-Here, `x` is the argument of the weight function and `log` determines if the result is returned on the log-scale.
-
-The following typedef represents a function that optimizes (i.e., maximizes or
-minimizes) a weight function on a given interval.
+The following typedef represents a function that optimizes (i.e., maximizes or minimizes) a weight function on a given interval.
 
 ```{cpp}
 typedef std::function<double(
-	const weight_dfd& w,  // <1>
-	double lo,            // <2>
-	double hi,            // <3>
-	bool log              // <4>
+	const dfdb& w,  // <1>
+	double lo,      // <2>
+	double hi,      // <3>
+	bool log        // <4>
 )> optimizer;
 ```
 1. A weight function.
@@ -617,7 +618,7 @@ virtual std::string description() const = 0;                   // <9>
 4. The weight function $w$.
 5. Majorized weight function $\overline{w}_j$ for this region.
 6. Indicator of whether this region is bifurcatable into two smaller regions.
-This is used when refining a proposal; see Section TBD. One reason that a
+This is used when refining a proposal; see @sec-vws-knots. One reason that a
 region should not be bifurcated is when one of the resulting regions will not
 have any points of support.
 7. The quantity $\overline{\xi}_j$ for this region.
@@ -649,7 +650,7 @@ constructors.
 RealConstRegion(
 	double a,                                 // <1>
 	double b,                                 // <2>
-	const weight_dfd& w,                      // <3>
+	const dfdb& w,                            // <3>
 	const UnivariateHelper& helper,           // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default  // <6>
@@ -657,7 +658,7 @@ RealConstRegion(
 
 RealConstRegion(
 	double a,                                 // <1>
-	const weight_dfd& w,                      // <3>
+	const dfdb& w,                            // <3>
 	const UnivariateHelper& helper            // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default  // <6>
@@ -1218,7 +1219,7 @@ We have
 Therefore, it is seen that $\log w(x)$ is concave when $d > 3$, convex when $d = 2$, and constant otherwise. When $d > 3$, $\frac{d}{dx} \log w(x)$ is positive for $x \in (-1, 0)$, negative for $x \in (0, 1)$, and has root $x = 0$; therefore,  $\log w(x)$ is unimodal on $(-1, 1)$ with a maximum at $x = 0$. When $d = 2$, the point $x = 0$ is instead a minimum of $\log w(x)$. Finally, $w$ is a constant in the case $d = 3$. We can code these maximization and minimization routines as lambdas.
 
 ```{cpp}
-vws::optimizer opt1 = [&](const vws::weight_dfd& w, double lo, double hi, bool log)
+vws::optimizer opt1 = [&](const vws::dfdb& w, double lo, double hi, bool log)
 {
 	double out;
 	if (lo <= 0 && 0 < hi) {
@@ -1233,7 +1234,7 @@ vws::optimizer opt1 = [&](const vws::weight_dfd& w, double lo, double hi, bool l
 ```
 
 ```{cpp}
-vws::optimizer opt2 = [&](const vws::weight_dfd& w, double lo, double hi, bool log)
+vws::optimizer opt2 = [&](const vws::dfdb& w, double lo, double hi, bool log)
 {
 	double w_lo = w(lo, true);
 	double w_hi = w(hi, true);
@@ -1478,7 +1479,7 @@ All codes for this example are in the folder `examples/ln-norm`.
 We may adapt the code from @sec-vmf-const-default to target density in the present problem. Now the weight function may be coded as follows.
 
 ```{cpp}
-const vws::weight_dfd& w = [&](double x, bool log = true) {
+const vws::dfdb& w = [&](double x, bool log = true) {
 	double out = R_NegInf;
 	if (x > 0) {
 		out = -std::log(x) - std::pow(std::log(x) - mu, 2) / (2 * std::pow(sigma, 2));
@@ -1615,7 +1616,7 @@ ggplot() +
 The maximizer may be coded as follows.
 
 ```{cpp}
-const vws::optimizer& maxopt = [&](const vws::weight_dfd& w, double lo,
+const vws::optimizer& maxopt = [&](const vws::dfdb& w, double lo,
 	double hi, bool log)
 {
 	double y_star = exp(mu - sigma2);
@@ -1636,7 +1637,7 @@ const vws::optimizer& maxopt = [&](const vws::weight_dfd& w, double lo,
 Here is code for the minimizer.
 
 ```{cpp}
-const vws::optimizer& minopt = [&](const vws::weight_dfd& w, double lo,
+const vws::optimizer& minopt = [&](const vws::dfdb& w, double lo,
 	double hi, bool log)
 {
 	double lwa = w(lo, true);
@@ -1907,7 +1908,7 @@ lwseq = w(xseq, log = T)
 The weight function may be coded as a lambda in C++ as follows.
 
 ```{cpp}
-const vws::weight_dfd& w = [&](double x, bool log = true) {
+const vws::dfdb& w = [&](double x, bool log = true) {
 	double out = -std::lgamma(x + nu + 1);
 	return log ? out : std::exp(out);
 };
@@ -1976,7 +1977,7 @@ plot_pmf(out1$draws) +
 We can make several improvements to the default numerical majorizer by coding it explicitly. We notice that $\log w(x) = -\log \Gamma(x + \nu + 1)$ is a decreasing function in $x$ so that numerical optimization is not necessary. It can be bounded above on the $j$th region by evaluating at the left endpoint $\alpha_{j-1}$. Similarly, it can be bounded below on the $j$th region by evaluating on the right endpoint $\alpha_j$. Furthermore, if these endpoints are not integers, we can improve the bounds by restricting consideration to integers, using $\lceil \alpha_{j-1} \rceil + 1$ and $\lceil \alpha_j \rceil$ to obtain the maximizer and minimizer, respectively. The following functions put this into practice.
 
 ```{cpp}
-const vws::optimizer& maxopt = [](const vws::weight_dfd& w, double lo,
+const vws::optimizer& maxopt = [](const vws::dfdb& w, double lo,
 	double hi, bool log)
 {
 	if (lo < 0 && hi < 0) { Rcpp::stop("Did not code this case"); }
@@ -1985,7 +1986,7 @@ const vws::optimizer& maxopt = [](const vws::weight_dfd& w, double lo,
 	return log ? out : std::exp(out);
 };
 
-const vws::optimizer& minopt = [](const vws::weight_dfd& w, double lo,
+const vws::optimizer& minopt = [](const vws::dfdb& w, double lo,
 	double hi, bool log)
 {
 	if (lo < 0 && hi < 0) { Rcpp::stop("Did not code this case"); }

@@ -12,7 +12,7 @@ Rcpp::List r_bessel_v1(unsigned int n, double lambda, double nu, unsigned int N,
 
 	double mean = lambda * lambda / 4;
 
-	const vws::weight_dfd& w =
+	const vws::dfdb& w =
 	[&](double x, bool log = true) {
 		double out = -std::lgamma(x + nu + 1);
 		return log ? out : std::exp(out);

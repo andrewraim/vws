@@ -11,7 +11,7 @@ Rcpp::List r_vmf_pre_v1(unsigned int n, double kappa, double d,
     args.max_rejects = max_rejects;
     args.report = report;
 
-    const vws::weight_dfd& w =                              // <6>
+    const vws::dfdb& w =                                    // <6>
     [&](double x, bool log = true) {
         double out = R_NegInf;
         if (std::fabs(x) < 1){

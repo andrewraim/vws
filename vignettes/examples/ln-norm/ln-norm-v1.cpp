@@ -11,7 +11,7 @@ Rcpp::List r_ln_norm_v1(unsigned int n, double z, double mu,
 	args.report = report;
 	args.action = vws::error_action::STOP;
 
-	const vws::weight_dfd& w =
+	const vws::dfdb& w =
 	[&](double x, bool log = true) {
 		double out = R_NegInf;
 		if (x > 0) {

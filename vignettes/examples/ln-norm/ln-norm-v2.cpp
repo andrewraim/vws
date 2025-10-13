@@ -11,7 +11,7 @@ Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
 	args.report = report;
 	double sigma2 = sigma*sigma;
 
-	const vws::weight_dfd& w =
+	const vws::dfdb& w =
 	[&](double x, bool log = true) {
 		double out = R_NegInf;
 		if (x > 0) {
@@ -30,7 +30,7 @@ Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
 		return R::qnorm(p, z, lambda, lower, log);
 	};
 
-	const vws::optimizer& maxopt = [&](const vws::weight_dfd& w, double lo,
+	const vws::optimizer& maxopt = [&](const vws::dfdb& w, double lo,
 		double hi, bool log)
 	{
 		double y_star = exp(mu - sigma2);
@@ -47,7 +47,7 @@ Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
 		return log ? out : exp(out);
 	};
 
-	const vws::optimizer& minopt = [&](const vws::weight_dfd& w, double lo,
+	const vws::optimizer& minopt = [&](const vws::dfdb& w, double lo,
 		double hi, bool log)
 	{
 		double lwa = w(lo, true);

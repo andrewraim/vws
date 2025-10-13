@@ -10,7 +10,7 @@ Rcpp::List r_vmf_pre_v2(unsigned int n, double kappa, double d, unsigned int N,
 	args.max_rejects = max_rejects;
 	args.report = report;
 
-	const vws::weight_dfd& w =
+	const vws::dfdb& w =
 	[&](double x, bool log = true) {
 		double out = R_NegInf;
 		if (std::fabs(x) < 1){
@@ -29,7 +29,7 @@ Rcpp::List r_vmf_pre_v2(unsigned int n, double kappa, double d, unsigned int N,
 		return q_texp(p, kappa, -1, 1, lower, log);
 	};
 
-	vws::optimizer opt1 = [&](const vws::weight_dfd& w, double lo, double hi,
+	vws::optimizer opt1 = [&](const vws::dfdb& w, double lo, double hi,
 		bool log)
 	{
 		double out;
@@ -43,7 +43,7 @@ Rcpp::List r_vmf_pre_v2(unsigned int n, double kappa, double d, unsigned int N,
 		return log ? out : std::exp(out);
 	};
 
-	vws::optimizer opt2 = [&](const vws::weight_dfd& w, double lo, double hi,
+	vws::optimizer opt2 = [&](const vws::dfdb& w, double lo, double hi,
 		bool log)
 	{
 		double w_lo = w(lo, true);

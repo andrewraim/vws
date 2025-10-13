@@ -12,7 +12,7 @@ Rcpp::List r_bessel_v2(unsigned int n, double lambda, double nu, unsigned int N,
 
 	double mean = lambda * lambda / 4;
 
-	const vws::weight_dfd& w =
+	const vws::dfdb& w =
 	[&](double x, bool log = true) {
 		double out = -std::lgamma(x + nu + 1);
 		return log ? out : std::exp(out);
@@ -33,7 +33,7 @@ Rcpp::List r_bessel_v2(unsigned int n, double lambda, double nu, unsigned int N,
 	// at the largest integer. We can also ensure that only integer values
 	// are considered, which is more awkward with numerical optimization.
 
-	const vws::optimizer& maxopt = [](const vws::weight_dfd& w,
+	const vws::optimizer& maxopt = [](const vws::dfdb& w,
 		double lo, double hi, bool log)
 	{
 		if (lo < 0 && hi < 0) { Rcpp::stop("Did not code this case"); }
@@ -42,7 +42,7 @@ Rcpp::List r_bessel_v2(unsigned int n, double lambda, double nu, unsigned int N,
 		return log ? out : std::exp(out);
 	};
 
-	const vws::optimizer& minopt = [](const vws::weight_dfd& w,
+	const vws::optimizer& minopt = [](const vws::dfdb& w,
 		double lo, double hi, bool log)
 	{
 		if (lo < 0 && hi < 0) { Rcpp::stop("Did not code this case"); }

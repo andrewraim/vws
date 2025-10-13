@@ -15,9 +15,9 @@ static const unsigned int uint_max = std::numeric_limits<unsigned int>::max();
 /*
 * Typedefs for several functions used in VWS programming.
 */
-typedef std::function<double(double, bool)> weight_dfd;
+typedef std::function<double(double, bool)> dfdb;
 typedef std::function<bool(double)> indicator;
-typedef std::function<double(const weight_dfd& w, double lo, double hi,
+typedef std::function<double(const dfdb& w, double lo, double hi,
 	bool log)> optimizer;
 
 /*
@@ -36,7 +36,7 @@ enum class error_action {
 	NONE
 };
 
-inline static const optimizer maxopt_default = [](const weight_dfd& w,
+inline static const optimizer maxopt_default = [](const dfdb& w,
 	double lo, double hi, bool log) -> double
 {
 	// Pass the log-weight function to `optimize_hybrid`.
@@ -45,7 +45,7 @@ inline static const optimizer maxopt_default = [](const weight_dfd& w,
 	return log ? out.value : exp(out.value);
 };
 
-inline static const optimizer minopt_default = [](const weight_dfd& w,
+inline static const optimizer minopt_default = [](const dfdb& w,
 	double lo, double hi, bool log) -> double
 {
 	// Pass the log-weight function to `optimize_hybrid`.
