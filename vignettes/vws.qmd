@@ -560,8 +560,6 @@ The `seq` function is provided as a convenience to generate equally-spaced knots
 std::vector<double> seq(double lo, double hi, unsigned int N, bool endpoints = false);
 ```
 
-**TBD:** Should the first refine function take a vector of ints for `IntConstRegion` regions? Seems okay to leave it as is ...
-
 ### Summary Methods {.unlisted}
 
 Several methods are provided to summarize the regions in the proposal.
