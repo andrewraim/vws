@@ -56,7 +56,6 @@ set.seed(1234)
 1. Need an abstract.
 1. Need material for `IntConstRegion` in API section.
 1. Make sure to check for other TBDs that may be scattered throughout.
-1. Clean out stale example code in `inst` folder.
 
 **Is this still relevant:** We should have a separate section where we describe doing stuff: constructing the proposal (special cases and general case where we override abstract region), refining the proposal, ...
 :::
