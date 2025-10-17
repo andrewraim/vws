@@ -1,4 +1,7 @@
 *.html
-*.R
+*.log
+*.tex
 examples_files
 /.quarto/
+fontawesome5*
+xpatch.sty

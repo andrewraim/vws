@@ -4,8 +4,22 @@
 #include <Rcpp.h>
 #include "logit.h"
 
+/*
+* Functions for a "rectangular" transformation and its inverse.
+*/
+
+
 namespace vws {
 
+/*
+* Rectangular transformation
+*
+* - `z`: scalar in the rectangle $[a, b]$.
+* - `a`: lower limit which may be `-inf`.
+* - `b`: upper limit which may be `+inf`.
+*
+* Returns a scalar on the real line.
+*/
 inline double rect(double z, double a, double b)
 {
 	double x;
@@ -13,11 +27,11 @@ inline double rect(double z, double a, double b)
 	if (std::isinf(a) && std::isinf(b) && a < 0 && b > 0) {
 		x = z;
 	} else if (std::isinf(a) && a < 0) {
-		x = logit(z / b);
+		x = -log(b - z);
 	} else if (std::isinf(b) && b > 0) {
 		x = log(z - a);
 	} else if (std::isfinite(a) && std::isfinite(b)) {
-		x = logit(z / (b - a) - a);
+		x = logit((z - a) / (b - a));
 	} else {
 		Rcpp::stop("Invalid endpoints");
 	}
@@ -25,7 +39,15 @@ inline double rect(double z, double a, double b)
 	return x;
 }
 
-
+/*
+* Inverse rectangular transformation
+*
+* - `z`: scalar in the real line.
+* - `a`: lower limit which may be `-inf`.
+* - `b`: upper limit which may be `+inf`.
+*
+* Returns a scalar in the rectangle $[a, b]$.
+*/
 inline double inv_rect(double x, double a, double b)
 {
 	double z;
@@ -33,9 +55,9 @@ inline double inv_rect(double x, double a, double b)
 	if (std::isinf(a) && std::isinf(b) && a < 0 && b > 0) {
 		z = x;
 	} else if (std::isinf(a) && a < 0) {
-		z = b * inv_logit(x);
+		z = b - exp(-x);
 	} else if (std::isinf(b) && b > 0) {
-		z = exp(x) + a;
+		z = a + exp(x);
 	} else if (std::isfinite(a) && std::isfinite(b)) {
 		z = (b - a) * inv_logit(x) + a;
 	} else {
@@ -45,6 +67,15 @@ inline double inv_rect(double x, double a, double b)
 	return z;
 }
 
+/*
+* Rectangular transformation
+*
+* - `z`: a vector in the rectangle $[a_1, b_1] \times \cdots \times [a_d, b_d]$.
+* - `a`: a vector of $d$ lower limits which each may be `-inf`.
+* - `b`: a vector of $d$ upper limits which each may be `+inf`.
+*
+* Returns a vector of $d$ elements on the real line.
+*/
 inline Rcpp::NumericVector rect(const Rcpp::NumericVector& z,
 	const Rcpp::NumericVector& a, const Rcpp::NumericVector& b)
 {
@@ -62,22 +93,21 @@ inline Rcpp::NumericVector rect(const Rcpp::NumericVector& z,
 	Rcpp::NumericVector x(n);
 
 	for (unsigned int i = 0; i < n; i++) {
-		if (std::isinf(a(i)) && std::isinf(b(i)) && a(i) < 0 && b(i) > 0) {
-			x(i) = z(i);
-		} else if (std::isinf(a(i)) && a(i) < 0) {
-			x(i) = logit(z(i) / b(i));
-		} else if (std::isinf(b(i)) && b(i) > 0) {
-			x(i) = log(z(i) - a(i));
-		} else if (std::isfinite(a(i)) && std::isfinite(b(i))) {
-			x[i] = logit(z(i) / (b(i) - a(i)) - a(i));
-		} else {
-			Rcpp::stop("Invalid endpoints");
-		}
+		x(i) = rect(z(i), a(i), b(i));
 	}
 
 	return x;
 }
 
+/*
+* Inverse rectangular transformation
+*
+* - `z`: a vector of $d$ elements on the real line.
+* - `a`: a vector of $d$ lower limits which each may be `-inf`.
+* - `b`: a vector of $d$ upper limits which each may be `+inf`.
+*
+* Returns a vector in the rectangle $[a_1, b_1] \times \cdots \times [a_d, b_d]$.
+*/
 inline Rcpp::NumericVector inv_rect(const Rcpp::NumericVector& x,
 	const Rcpp::NumericVector& a, const Rcpp::NumericVector& b)
 {
@@ -95,17 +125,7 @@ inline Rcpp::NumericVector inv_rect(const Rcpp::NumericVector& x,
 	Rcpp::NumericVector z(n);
 
 	for (unsigned int i = 0; i < n; i++) {
-		if (std::isinf(a(i)) && std::isinf(b(i)) && a(i) < 0 && b(i) > 0) {
-			z(i) = x(i);
-		} else if (std::isinf(a(i)) && a(i) < 0) {
-			z(i) = b(i) * inv_logit(x(i));
-		} else if (std::isinf(b(i)) && b(i) > 0) {
-			z(i) = exp(x(i)) + a(i);
-		} else if (std::isfinite(a(i)) && std::isfinite(b(i))) {
-			z(i) = (b(i) - a(i)) * inv_logit(x(i)) + a(i);
-		} else {
-			Rcpp::stop("Invalid endpoints");
-		}
+		z(i) = inv_rect(x(i), a(i), b(i));
 	}
 
 	return z;

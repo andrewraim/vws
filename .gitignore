@@ -51,3 +51,5 @@ inst/doc
 /doc/
 /Meta/
 docs
+
+*.o

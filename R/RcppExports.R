@@ -3,6 +3,31 @@
 
 #' Categorical Distribution
 #'
+#' Draw variates from a categorical distribution.
+#'
+#' @param n Number of desired draws.
+#' @param p Vector of \eqn{k} probabilities for distribution.
+#' @param log logical; if `TRUE`, interpret `p` as being specified on the
+#' log-scale as `log(p)`. Otherwise, interpret `p` as being specified on the
+#' original probability scale.
+#' @param one_based logical; if `TRUE`, assume a categorical distribution
+#' with support \eqn{\{ 1, \ldots, k \}}. Otherwise, assume support
+#' \eqn{\{ 0, \ldots, k - 1 \}}.
+#'
+#' @return A vector of \eqn{n} draws.
+#'
+#' @examples
+#' p = c(0.1, 0.2, 0.3, 0.4)
+#' lp = log(p)
+#'
+#' set.seed(1234)
+#' r_categ(50, p, log = FALSE, one_based = FALSE)
+#' r_categ(50, p, log = FALSE, one_based = TRUE)
+#'
+#' set.seed(1234)
+#' r_categ(50, lp, log = TRUE, one_based = FALSE)
+#' r_categ(50, lp, log = TRUE, one_based = TRUE)
+#'
 #' @name Categorical
 #' @export
 r_categ <- function(n, p, log = FALSE, one_based = FALSE) {
@@ -11,19 +36,43 @@ r_categ <- function(n, p, log = FALSE, one_based = FALSE) {
 
 #' Gumbel Distribution
 #'
-#' Functions for the Gumbel distribution
+#' Functions for the Gumbel distribution with density
+#' \deqn{
+#' f(x \mid \mu, \sigma) =
+#' \frac{1}{\sigma}
+#' \exp\{ -\{ (x - \mu) / \sigma + e^{-(x - \mu) / \sigma} \} \}
+#' }
 #'
-#' @param n Number of draws
-#' @param x Vector of quantiles
-#' @param p Vector of probabilities
-#' @param q Vector of quantiles
-#' @param mu Location parameter
-#' @param sigma Scale parameter
+#' @param n Number of draws.
+#' @param x Vector; argument of density.
+#' @param p Vector; argument of cumulative distribution function.
+#' @param q Vector; argument of quantile function.
+#' @param mu Location parameter.
+#' @param sigma Scale parameter.
 #' @param lower Logical; if `TRUE` (default), probabilities are
 #' \eqn{P[X \leq x]} otherwise, \eqn{P[X > x]}.
 #' @param log Logical; if `TRUE`, probabilities p are given as \eqn{log(p)}
 #'
-#' @return A vector of draws
+#' @return
+#' `d_gumbel` computes the density, `r_gumbel` generates random deviates,
+#' `p_gumbel` computes the CDF, and `q_gumbel` computes quantiles.
+#'
+#' @examples
+#' mu = 1
+#' sigma = 2
+#' x = r_gumbel(100000, mu, sigma)
+#' xx = seq(min(x), max(x), length.out = 100)
+#'
+#' plot(density(x))
+#' lines(xx, d_gumbel(xx, mu, sigma), lty = 2, col = "blue", lwd = 2)
+#'
+#' plot(ecdf(x))
+#' lines(xx, p_gumbel(xx, mu, sigma), lty = 2, col = "blue", lwd = 2)
+#'
+#' pp = seq(0, 1, length.out = 102) |> head(-1) |> tail(-1)
+#' qq = quantile(x, probs = pp)
+#' plot(pp, qq)
+#' lines(pp, q_gumbel(pp, mu, sigma), lty = 2, col = "blue", lwd = 2)
 #'
 #' @name Gumbel
 #' @export
@@ -49,49 +98,6 @@ q_gumbel <- function(p, mu = 0, sigma = 1, lower = TRUE, log = FALSE) {
     .Call(`_vws_q_gumbel_rcpp`, p, mu, sigma, lower, log)
 }
 
-#' Inverse Gamma distribution
-#'
-#' @param n Number of draws.
-#' @param x Vector of quantiles.
-#' @param q Vector of quantiles.
-#' @param p Vector of probabilities.
-#' @param a Shape parameter.
-#' @param b Rate parameter.
-#' @param lower logical; if TRUE (default), probabilities are
-#' \eqn{P(X \leq x)}; otherwise, \eqn{P(X > x)}.
-#' @param log If `TRUE`, return densities and probabilities on the log-scale.
-#'
-#' @return
-#' `d_invgamma` computes the density, `r_invgamma` generates random deviates,
-#' `p_invgamma` computes the CDF, and `q_invgamma` computes quantiles.
-#'
-#' @details
-#' Note that `Rcpp::*gamma` and `R::*gamma` functions are both parameterized
-#' by a scale parameter, which is the inverse of the rate.
-#'
-#' @name InverseGamma
-r_invgamma <- function(n, a, b) {
-    .Call(`_vws_r_invgamma_rcpp`, n, a, b)
-}
-
-#' @name InverseGamma
-#' @export
-d_invgamma <- function(x, a, b, log = FALSE) {
-    .Call(`_vws_d_invgamma_rcpp`, x, a, b, log)
-}
-
-#' @name InverseGamma
-#' @export
-p_invgamma <- function(q, a, b, lower = TRUE, log = FALSE) {
-    .Call(`_vws_p_invgamma_rcpp`, q, a, b, lower, log)
-}
-
-#' @name InverseGamma
-#' @export
-q_invgamma <- function(p, a, b, lower = TRUE, log = FALSE) {
-    .Call(`_vws_q_invgamma_rcpp`, p, a, b, lower, log)
-}
-
 #' Log-Sum-Exp
 #'
 #' Compute `log(sum(exp(x)))` in a more stable way.
@@ -105,13 +111,6 @@ q_invgamma <- function(p, a, b, lower = TRUE, log = FALSE) {
 #' The function `log_sub2_exp` expects that each element of `x` is
 #' larger than or equal to its corresponding element in `y`. Otherwise,
 #' `NaN` will be returned with a warning.
-#'
-#' The function `log_sub2_exp_signed` can handle inputs where elements of
-#' `x` are smaller than corresponding elements of `y`. The return
-#' value `modulus` contains `log(abs(exp(x) - exp(y)))`, and
-#' `sign` contains the sign of `exp(x) - exp(y)`. Therefore, the
-#' difference on the original scale can be reconstituted as
-#' `sign * exp(modulus)`.
 #'
 #' @examples
 #' pi = 1:6 / sum(1:6)
@@ -127,7 +126,7 @@ q_invgamma <- function(p, a, b, lower = TRUE, log = FALSE) {
 #' x = c(-Inf -Inf, -Inf)
 #' log_sum_exp(x)
 #'
-#' # Result should be -Inf
+#' # Result should be Inf
 #' x = c(-Inf -Inf, Inf)
 #' log_sum_exp(x)
 #'
@@ -139,22 +138,10 @@ q_invgamma <- function(p, a, b, lower = TRUE, log = FALSE) {
 #' out = log_sub2_exp(log(12), log(5))
 #' exp(out)
 #'
-#' # Results should be 7 and -7 on the original scale, respectively
-#' out1 = log_sub2_exp_signed(log(12), log(5))
-#' out2 = log_sub2_exp_signed(log(5), log(12))
-#' out1$sign * exp(out1$modulus)
-#' out2$sign * exp(out2$modulus)
-#'
 #' @name log_sum_exp
 #' @export
 log_sum_exp <- function(x) {
     .Call(`_vws_log_sum_exp_rcpp`, x)
-}
-
-#' @name log_sum_exp
-#' @export
-log_sum_exp_mat <- function(x) {
-    .Call(`_vws_log_sum_exp_mat_rcpp`, x)
 }
 
 #' @name log_sum_exp
@@ -169,17 +156,40 @@ log_sub2_exp <- function(x, y) {
     .Call(`_vws_log_sub2_exp_rcpp`, x, y)
 }
 
-#' Optimize Hybrid
+#' Hybrid Univariate Optimization
 #'
-#' @param f TBD
-#' @param init TBD
-#' @param lower TBD
-#' @param upper TBD
-#' @param maximize TBD
-#' @param maxiter TBD
+#' Use Brent's method if a bounded search interval is specified. Otherwise use
+#' BFGS method.
+#'
+#' @param f Objective function. Should take a scalar as an argument.
+#' @param init Initial value for optimization variable.
+#' @param lower Lower bound for search; may be \eqn{-\infty}.
+#' @param upper Upper bound for search; may be \eqn{+\infty}.
+#' @param maximize logical; if `TRUE`, optimization will be a maximization.
+#' Otherwise, it will be a minimization.
+#' @param maxiter Maximum number of iterations.
+#'
+#' @returns
+#' \item{par}{Value of optimization variable.}
+#' \item{value}{Value of optimization function.}
+#' \item{method}{Description of result.}
+#' \item{status}{Status code from BFGS or `0` otherwise.}
+#'
+#' @examples
+#' f = function(x) { x^2 }
+#' optimize_hybrid(f, init = 0, lower = -1, upper = 2, maximize = FALSE)
+#' optimize_hybrid(f, init = 0, lower = -1, upper = Inf, maximize = FALSE)
+#' optimize_hybrid(f, init = 0, lower = -Inf, upper = 1, maximize = FALSE)
+#' optimize_hybrid(f, init = 0, lower = 0, upper = Inf, maximize = FALSE)
+#' optimize_hybrid(f, init = 0, lower = -Inf, upper = 0, maximize = FALSE)
+#'
+#' f = function(x) { 1 - x^2 }
+#' optimize_hybrid(f, init = 0, lower = -1, upper = 1, maximize = TRUE)
+#' optimize_hybrid(f, init = 0, lower = -1, upper = 0, maximize = TRUE)
+#' optimize_hybrid(f, init = 0, lower = 0, upper = 1, maximize = TRUE)
 #'
 #' @export
-optimize_hybrid <- function(f, init, lower, upper, maximize, maxiter = 100000L) {
+optimize_hybrid <- function(f, init, lower, upper, maximize = FALSE, maxiter = 10000L) {
     .Call(`_vws_optimize_hybrid_rcpp`, f, init, lower, upper, maximize, maxiter)
 }
 
@@ -191,19 +201,43 @@ optimize_hybrid <- function(f, init, lower, upper, maximize, maxiter = 100000L) 
 #' @param x A point in \eqn{\mathbb{R}^{d}}.
 #' @param z A point in the rectangle \eqn{[a_1,b_1] \times \cdots \times [a_d,b_d]}.
 #' @param a A vector \eqn{(a_1, \ldots, a_d)}, Elements may be `-Inf`.
-#' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be `Inf`.
+#' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be `+Inf`.
 #'
 #' @examples
-#' x = seq(-1, 1, length.out = 3)
-#' a = rep(0, 3)
-#' b = rep(1, 3)
-#' z = inv_rect(x, a, b)
-#' rect(z, a, b)
+#' n = 20
+#' x = seq(-5, 5, length.out = n)
 #'
-#' a = c(-Inf, 0, -Inf)
-#' b = c(Inf, 1, Inf)
+#' # Transform x to the interval [-1, 1]
+#' a = rep(-1, n)
+#' b = rep(+1, n)
 #' z = inv_rect(x, a, b)
-#' rect(z, a, b)
+#' print(z)
+#' xx = rect(z, a, b)
+#' stopifnot(all(abs(x - xx) < 1e-8))
+#'
+#' # Transform x to the interval [-Inf, 1]
+#' a = rep(-Inf, n)
+#' b = rep(+1, n)
+#' z = inv_rect(x, a, b)
+#' print(z)
+#' xx = rect(z, a, b)
+#' stopifnot(all(abs(x - xx) < 1e-8))
+#'
+#' # Transform x to the interval [-1, Inf]
+#' a = rep(-1, n)
+#' b = rep(+Inf, n)
+#' z = inv_rect(x, a, b)
+#' print(z)
+#' xx = rect(z, a, b)
+#' stopifnot(all(abs(x - xx) < 1e-8))
+#'
+#' # Transform x to the interval [-Inf, Inf]
+#' a = rep(-Inf, n)
+#' b = rep(+Inf, n)
+#' z = inv_rect(x, a, b)
+#' print(z)
+#' xx = rect(z, a, b)
+#' stopifnot(all(abs(x - xx) < 1e-8))
 #'
 #' @name rect
 #' @export
@@ -215,57 +249,5 @@ rect <- function(z, a, b) {
 #' @export
 inv_rect <- function(x, a, b) {
     .Call(`_vws_inv_rect_rcpp`, x, a, b)
-}
-
-#' Truncated Exponential
-#'
-#' @name TExp
-#' @export
-n_texp <- function(kappa, lo, hi, log = FALSE) {
-    .Call(`_vws_n_texp_rcpp`, kappa, lo, hi, log)
-}
-
-#' @name TExp
-#' @export
-integrate_texp <- function(a, b, kappa, lo, hi, log = FALSE) {
-    .Call(`_vws_integrate_texp_rcpp`, a, b, kappa, lo, hi, log)
-}
-
-#' @name TExp
-#' @export
-d_texp <- function(x, kappa, lo, hi, log = FALSE) {
-    .Call(`_vws_d_texp_rcpp`, x, kappa, lo, hi, log)
-}
-
-#' @name TExp
-#' @export
-p_texp <- function(q, kappa, lo, hi, lower = TRUE, log = FALSE) {
-    .Call(`_vws_p_texp_rcpp`, q, kappa, lo, hi, lower, log)
-}
-
-#' @name TExp
-#' @export
-q_texp <- function(p, kappa, lo, hi, lower = TRUE, log = FALSE) {
-    .Call(`_vws_q_texp_rcpp`, p, kappa, lo, hi, lower, log)
-}
-
-#' @name TExp
-#' @export
-r_texp <- function(n, kappa, lo, hi) {
-    .Call(`_vws_r_texp_rcpp`, n, kappa, lo, hi)
-}
-
-#' @name TExp
-#' @export
-mgf_texp <- function(s, kappa, lo, hi, log = FALSE) {
-    .Call(`_vws_mgf_texp_rcpp`, s, kappa, lo, hi, log)
-}
-
-#' Uniform Distribution
-#'
-#' @name Uniform
-#' @export
-mgf_unif <- function(s, lo, hi, log = FALSE) {
-    .Call(`_vws_mgf_unif_rcpp`, s, lo, hi, log)
 }
 

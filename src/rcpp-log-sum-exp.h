@@ -17,13 +17,6 @@
 //' larger than or equal to its corresponding element in `y`. Otherwise,
 //' `NaN` will be returned with a warning.
 //'
-//' The function `log_sub2_exp_signed` can handle inputs where elements of
-//' `x` are smaller than corresponding elements of `y`. The return
-//' value `modulus` contains `log(abs(exp(x) - exp(y)))`, and
-//' `sign` contains the sign of `exp(x) - exp(y)`. Therefore, the
-//' difference on the original scale can be reconstituted as
-//' `sign * exp(modulus)`.
-//'
 //' @examples
 //' pi = 1:6 / sum(1:6)
 //' x = log(2*pi)
@@ -38,7 +31,7 @@
 //' x = c(-Inf -Inf, -Inf)
 //' log_sum_exp(x)
 //'
-//' # Result should be -Inf
+//' # Result should be Inf
 //' x = c(-Inf -Inf, Inf)
 //' log_sum_exp(x)
 //'
@@ -50,21 +43,10 @@
 //' out = log_sub2_exp(log(12), log(5))
 //' exp(out)
 //'
-//' # Results should be 7 and -7 on the original scale, respectively
-//' out1 = log_sub2_exp_signed(log(12), log(5))
-//' out2 = log_sub2_exp_signed(log(5), log(12))
-//' out1$sign * exp(out1$modulus)
-//' out2$sign * exp(out2$modulus)
-//'
 //' @name log_sum_exp
 //' @export
 // [[Rcpp::export(name = "log_sum_exp")]]
 double log_sum_exp_rcpp(const Rcpp::NumericVector& x);
-
-//' @name log_sum_exp
-//' @export
-// [[Rcpp::export(name = "log_sum_exp_mat")]]
-Rcpp::NumericVector log_sum_exp_mat_rcpp(const Rcpp::NumericMatrix& x);
 
 //' @name log_sum_exp
 //' @export

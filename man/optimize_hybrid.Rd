@@ -2,23 +2,45 @@
 % Please edit documentation in R/RcppExports.R
 \name{optimize_hybrid}
 \alias{optimize_hybrid}
-\title{Optimize Hybrid}
+\title{Hybrid Univariate Optimization}
 \usage{
-optimize_hybrid(f, init, lower, upper, maximize, maxiter = 100000L)
+optimize_hybrid(f, init, lower, upper, maximize = FALSE, maxiter = 10000L)
 }
 \arguments{
-\item{f}{TBD}
+\item{f}{Objective function. Should take a scalar as an argument.}
 
-\item{init}{TBD}
+\item{init}{Initial value for optimization variable.}
 
-\item{lower}{TBD}
+\item{lower}{Lower bound for search; may be \eqn{-\infty}.}
 
-\item{upper}{TBD}
+\item{upper}{Upper bound for search; may be \eqn{+\infty}.}
 
-\item{maximize}{TBD}
+\item{maximize}{logical; if \code{TRUE}, optimization will be a maximization.
+Otherwise, it will be a minimization.}
 
-\item{maxiter}{TBD}
+\item{maxiter}{Maximum number of iterations.}
+}
+\value{
+\item{par}{Value of optimization variable.}
+\item{value}{Value of optimization function.}
+\item{method}{Description of result.}
+\item{status}{Status code from BFGS or \code{0} otherwise.}
 }
 \description{
-Optimize Hybrid
+Use Brent's method if a bounded search interval is specified. Otherwise use
+BFGS method.
+}
+\examples{
+f = function(x) { x^2 }
+optimize_hybrid(f, init = 0, lower = -1, upper = 2, maximize = FALSE)
+optimize_hybrid(f, init = 0, lower = -1, upper = Inf, maximize = FALSE)
+optimize_hybrid(f, init = 0, lower = -Inf, upper = 1, maximize = FALSE)
+optimize_hybrid(f, init = 0, lower = 0, upper = Inf, maximize = FALSE)
+optimize_hybrid(f, init = 0, lower = -Inf, upper = 0, maximize = FALSE)
+
+f = function(x) { 1 - x^2 }
+optimize_hybrid(f, init = 0, lower = -1, upper = 1, maximize = TRUE)
+optimize_hybrid(f, init = 0, lower = -1, upper = 0, maximize = TRUE)
+optimize_hybrid(f, init = 0, lower = 0, upper = 1, maximize = TRUE)
+
 }

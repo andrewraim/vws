@@ -13,3 +13,9 @@ setting the following YAML header entry to `true` or `false`, respectively.
 execute:
   eval: false
 ```
+
+This document uses the latex package `unicode-math`. It requires the package
+[xpatch][xpatch] as a prerequisite.
+
+[xpatch]: https://ctan.org/pkg/xpatch
+

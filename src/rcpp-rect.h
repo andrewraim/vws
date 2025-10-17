@@ -11,19 +11,43 @@
 //' @param x A point in \eqn{\mathbb{R}^{d}}.
 //' @param z A point in the rectangle \eqn{[a_1,b_1] \times \cdots \times [a_d,b_d]}.
 //' @param a A vector \eqn{(a_1, \ldots, a_d)}, Elements may be `-Inf`.
-//' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be `Inf`.
+//' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be `+Inf`.
 //'
 //' @examples
-//' x = seq(-1, 1, length.out = 3)
-//' a = rep(0, 3)
-//' b = rep(1, 3)
-//' z = inv_rect(x, a, b)
-//' rect(z, a, b)
+//' n = 20
+//' x = seq(-5, 5, length.out = n)
 //'
-//' a = c(-Inf, 0, -Inf)
-//' b = c(Inf, 1, Inf)
+//' # Transform x to the interval [-1, 1]
+//' a = rep(-1, n)
+//' b = rep(+1, n)
 //' z = inv_rect(x, a, b)
-//' rect(z, a, b)
+//' print(z)
+//' xx = rect(z, a, b)
+//' stopifnot(all(abs(x - xx) < 1e-8))
+//'
+//' # Transform x to the interval [-Inf, 1]
+//' a = rep(-Inf, n)
+//' b = rep(+1, n)
+//' z = inv_rect(x, a, b)
+//' print(z)
+//' xx = rect(z, a, b)
+//' stopifnot(all(abs(x - xx) < 1e-8))
+//'
+//' # Transform x to the interval [-1, Inf]
+//' a = rep(-1, n)
+//' b = rep(+Inf, n)
+//' z = inv_rect(x, a, b)
+//' print(z)
+//' xx = rect(z, a, b)
+//' stopifnot(all(abs(x - xx) < 1e-8))
+//'
+//' # Transform x to the interval [-Inf, Inf]
+//' a = rep(-Inf, n)
+//' b = rep(+Inf, n)
+//' z = inv_rect(x, a, b)
+//' print(z)
+//' xx = rect(z, a, b)
+//' stopifnot(all(abs(x - xx) < 1e-8))
 //'
 //' @name rect
 //' @export
