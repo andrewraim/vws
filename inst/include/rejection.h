@@ -30,14 +30,10 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 	unsigned int N_rejects = 0;
 	bool accept = false;
 
-	// Rprintf("Rejection Checkpoint 1\n");
-
 	unsigned int max_rejects = args.max_rejects;
 	unsigned int report = args.report;
-	error_action action = args.action;
+	fntl::error_action action = args.action;
 	double log_ratio_ub = std::exp(args.ratio_ub);
-
-	// Rprintf("Rejection checkpoint 2\n");
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
@@ -49,18 +45,12 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 
 		while (!accept && N_rejects <= max_rejects)
 		{
-			// Rprintf("Rejection checkpoint 2.1\n");
 			double v = ::R::runif(0, 1);
-			// Rprintf("Rejection checkpoint 2.2\n");
 			const T& x = h.r();
-			// Rprintf("Rejection checkpoint 2.3\n");
 			double log_fx = h.d_target_unnorm(x);
-			// Rprintf("Rejection checkpoint 2.4\n");
 			double log_hx = h.d(x, false, true);
-			// Rprintf("Rejection checkpoint 2.5\n");
 			double log_ratio = log_fx - log_hx - log_M;
 
-			// Rprintf("Rejection checkpoint 2.2\n");
 			if (log_ratio > log_ratio_ub) {
 				Rcpp::stop("log_ratio %g exceeded %g; with x = %g, log f(x) = %g, and log h(x) = %g",
 					log_ratio, log_ratio_ub, x, log_fx, log_hx);
@@ -74,7 +64,6 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 				rejects[i]++;
 			}
 
-			// Rprintf("Rejection checkpoint 2.3\n");
 			// Report progress after `report` candidates
 			unsigned int N_accepts = i + accept;
 			if ((N_rejects + N_accepts) % report == 0) {
@@ -84,17 +73,15 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 		}
 	}
 
-	// Rprintf("Rejection checkpoint 3\n");
-
 	if (N_rejects > max_rejects) {
 		switch(action) {
-			case error_action::STOP:
+			case fntl::error_action::STOP:
 				Rcpp::stop("Exceeded maximum number of rejects: %d\n", max_rejects);
 				break;
-			case error_action::WARNING:
+			case fntl::error_action::WARNING:
 				Rcpp::warning("Exceeded maximum number of rejects: %d\n", max_rejects);
 				break;
-			case error_action::MESSAGE:
+			case fntl::error_action::MESSAGE:
 				Rprintf("Exceeded maximum number of rejects: %d\n", max_rejects);
 				break;
 			default:

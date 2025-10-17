@@ -48,7 +48,7 @@ struct rejection_args
 	unsigned int max_rejects = std::numeric_limits<unsigned int>::max();
 	unsigned int report = std::numeric_limits<unsigned int>::max();
 	double ratio_ub = std::exp(1e-5);
-	error_action action = error_action::STOP;
+	fntl::error_action action = fntl::error_action::STOP;
 
 	rejection_args() { };
 	rejection_args(SEXP obj);
@@ -78,7 +78,7 @@ inline rejection_args::rejection_args(SEXP obj)
 
 	if (x.containsElementNamed("action")) {
 		unsigned int ac = x["action"];
-		action = error_action(ac);
+		action = fntl::error_action(ac);
 	}
 
 	max_rejects = x.containsElementNamed("max_rejects") ? x["max_rejects"] : max_rejects;

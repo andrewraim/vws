@@ -54,7 +54,7 @@ geometry:
   - top=0.75in
   - bottom=1.00in
 execute:
-  eval: false
+  eval: true
 code-block-bg: true
 code-block-border-left: "#B2DEED"
 filters:
@@ -317,7 +317,7 @@ The following typedef represents an indicator function.
 typedef std::function<bool(double x)> indicator;
 ```
 
-The following typedef is used to represent weight functions. Here, `x` is the argument of the weight function and `log` determines if the result is returned on the log-scale.
+The following typedef is used to represent functions that take `double` and `boolean` arguments and return a `double`. It is used as the type for weight functions in particular, with `x` the argument of the weight function and `log = true` if the result is to be returned on the log-scale.
 
 ```{cpp}
 typedef std::function<double(double x, bool log)> dfdb;
@@ -338,26 +338,6 @@ typedef std::function<double(
 2.  Lower bound of the interval; may be `R_NegInf`.
 3.  Upper bound of the interval; may be `R_PosInf`.
 4.  Logical; `log = true` specifies that the result should be the optimal value $\log w(x^*)$, given on the log-scale. Otherwise, the result should be the optimal value $w(x^*)$ on the original scale.
-
-The following enum specifies actions for when error conditions are encountered.
-
-```{cpp}
-enum class error_action {
-	STOP,
-	WARNING,
-	MESSAGE,
-	NONE
-};
-```
-
-1.  Throw an exception.
-2.  Emit a warning and proceed.
-3.  Print a message and proceed.
-4.  Do not take any of the above actions and proceed.
-
-**TBD:** should we try to use `fntl::error_action` instead?
-
-**TBD** Can we pass `optimize_hybrid` to `RealConstRegion` as the default and clean up that part of the code?
 
 ## Finite Mixture Proposal {#sec-cpp-api-proposal}
 
@@ -767,12 +747,11 @@ inline rejection_result<T> rejection(
 Template arguments `T` and `R` correspond to the given proposal `h` and are described in @sec-cpp-api-proposal. Additional arguments are provided via the following struct.
 
 ```{cpp}
-struct rejection_args
-{
+struct rejection_args {
 	unsigned int max_rejects = std::numeric_limits<unsigned int>::max(); // <1>
 	unsigned int report = std::numeric_limits<unsigned int>::max();      // <2>
 	double ratio_ub = std::exp(1e-5);                                    // <3>
-	error_action action = error_action::STOP;                            // <4>
+	fntl::error_action action = fntl::error_action::STOP;                // <4>
 
 	rejection_args() { };                                                // <5>
 	rejection_args(SEXP obj);                                            // <6>
@@ -780,13 +759,18 @@ struct rejection_args
 };
 ```
 
-1.  Maximum number of rejections to tolerate overall (among all $n$ attempted draws) before bailing out.
-2.  Determines period at which progress is logged to the console.
-3.  Upper bound for the ratio $f_0(x) / h_0(x)$. The ratio may be slightly larger than 1 due to numerical precision, but an error is thrown if it is larger than this value.
-4.  The action to take if `max_rejects` rejections is exceeded. See below for possible values.
-5.  Constructor that takes no arguments.
-6.  Convert an `Rcpp::List` to a `rejection_args` struct.
-7.  Return a `Rcpp::List` from a `rejection_args` struct.
+1. Maximum number of rejections to tolerate overall (among all $n$ attempted draws) before bailing out.
+2. Determines period at which progress is logged to the console.
+3. Upper bound for the ratio $f_0(x) / h_0(x)$. The ratio may be slightly larger than 1 due to numerical precision, but an error is thrown if it is larger than this value.
+4. The action to take if `max_rejects` rejections is exceeded. The definition of the `fntl::error_action` enum is given in Section 2 of @fntl.
+5. Constructor that takes no arguments.
+6. Convert an `Rcpp::List` to a `rejection_args` struct.
+7. Return a `Rcpp::List` from a `rejection_args` struct.
+
+If `action = fntl::error_action::STOP`, the `rejection` functions halts when an error condition is encountered. If `action = fntl::error_action::WARNING` or `action = fntl::error_action::MESSAGE`, a warning or message is emitted without halting. Otherwise, if `action = fntl::error_action::NONE`, the error condition is ignored.
+
+before all $n$ desired variates are drawn. In this case, the `draws` and `rejects` vectors will have lengths shorter than $n$.
+
 
 The return value of `rejection` is a struct of the following type.
 
@@ -804,10 +788,6 @@ struct rejection_result
 1.  Vector of draws.
 2.  Vector of rejection counts; the $i$th element represents number of rejections observed before accepting the $i$th draw.
 3.  Return a `Rcpp::List` from a `rejection_args` struct.
-
-If `action != error_action::STOP` in `rejection_args`, the sampler can halt before all $n$ desired variates are drawn. In this case, the `draws` and `rejects` vectors will have lengths shorter than $n$.
-
-**TBD** here is `error_action`.
 
 ## Optimization on an Interval {#sec-cpp-api-opt}
 
@@ -1277,14 +1257,13 @@ sigma = sqrt(0.5)
 lambda = 10
 ```
 
-Jointly draw values $Y$ and $Z$ from the model; $Z$ is considered observed while $Y$ is latent and the objective for inference.
+Jointly draw values of $Y$ and $Z$ from the model; $Z$ is considered observed while $Y$ is latent and the objective for inference.
 
 ```{r}
 source("examples/ln-norm/functions.R")
 y_true = rlnorm(1, mu, sigma)
 z = rnorm(1, y_true, lambda)
-print(y_true)
-print(z)
+vws::printf("y_true = %g and z = %g\n", y_true, z)
 ```
 
 Let us code the target density to assist in evaluating the distribution of the draws. To compute the normalizing constant, we will use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have <!-- --> \begin{align*}
@@ -1411,7 +1390,7 @@ We have first derivative <!-- --> \begin{align*}
 ```{r}
 y_star = exp(mu - sigma^2)
 w_star = -mu + sigma^2 / 2
-printf("Maximizer y = %g obtains value log w(%g) = %g.\n", y_star, y_star, w_star)
+vws::printf("Maximizer y = %g obtains value log w(%g) = %g.\n", y_star, y_star, w_star)
 ```
 
 ```{r}

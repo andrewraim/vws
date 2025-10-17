@@ -20,22 +20,6 @@ typedef std::function<bool(double)> indicator;
 typedef std::function<double(const dfdb& w, double lo, double hi,
 	bool log)> optimizer;
 
-/*
-* Enumeration that represents actions to be taken when an error condition
-* arises. The general meanings are:
-*
-* - `STOP`: an exception should be thrown;
-* - `WARNING`: a warning should be emitted but execution should continue;
-* - `MESSAGE`: a message should be emitted but execution should continue;
-* - `NONE`: the condition should be ignored.
-*/
-enum class error_action {
-	STOP,
-	WARNING,
-	MESSAGE,
-	NONE
-};
-
 inline static const optimizer maxopt_default = [](const dfdb& w,
 	double lo, double hi, bool log) -> double
 {
