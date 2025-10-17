@@ -72,10 +72,7 @@ set.seed(1234)
 
 ::: {.callout-caution title="TBD"}
 1.  Write out the formulation for the linear majorizer.
-2.  Need material for `IntConstRegion` in API section.
-3.  Make sure to check for other TBDs that may be scattered throughout.
-
-**Is this still relevant:** We should have a separate section where we describe doing stuff: constructing the proposal (special cases and general case where we override abstract region), refining the proposal, ...
+2.  Make sure to check for other TBDs that may be scattered throughout.
 :::
 
 # Disclaimer and Acknowledgments {.unnumbered}
@@ -218,13 +215,13 @@ Bifurcation at a midpoint is mostly straightforward in univariate settings where
 
 The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples.
 
-Use of the `vws` package centers on two classes. The `FMMProposal` class represents a finite mixture of the form \eqref{eqn:fmm-proposal} and encapsulates the operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations required for VWS. `Region` itself is an abstract base class which defines an interface needed by the framework. All problem-specific logic is coded within a subclass of `Region`: either by using one of the provided subclasses or by coding a new subclass. The subclasses `RealConstRegion` and `IntConstRegion` provide implementations of the constant majorizer from @sec-vws-constant for continuous and discrete univariate distributions, respectively. The linear majorizer described in @sec-vws-linear requires more customization than the constant majorizer; therefore, users should create a subclass of `Region` to implement such a proposal. An `FMMProposal` object is created from one or more `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
+Use of the `vws` package centers on two classes. The `FMMProposal` class represents a finite mixture of the form \eqref{eqn:fmm-proposal} and encapsulates the operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations required for VWS. `Region` itself is an abstract base class which defines an interface needed by the framework. All problem-specific logic is coded within a subclass of `Region`: either by using one of the provided subclasses or by coding a new subclass. The subclasses `RealConstRegion` and `IntConstRegion` provide implementations of the constant majorizer from @sec-vws-constant, for continuous and discrete univariate distributions, respectively. The linear majorizer described in @sec-vws-linear requires more customization than the constant majorizer; here, users should create a subclass of `Region`. An `FMMProposal` object is created from $N \geq 1$ `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
 
-The `rejection` function takes an object `h` of class `FMMProposal` and carries out rejection sampling to obtain `n` draws. The `rejection` function returns a vector of accepted draws along with information about the number of rejections. @fig-software-design displays a diagram of the high-level design just described.
+The `rejection` function takes an object `h` of class `FMMProposal` and carries out rejection sampling to obtain $n$ draws. The `rejection` function returns a vector of accepted draws along with information about the number of rejections. @fig-software-design displays a diagram of the high-level design just described.
 
 ![Design of `vws` package.](software-design.pdf){#fig-software-design}
 
-The following display outlines a typical workflow for VWS rejection sampling in C++. Suppose this is in a file named `sample.cpp`.
+The following display outlines a typical workflow for VWS rejection sampling in C++. Suppose this code is saved is in a file named `sample.cpp`.
 
 ```{cpp}
 // [[Rcpp::depends(vws, fntl)]]                 // <1>
@@ -246,14 +243,14 @@ Rcpp::List sample(unsigned int n)
 }
 ```
 
-1.  This annotation ensures that `vws` and `fntl` packages are linked during compilation. `fntl` is not explicitly used in this example, but it is needed for linking regardless.
-2.  Include the main header for the `vws` package so that the API is accessible.
-3.  This annotation exports the `sample` function for use in R. This is not needed if the `sample` function will be used only in C++.
-4.  Construct a region of type `MyRegion` which we have presumably defined in `MyRegion.h`. The symbol `...` is a placeholder for any arguments needed by the constructor.
-5.  Construct an `FMMProposal` based on a single region `supp`. Note that it is a template class that needs two template arguments: the first (`double`) indicates the data type of the distribution and the second (`MyRegion`) indicates the type of region it will contain.
-6.  Refine the proposal using Algorithm \ref{alg:refine} up to $N-1$ times or until tolerance `0.01` is achieved.
-7.  Carry out rejection sampling with the refined proposal `h`.
-8.  Pack elements of the struct `out` into an `Rcpp::List` and return them to the caller.
+1. This annotation ensures that `vws` and `fntl` packages are linked during compilation. `fntl` is not explicitly used in this example, but it is needed for linking regardless.
+2. Include the main header for the `vws` package so that the API is accessible.
+3. This annotation exports the `sample` function for use in R. This is not needed if the `sample` function will be used only in C++.
+4. Construct a region of type `MyRegion` which we have presumably defined in `MyRegion.h`. The symbol `...` here isz a placeholder for any arguments needed by the constructor.
+5. Construct an `FMMProposal` based on a single region `supp`. Note that it is a template class that needs two template arguments: the first (`double`) indicates the data type of the distribution and the second (`MyRegion`) indicates the type of region it will contain.
+6. Refine the proposal using Algorithm \ref{alg:refine} up to $N-1$ times or until tolerance `0.01` is achieved.
+7. Carry out rejection sampling with the refined proposal `h`.
+8. Pack up elements of the struct `out` into an `Rcpp::List` and return them to the caller.
 
 Note that `FMMProposal` class, the `rejection` function, and other elements of the `vws` API are in the `vws` namespace. Details for the API are given in @sec-cpp-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual.
 
@@ -272,7 +269,7 @@ A complete VWS example is given in @sec-vmf-const-default; this demonstrates the
 It is useful to mention several other preliminaries for the `vws` package; see the following remarks.
 
 ::: {#rem-lambdas}
-Lambdas in C++ are functions which can be defined within the course of a program, saved as objects which can be passed to other functions, and capture variables in the environment so that they do not need to be passed as arguments. They will feel very familiar to R programmers who likely use R functions in this way. Here is a snippet with several examples of lambdas.
+Lambdas in C++ are functions which can be defined within the course of a program, saved as objects which can be passed to other functions, and capture variables in the environment so that they do not need to be passed as arguments. They should feel very familiar to R programmers who likely use R functions in this way. Here is a snippet with several examples of lambdas.
 
 ```{cpp}
 double z = 3;
@@ -289,9 +286,9 @@ These four functions carry out the same operation and may be invoked in the usua
 double out = f1(1, 2);
 ```
 
-The typedef `dfdd` is defined as a shorthand for a Standard Template Library (STL) [`function`](https://en.cppreference.com/w/cpp/utility/functional/function.html) which takes two `double`s as arguments and returns a `double`. An STL `function` can be passed to other functions like any other variable. Function `f1` explicitly states the return type of the lambda using `-> double` while it is left to be inferred in the others. The variable `z` is captured by `f1`, `f2`, and `f3` so that it is "baked in" to the function definition without subsequently needing to be passed. Functions `f1` and `f2` capture `z` by reference while `f3` captures `z` by value, indicated using the notations `[&]` and `[=]` respectively. Function `f4` uses the notation `[]` to indicated that it does not capture any outside variables.
+The typedef `dfdd` is given as a shorthand for a Standard Template Library (STL) [`function`](https://en.cppreference.com/w/cpp/utility/functional/function.html) which takes two `double`s as arguments and returns a `double`. An STL `function` can be passed to other functions like any other variable. Function `f1` explicitly states the return type of the lambda using `-> double` while it is omitted in the others to be inferred by the compiler. The variable `z` is *captured* by `f1`, `f2`, and `f3`; in other words, it is "baked in" to the function definition without needing to be passed as an argument. Functions `f1` and `f2` capture `z` by reference while `f3` captures `z` by value, indicated with the syntaxes `[&]` and `[=]` respectively. Function `f4` uses `[]` to indicated that it does not capture any outside variables.
 
-The `fntl` package defines several typedefs used in the `vws` package, and also provides access to numerical tools such as integration, differentiation, and optimization which take STL `function`s as arguments. \remarkqed
+The `fntl` package defines several function typedefs used in the `vws` package, and also provides access to numerical tools such as integration, differentiation, and optimization which take STL `function`s as arguments. \remarkqed
 :::
 
 ::: {#rem-logscale}
@@ -511,16 +508,12 @@ void print(unsigned int n = 5) const;  // <2>
 
 **TBD**: mention that bifurcated objects inherit values of the original such as `w` and the optimization functions.
 
-### Class Definition {.unlisted}
-
 The class has one template argument `T`, which is the data type for the underlying distribution.
 
 ```{cpp}
 template <class T>
 class Region { ... }
 ```
-
-### Public Methods {.unlisted}
 
 The interface consists of the following public methods. These are abstract and must be implemented in a subclass.
 
@@ -554,7 +547,7 @@ The argument `log = true` in the methods above requests values to be returned on
 
 ### Constructors {.unlisted}
 
-In addition to the methods defined in `Region`, we have the following constructors.
+`RealConstRegion` has the following constructors.
 
 ```{cpp}
 RealConstRegion(
@@ -588,21 +581,15 @@ The default optimizers, `maxopt_default` and `minopt_default`, use the hybrid nu
 
 ### Methods {.unlisted}
 
-The `optimize` method maximizes or minimizes the weight function $w$ over the given region. The the optimized value of $w$ is returned. If `maximize = true` do maximization; otherwise do minimization. If `log = true`, return value on the log-scale. Otherwise, return it on the original scale.
-
-```{cpp}
-double optimize(bool maximize = true, bool log = true) const;
-```
-
-**TBD:** Do we still have the `optimize` method? If so, do we need it?
-
 The `midpoint` method returns a point between endpoints $a$ and $b$ of the region. It is used especially to bifurcate a given region into two smaller regions. If $a$ and $b$ are both finite, return the standard midpoint. If both are infinite, zero is returned. If only $a$ is finite, return a larger point in the support. If only $b$ is finite, return a smaller point in the support.
 
 ```{cpp}
 double midpoint() const;
 ```
 
-In particular, the current implementation is <!-- --> \begin{align*}
+In particular, the current implementation is
+<!-- -->
+\begin{align*}
 \text{midpoint}(a,b) =
 \begin{cases}
 0 & \text{if $a = -\infty$ and $b = \infty$}, \\
@@ -610,7 +597,9 @@ b - |b| - 1 & \text{if $a = -\infty$ and $b < \infty$}, \\
 a + |a| + 1 & \text{if $a > -\infty$ and $b = \infty$}, \\
 (a + b) / 2 & \text{otherwise}.
 \end{cases}
-\end{align*} <!-- --> The `bifurcate` method returns two disjoint regions whose union is the current region. The result is given as an STL pair. The first version bifurcates at the midpoint of the current region, determined by the `midpoint` method. The second version partitions at the given $x$.
+\end{align*}
+<!-- -->
+The `bifurcate` method returns two disjoint regions whose union is the current region. The result is given as an STL pair. The first version bifurcates at the midpoint of the current region, determined by the `midpoint` method. The second version partitions at the given $x$.
 
 ```{cpp}
 std::pair<RealConstRegion,RealConstRegion> bifurcate() const;
@@ -620,7 +609,7 @@ std::pair<RealConstRegion,RealConstRegion> bifurcate(const double& x) const;
 The `is_bifurcatable` function always returns `true` in the case of a continuous support.
 
 ```{cpp}
-bool RealConstRegion::is_bifurcatable() const;
+bool is_bifurcatable() const;
 ```
 
 The `singleton` method returns a singleton interval $(x, x]$, using the current object's weight function, base distribution, etc.
@@ -644,21 +633,85 @@ const RealConstRegion& operator=(const RealConstRegion& x);
 
 ## Region on Integer-Valued Support with Constant Majorizer {#sec-cpp-api-intconstregion}
 
-**TBD**: do we still need this?
+The class `IntConstRegion` is a subclass of `RealConstRegion` that is specialized to integer-valued distributions.
 
-**TBD**: When the support is integer-valued, we instead consider <!-- --> \begin{align*}
-\text{midpoint}(a,b) =
-\begin{cases}
-0 & \text{if $a = -\infty$ and $b = \infty$}, \\
-b - |b| - 1 & \text{if $a = -\infty$ and $b < \infty$}, \\
-a + |a| + 1 & \text{if $a > -\infty$ and $b = \infty$}, \\
-\lceil (a + \alpha_\ell) / 2 \rceil & \text{otherwise}.
-\end{cases}
-\end{align*} <!-- --> **(Do we still even use this?)** The function `is_bifurcatable` returns `false` for regions whose width is smaller than 1.
+```{cpp}
+class IntConstRegion : public RealConstRegion { ... };
+```
+
+### Constructors {.unlisted}
+
+`IntConstRegion` has the following constructors.
+
+```{cpp}
+IntConstRegion(
+	double a,                                 // <1>
+	double b,                                 // <2>
+	const dfdb& w,                            // <3>
+	const UnivariateHelper& helper,           // <4>
+    const optimizer& maxopt = maxopt_default, // <5>
+    const optimizer& minopt = minopt_default  // <6>
+);
+
+IntConstRegion(
+	double a,                                 // <1>
+	const dfdb& w,                            // <3>
+	const UnivariateHelper& helper            // <4>
+    const optimizer& maxopt = maxopt_default, // <5>
+    const optimizer& minopt = minopt_default  // <6>
+);
+```
+
+1.  Lower limit of interval that defines this region.
+2.  Upper limit of interval that defines this region.
+3.  Weight function $w$ for the target distribution.
+4.  A container with operations of the base distribution $g$.
+5.  A function of type `optimizer` that maximizes `w` on the given region.
+6.  A function of type `optimizer` that minimizes `w` on the given region.
+
+The first constructor creates a region based on the interval $(a,b]$; the second creates a region based on the singleton set $\{a\}$, which is intended primarily for internal use. Note that `a` and `b` need not be integers.
+
+The default optimizers, `maxopt_default` and `minopt_default`, use the hybrid numerical optimization method in @sec-cpp-api-opt to optimize `w`.
+
+
+### Methods {.unlisted}
+
+The following methods are specialized from `RealConstRegion`.
+
+```{cpp}
+std::pair<IntConstRegion,IntConstRegion> bifurcate() const;
+std::pair<IntConstRegion,IntConstRegion> bifurcate(const double& x) const;
+```
+
+The `is_bifurcatable` function returns `false` for regions whose width is smaller than $1$.
+
+```{cpp}
+bool is_bifurcatable() const;
+```
+
+The `singleton` method returns a singleton interval $(x, x]$, using the current object's weight function, base distribution, etc.
+
+```{cpp}
+IntConstRegion singleton(const double& x) const;
+```
+
+The following methods determine an ordering of the current region and an another region specified as argument `x`. Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $b_1 < a_2$. The regions are considered equal if $a_1 = a_2$ and $b_1 = b_2$. Note that other elements such as $w$ are $g$ are not explicitly checked, and are assumed to be the same.
+
+```{cpp}
+
+bool operator<(const IntConstRegion& x) const;
+bool operator==(const IntConstRegion& x) const;
+```
+
+The following method assigns the current region to be equal to the argument `x`.
+
+```{cpp}
+const IntConstRegion& operator=(const IntConstRegion& x);
+```
 
 ## Univariate Helper {#sec-cpp-api-helper}
 
-`UnivariateHelper` is a class which is intended for use with `RealConstRegion`. It encapsulates several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
+The class `UnivariateHelper` is intended for use with `RealConstRegion` and `IntConstRegion`. It encapsulates several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
 
 ```{cpp}
 UnivariateHelper(

@@ -69,18 +69,6 @@ public:
 	std::string description() const;
 
 	/*
-	* Maximize or minimize the function $w$ over this region. Optimization
-	* is carried out with the `optimize_hybrid` function.
-	*
-	* - `maximize`: if `true` do maximization; otherwise do minimization.
-	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
-	*   on the original scale.
-	*
-	* Returns the optimized value of $w$.
-	*/
-	double optimize(bool maximize = true, bool log = true) const;
-
-	/*
 	* A midpoint between limits $a$ and $b$ of region. If $a$ and $b$ are both
 	* finite, return the standard midpoint. If both are infinite, return zero.
 	* If only $a$ is finite, return a larger point in the support. If only $b$
