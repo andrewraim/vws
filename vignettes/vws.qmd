@@ -96,32 +96,62 @@ Readers looking for a quick start can go directly to the first example in @sec-v
 
 # A Brief Review of Vertical Weighted Strips {#sec-vws}
 
-The objective of VWS is to sample from a weighted density <!-- --> \begin{align}
+The objective of VWS is to sample from a weighted density
+<!-- -->
+\begin{align}
 f(x) = f_0(x) / \psi, \quad
 f_0(x) = w(x) g(x), \quad
 \psi = \int_\Omega f_0(x) d\nu(x),
 \label{eqn:weighted-target}
-\end{align} <!-- --> where $\Omega$ is the support, $\nu$ is a dominating measure, $g$ is assumed to be a normalized density, $w(x)$ is a nonnegative weight function, and $\psi$ is a normalizing constant. We will construct a proposal of the form <!-- --> \begin{align*}
+\end{align}
+<!-- -->
+where $\Omega$ is the support, $\nu$ is a dominating measure, $g$ is assumed to be a normalized density, $w(x)$ is a nonnegative weight function, and $\psi$ is a normalizing constant. We will construct a proposal of the form
+<!-- -->
+\begin{align*}
 h(x) = h_0(x) / \psi_N, \quad
 h_0(x) = \overline{w}(x) g(x), \quad
 \psi_N = \int_\Omega h_0(x) d\nu(x).
-\end{align*} <!-- --> The construction assumes that $\Omega$ is partitioned into regions $\mathcal{D}_1, \ldots, \mathcal{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathcal{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Let $\ind\{ x \in A \}$ denote the indicator function for $x \in A$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathcal{D}_j\}$, the unnormalized proposal becomes <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+The construction assumes that $\Omega$ is partitioned into regions $\mathcal{D}_1, \ldots, \mathcal{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathcal{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Let $\ind\{ x \in A \}$ denote the indicator function for $x \in A$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathcal{D}_j\}$, the unnormalized proposal becomes
+<!-- -->
+\begin{align*}
 h_0(x) = g(x) \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathcal{D}_j\}.
-\end{align*} <!-- --> With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. The normalized $h$ can be obtained by defining <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. The normalized $h$ can be obtained by defining
+<!-- -->
+\begin{align*}
 \overline{\xi}_j = \E[\overline{w}_j(T) \ind\{T \in \mathcal{D}_j\}], \quad T \sim g,
-\end{align*} <!-- --> and <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+and
+<!-- -->
+\begin{align*}
 \psi_N = \sum_{j=1}^N \overline{\xi}_j,
-\end{align*} <!-- --> giving the finite mixture <!-- --> \begin{align}
+\end{align*}
+<!-- -->
+giving the finite mixture
+<!-- -->
+\begin{align}
 h(x)
 = h_0(x) / \psi_N
 = \sum_{j=1}^N \pi_j g_j(x),
 \label{eqn:fmm-proposal}
-\end{align} <!-- --> a finite mixture with mixing weights and component densities, <!-- --> \begin{align*}
+\end{align}
+<!-- -->
+a finite mixture with mixing weights and component densities,
+<!-- -->
+\begin{align*}
 \pi_j = \frac{\overline{\xi}_j}{\sum_{\ell=1}^N \overline{\xi}_\ell},
 \quad \text{and} \quad
 g_j(x) = 
 \overline{w}_j(x) g(x) \ind\{x \in \mathcal{D}_j\} / \overline{\xi}_j,
-\end{align*} <!-- --> respectively. The $g_j$ are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a minorizer of $w$ so that $0 \leq \underline{w}_j(x) \leq w(x)$ for all $x \in \mathcal{D}_j$, and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind\{T \in \mathcal{D}_j\}]$ with $T \sim g$. When $h$ is used as a proposal in rejection sampling, an upper bound for the probability of rejection is <!-- --> \begin{align}
+\end{align*}
+<!-- -->
+respectively. The $g_j$ are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a minorizer of $w$ so that $0 \leq \underline{w}_j(x) \leq w(x)$ for all $x \in \mathcal{D}_j$, and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind\{T \in \mathcal{D}_j\}]$ with $T \sim g$. When $h$ is used as a proposal in rejection sampling, an upper bound for the probability of rejection is
+<!-- -->
+\begin{align}
 \rho_+ = \sum_{j=1}^N \rho_j,
 \quad \text{where} \quad
 \rho_j = \frac{
@@ -130,7 +160,9 @@ g_j(x) =
 \sum_{j=1}^N \overline{\xi}_\ell
 }.
 \label{eqn:bound}
-\end{align} <!-- --> The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to \eqref{eqn:bound}. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling. If the bound is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in remainder of this section. \[@sec-vws-constant\] discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear.
+\end{align}
+<!-- -->
+The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to \eqref{eqn:bound}. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling. If the bound is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear.
 
 ## Constant Majorizer {#sec-vws-constant}
 
@@ -142,19 +174,29 @@ Suppose $\Omega = (\alpha_0, \alpha_N]$ is an interval whose endpoints may or ma
 This is old material. We should rethink how we present the linear majorizer details here.
 :::
 
-The following construction assumes that $\zeta$ is finite and concave on the interval $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$. A majorizer is obtained from <!-- --> \begin{align}
+The following construction assumes that $\zeta$ is finite and concave on the interval $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$. A majorizer is obtained from
+<!-- -->
+\begin{align}
 \zeta(y) &\leq \zeta(c) + (y - c) \nabla(c)
 = \overline{\beta}_{j0} + \overline{\beta}_{j1} y,
 \quad 
 \overline{\beta}_{j0} = \zeta(c) - c \cdot \zeta'(c), \quad
 \overline{\beta}_{j1} = \zeta'(c),
 \label{eqn:ln-norm-linear-majorizer}
-\end{align} <!-- --> where $c$ is a point in $\mathcal{D}_j$. In particular, let us consider the value of $c$ as <!-- --> \begin{align*}
+\end{align}
+<!-- -->
+where $c$ is a point in $\mathcal{D}_j$. In particular, let us consider the value of $c$ as
+<!-- -->
+\begin{align*}
 c^* &= \argmin_{c \in \mathcal{D}_j} \int_{\mathcal{D}_j} | h_0(y) - f_0(y) | dy
 \nonumber \\
 %
 &\equiv \argmin_{c \in \mathcal{D}_j} \Big\{ \log w(c) - c \nabla(c) + \log M_j(\nabla(c)) \Big\}.
-\end{align*} <!-- --> Here, $M_j(s)$ is the moment generating function of random variable $T \sim g$ with support truncated to $(\alpha_{j-1}, \alpha_j]$: <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+Here, $M_j(s)$ is the moment generating function of random variable $T \sim g$ with support truncated to $(\alpha_{j-1}, \alpha_j]$:
+<!-- -->
+\begin{align*}
 M_j(s)
 %
 &= \int_{\alpha_{j-1}}^{\alpha^j} e^{sy} \frac{
@@ -169,16 +211,26 @@ M_j(s)
 }{
 \Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
 },
-\end{align*} <!-- --> using [@rem-normal-mgf-integral]. A minorizer can be obtained by expressing $y = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$ for $\lambda \in [0,1]$ so that $\lambda = (y - \alpha_{j-1}) / (\alpha_j - \alpha_{j-1})$ and <!-- --> \begin{align}
+\end{align*}
+<!-- -->
+using [@rem-normal-mgf-integral]. A minorizer can be obtained by expressing $y = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$ for $\lambda \in [0,1]$ so that $\lambda = (y - \alpha_{j-1}) / (\alpha_j - \alpha_{j-1})$ and
+<!-- -->
+\begin{align}
 \zeta(y) &\geq (1-\lambda) \zeta(\alpha_{j-1}) + \lambda \zeta(\alpha_j) \nonumber \\
 &= \zeta(\alpha_{j-1}) + \frac{y - \alpha_{j-1}}{\alpha_j - \alpha_{j-1}} [ \zeta(\alpha_j) - \zeta(\alpha_{j-1})]
 = \underline{\beta}_{j0} + \underline{\beta}_{j1} y,
 \label{eqn:ln-norm-linear-minorizer}
-\end{align} <!-- --> with <!-- --> \begin{align*}
+\end{align}
+<!-- -->
+with
+<!-- -->
+\begin{align*}
 \underline{\beta}_{j0} = \zeta(\alpha_{j-1}) - \alpha_{j-1} \underline{\beta}_{j1}
 \quad \text{and} \quad
 \underline{\beta}_{j1} = \frac{\zeta(\alpha_j) - \zeta(\alpha_{j-1}) }{ \alpha_j - \alpha_{j-1} }.
-\end{align*} <!-- --> If $\zeta$ is convex on $\mathcal{D}_j$ rather than concave, the roles of \eqref{eqn:ln-norm-linear-majorizer} and \eqref{eqn:ln-norm-linear-minorizer} are switched so that \eqref{eqn:ln-norm-linear-majorizer} is minorizer and \eqref{eqn:ln-norm-linear-minorizer} is majorizer.
+\end{align*}
+<!-- -->
+If $\zeta$ is convex on $\mathcal{D}_j$ rather than concave, the roles of \eqref{eqn:ln-norm-linear-majorizer} and \eqref{eqn:ln-norm-linear-minorizer} are switched so that \eqref{eqn:ln-norm-linear-majorizer} is minorizer and \eqref{eqn:ln-norm-linear-minorizer} is majorizer.
 
 ## Knot Selection {#sec-vws-knots}
 
@@ -560,7 +612,9 @@ The `midpoint` method returns a point between endpoints $a$ and $b$ of the regio
 double midpoint() const;
 ```
 
-In particular, the current implementation is <!-- --> \begin{align*}
+In particular, the current implementation is
+<!-- -->
+\begin{align*}
 \text{midpoint}(a,b) =
 \begin{cases}
 0 & \text{if $a = -\infty$ and $b = \infty$}, \\
@@ -568,7 +622,9 @@ b - |b| - 1 & \text{if $a = -\infty$ and $b < \infty$}, \\
 a + |a| + 1 & \text{if $a > -\infty$ and $b = \infty$}, \\
 (a + b) / 2 & \text{otherwise}.
 \end{cases}
-\end{align*} <!-- --> The `bifurcate` method returns two disjoint regions whose union is the current region. The result is given as an STL pair. The first version bifurcates at the midpoint of the current region, determined by the `midpoint` method. The second version partitions at the given $x$.
+\end{align*}
+<!-- -->
+The `bifurcate` method returns two disjoint regions whose union is the current region. The result is given as an STL pair. The first version bifurcates at the midpoint of the current region, determined by the `midpoint` method. The second version partitions at the given $x$.
 
 ```{cpp}
 std::pair<RealConstRegion,RealConstRegion> bifurcate() const;
@@ -872,10 +928,14 @@ Rcpp::NumericVector log_sub2_exp(
 
 ## Generating from a Discrete Distribution {#sec-cpp-api-discrete}
 
-We make use of the Gumbel trick [e.g., @HuijbenEtAl2023] to draw from a discrete distribution with probabilities $p_1, \ldots, p_k$. This approach allows probabilities to be specified on the log-scale without the need to exponentiate or normalize them so that they sum to one. The Gumbel trick generates a draw $x$ from the desired discrete distribution via <!-- --> $$
+We make use of the Gumbel trick [e.g., @HuijbenEtAl2023] to draw from a discrete distribution with probabilities $p_1, \ldots, p_k$. This approach allows probabilities to be specified on the log-scale without the need to exponentiate or normalize them so that they sum to one. The Gumbel trick generates a draw $x$ from the desired discrete distribution via
+<!-- -->
+$$
 X = \argmax \{ Z_1 + \log p_1, \ldots, Z_k + \log p_k \},
 \quad Z_1, \ldots, Z_k \iid \text{Gumbel}(0,1),
-$$ <!-- --> where $\text{Gumbel}(0,1)$ is a standard Gumbel distribution with density $f(x) = e^{-(x + e^{x})}$. A benefit of this method is that the probabilities can be given on the log-scale and do not necessarily need to be exponentiated.
+$$
+<!-- -->
+where $\text{Gumbel}(0,1)$ is a standard Gumbel distribution with density $f(x) = e^{-(x + e^{x})}$. A benefit of this method is that the probabilities can be given on the log-scale and do not necessarily need to be exponentiated.
 
 ### Categorical Distribution {.unlisted}
 
@@ -928,18 +988,32 @@ Rcpp::NumericVector r_gumbel(unsigned int n, double mu = 0, double sigma = 1);
 
 # Example: Von Mises Fisher Distribution {#sec-vmf}
 
-Let us consider generating from the von Mises Fisher (VMF) distribution as in @VWS2025. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density <!-- --> \begin{align*}
+Let us consider generating from the von Mises Fisher (VMF) distribution as in @VWS2025. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
+<!-- -->
+\begin{align*}
 f_{\text{VMF}}(\vec{v}) = \frac{
 \kappa^{d / 2 - 1}
 }{
 (2 \pi)^{d/2} I_{d/2 - 1}(\kappa)
 } \exp(\kappa \cdot \vec{\mu}^\top \vec{v}) \cdot \ind\{\vec{v} \in \mathbb{S}^{d-1}\},
-\end{align*} <!-- --> with modified Bessel function of the first kind <!-- --> \begin{math}
+\end{align*}
+<!-- -->
+with modified Bessel function of the first kind
+<!-- -->
+\begin{math}
 I_{\nu}(x) = \sum_{m=0}^\infty \{m! \cdot \Gamma(m + \nu + 1)\}^{-1} (\frac{x}{2})^{2m + \nu}
-\end{math} <!-- --> and gamma function $\Gamma(x) = \int_0^\infty t^{x-1} e^{-t} dt$. Parameters $\vec{\mu} \in \mathbb{S}^{d-1}$ and $\kappa > 0$ determine the orientation on the sphere and the concentration, respectively. First consider $\vec{\mu}_0 = (1, 0, \ldots, 0)$. A random variable $\vec{V}_0 \sim \text{VMF}_d(\vec{\mu}_0, \kappa)$ can be obtained from the transformation <!-- --> \begin{align}
+\end{math}
+<!-- -->
+and gamma function $\Gamma(x) = \int_0^\infty t^{x-1} e^{-t} dt$. Parameters $\vec{\mu} \in \mathbb{S}^{d-1}$ and $\kappa > 0$ determine the orientation on the sphere and the concentration, respectively. First consider $\vec{\mu}_0 = (1, 0, \ldots, 0)$. A random variable $\vec{V}_0 \sim \text{VMF}_d(\vec{\mu}_0, \kappa)$ can be obtained from the transformation
+<!-- -->
+\begin{align}
 \vec{V}_0 = \left( X, \sqrt{1 - X^2} \cdot \vec{U} \right),
 \label{eqn:vmf-tx}
-\end{align} <!-- --> where $\vec{U}$ is a uniform random variable on the sphere $\mathbb{S}^{d-2}$ and $X$ has density <!-- --> \begin{align}
+\end{align}
+<!-- -->
+where $\vec{U}$ is a uniform random variable on the sphere $\mathbb{S}^{d-2}$ and $X$ has density
+<!-- -->
+\begin{align}
 f(x) =
 \frac{
 (\kappa / 2)^{d/2 - 1} (1 - x^2)^{(d-3)/2} \exp(\kappa x)
@@ -947,12 +1021,20 @@ f(x) =
 \sqrt{\pi} \cdot I_{d/2 - 1}(\kappa) \cdot \Gamma((d-1)/2)
 } \cdot \ind\{-1 < x < 1\}.
 \label{eqn:vmf-target}
-\end{align} <!-- --> To obtain a draw from $\vec{V} \sim \text{VMF}_d(\vec{\mu}, \kappa)$ with an arbitrary $\vec{\mu}$, we can rotate $\vec{V} = \vec{Q} \vec{V}_0$ using an orthonormal matrix $\vec{Q}$ whose first column is $\vec{\mu}$. In the construction $\vec{V}_0$ from \eqref{eqn:vmf-tx}, we may draw $\vec{U} = \vec{Z} / \sqrt{\vec{Z}^\top \vec{Z}}$ from $\vec{Z} \sim \text{N}(\vec{0}, \vec{I}_{d-1})$ and $X$ independently from \eqref{eqn:vmf-target}. In the following, we consider the use of VWS to draw the univariate random variable $X$. Before proceeding, we give a notation to a useful distribution.
+\end{align}
+<!-- -->
+To obtain a draw from $\vec{V} \sim \text{VMF}_d(\vec{\mu}, \kappa)$ with an arbitrary $\vec{\mu}$, we can rotate $\vec{V} = \vec{Q} \vec{V}_0$ using an orthonormal matrix $\vec{Q}$ whose first column is $\vec{\mu}$. In the construction $\vec{V}_0$ from \eqref{eqn:vmf-tx}, we may draw $\vec{U} = \vec{Z} / \sqrt{\vec{Z}^\top \vec{Z}}$ from $\vec{Z} \sim \text{N}(\vec{0}, \vec{I}_{d-1})$ and $X$ independently from \eqref{eqn:vmf-target}. In the following, we consider the use of VWS to draw the univariate random variable $X$. Before proceeding, we give a notation to a useful distribution.
 
 ::: {#def-texp}
-Denote $X \sim \text{Exp}_{(a,b)}(\kappa)$ to as a doubly truncated Exponential random variable with density <!-- --> \begin{align*}
+Denote $X \sim \text{Exp}_{(a,b)}(\kappa)$ to as a doubly truncated Exponential random variable with density
+<!-- -->
+\begin{align*}
 g(x) = \frac{\kappa e^{\kappa x}}{e^{\kappa b} - e^{\kappa a}} \cdot \ind\{a < x < b\},
-\end{align*} <!-- --> where $-\infty < a < b < \infty$ and rate $\kappa$ may be any real number. The CDF and quantile function corresponding to $g$ are <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+where $-\infty < a < b < \infty$ and rate $\kappa$ may be any real number. The CDF and quantile function corresponding to $g$ are
+<!-- -->
+\begin{align*}
 &G(x) = \frac{e^{\kappa x} - e^{\kappa a}}{e^{\kappa b} - e^{\kappa a}} \cdot,
 \quad x \in (a, b), \\
 %
@@ -960,13 +1042,21 @@ g(x) = \frac{\kappa e^{\kappa x}}{e^{\kappa b} - e^{\kappa a}} \cdot \ind\{a < x
 \end{align*}
 :::
 
-Returning to target \eqref{eqn:vmf-target}, let us decompose $f$ into <!-- --> \begin{align*}
+Returning to target \eqref{eqn:vmf-target}, let us decompose $f$ into
+<!-- -->
+\begin{align*}
 f(x) \propto
 \underbrace{(1 - x^2)^{(d-3)/2}}_{w(x)}
 \underbrace{\exp(\kappa x) \cdot \ind\{x \in (-1,1)\}}_{g_0(x)},
-\end{align*} <!-- --> so that $w$ is the weight function and $g_0$ is proportional to the density of $\text{Exp}_{(-1,1)}(\kappa)$, <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+so that $w$ is the weight function and $g_0$ is proportional to the density of $\text{Exp}_{(-1,1)}(\kappa)$,
+<!-- -->
+\begin{align*}
 g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \ind\{x \in (-1,1)\}.
-\end{align*} <!-- --> @sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions. Codes for this example are in the folder `examples/vmf`. C++ functions for the $\text{Exp}_{(a,b)}(\kappa)$ distribution from @def-texp are given in the file `examples/vmf/texp.h`.
+\end{align*}
+<!-- -->
+@sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions. Codes for this example are in the folder `examples/vmf`. C++ functions for the $\text{Exp}_{(a,b)}(\kappa)$ distribution from @def-texp are given in the file `examples/vmf/texp.h`.
 
 ::: {#rem-vmf-caveat}
 A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \infty$ as $x$ approaches $\pm 1$. One way to avoid this is by truncating the support to $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for a small $\epsilon > 0$. Rejection sampling can proceed using the truncated support if the exclusion of $(-1, -1 + \epsilon] \cup (1 - \epsilon, 1]$ is known to have a negligible impact on the result. Otherwise, @VWS2025 mention another strategy where the support is initially truncated and gradually expanded as rejections are encountered. In this document, we assume $(\alpha_0, \alpha_N] = (-1, 1]$ for $d > 3$ and a fixed truncation $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for $d < 3$.
@@ -1014,14 +1104,15 @@ head(out1$draws)
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of refine improvement for VMF example with constant majorizer.
+#|   Refinement for VMF example with constant majorizer.
 #| label: fig-vmf-const-refine
 #| echo: false
 
-data.frame(bdd = exp(out1$lbdd)) %>%
-	mutate(step = row_number() - 1) %>%
-	ggplot() +
+df = data.frame(bdd = exp(out1$lbdd)) %>%
+	mutate(step = row_number() - 1)
+ggplot(df) +
 	geom_line(aes(x = step, y = bdd)) +
+	scale_x_continuous(breaks = df$step[df$step %% 2 == 0]) +
 	scale_y_continuous(n.breaks = 10) +
 	xlab("Step") +
 	ylab("Bound") +
@@ -1049,11 +1140,15 @@ data.frame(x = out1$draws) %>%
 
 It is not difficult to find the min and max of the function $w$ on a given interval for this example. We can reduce some of the computational burden by providing functions to compute these two values.
 
-We have <!-- --> \begin{align*}
+We have
+<!-- -->
+\begin{align*}
 &\log w(x) = \frac{d-3}{2} \log(1 - x^2), \\
 &\frac{d}{dx} \log w(x) = -(d-3) \frac{x}{1 - x^2}, \\
 &\frac{d^2}{dx^2} \log w(x) = -(d-3) \frac{1 + x^2}{(1 - x^2)^2}.
-\end{align*} <!-- --> Therefore, it is seen that $\log w(x)$ is concave when $d > 3$, convex when $d = 2$, and constant otherwise. When $d > 3$, $\frac{d}{dx} \log w(x)$ is positive for $x \in (-1, 0)$, negative for $x \in (0, 1)$, and has root $x = 0$; therefore, $\log w(x)$ is unimodal on $(-1, 1)$ with a maximum at $x = 0$. When $d = 2$, the point $x = 0$ is instead a minimum of $\log w(x)$. Finally, $w$ is a constant in the case $d = 3$. We can code these maximization and minimization routines as lambdas.
+\end{align*}
+<!-- -->
+Therefore, it is seen that $\log w(x)$ is concave when $d > 3$, convex when $d = 2$, and constant otherwise. When $d > 3$, $\frac{d}{dx} \log w(x)$ is positive for $x \in (-1, 0)$, negative for $x \in (0, 1)$, and has root $x = 0$; therefore, $\log w(x)$ is unimodal on $(-1, 1)$ with a maximum at $x = 0$. When $d = 2$, the point $x = 0$ is instead a minimum of $\log w(x)$. Finally, $w$ is a constant in the case $d = 3$. We can code these maximization and minimization routines as lambdas.
 
 ```{cpp}
 vws::optimizer opt1 = [&](const vws::dfdb& w, double lo, double hi, bool log)
@@ -1114,13 +1209,19 @@ head(out2$draws)
 
 **TBD: explain the construction of linear coefficients and the choice of** $c$ in the background material at the top of the document.
 
-We noted in @sec-vmf-const-custom that $w$ is log-convex when $d < 3$, log-concave when $d > 3$, and a constant otherwise. Therefore, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j(x) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} x \}$. This yields the expression <!-- --> \begin{align*}
+We noted in @sec-vmf-const-custom that $w$ is log-convex when $d < 3$, log-concave when $d > 3$, and a constant otherwise. Therefore, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j(x) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} x \}$. This yields the expression
+<!-- -->
+\begin{align*}
 \overline{\xi}_j
 = \int_{\alpha_{j-1}}^{\alpha_j} \overline{w}_j(x) g(x) dx
 = \frac{\kappa \exp\{ \overline{\beta}_{j0} \}}{(\kappa + \overline{\beta}_{j1}) (e^{\kappa \alpha_N} - e^{\kappa \alpha_0})} \left\{
 \exp\{(\kappa + \overline{\beta}_{j1}) \alpha_j\} - \exp\{(\kappa + \overline{\beta}_{j1}) \alpha_{j-1} \}
 \right\}.
-\end{align*} <!-- --> The proposal $h$ is then a finite mixture $h(x) = \sum_{j=1}^N \pi_j g_j(x)$ with <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+The proposal $h$ is then a finite mixture $h(x) = \sum_{j=1}^N \pi_j g_j(x)$ with
+<!-- -->
+\begin{align*}
 g_j(x)
 &= \overline{w}_j(x) g(x) \ind\{ x \in \mathcal{D}_j \} / \overline{\xi}_j \\
 &= \frac{
@@ -1129,10 +1230,18 @@ g_j(x)
 \exp\{(\kappa + \overline{\beta}_{j1}) \alpha_j\} - \exp\{(\kappa + \overline{\beta}_{j1}) \alpha_{j-1} \}
 }
 \cdot \ind(\alpha_{j-1} < x \leq \alpha_j),
-\end{align*} <!-- --> the density of $\text{Exp}_{(\alpha_{j-1}, \alpha_j]}(\kappa + \overline{\beta}_{j1})$. To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (**TBD**) using the expression <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+the density of $\text{Exp}_{(\alpha_{j-1}, \alpha_j]}(\kappa + \overline{\beta}_{j1})$. To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (**TBD**) using the expression
+<!-- -->
+\begin{align*}
 M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) dx
 = \frac{e^{s\alpha_j} - e^{s\alpha_{j-1}}}{s(\alpha_j - \alpha_{j-1})}.
-\end{align*} <!-- --> To compute \eqref{eqn:bound}, we assume the "trivial" minorizer $\underline{w}_j(x) = w(x)$ so that <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+To compute \eqref{eqn:bound}, we assume the "trivial" minorizer $\underline{w}_j(x) = w(x)$ so that
+<!-- -->
+\begin{align*}
 \underline{\xi}_j
 = \int_{\alpha_{j-1}}^{\alpha_j} w(x) g(x) dx
 = \int_{\alpha_{j-1}}^{\alpha_j} \frac{(1-x^2)^{(d-3)/2} \kappa e^{\kappa x}}{e^{\kappa \alpha_N} - e^{\kappa \alpha_0}} dx.
@@ -1176,7 +1285,7 @@ data.frame(x = out3$draws) %>%
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of refine improvement for VMF example with constant majorizer.
+#|   Refinement for VMF example with constant majorizer.
 #| label: fig-vmf-refine
 #| echo: false
 
@@ -1192,7 +1301,7 @@ ggplot(df) +
 	geom_line(aes(x = N, y = bdd, color = sampler), lwd = 1.02, alpha = 1) +
 	geom_point(aes(x = N, y = bdd, pch = sampler, color = sampler),
 		cex = 3, alpha = 1) +
-	scale_x_continuous(breaks = seq(0, max(df$N))) +
+	scale_x_continuous(breaks = df$N[df$N %% 2 == 0]) +
 	scale_y_continuous(n.breaks = 10) +
 	xlab("N") +
 	ylab("Bound") +
@@ -1205,7 +1314,9 @@ The setting $Z = Y + \gamma$ is the basis of a modeling scenario considered by @
 
 Suppose $Y$ and $\gamma$ are independently distributed with $Y \sim \text{Lognormal}(\mu, \sigma^2)$ and $\gamma \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ is assumed to be known and provided with the noisy data. Such transparency into the noise mechanism is often a feature of differential privacy.
 
-Suppose the target distribution is the conditional $[Y \mid Z = z, \mu, \sigma^2]$ whose density is given by <!-- --> \begin{align}
+Suppose the target distribution is the conditional $[Y \mid Z = z, \mu, \sigma^2]$ whose density is given by
+<!-- -->
+\begin{align}
 f(y \mid z, \mu, \sigma^2)
 %
 &\propto \frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
@@ -1224,10 +1335,18 @@ f(y \mid z, \mu, \sigma^2)
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
 \right\} \ind\{y \in (0,\infty)\}}_{w(y)}.
 \label{eqn:ln-norm}
-\end{align} <!-- --> We have decomposed $f$ into weight function <!-- --> \begin{math}
+\end{align}
+<!-- -->
+We have decomposed $f$ into weight function
+<!-- -->
+\begin{math}
 w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
 \ind\{ y \in (0,\infty) \},
-\end{math} <!-- --> from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution $g$ as $\text{N}(z, \lambda^2)$. The conditional $[\vec{y} \mid \sigma^2, \vec{\mu}, \vec{z}]$ in \eqref{eqn:ln-norm} would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:ln-norm}. It will sometimes be more convenient (and more numerically stable) to work with $w$ on the log-scale; therefore, define <!-- --> \begin{align}
+\end{math}
+<!-- -->
+from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution $g$ as $\text{N}(z, \lambda^2)$. The conditional $[\vec{y} \mid \sigma^2, \vec{\mu}, \vec{z}]$ in \eqref{eqn:ln-norm} would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:ln-norm}. It will sometimes be more convenient (and more numerically stable) to work with $w$ on the log-scale; therefore, define
+<!-- -->
+\begin{align}
 \zeta(y) = \log w(y)
 = -\log y - \frac{(\log y - \mu)^2}{2 \sigma^2} + \log \ind\{ y \in (0,\infty) \}.
 \label{eqn:ln-norm-log-weight-fn}
@@ -1253,7 +1372,9 @@ z = rnorm(1, y_true, lambda)
 vws::printf("y_true = %g and z = %g\n", y_true, z)
 ```
 
-Let us code the target density to assist in evaluating the distribution of the draws. To compute the normalizing constant, we will use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have <!-- --> \begin{align*}
+Let us code the target density to assist in evaluating the distribution of the draws. To compute the normalizing constant, we will use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
+<!-- -->
+\begin{align*}
 \psi &= \int_{-\infty}^\infty w(y) g(y) dy \\
 %
 &= \int_{-\infty}^\infty \ind\{y > 0\} \cdot \frac{1}{y}
@@ -1264,12 +1385,18 @@ Let us code the target density to assist in evaluating the distribution of the d
 \cdot \frac{1}{z - \sqrt{2} \lambda x}
 \exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( z - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}
 \frac{1}{\sqrt{\pi}} e^{-x^2} dx,
-\end{align*} <!-- --> by the transformation $y = z - \sqrt{2} \lambda x$, so that <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+by the transformation $y = z - \sqrt{2} \lambda x$, so that
+<!-- -->
+\begin{align*}
 q(x) = \ind\left( z > \sqrt{2} \lambda x \right)
 \cdot \frac{1}{z - \sqrt{2} \lambda x}
 \exp\left\{ -\frac{1}{2\sigma^2} \left[\log\left( x - \sqrt{2} \lambda x \right) - \mu \right]^2 \right\}
 \frac{1}{\sqrt{\pi}}.
-\end{align*} <!-- --> The function `d_target` defined in `examples/ln-norm/functions.R` computes the target density using this method.
+\end{align*}
+<!-- -->
+The function `d_target` defined in `examples/ln-norm/functions.R` computes the target density using this method.
 
 All codes for this example are in the folder `examples/ln-norm`.
 
@@ -1317,15 +1444,15 @@ head(out1$draws)
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of refine improvement for lognormal-normal example with constant
-#|   majorizer.
+#|   Refinement for lognormal-normal example with constant majorizer.
 #| label: fig-ln-norm-const-refine
 #| echo: false
 
-data.frame(bdd = exp(out1$lbdd)) %>%
-	mutate(step = row_number() - 1) %>%
-	ggplot() +
+df = data.frame(bdd = exp(out1$lbdd)) %>%
+	mutate(step = row_number() - 1)
+ggplot(df) +
 	geom_line(aes(x = step, y = bdd)) +
+	scale_x_continuous(breaks = df$step[df$step %% 2 == 0]) +
 	scale_y_continuous(n.breaks = 10) +
 	xlab("Step") +
 	ylab("Bound") +
@@ -1363,16 +1490,24 @@ data.frame(x = out1$draws) %>%
 
 The log-weight function $\zeta$ from \eqref{eqn:ln-norm-log-weight-fn} can be both maximized and minimized in closed form. Coding it explicitly reduces computational overhead and avoids convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `RealConstRegion`.
 
-We have first derivative <!-- --> \begin{align*}
+We have first derivative
+<!-- -->
+\begin{align*}
 &\zeta'(y) = -\frac{1}{y}\left(
 1 + \frac{\log y - \mu}{\sigma^2}
 \right),
-\end{align*} <!-- --> for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(y)$ is positive when $y < y^*$, negative when $y > y^*$, and takes value zero at $y = y^*$. Therefore, $\zeta$ is unimodal and $y^*$ maximizes $\zeta$ with <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(y)$ is positive when $y < y^*$, negative when $y > y^*$, and takes value zero at $y = y^*$. Therefore, $\zeta$ is unimodal and $y^*$ maximizes $\zeta$ with
+<!-- -->
+\begin{align*}
 \zeta(y^*)
 &= -\log[\exp(\mu - \sigma^2)]  - \frac{(\log [\exp(\mu - \sigma^2)] - \mu)^2}{2 \sigma^2} \\
 &= -\mu + \sigma^2 - \frac{(\sigma^2)^2}{2 \sigma^2} \\
 &= -\mu + \sigma^2 / 2.
-\end{align*} <!-- --> Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$. @fig-ln-norm-weight displays a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
+\end{align*}
+<!-- -->
+Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$. @fig-ln-norm-weight displays a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
 
 ```{r}
 y_star = exp(mu - sigma^2)
@@ -1455,11 +1590,15 @@ head(out2$draws)
 
 ## Linear Majorizer {#sec-ln-norm-linear}
 
-We can obtain a linear majorizer by noting the convexity of $\zeta$. Its second derivative is seen to be <!-- --> \begin{align*}
+We can obtain a linear majorizer by noting the convexity of $\zeta$. Its second derivative is seen to be
+<!-- -->
+\begin{align*}
 &\zeta''(y) = -\frac{1}{y^2} \left(
 1 + \frac{\log y - \mu - 1}{\sigma^2}
 \right),
-\end{align*} <!-- --> which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will to ensure that all partitions considered thereafter consist of regions on which $\zeta$ is entirely concave or convex.
+\end{align*}
+<!-- -->
+which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will to ensure that all partitions considered thereafter consist of regions on which $\zeta$ is entirely concave or convex.
 
 ```{r}
 y0 = exp(mu - sigma^2 + 1)
@@ -1489,17 +1628,23 @@ ggplot() +
 As in @sec-vmf-linear, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j(y) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} y \}$. Here, we also assume a minorizer of the form $\underline{w}_j(y) = \exp\{ \underline{\beta}_{j0} + \underline{\beta}_{j1} y \}$. Before proceeding, the following integral is stated as a remark as it will be used several times.
 
 ::: {#rem-normal-mgf-integral}
-Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the density and CDF of $Y \sim \text{N}(\mu, \sigma^2)$, respectively. If $a < b$ are scalars (possibly infinite), then <!-- --> \begin{align*}
+Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the density and CDF of $Y \sim \text{N}(\mu, \sigma^2)$, respectively. If $a < b$ are scalars (possibly infinite), then
+<!-- -->
+\begin{align*}
 \int_a^b e^{ty} \phi(y \mid \mu, \sigma^2) dy
 &= \exp(\mu t + t^2 \sigma^2 / 2) \left\{ 
 \Phi(b \mid \mu + t \sigma^2, \sigma^2) - \Phi(a \mid \mu + t \sigma^2, \sigma^2)
 \right\} \\
 &= \exp(\mu t + t^2 \sigma^2 / 2)
 \Prob(a < T \leq b).
-\end{align*} <!-- --> where $T \sim \text{N}(\mu + t \sigma^2, \sigma^2)$. The special case $a = -\infty$ and $b = \infty$ yields the moment-generating function $M(t) = \exp(\mu t + t^2 \sigma^2 / 2)$ of $Y$. \remarkqed
+\end{align*}
+<!-- -->
+where $T \sim \text{N}(\mu + t \sigma^2, \sigma^2)$. The special case $a = -\infty$ and $b = \infty$ yields the moment-generating function $M(t) = \exp(\mu t + t^2 \sigma^2 / 2)$ of $Y$. \remarkqed
 :::
 
-@rem-normal-mgf-integral yields the expressions <!-- --> \begin{align*}
+@rem-normal-mgf-integral yields the expressions
+<!-- -->
+\begin{align*}
 \overline{\xi}_j
 &= \int_{\alpha_{j-1}}^{\alpha_j} \overline{w}_j(y) g(y) dy \\
 %
@@ -1513,14 +1658,22 @@ Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the
 + \frac{1}{2} \overline{\beta}_{1j}^2 \lambda^2
 \right\}
 \Prob(\alpha_{j-1} < \overline{T} \leq \alpha_j),
-\end{align*} <!-- --> where $\overline{T} \sim \text{N}(z + \overline{\beta}_{1j} \lambda^2, \lambda^2)$, and similarly, <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+where $\overline{T} \sim \text{N}(z + \overline{\beta}_{1j} \lambda^2, \lambda^2)$, and similarly,
+<!-- -->
+\begin{align*}
 \underline{\xi}_j
 &= \exp\left\{
 \underline{\beta}_{0j} + z \underline{\beta}_{1j}
 + \frac{1}{2} \underline{\beta}_{1j}^2 \lambda^2
 \right\}
 \Prob(\alpha_{j-1} < \underline{T} \leq \alpha_j),
-\end{align*} <!-- --> where $\underline{T} \sim \text{N}(z + \underline{\beta}_{1j} \lambda^2, \lambda^2)$. The proposal $h$ is a finite mixture $h(y) = \sum_{j=1}^N \pi_j g_j(y)$ with <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+where $\underline{T} \sim \text{N}(z + \underline{\beta}_{1j} \lambda^2, \lambda^2)$. The proposal $h$ is a finite mixture $h(y) = \sum_{j=1}^N \pi_j g_j(y)$ with
+<!-- -->
+\begin{align*}
 g_j(y)
 &= \overline{w}_j(y) g(y) \ind\{ y \in \mathcal{D}_j \} / \overline{\xi}_j \\
 %
@@ -1536,12 +1689,20 @@ g_j(y)
 \Prob(\alpha_{j-1} < \overline{T} \leq \alpha_j)
 }
 \cdot \ind(\alpha_{j-1} < y \leq \alpha_j),
-\end{align*} <!-- --> which is the density of $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$.
+\end{align*}
+<!-- -->
+which is the density of $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$.
 
-To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (**TBD**) using the expression <!-- --> \begin{align*}
+To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (**TBD**) using the expression
+<!-- -->
+\begin{align*}
 M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) dx
 = \frac{e^{s\alpha_j} - e^{s\alpha_{j-1}}}{s(\alpha_j - \alpha_{j-1})}.
-\end{align*} <!-- --> To compute \eqref{eqn:bound}, we assume the "trivial" minorizer $\underline{w}_j(x) = w(x)$ so that <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+To compute \eqref{eqn:bound}, we assume the "trivial" minorizer $\underline{w}_j(x) = w(x)$ so that
+<!-- -->
+\begin{align*}
 \underline{\xi}_j
 = \int_{\alpha_{j-1}}^{\alpha_j} w(x) g(x) dx
 = \int_{\alpha_{j-1}}^{\alpha_j} \frac{(1-x^2)^{(d-3)/2} \kappa e^{\kappa x}}{e^{\kappa \alpha_N} - e^{\kappa \alpha_0}} dx.
@@ -1585,8 +1746,7 @@ data.frame(x = out1$draws) %>%
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of refine improvement for lognormal-normal example with constant
-#|   majorizer.
+#|   Refinement for lognormal-normal example with constant majorizer.
 #| label: fig-ln-norm-refine
 #| echo: false
 
@@ -1602,7 +1762,7 @@ ggplot(df) +
 	geom_line(aes(x = N, y = bdd, color = sampler), lwd = 1.02, alpha = 1) +
 	geom_point(aes(x = N, y = bdd, pch = sampler, color = sampler),
 		cex = 3, alpha = 1) +
-	scale_x_continuous(breaks = seq(0, max(df$N))) +
+	scale_x_continuous(breaks = df$N[df$N %% 2 == 0]) +
 	scale_y_continuous(n.breaks = 10) +
 	xlab("N") +
 	ylab("Bound") +
@@ -1611,14 +1771,24 @@ ggplot(df) +
 
 # Example: Bessel Count Distribution {#sec-bessel}
 
-While Sections [-@sec-vmf] and [-@sec-ln-norm] considered continuous distributions, we now demonstrate generation from a discrete target. Consider generating from the Bessel distribution with density <!-- --> \begin{align*}
+While Sections [-@sec-vmf] and [-@sec-ln-norm] considered continuous distributions, we now demonstrate generation from a discrete target. Consider generating from the Bessel distribution with density
+<!-- -->
+\begin{align*}
 f(x) = \frac{(\lambda/2)^{2x+\nu}}{I_v(\lambda) \cdot x! \cdot \Gamma(x + \nu + 1)}
 \cdot \ind\{ x \in \mathbb{N} \}, \quad
 \nu > -1, \quad
 \lambda > 0,
-\end{align*} <!-- --> where $\mathbb{N} = \{ 0, 1, 2, \ldots \}$ is the set of nonnegative integers and where <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+where $\mathbb{N} = \{ 0, 1, 2, \ldots \}$ is the set of nonnegative integers and where 
+<!-- -->
+\begin{align*}
 I_v(\lambda) = \sum_{x=0}^\infty \frac{(\lambda/2)^{2x+\nu}}{x! \cdot \Gamma(x + \nu + 1)}
-\end{align*} <!-- --> is a modified Bessel function of the first kind. Let $X \sim \text{Bessel}(\lambda, \nu)$ denote a random variable with density $f$. @Devroye2002 develops a rejection sampling method to generate draws of $X$ after establishing properties of the distribution. Here we implement several VWS samplers which do not require as much insight. Our approach is to decompose the density into <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+is a modified Bessel function of the first kind. Let $X \sim \text{Bessel}(\lambda, \nu)$ denote a random variable with density $f$. @Devroye2002 develops a rejection sampling method to generate draws of $X$ after establishing properties of the distribution. Here we implement several VWS samplers which do not require as much insight. Our approach is to decompose the density into
+<!-- -->
+\begin{align*}
 f(x)
 &= \frac{(\lambda/2)^{2x+\nu}}{I_v(\lambda) \cdot x! \cdot \Gamma(x + \nu + 1)}
 \cdot \ind\{ x \in \mathbb{N} \} \\
@@ -1626,7 +1796,9 @@ f(x)
 &\propto 
 \underbrace{\frac{1}{\Gamma(x + \nu + 1)}}_{w(x)}
 \underbrace{\frac{(\lambda/2)^{2x} e^{-\lambda^2 / 4}}{x!} \ind\{ x \in \mathbb{N} \}}_{g(x)},
-\end{align*} <!-- --> so that $g$ is the density of a $\text{Poisson}(\lambda^2 / 4)$ distribution and the weight function is specified by $\log w(x) = -\log \Gamma(x + \nu + 1)$. Notice that we have disregarded many of the normalizing constants in this formulation.
+\end{align*}
+<!-- -->
+so that $g$ is the density of a $\text{Poisson}(\lambda^2 / 4)$ distribution and the weight function is specified by $\log w(x) = -\log \Gamma(x + \nu + 1)$. Notice that we have disregarded many of the normalizing constants in this formulation.
 
 Before proceeding, let us fix values of $\lambda$ and $\nu$ and compute values of $\log w(x)$ and $f(x)$; these will be useful for illustration. Let us also load some useful R functions from the script `examples/bessel/bessel.R`; primarily, `d_bessel` computes the target density.
 
@@ -1687,15 +1859,15 @@ head(out1$draws)
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of refine improvement for lognormal-normal example with constant
-#|   majorizer.
+#|   Refinement for lognormal-normal example with constant majorizer.
 #| label: fig-bessel-const-refine
 #| echo: false
 
-data.frame(bdd = exp(out1$lbdd)) %>%
-	mutate(step = row_number() - 1) %>%
-	ggplot() +
+df = data.frame(bdd = exp(out1$lbdd)) %>%
+	mutate(step = row_number() - 1)
+ggplot(df) +
 	geom_line(aes(x = step, y = bdd)) +
+	scale_x_continuous(breaks = df$step[df$step %% 2 == 0]) +
 	scale_y_continuous(n.breaks = 10) +
 	xlab("Step") +
 	ylab("Bound") +
@@ -1759,12 +1931,18 @@ head(out2$draws)
 Our decomposition of $f$ into given $w$ and $g$ lends itself well to a linear majorizer because the function $\log w(x) = -\log \Gamma(x + \nu + 1)$ is log-convex. In fact, a theorem attributed to @BohrMollerup1922 states that the function $q(x) = \Gamma(x)$ is uniquely characterized as the only function on $(0, \infty)$ which is log-convex with $q(1) = 1$ and $q(x+1) = x q(x)$. The following remark is also useful to formulate the linear majorizer.
 
 ::: {#rem-incgamma}
-By rearranging equation 6.5.13 of @AbramowitzStegun1972, the cdf of $T \sim \text{Poisson}(\lambda)$ can be written as <!-- --> \begin{displaymath}
+By rearranging equation 6.5.13 of @AbramowitzStegun1972, the cdf of $T \sim \text{Poisson}(\lambda)$ can be written as
+<!-- -->
+\begin{displaymath}
 F(x \mid \lambda)
 = e^{-\lambda} \sum_{k=0}^n \frac{\lambda^k}{k!}
 = \frac{\Gamma(x + 1, \lambda)}{\Gamma(x + 1)},
 \quad x \in \{ 1, 2, \ldots \},
-\end{displaymath} <!-- --> where $\Gamma(c,z) = \int_z^\infty t^{c-1} e^{-t} dt$ and $\Gamma(c) = \Gamma(c,0)$. Therefore, for $a, b \in \mathbb{R}$ with $0 \leq a \leq b$ and $T \sim \text{Poisson}(\lambda)$, <!-- --> \begin{align*}
+\end{displaymath}
+<!-- -->
+where $\Gamma(c,z) = \int_z^\infty t^{c-1} e^{-t} dt$ and $\Gamma(c) = \Gamma(c,0)$. Therefore, for $a, b \in \mathbb{R}$ with $0 \leq a \leq b$ and $T \sim \text{Poisson}(\lambda)$,
+<!-- -->
+\begin{align*}
 \Prob(a < T \leq b)
 &= \Prob(\lfloor a \rfloor + 1 \leq X \leq \lfloor b \rfloor) \\
 &= \sum_{x = \lfloor a \rfloor + 1}^{\lfloor b \rfloor}
@@ -1773,10 +1951,14 @@ F(x \mid \lambda)
 - \sum_{x = 0}^{\lfloor a \rfloor} \frac{e^{-\lambda} \lambda^x}{x!} \\
 &= \frac{\Gamma(\lfloor b \rfloor + 1, \lambda)}{\Gamma(\lfloor b \rfloor + 1)}
 - \frac{\Gamma(\lfloor a \rfloor + 1, \lambda)}{\Gamma(\lfloor a \rfloor + 1)}.
-\end{align*} <!-- --> \remarkqed
+\end{align*}
+<!-- -->
+\remarkqed
 :::
 
-We have the expression <!-- --> \begin{align*}
+We have the expression
+<!-- -->
+\begin{align*}
 \overline{\xi}_j
 &= \int_{\alpha_{j-1}}^{\alpha_j} \overline{w}_j(x) g(x) d\nu(x) \\
 %
@@ -1795,14 +1977,22 @@ We have the expression <!-- --> \begin{align*}
 \overline{\beta}_{j0} - \frac{\lambda^2}{4}
 + \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)
 \Prob(\alpha_{j-1} < \overline{T} \leq \alpha_j),
-\end{align*} <!-- --> where $\overline{T} \sim \text{Poisson}(e^{ \overline{\beta}_{j1}} \lambda^2 / 4)$, and similarly, <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+where $\overline{T} \sim \text{Poisson}(e^{ \overline{\beta}_{j1}} \lambda^2 / 4)$, and similarly,
+<!-- -->
+\begin{align*}
 \underline{\xi}_j
 %
 &= \exp\left(
 \overline{\beta}_{j0} - \frac{\lambda^2}{4}
 + \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)
 \Prob(\alpha_{j-1} < \underline{T} \leq \alpha_j).
-\end{align*} <!-- --> where $\underline{T} \sim \text{Poisson}(e^{ \underline{\beta}_{j1}} \lambda^2 / 4)$. The proposal $h$ is a finite mixture $h(x) = \sum_{j=1}^N \pi_j g_j(x)$ with <!-- --> \begin{align*}
+\end{align*}
+<!-- -->
+where $\underline{T} \sim \text{Poisson}(e^{ \underline{\beta}_{j1}} \lambda^2 / 4)$. The proposal $h$ is a finite mixture $h(x) = \sum_{j=1}^N \pi_j g_j(x)$ with
+<!-- -->
+\begin{align*}
 g_j(x)
 &= \overline{w}_j(x) g(x) \ind\{ x \in \mathcal{D}_j \} / \overline{\xi}_j \\
 %
@@ -1825,9 +2015,13 @@ g_j(x)
 \Prob(\alpha_{j-1} < \overline{T} \leq \alpha_j)
 }
 \ind(\alpha_{j-1} < x \leq \alpha_j),
-\end{align*} <!-- --> which is the density of $\text{Poisson}(\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$.
+\end{align*}
+<!-- -->
+which is the density of $\text{Poisson}(\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$.
 
-To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (TBD) using the expression <!-- --> \begin{align*}
+To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (TBD) using the expression
+<!-- -->
+\begin{align*}
 M_j(s)
 &= \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) d\nu(x) \\
 &= \exp( -\lambda^2 / 4 ) \exp(e^s \lambda^2 / 4 )
@@ -1836,7 +2030,9 @@ M_j(s)
 (e^s \lambda^2 / 4)^x \\
 &= \exp\left\{ -\frac{\lambda^2}{4} + e^s \frac{\lambda^2}{4} \right\}
 \Prob(\alpha_{j-1} < T \leq \alpha_j),
-\end{align*} <!-- --> where $T \sim \text{Poisson}(e^s \lambda^2 / 4)$.
+\end{align*}
+<!-- -->
+where $T \sim \text{Poisson}(e^s \lambda^2 / 4)$.
 
 The following R code builds the complete example and invokes the sampling function.
 
@@ -1868,7 +2064,7 @@ plot_pmf(out3$draws) +
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Rate of refine improvement for Bessel example with three majorizers.
+#|   Refinement for Bessel example with three majorizers.
 #| label: fig-bessel-refine
 #| echo: false
 
@@ -1884,7 +2080,7 @@ ggplot(df) +
 	geom_line(aes(x = N, y = bdd, color = sampler), lwd = 1.02, alpha = 1) +
 	geom_point(aes(x = N, y = bdd, pch = sampler, color = sampler),
 		cex = 3, alpha = 1) +
-	scale_x_continuous(breaks = seq(0, max(df$N))) +
+	scale_x_continuous(breaks = df$N[df$N %% 2 == 0]) +
 	scale_y_continuous(n.breaks = 10) +
 	xlab("N") +
 	ylab("Bound") +
