@@ -24,19 +24,13 @@ editor_options:
   chunk_output_type: console
 classoption: abstract
 abstract: |
-  The `vws` package facilitates vertical weighted strips (VWS) sampling in R.
-  VWS is an approach to constructing proposals for rejection sampling which is
-  explored in @VWS2025. Here, the target density is regarded as a weighted
-  density - the product of a weight function and a base density; the weight
-  function is majorized to yield an envelope which ideally is more readily
-  sampled as a proposal distribution. When the weight function is majorized in
-  a piecewise manner over the support, the resulting proposal can be regarded
-  as a finite mixture. This mixture can be refined to reduce the rejection
-  probability to an acceptable tolerance. The `vws` packages provides an API to
-  program the necessary components for the resulting proposal and carry out
-  rejection sampling. The API of the `vws` package is C++ and makes use of
+  The `vws` package facilitates rejection sampling using the vertical weighted
+  strips (VWS) method in R. VWS is an approach to constructing proposals for
+  rejection sampling which is explored in @VWS2025. The `vws` package provides
+  an API to program the necessary components for the proposal and carry out
+  rejection sampling. The API of the `vws` package is in C++ and makes use of
   templates and object-oriented programming; a working understanding of these
-  constructs is assumed. The primary intended usage is that sampler logic is
+  techniques is assumed. The primary intended usage is that sampler logic is
   implemented in C++ and embedded into a variate generation function which is
   exposed in R for use in applications. This vignette presents the API and
   several complete examples; multiple variations of VWS samplers are presented
@@ -83,7 +77,7 @@ Although there are no guarantees of correctness of the `vws` package, reasonable
 
 # Introduction
 
-The `vws` package facilitates vertical weighted strips (VWS) sampling [@VWS2025]. VWS is an approach to construct proposals distributions for rejection sampling. The target distribution is factored into a nonnegative weight function and base density, the weight function is majorized with another function (which bounds it above) with a more convenient functional form, and the majorized weight function is combined with the base density to obtain a proposal. If it is convenient to generate draws from the proposal and the distance between the original and majorized weight function is not too large, such a proposal can be effectively used in rejection sampling.
+The `vws` package facilitates vertical weighted strips (VWS) sampling [@VWS2025]. VWS is an approach to construct proposals distributions for rejection sampling. Here, the target density is regarded as a weighted density - the product of a nonnegative weight function and a base density. The weight function is majorized by some given function (which bounds it above) to yield an envelope that is combined with the base density to form the a proposal distribution. If it is convenient to generate draws from the proposal and the distance between the original and majorized weight function is not too large, such a proposal can be effectively used in rejection sampling. When the weight function is majorized in a piecewise manner over the support, the resulting proposal can be regarded as a finite mixture. This mixture can be refined to reduce the rejection probability to an acceptable tolerance.
 
 The `vws` package provides tools to construct VWS proposal distributions. Variate generation functions are constructed in C++ and may be exposed for use in R via the Rcpp package [@Eddelbuettel2103]. C++ is taken as the primary programming language because of its efficiency as a compiled language and its formal approach to object-oriented programming. The `fntl` package [@fntl] is integral to `vws` usage; it provides a simplified C++ interface to routines in the R API [@RExtensions], as well as other useful numerical routines, where functions supplied as lambdas. The `vws` package has been designed primarily to generate from (continuous and discrete) univariate distributions. It is also possible to construct proposals for multivariate distributions using the VWS approach; the `vws` package is intended to support code development for such settings as well.
 
@@ -243,14 +237,14 @@ Rcpp::List sample(unsigned int n)
 }
 ```
 
-1. This annotation ensures that `vws` and `fntl` packages are linked during compilation. `fntl` is not explicitly used in this example, but it is needed for linking regardless.
-2. Include the main header for the `vws` package so that the API is accessible.
-3. This annotation exports the `sample` function for use in R. This is not needed if the `sample` function will be used only in C++.
-4. Construct a region of type `MyRegion` which we have presumably defined in `MyRegion.h`. The symbol `...` here isz a placeholder for any arguments needed by the constructor.
-5. Construct an `FMMProposal` based on a single region `supp`. Note that it is a template class that needs two template arguments: the first (`double`) indicates the data type of the distribution and the second (`MyRegion`) indicates the type of region it will contain.
-6. Refine the proposal using Algorithm \ref{alg:refine} up to $N-1$ times or until tolerance `0.01` is achieved.
-7. Carry out rejection sampling with the refined proposal `h`.
-8. Pack up elements of the struct `out` into an `Rcpp::List` and return them to the caller.
+1.  This annotation ensures that `vws` and `fntl` packages are linked during compilation. `fntl` is not explicitly used in this example, but it is needed for linking regardless.
+2.  Include the main header for the `vws` package so that the API is accessible.
+3.  This annotation exports the `sample` function for use in R. This is not needed if the `sample` function will be used only in C++.
+4.  Construct a region of type `MyRegion` which we have presumably defined in `MyRegion.h`. The symbol `...` here isz a placeholder for any arguments needed by the constructor.
+5.  Construct an `FMMProposal` based on a single region `supp`. Note that it is a template class that needs two template arguments: the first (`double`) indicates the data type of the distribution and the second (`MyRegion`) indicates the type of region it will contain.
+6.  Refine the proposal using Algorithm \ref{alg:refine} up to $N-1$ times or until tolerance `0.01` is achieved.
+7.  Carry out rejection sampling with the refined proposal `h`.
+8.  Pack up elements of the struct `out` into an `Rcpp::List` and return them to the caller.
 
 Note that `FMMProposal` class, the `rejection` function, and other elements of the `vws` API are in the `vws` namespace. Details for the API are given in @sec-cpp-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual.
 
@@ -286,7 +280,7 @@ These four functions carry out the same operation and may be invoked in the usua
 double out = f1(1, 2);
 ```
 
-The typedef `dfdd` is given as a shorthand for a Standard Template Library (STL) [`function`](https://en.cppreference.com/w/cpp/utility/functional/function.html) which takes two `double`s as arguments and returns a `double`. An STL `function` can be passed to other functions like any other variable. Function `f1` explicitly states the return type of the lambda using `-> double` while it is omitted in the others to be inferred by the compiler. The variable `z` is *captured* by `f1`, `f2`, and `f3`; in other words, it is "baked in" to the function definition without needing to be passed as an argument. Functions `f1` and `f2` capture `z` by reference while `f3` captures `z` by value, indicated with the syntaxes `[&]` and `[=]` respectively. Function `f4` uses `[]` to indicated that it does not capture any outside variables.
+The typedef `dfdd` is given as a shorthand for a Standard Template Library (STL) [`function`](https://en.cppreference.com/w/cpp/utility/functional/function.html) which takes two `double`s as arguments and returns a `double`. An STL `function` can be passed to other functions like any other variable. Function `f1` explicitly states the return type of the lambda using `-> double` while it is omitted in the others to be inferred by the compiler. The variable `z` is *captured* by `f1`, `f2`, and `f3`; in other words, it is "baked in" to the function definition without needing to be passed as an argument. Functions `f1` and `f2` capture `z` by reference while `f3` captures `z` by value, indicated with the syntaxes `[&]` and `[=]` respectively. Function `f4` uses empty square brackets `[]` to indicate that it does not capture any outside variables.
 
 The `fntl` package defines several function typedefs used in the `vws` package, and also provides access to numerical tools such as integration, differentiation, and optimization which take STL `function`s as arguments. \remarkqed
 :::
@@ -349,9 +343,7 @@ The class `FMMProposal` represents a VWS proposal.
 
 ```{cpp}
 template <class T, class R>
-class FMMProposal {
-	...
-}
+class FMMProposal { ... }
 ```
 
 ### Constructor {.unlisted}
@@ -373,11 +365,12 @@ FMMProposal(const R& region);
 The following functions make use of the proposal as a distribution. They are especially utilized in rejection sampling.
 
 ```{cpp}
-std::vector<T> r(unsigned int n = 1) const;                                           // <1>
-std::pair<std::vector<T>, std::vector<unsigned int>> r_ext(unsigned int n = 1) const; // <2>
-double d(const T& x, bool normalize = true, bool log = false) const;                  // <3>
-double w_major(const T& x, bool log = true) const;                                    // <4>
-double d_target_unnorm(const T& x, bool log = true) const;                            // <5>
+std::vector<T> r(unsigned int n = 1) const;                           // <1>
+std::pair<std::vector<T>, std::vector<unsigned int>>                  // <2>
+	r_ext(unsigned int n = 1) const;
+double d(const T& x, bool normalize = true, bool log = false) const;  // <3>
+double w_major(const T& x, bool log = true) const;                    // <4>
+double d_target_unnorm(const T& x, bool log = true) const;            // <5>
 ```
 
 1.  Draw $n$ variates of type `T` from the proposal.
@@ -567,9 +560,7 @@ The `midpoint` method returns a point between endpoints $a$ and $b$ of the regio
 double midpoint() const;
 ```
 
-In particular, the current implementation is
-<!-- -->
-\begin{align*}
+In particular, the current implementation is <!-- --> \begin{align*}
 \text{midpoint}(a,b) =
 \begin{cases}
 0 & \text{if $a = -\infty$ and $b = \infty$}, \\
@@ -577,9 +568,7 @@ b - |b| - 1 & \text{if $a = -\infty$ and $b < \infty$}, \\
 a + |a| + 1 & \text{if $a > -\infty$ and $b = \infty$}, \\
 (a + b) / 2 & \text{otherwise}.
 \end{cases}
-\end{align*}
-<!-- -->
-The `bifurcate` method returns two disjoint regions whose union is the current region. The result is given as an STL pair. The first version bifurcates at the midpoint of the current region, determined by the `midpoint` method. The second version partitions at the given $x$.
+\end{align*} <!-- --> The `bifurcate` method returns two disjoint regions whose union is the current region. The result is given as an STL pair. The first version bifurcates at the midpoint of the current region, determined by the `midpoint` method. The second version partitions at the given $x$.
 
 ```{cpp}
 std::pair<RealConstRegion,RealConstRegion> bifurcate() const;
@@ -652,7 +641,6 @@ IntConstRegion(
 The first constructor creates a region based on the interval $(a,b]$; the second creates a region based on the singleton set $\{a\}$, which is intended primarily for internal use. Note that `a` and `b` need not be integers.
 
 The default optimizers, `maxopt_default` and `minopt_default`, use the hybrid numerical optimization method in @sec-cpp-api-opt to optimize `w`.
-
 
 ### Methods {.unlisted}
 
@@ -759,18 +747,17 @@ struct rejection_args {
 };
 ```
 
-1. Maximum number of rejections to tolerate overall (among all $n$ attempted draws) before bailing out.
-2. Determines period at which progress is logged to the console.
-3. Upper bound for the ratio $f_0(x) / h_0(x)$. The ratio may be slightly larger than 1 due to numerical precision, but an error is thrown if it is larger than this value.
-4. The action to take if `max_rejects` rejections is exceeded. The definition of the `fntl::error_action` enum is given in Section 2 of @fntl.
-5. Constructor that takes no arguments.
-6. Convert an `Rcpp::List` to a `rejection_args` struct.
-7. Return a `Rcpp::List` from a `rejection_args` struct.
+1.  Maximum number of rejections to tolerate overall (among all $n$ attempted draws) before bailing out.
+2.  Determines period at which progress is logged to the console.
+3.  Upper bound for the ratio $f_0(x) / h_0(x)$. The ratio may be slightly larger than 1 due to numerical precision, but an error is thrown if it is larger than this value.
+4.  The action to take if `max_rejects` rejections is exceeded. The definition of the `fntl::error_action` enum is given in Section 2 of @fntl.
+5.  Constructor that takes no arguments.
+6.  Convert an `Rcpp::List` to a `rejection_args` struct.
+7.  Return a `Rcpp::List` from a `rejection_args` struct.
 
 If `action = fntl::error_action::STOP`, the `rejection` functions halts when an error condition is encountered. If `action = fntl::error_action::WARNING` or `action = fntl::error_action::MESSAGE`, a warning or message is emitted without halting. Otherwise, if `action = fntl::error_action::NONE`, the error condition is ignored.
 
 before all $n$ desired variates are drawn. In this case, the `draws` and `rejects` vectors will have lengths shorter than $n$.
-
 
 The return value of `rejection` is a struct of the following type.
 
