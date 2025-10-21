@@ -48,7 +48,7 @@ geometry:
   - top=0.75in
   - bottom=1.00in
 execute:
-  eval: true
+  eval: false
 code-block-bg: true
 code-block-border-left: "#B2DEED"
 filters:
@@ -113,16 +113,16 @@ h_0(x) = \overline{w}(x) g(x), \quad
 \psi_N = \int_\Omega h_0(x) d\nu(x).
 \end{align*}
 <!-- -->
-The construction assumes that $\Omega$ is partitioned into regions $\mathcal{D}_1, \ldots, \mathcal{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathcal{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Let $\ind\{ x \in A \}$ denote the indicator function for $x \in A$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathcal{D}_j\}$, the unnormalized proposal becomes
+The construction assumes that $\Omega$ is partitioned into regions $\mathscr{D}_1, \ldots, \mathscr{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathscr{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Let $\ind\{ x \in A \}$ denote the indicator function for $x \in A$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathscr{D}_j\}$, the unnormalized proposal becomes
 <!-- -->
 \begin{align*}
-h_0(x) = g(x) \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathcal{D}_j\}.
+h_0(x) = g(x) \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathscr{D}_j\}.
 \end{align*}
 <!-- -->
 With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. The normalized $h$ can be obtained by defining
 <!-- -->
 \begin{align*}
-\overline{\xi}_j = \E[\overline{w}_j(T) \ind\{T \in \mathcal{D}_j\}], \quad T \sim g,
+\overline{\xi}_j = \int_{\mathscr{D}_j} \overline{w}_j(x) g(x) d\nu(x)
 \end{align*}
 <!-- -->
 and
@@ -146,10 +146,10 @@ a finite mixture with mixing weights and component densities,
 \pi_j = \frac{\overline{\xi}_j}{\sum_{\ell=1}^N \overline{\xi}_\ell},
 \quad \text{and} \quad
 g_j(x) = 
-\overline{w}_j(x) g(x) \ind\{x \in \mathcal{D}_j\} / \overline{\xi}_j,
+\overline{w}_j(x) g(x) \ind\{x \in \mathscr{D}_j\} / \overline{\xi}_j,
 \end{align*}
 <!-- -->
-respectively. The $g_j$ are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a minorizer of $w$ so that $0 \leq \underline{w}_j(x) \leq w(x)$ for all $x \in \mathcal{D}_j$, and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind\{T \in \mathcal{D}_j\}]$ with $T \sim g$. When $h$ is used as a proposal in rejection sampling, an upper bound for the probability of rejection is
+respectively. The $g_j$ are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a minorizer of $w$ so that $0 \leq \underline{w}_j(x) \leq w(x)$ for all $x \in \mathscr{D}_j$, and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind\{T \in \mathscr{D}_j\}]$ with $T \sim g$. When $h$ is used as a proposal in rejection sampling, an upper bound for the probability of rejection is
 <!-- -->
 \begin{align}
 \rho_+ = \sum_{j=1}^N \rho_j,
@@ -166,34 +166,173 @@ The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to 
 
 ## Constant Majorizer {#sec-vws-constant}
 
-Suppose $\Omega = (\alpha_0, \alpha_N]$ is an interval whose endpoints may or may not be finite. Furthermore, suppose decomposition \eqref{eqn:weighted-target} is selected so that $w(x)$ is finite on each $\mathcal{D}_j$ and the constant $\overline{w}_j \geq \sup_{x \in \mathcal{D}_j} w(x)$ can serve as the majorizing function of $w$. Furthermore, let the minorizer for $w$ be the constant $\underline{w}_j \leq \inf_{x \in \mathcal{D}_j} w(x)$. Here we obtain component densities $g_j(x) = g(x) \ind\{x \in \mathcal{D}_j\} / \Prob(T \in \mathcal{D}_j)$ along with the quantities $\overline{\xi}_j = \overline{w}_j \Prob(T \in \mathcal{D}_j)$ and $\underline{\xi}_j = \underline{w}_j \Prob(T \in \mathcal{D}_j)$.
+Suppose $\Omega = (\alpha_0, \alpha_N]$ is an interval whose endpoints may or may not be finite and $w(x) < \infty$ on $\Omega$. We can majorize $w$ using a constant $\overline{w}_j \geq \sup_{x \in \mathscr{D}_j} w(x)$ on each $\mathscr{D}_j$ so that the majorizer is $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{ x \in \mathscr{D}_j \}$. Here we obtain component densities of finite mixture \eqref{eqn:fmm-proposal} as
+<!-- -->
+\begin{align*}
+g_j(x) = g(x) \ind\{x \in \mathscr{D}_j\} / \Prob(T \in \mathscr{D}_j),
+\quad \text{with} \quad
+\overline{\xi}_j = \overline{w}_j \Prob(T \in \mathscr{D}_j).
+\end{align*}
+<!-- -->
+Furthermore, if we assume a constant minorizer $\underline{w}_j \leq \inf_{x \in \mathscr{D}_j} w(x)$, then $\underline{\xi}_j = \underline{w}_j \Prob(T \in \mathscr{D}_j)$.
 
 ## Linear Majorizer {#sec-vws-linear}
 
-::: {.callout-caution title="TBD"}
-This is old material. We should rethink how we present the linear majorizer details here.
-:::
-
-The following construction assumes that $\zeta$ is finite and concave on the interval $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$. A majorizer is obtained from
-<!-- -->
-\begin{align}
-\zeta(y) &\leq \zeta(c) + (y - c) \nabla(c)
-= \overline{\beta}_{j0} + \overline{\beta}_{j1} y,
-\quad 
-\overline{\beta}_{j0} = \zeta(c) - c \cdot \zeta'(c), \quad
-\overline{\beta}_{j1} = \zeta'(c),
-\label{eqn:ln-norm-linear-majorizer}
-\end{align}
-<!-- -->
-where $c$ is a point in $\mathcal{D}_j$. In particular, let us consider the value of $c$ as
+Suppose $\Omega = (\alpha_0, \alpha_N]$ is an interval whose endpoints may or may not be finite and $0 < w(x) < \infty$ on $\Omega$. Furthermore, suppose $\Omega$ is partitioned into regions $\mathscr{D}_j = (\alpha_{j-1}, \alpha_j]$ where $w$ is entirely either log-convex or log-concave for each $j = 1\, \ldots, N$. An exponentiated linear function $\overline{w}_j(x) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} x \}$ can be used to majorize $w$ on $\mathscr{D}_j$ with an appropriate choice of coefficients $\overline{\beta}_{0j}$ and $\overline{\beta}_{1j}$. Therefore, the piecewise linear function $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \ind\{ x \in \mathscr{D}_j \}$ is a majorizer on $\Omega$. Here the component densities of finite mixture \eqref{eqn:fmm-proposal} are
 <!-- -->
 \begin{align*}
-c^* &= \argmin_{c \in \mathcal{D}_j} \int_{\mathcal{D}_j} | h_0(y) - f_0(y) | dy
-\nonumber \\
+g_j(x) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} x \} g(x) \ind\{ x \in \mathscr{D}_j \} / \overline{\xi}_j,
 %
-&\equiv \argmin_{c \in \mathcal{D}_j} \Big\{ \log w(c) - c \nabla(c) + \log M_j(\nabla(c)) \Big\}.
+\quad \text{with} \quad
+%
+\overline{\xi}_j = e^{ \overline{\beta}_{0j} } \int_{\alpha_{j-1}}^{\alpha_j}
+e^{ \overline{\beta}_{1j} \cdot x } g(x) d\nu(x).
 \end{align*}
 <!-- -->
+In certain cases, such as where $g$ is in an exponential family, the integral in $\overline{\xi}_j$ can be simplified and $g_j$ is seen to be a familiar distribution. We may also assume a linear minorizer $\overline{w}(x) = \sum_{j=1}^N \underline{w}_j(x) \ind\{ x \in \mathscr{D}_j \}$ with $\overline{w}_j(x) = \exp\{ \underline{\beta}_{0j} + \underline{\beta}_{1j} x \}$ for appropriate coefficients $\underline{\beta}_{0j}$ and $\underline{\beta}_{1j}$.
+
+To identify coefficients $\overline{\beta}_{0j}$, $\overline{\beta}_{1j}$, $\underline{\beta}_{0j}$, and $\underline{\beta}_{1j}$, consider the following remarks corresponding to the log-concave and log-convex cases, respectively.
+
+::: {#rem-linear-concave}
+Suppose $w$ is log-concave on $\mathscr{D}_j$. For any $c \in \mathscr{D}_j$,
+<!-- -->
+\begin{align}
+\log w(x)
+&\leq \log w(c) + (x - c) \nabla(c) \nonumber \\
+&= \overline{\beta}_{j0} + \overline{\beta}_{j1} \cdot x,
+\label{eqn:linear-concave-majorizer}
+\end{align}
+<!-- -->
+so that
+\begin{math}
+\overline{w}_j(x) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} \cdot x \}
+\end{math}
+<!-- -->
+with
+<!-- -->
+\begin{math}
+\overline{\beta}_{j0} = \log w(c) - c \cdot \nabla(c),
+\end{math}
+<!-- -->
+\begin{math}
+\overline{\beta}_{j1} = \nabla(c),
+\end{math}
+<!-- -->
+and
+<!-- -->
+\begin{math}
+\nabla(x) = \frac{d}{dx} \log w(x).
+\end{math}
+<!-- -->
+For the accompanying minorizer, let $\lambda \in [0,1]$ for a given $x \in \mathscr{D}_j$ so that $x = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$. Concavity of $\log w(x)$ gives
+<!-- -->
+\begin{align}
+\log w(x) &\geq (1-\lambda) \log w(\alpha_{j-1}) + \lambda \log w(\alpha_j) \nonumber \\
+&= \log w(\alpha_{j-1}) + \frac{x - \alpha_{j-1}}{\alpha_j - \alpha_{j-1}} [ \log w(\alpha_j) - \log w(\alpha_{j-1})] \nonumber \\
+&= \underline{\beta}_{j0} + \underline{\beta}_{j1} \cdot x,
+\label{eqn:linear-concave-minorizer}
+\end{align}
+<!-- -->
+so that
+<!-- -->
+\begin{math}
+\underline{w}_j(x) = \exp\{ \underline{\beta}_{j0} + \underline{\beta}_{j1} \cdot x \}
+\end{math}
+<!-- -->
+with
+<!-- -->
+\begin{math}
+\underline{\beta}_{j0} = \log w(\alpha_{j-1}) - \alpha_{j-1} \underline{\beta}_{j1}
+\end{math}
+<!-- -->
+and
+<!-- -->
+\begin{math}
+\underline{\beta}_{j1} = \{\log w(\alpha_j) - \log w(\alpha_{j-1}) \} / \{ \alpha_j - \alpha_{j-1} \}.
+\end{math}
+\remarkqed
+:::
+
+::: {#rem-linear-convex}
+Suppose $w$ is log-convex on $\mathscr{D}_j$. A majorizer and minorizer are obtained from \eqref{eqn:linear-concave-minorizer} and \eqref{eqn:linear-concave-majorizer}, respectively. Note that they have switched roles from @rem-linear-concave.
+\remarkqed
+:::
+
+The following remark describes one possible choice for the expansion point $c$ which will be utilized in the examples in Sections [-@sec-vmf-linear], [-@sec-ln-norm-linear], and [-@sec-bessel-linear].
+
+::: {#rem-expansion-point}
+For a majorizer in the log-concave case, we choose $c$ to minimize the L1 distance between unnormalized densities,
+<!-- -->
+\begin{align}
+c^*
+&= \argmin_{c \in \mathscr{D}_j} \int_{\mathscr{D}_j} [\overline{w}_j(x) - w(x) ] g(x) d\nu(x) \nonumber \\
+%
+&= \argmin_{c \in \mathscr{D}_j} \Big\{ w(c) \exp\{ -c \nabla(c) \} \int_{\mathscr{D}_j} \exp\{ x \nabla(c) \} g(x) d\nu(x) \Big\} \nonumber \\
+%
+&= \argmin_{c \in \mathscr{D}_j} \Big\{ \log w(c) - c \nabla(c) + \log M_j(\nabla(c)) \Big\},
+\label{eqn:concave-majorize-choice}
+\end{align}
+<!-- -->
+where 
+<!-- -->
+\begin{math}
+\overline{w}_j(x) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} \cdot x \},
+\end{math}
+<!-- -->
+\begin{math}
+\overline{\beta}_{j0} = \log w(c) - c \cdot \nabla(c),
+\end{math}
+<!-- -->
+\begin{math}
+\overline{\beta}_{j1} = \nabla(c),
+\end{math}
+<!-- -->
+\begin{math}
+\nabla(x) = \frac{d}{dx} \log w(x),
+\end{math}
+<!-- -->
+and
+<!-- -->
+\begin{math}
+M_j(s) = \int_a^b e^{xs} g(x) d\nu(x).
+\end{math}
+<!-- -->
+A similar choice of $c$ for a minorizer in the log-convex case is
+<!-- -->
+\begin{align}
+c^* &= \argmin_{c \in \mathscr{D}_j} \int_{\mathscr{D}_j} [w(x) - \underline{w}_j(x) ] g(x) d\nu(x) \nonumber \\
+%
+&= \argmax_{c \in \mathscr{D}_j} \int_{\mathscr{D}_j} \underline{w}_j(x) g(x) d\nu(x) \nonumber \\
+%
+&= \argmax_{c \in \mathscr{D}_j} \Big\{ \log w(c) - c \nabla(c) + \log M_j(\nabla(c)) \Big\}.
+\label{eqn:convex-minorize-choice}
+\end{align}
+<!-- -->
+where 
+<!-- -->
+\begin{math}
+\overline{w}_j(x) = \exp\{ \underline{\beta}_{j0} + \underline{\beta}_{j1} \cdot x \}, \end{math}
+<!-- -->
+\begin{math}
+\underline{\beta}_{j0} = \log w(c) - c \cdot \nabla(c), \quad
+\end{math}
+<!-- -->
+\begin{math}
+\underline{\beta}_{j1} = \nabla(c), \quad
+\end{math}
+<!-- -->
+\begin{math}
+\nabla(x) = \frac{d}{dx} \log w(x).
+\end{math}
+<!-- -->
+\remarkqed
+:::
+
+
+::: {.callout-caution title="TBD"}
+Consider moving this back to lognormal-normal example!
+:::
+
 Here, $M_j(s)$ is the moment generating function of random variable $T \sim g$ with support truncated to $(\alpha_{j-1}, \alpha_j]$:
 <!-- -->
 \begin{align*}
@@ -213,24 +352,7 @@ M_j(s)
 },
 \end{align*}
 <!-- -->
-using [@rem-normal-mgf-integral]. A minorizer can be obtained by expressing $y = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$ for $\lambda \in [0,1]$ so that $\lambda = (y - \alpha_{j-1}) / (\alpha_j - \alpha_{j-1})$ and
-<!-- -->
-\begin{align}
-\zeta(y) &\geq (1-\lambda) \zeta(\alpha_{j-1}) + \lambda \zeta(\alpha_j) \nonumber \\
-&= \zeta(\alpha_{j-1}) + \frac{y - \alpha_{j-1}}{\alpha_j - \alpha_{j-1}} [ \zeta(\alpha_j) - \zeta(\alpha_{j-1})]
-= \underline{\beta}_{j0} + \underline{\beta}_{j1} y,
-\label{eqn:ln-norm-linear-minorizer}
-\end{align}
-<!-- -->
-with
-<!-- -->
-\begin{align*}
-\underline{\beta}_{j0} = \zeta(\alpha_{j-1}) - \alpha_{j-1} \underline{\beta}_{j1}
-\quad \text{and} \quad
-\underline{\beta}_{j1} = \frac{\zeta(\alpha_j) - \zeta(\alpha_{j-1}) }{ \alpha_j - \alpha_{j-1} }.
-\end{align*}
-<!-- -->
-If $\zeta$ is convex on $\mathcal{D}_j$ rather than concave, the roles of \eqref{eqn:ln-norm-linear-majorizer} and \eqref{eqn:ln-norm-linear-minorizer} are switched so that \eqref{eqn:ln-norm-linear-majorizer} is minorizer and \eqref{eqn:ln-norm-linear-minorizer} is majorizer.
+using [@rem-normal-mgf-integral].
 
 ## Knot Selection {#sec-vws-knots}
 
@@ -261,7 +383,7 @@ Bifurcation at a midpoint is mostly straightforward in univariate settings where
 
 The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples.
 
-Use of the `vws` package centers on two classes. The `FMMProposal` class represents a finite mixture of the form \eqref{eqn:fmm-proposal} and encapsulates the operations needed for rejection sampling. The `Region` class represents region $\mathcal{D}_j$ and the operations required for VWS. `Region` itself is an abstract base class which defines an interface needed by the framework. All problem-specific logic is coded within a subclass of `Region`: either by using one of the provided subclasses or by coding a new subclass. The subclasses `RealConstRegion` and `IntConstRegion` provide implementations of the constant majorizer from @sec-vws-constant, for continuous and discrete univariate distributions, respectively. The linear majorizer described in @sec-vws-linear requires more customization than the constant majorizer; here, users should create a subclass of `Region`. An `FMMProposal` object is created from $N \geq 1$ `Region` objects that represent the partition $\mathcal{D}_1, \ldots, \mathcal{D}_N$ of $\Omega$.
+Use of the `vws` package centers on two classes. The `FMMProposal` class represents a finite mixture of the form \eqref{eqn:fmm-proposal} and encapsulates the operations needed for rejection sampling. The `Region` class represents region $\mathscr{D}_j$ and the operations required for VWS. `Region` itself is an abstract base class which defines an interface needed by the framework. All problem-specific logic is coded within a subclass of `Region`: either by using one of the provided subclasses or by coding a new subclass. The subclasses `RealConstRegion` and `IntConstRegion` provide implementations of the constant majorizer from @sec-vws-constant, for continuous and discrete univariate distributions, respectively. The linear majorizer described in @sec-vws-linear requires more customization than the constant majorizer; here, users should create a subclass of `Region`. An `FMMProposal` object is created from $N \geq 1$ `Region` objects that represent the partition $\mathscr{D}_1, \ldots, \mathscr{D}_N$ of $\Omega$.
 
 The `rejection` function takes an object `h` of class `FMMProposal` and carries out rejection sampling to obtain $n$ draws. The `rejection` function returns a vector of accepted draws along with information about the number of rejections. @fig-software-design displays a diagram of the high-level design just described.
 
@@ -395,7 +517,7 @@ The class `FMMProposal` represents a VWS proposal.
 
 ```{cpp}
 template <class T, class R>
-class FMMProposal { ... }
+class FMMProposal { ... };
 ```
 
 ### Constructor {.unlisted}
@@ -537,7 +659,7 @@ The class has one template argument `T`, which is the data type for the underlyi
 
 ```{cpp}
 template <class T>
-class Region { ... }
+class Region { ... };
 ```
 
 The interface consists of the following public methods. These are abstract and must be implemented in a subclass.
@@ -771,14 +893,14 @@ The following functions carry out rejection sampling using a VWS proposal descri
 
 ```{cpp}
 template <typename T, typename R>
-inline rejection_result<T> rejection(
+rejection_result<T> rejection(
 	const FMMProposal<T,R>& h,         // <1>
 	unsigned int n,                    // <2>
 	const rejection_args& args         // <3>
 );
 
 template <typename T, typename R>
-inline rejection_result<T> rejection(
+rejection_result<T> rejection(
 	const FMMProposal<T,R>& h,         // <1>
 	unsigned int n                     // <2>
 );
@@ -1223,7 +1345,7 @@ The proposal $h$ is then a finite mixture $h(x) = \sum_{j=1}^N \pi_j g_j(x)$ wit
 <!-- -->
 \begin{align*}
 g_j(x)
-&= \overline{w}_j(x) g(x) \ind\{ x \in \mathcal{D}_j \} / \overline{\xi}_j \\
+&= \overline{w}_j(x) g(x) \ind\{ x \in \mathscr{D}_j \} / \overline{\xi}_j \\
 &= \frac{
 (\kappa + \overline{\beta}_{j1}) \exp\{(\kappa + \overline{\beta}_{j1}) x\}
 }{
@@ -1507,7 +1629,7 @@ for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zet
 &= -\mu + \sigma^2 / 2.
 \end{align*}
 <!-- -->
-Therefore, on a region $\mathcal{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$. @fig-ln-norm-weight displays a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
+Therefore, on a region $\mathscr{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$. @fig-ln-norm-weight displays a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
 
 ```{r}
 y_star = exp(mu - sigma^2)
@@ -1598,7 +1720,7 @@ We can obtain a linear majorizer by noting the convexity of $\zeta$. Its second 
 \right),
 \end{align*}
 <!-- -->
-which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathcal{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathcal{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will to ensure that all partitions considered thereafter consist of regions on which $\zeta$ is entirely concave or convex.
+which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathscr{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathscr{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will to ensure that all partitions considered thereafter consist of regions on which $\zeta$ is entirely concave or convex.
 
 ```{r}
 y0 = exp(mu - sigma^2 + 1)
@@ -1675,7 +1797,7 @@ where $\underline{T} \sim \text{N}(z + \underline{\beta}_{1j} \lambda^2, \lambda
 <!-- -->
 \begin{align*}
 g_j(y)
-&= \overline{w}_j(y) g(y) \ind\{ y \in \mathcal{D}_j \} / \overline{\xi}_j \\
+&= \overline{w}_j(y) g(y) \ind\{ y \in \mathscr{D}_j \} / \overline{\xi}_j \\
 %
 &= \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} y \}
 \frac{1}{\lambda \sqrt{2\pi}}
@@ -1994,7 +2116,7 @@ where $\underline{T} \sim \text{Poisson}(e^{ \underline{\beta}_{j1}} \lambda^2 /
 <!-- -->
 \begin{align*}
 g_j(x)
-&= \overline{w}_j(x) g(x) \ind\{ x \in \mathcal{D}_j \} / \overline{\xi}_j \\
+&= \overline{w}_j(x) g(x) \ind\{ x \in \mathscr{D}_j \} / \overline{\xi}_j \\
 %
 &= 
 \frac{
@@ -2005,7 +2127,7 @@ g_j(x)
 \overline{\beta}_{j0} - \frac{\lambda^2}{4}
 + \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)
 \Prob(\alpha_{j-1} < \overline{T} \leq \alpha_j)
-} \ind\{ x \in \mathcal{D}_j \} \\
+} \ind\{ x \in \mathscr{D}_j \} \\
 %
 &=
 \frac{1}{x!}
