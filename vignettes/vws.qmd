@@ -1178,7 +1178,7 @@ We now give our first example demonstrating the `vws` package. We consider a con
 4.  Define a C++ function which invokes the sampler and export it for use in R.
 5.  Prepare a struct with extra arguments for rejection sampling. Notice that `rejection_args`, along with other `vws` classes and functions, are in the `vws` namespace.
 6.  Define the weight function using C++ lambda syntax. We are careful to avoid `nan` values that can occur when $x = \pm 1$. Computations are carried out on the log-scale to avoid numerical loss of precision.
-7.  Specify the density, CDF, and quantile function of the base distribution $\text{Exp}_{(-1,1)}(\kappa)$. These are defined as lambdas whose signatures are defined in the `fntl` package. For example, a function of type `fntl::density` takes two inputs: a double `x` which is the the argument and `log` which is a boolean that specifies whether the value should be returned on the log-scale.
+7.  Specify the density, CDF, and quantile function of the base distribution $\text{Exp}_{(-1,1)}(\kappa)$. These are defined as lambdas whose signatures are defined in the `fntl` package. For example, a function of type `fntl::density` takes two inputs: a double `x` which is the argument and `log` which is a boolean that specifies whether the value should be returned on the log-scale.
 8.  Create a "helper" object as a container for the distribution functions.
 9.  Construct a specific type of `Region` which contains all problem-specific logic of the sampler. In this case, it is a `RealConstRegion` which facilitates construction for continuous univariate distributions and constant majorizers. We construct one region here which contains the entire support $(-1,1]$.
 10. Construct a `FMMProposal` based on our initial region `supp`. Notice that there are two template arguments specified here: the first specifies that the data type of the support is `double`; the second specifies that regions (which include the logic of the sampler) are of type `RealConstRegion`.
@@ -1785,7 +1785,7 @@ g_j(y)
 \cdot \ind(\alpha_{j-1} < y \leq \alpha_j),
 \end{align*}
 <!-- -->
-which is the density of $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case and the the minorizer in the log-convex case, with
+which is the density of $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case and the minorizer in the log-convex case, with
 <!-- -->
 \begin{align*}
 M_j(s) = \exp(z s + s^2 \lambda^2 / 2) 
@@ -2123,7 +2123,7 @@ g_j(x)
 \ind(\alpha_{j-1} < x \leq \alpha_j),
 \end{align*}
 <!-- -->
-which is the density of $\text{Poisson}(\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case and the the minorizer in the log-convex case, with
+which is the density of $\text{Poisson}(\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case, with
 <!-- -->
 \begin{align*}
 M_j(s)
