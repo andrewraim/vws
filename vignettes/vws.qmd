@@ -328,32 +328,6 @@ where
 \remarkqed
 :::
 
-
-::: {.callout-caution title="TBD"}
-Consider moving this back to lognormal-normal example!
-:::
-
-Here, $M_j(s)$ is the moment generating function of random variable $T \sim g$ with support truncated to $(\alpha_{j-1}, \alpha_j]$:
-<!-- -->
-\begin{align*}
-M_j(s)
-%
-&= \int_{\alpha_{j-1}}^{\alpha^j} e^{sy} \frac{
-\phi(y \mid z, \lambda^2)
-}{
-\Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
-} dy \\
-%
-&= \exp(z s + s^2 \lambda^2 / 2) 
-\frac{
-\Phi(\alpha_j \mid z + s \lambda^2, \lambda^2) - \Phi(\alpha_{j-1} \mid z + s \lambda^2, \lambda^2)
-}{
-\Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
-},
-\end{align*}
-<!-- -->
-using [@rem-normal-mgf-integral].
-
 ## Knot Selection {#sec-vws-knots}
 
 After selecting a decomposition of the target into weighted form \eqref{eqn:weighted-target}, the choice of knots is important to obtaining an efficient proposal distribution. One option is to specify knots at known locations. For example, we can consider using evenly spaced points on a given interval within the support; however, this may not take into account important features of the target and add wasteful mixture components which do not contribute much to the quality of the approximation. An automated option that often achieves much better results is the rule of thumb proposed in @VWS2025. This is shown here as Algorithm \ref{alg:refine}. This method sequentially refines an initial partitioning of the support; this may be a single region that contains the entire support. At least step a region is selected and bifurcated at its midpoint. The selection is probabilistic, with probability proportional to $\rho_\ell$. A deterministic ("greedy") variation can be considered by instead always selecting a region $\ell$ whose value $\rho_\ell$ is largest.
@@ -1354,7 +1328,7 @@ g_j(x)
 \cdot \ind(\alpha_{j-1} < x \leq \alpha_j),
 \end{align*}
 <!-- -->
-the density of $\text{Exp}_{(\alpha_{j-1}, \alpha_j]}(\kappa + \overline{\beta}_{j1})$. To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (**TBD**) using the expression
+the density of $\text{Exp}_{(\alpha_{j-1}, \alpha_j]}(\kappa + \overline{\beta}_{j1})$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case, with
 <!-- -->
 \begin{align*}
 M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) dx
@@ -1727,8 +1701,6 @@ y0 = exp(mu - sigma^2 + 1)
 printf("Convexity changes at y = %g.\n", y0)
 ```
 
-**TBD: MGF, code snippets**
-
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
@@ -1813,23 +1785,17 @@ g_j(y)
 \cdot \ind(\alpha_{j-1} < y \leq \alpha_j),
 \end{align*}
 <!-- -->
-which is the density of $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$.
-
-To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (**TBD**) using the expression
+which is the density of $\text{N}(z + \lambda^2 \overline{\beta}_{1j}, \lambda^2)$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case and the the minorizer in the log-convex case, with
 <!-- -->
 \begin{align*}
-M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) dx
-= \frac{e^{s\alpha_j} - e^{s\alpha_{j-1}}}{s(\alpha_j - \alpha_{j-1})}.
+M_j(s) = \exp(z s + s^2 \lambda^2 / 2) 
+\frac{
+\Phi(\alpha_j \mid z + s \lambda^2, \lambda^2) - \Phi(\alpha_{j-1} \mid z + s \lambda^2, \lambda^2)
+}{
+\Phi(\alpha_j \mid z, \lambda^2) - \Phi(\alpha_{j-1} \mid z, \lambda^2)
+}.
 \end{align*}
 <!-- -->
-To compute \eqref{eqn:bound}, we assume the "trivial" minorizer $\underline{w}_j(x) = w(x)$ so that
-<!-- -->
-\begin{align*}
-\underline{\xi}_j
-= \int_{\alpha_{j-1}}^{\alpha_j} w(x) g(x) dx
-= \int_{\alpha_{j-1}}^{\alpha_j} \frac{(1-x^2)^{(d-3)/2} \kappa e^{\kappa x}}{e^{\kappa \alpha_N} - e^{\kappa \alpha_0}} dx.
-\end{align*}
-
 Adapting the code from @sec-vmf-linear to the present problem, we implement `LinearVWSRegion` as a subclass of the abstract `Region` base class (@sec-cpp-api-region). See the file `examples/ln-norm/LinearVWSRegion.h`. The code in `examples/ln-norm/ln-norm-v3.cpp` instantiates a proposal from this region type and proceeds with rejection sampling. This code is displayed below.
 
 ``` {.cpp include="examples/ln-norm/ln-norm-v3.cpp" code-line-numbers="true"}
@@ -2034,7 +2000,7 @@ const vws::optimizer& minopt = [](const vws::dfdb& w, double lo,
 };
 ```
 
-We can construct the proposal using a single `IntConstRegion` that represents the support; the `maxopt` and `minopt` arguments are specified here. Also note that we have specified a lower endpoint $\alpha_0$ which is below zero to ensure that the support $(\alpha_0, \alpha_N]$ contains zero.
+We can construct the proposal using a single `IntConstRegion` that represents the support; the `maxopt` and `minopt` arguments are specified here. Also note that we have specified a lower endpoint $\alpha_0$ below zero to ensure that the support $(\alpha_0, \alpha_N]$ contains zero.
 
 ```{cpp}
 vws::IntConstRegion supp(-0.1, R_PosInf, w, helper, maxopt, minopt);
@@ -2050,7 +2016,7 @@ head(out2$draws)
 
 ## Linear Majorizer {#sec-bessel-linear}
 
-Our decomposition of $f$ into given $w$ and $g$ lends itself well to a linear majorizer because the function $\log w(x) = -\log \Gamma(x + \nu + 1)$ is log-convex. In fact, a theorem attributed to @BohrMollerup1922 states that the function $q(x) = \Gamma(x)$ is uniquely characterized as the only function on $(0, \infty)$ which is log-convex with $q(1) = 1$ and $q(x+1) = x q(x)$. The following remark is also useful to formulate the linear majorizer.
+Our decomposition of $f$ into given $w$ and $g$ lends itself well to a linear majorizer because the function $\log w(x) = -\log \Gamma(x + \nu + 1)$ is log-concave. In fact, a theorem attributed to @BohrMollerup1922 states that the function $q(x) = \Gamma(x)$ is uniquely characterized as the only function on $(0, \infty)$ which is log-convex with $q(1) = 1$ and $q(x+1) = x q(x)$. The following remark is also useful to formulate the linear majorizer.
 
 ::: {#rem-incgamma}
 By rearranging equation 6.5.13 of @AbramowitzStegun1972, the cdf of $T \sim \text{Poisson}(\lambda)$ can be written as
@@ -2073,6 +2039,24 @@ where $\Gamma(c,z) = \int_z^\infty t^{c-1} e^{-t} dt$ and $\Gamma(c) = \Gamma(c,
 - \sum_{x = 0}^{\lfloor a \rfloor} \frac{e^{-\lambda} \lambda^x}{x!} \\
 &= \frac{\Gamma(\lfloor b \rfloor + 1, \lambda)}{\Gamma(\lfloor b \rfloor + 1)}
 - \frac{\Gamma(\lfloor a \rfloor + 1, \lambda)}{\Gamma(\lfloor a \rfloor + 1)}.
+\end{align*}
+<!-- -->
+To verify the first equality, if $a$ is an integer then
+<!-- -->
+\begin{align*}
+\Prob(a < T \leq b)
+&= \Prob(T \in  \{a + 1, \ldots, \lfloor b \rfloor \} ) \\
+&= \Prob(T \in  \{ \lfloor a \rfloor + 1, \ldots, \lfloor b \rfloor \})
+= \Prob(\lfloor a \rfloor + 1 < T \leq \lfloor b \rfloor);
+\end{align*}
+<!-- -->
+otherwise, if $a$ is not an integer then
+<!-- -->
+\begin{align*}
+\Prob(a < T \leq b)
+&= \Prob(T \in  \{ \lceil a \rceil, \ldots, \lfloor b \rfloor \} ) \\
+&= \Prob(T \in  \{ \lfloor a \rfloor + 1, \ldots, \lfloor b \rfloor \})
+= \Prob(\lfloor a \rfloor + 1 < T \leq \lfloor b \rfloor).
 \end{align*}
 <!-- -->
 \remarkqed
@@ -2139,9 +2123,7 @@ g_j(x)
 \ind(\alpha_{j-1} < x \leq \alpha_j),
 \end{align*}
 <!-- -->
-which is the density of $\text{Poisson}(\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$.
-
-To construct $\overline{\beta}_{j0}$ and $\overline{\beta}_{j1}$, we make use of method (TBD) using the expression
+which is the density of $\text{Poisson}(\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case and the the minorizer in the log-convex case, with
 <!-- -->
 \begin{align*}
 M_j(s)
