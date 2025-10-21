@@ -48,7 +48,7 @@ geometry:
   - top=0.75in
   - bottom=1.00in
 execute:
-  eval: false
+  eval: true
 code-block-bg: true
 code-block-border-left: "#B2DEED"
 filters:
@@ -65,8 +65,7 @@ set.seed(1234)
 ```
 
 ::: {.callout-caution title="TBD"}
-1.  Write out the formulation for the linear majorizer.
-2.  Make sure to check for other TBDs that may be scattered throughout.
+1.  Make sure to check for other TBDs that may be scattered throughout.
 :::
 
 # Disclaimer and Acknowledgments {.unnumbered}
