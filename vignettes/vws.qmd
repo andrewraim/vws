@@ -49,7 +49,7 @@ geometry:
   - bottom=1.00in
 execute:
   eval: true
-code-block-bg: true
+code-block-bg: "#fafafa"
 code-block-border-left: "#B2DEED"
 filters:
   - include-code-files
@@ -63,10 +63,6 @@ library(tidyverse)
 
 set.seed(1234)
 ```
-
-::: {.callout-caution title="TBD"}
-1.  Make sure to check for other TBDs that may be scattered throughout.
-:::
 
 # Disclaimer and Acknowledgments {.unnumbered}
 
@@ -552,7 +548,7 @@ unsigned int size() const;                                            // <8>
 
 Methods above with the a `log` argument return values on the log-scale when `log = true`.
 
-### Iterator Methods {.unlisted}
+### Iterators {.unlisted}
 
 The following methods can be used to get (read-only) iterators to internal data structures. These can be more efficient than the accessors above because they do not make a copy of the data.
 
@@ -572,7 +568,7 @@ Rcpp::LogicalVector::const_iterator bifurcatable_end() const;
 3.  The start and end of the vector $(\underline{\xi}_1, \ldots, \underline{\xi}_N)$.
 4.  The start and end of the vector of indicators for whether regions are bifurcatable.
 
-### Methods to Refine the Proposal {.unlisted}
+### Refining the Proposal {.unlisted}
 
 Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition. Both variants return a vector which represents values of the bound \eqref{eqn:bound} at each refinement step; the vector is of length $N_0 + 1$ where $N_0$ are the number of steps taken, the $j$th element represents the value at refinement $j = 0, \ldots, N_0$, and the element with index $j = 0$ represents the initial value. The first variant partitions at a given vector of knots.
 
@@ -626,8 +622,6 @@ void print(unsigned int n = 5) const;  // <2>
 
 `Region` is an abstract base class whose interface represents the problem-specific logic that must be coded to implement VWS. Users create a subclass of this method to construct a proposal for a given problem. However, for the most common application of VWS - univariate support with a constant majorizer - users may start with a specialized subclass. See Sections [-@sec-cpp-api-realconstregion] and [-@sec-cpp-api-intconstregion].
 
-**TBD**: mention that bifurcated objects inherit values of the original such as `w` and the optimization functions.
-
 The class has one template argument `T`, which is the data type for the underlying distribution.
 
 ```{cpp}
@@ -660,6 +654,28 @@ virtual std::string description() const = 0;                   // <9>
 9.  A string that describes this region.
 
 The argument `log = true` in the methods above requests values to be returned on the log-scale.
+
+Subclasses of `Region` are expected to provide several additional functions. Suppose `MyRegion` is a subclass of `Region` whose elements are variables of type `type` (e.g., `double`); its definition should include the following.
+
+```{cpp}
+class MyRegion : public Region<type>
+{
+public:
+    std::pair<MyRegion,MyRegion> bifurcate() const;              // <1>
+    std::pair<MyRegion,MyRegion> bifurcate(const type& x) const; // <2>
+    MyRegion singleton(const type& x) const;                     // <3>
+    bool operator<(const MyRegion& x) const;                     // <4>
+    bool operator==(const MyRegion& x) const;                    // <5>
+    const MyRegion& operator=(const MyRegion& x);                // <6>
+...
+};
+```
+1. Bifurcate the current region into two regions; this version takes no arguments and includes logic to decide where to make the split.
+2. Bifurcate the current region into two regions; the argument `x` is used as the location to make the split.
+3. Return a region on the singleton set $(x,x]$ with the information in the current object.
+4. Comparison operator; used to order regions of this type.
+5. Equality operator; check whether two regions of this type are equal.
+6. Assignment operator; assign information from `x` to this object.
 
 ## Region on Real-Valued Support with Constant Majorizer {#sec-cpp-api-realconstregion}
 
@@ -1302,8 +1318,6 @@ head(out2$draws)
 
 ## Linear Majorizer {#sec-vmf-linear}
 
-**TBD: explain the construction of linear coefficients and the choice of** $c$ in the background material at the top of the document.
-
 We noted in @sec-vmf-const-custom that $w$ is log-convex when $d < 3$, log-concave when $d > 3$, and a constant otherwise. Therefore, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j(x) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} x \}$. This yields the expression
 <!-- -->
 \begin{align*}
@@ -1356,7 +1370,10 @@ out3 = r_vmf_pre_v3(n = 1000, kappa = 5, d = 4, N = 50, tol = 0.01)
 head(out3$draws)
 ```
 
-**TBD: do we need to truncate our (-1,1) support in the code? Check the implementation in VWS paper!!**
+::: {#rem-vmf-endpoints}
+This code will fail if we attempt to use it with $d = 2$. Here, $\log w(x) \rightarrow \infty$ as $x \rightarrow \pm 1$ so that the first and last regions cannot be bounded by an exponentiated linear form. This can be averted by truncating the support to $(-1 + \epsilon, 1 - \epsilon]$ for a small enough $\epsilon > 0$.
+\remarkqed
+:::
 
 @fig-vmf-const-draws plots the empirical distribution of the draws and compares them to the density. @fig-vmf-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
 
@@ -1405,7 +1422,7 @@ ggplot(df) +
 
 # Example: Lognormal-Normal Conditional Distribution {#sec-ln-norm}
 
-The setting $Z = Y + \gamma$ is the basis of a modeling scenario considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025 where sensitive data are released under a measure of privacy protection. Here, $Y$ represents sensitive underlying data such as a tabulation of respondents' data collected by an official statistics agency and $\gamma$ is random noise added for privacy protection. The resulting $Z$ is considered protected and suitable for release. The objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies mathematical criteria for privacy and the design of noise mechanisms which can satisfy those criteria [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
+Suppose an official statistics agency collects sensitive data from respondents in a survey or census. The agency then seeks to disseminate a tabulation of the data to users while protecting the privacy of the respondents. The agency can consider adding random noise $\gamma$ to the tabulation $Y$ and releasing $Z = Y + \gamma$. This setting is the basis of a modeling scenario considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025 where the distribution for $\gamma$ have been selected by the agency to satisfy given mathematical criteria for privacy, and the objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies the design of noise mechanisms to satisfy mathematical criteria for privacy [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
 
 Suppose $Y$ and $\gamma$ are independently distributed with $Y \sim \text{Lognormal}(\mu, \sigma^2)$ and $\gamma \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ is assumed to be known and provided with the noisy data. Such transparency into the noise mechanism is often a feature of differential privacy.
 
@@ -1858,7 +1875,7 @@ ggplot(df) +
 
 # Example: Bessel Count Distribution {#sec-bessel}
 
-While Sections [-@sec-vmf] and [-@sec-ln-norm] considered continuous distributions, we now demonstrate generation from a discrete target. Consider generating from the Bessel distribution with density
+While Sections [-@sec-vmf] and [-@sec-ln-norm] considered continuous distributions, we now demonstrate generation from a discrete target. Consider generating from the Bessel distribution [@YuanKalbfleisch2000] with density
 <!-- -->
 \begin{align*}
 f(x) = \frac{(\lambda/2)^{2x+\nu}}{I_v(\lambda) \cdot x! \cdot \Gamma(x + \nu + 1)}
@@ -1885,7 +1902,7 @@ f(x)
 \underbrace{\frac{(\lambda/2)^{2x} e^{-\lambda^2 / 4}}{x!} \ind\{ x \in \mathbb{N} \}}_{g(x)},
 \end{align*}
 <!-- -->
-so that $g$ is the density of a $\text{Poisson}(\lambda^2 / 4)$ distribution and the weight function is specified by $\log w(x) = -\log \Gamma(x + \nu + 1)$. Notice that we have disregarded many of the normalizing constants in this formulation.
+so that $g$ is the density of a $\text{Poisson}(\lambda^2 / 4)$ distribution and the weight function is specified by $\log w(x) = -\log \Gamma(x + \nu + 1)$. Notice that we have disregarded several terms in the normalizing constant.
 
 Before proceeding, let us fix values of $\lambda$ and $\nu$ and compute values of $\log w(x)$ and $f(x)$; these will be useful for illustration. Let us also load some useful R functions from the script `examples/bessel/bessel.R`; primarily, `d_bessel` computes the target density.
 
@@ -1903,8 +1920,6 @@ xseq = seq(0, 15)
 fseq = d_bessel(xseq, lambda, nu)
 lwseq = w(xseq, log = T)
 ```
-
-**TBD**: Consider giving background information about the Bessel distribution to show why it was of special interest to Devroye.
 
 ## Constant Majorizer with Numerical Optimization {#sec-bessel-const-default}
 
@@ -2146,23 +2161,9 @@ out3 = r_bessel_v3(n = 1000, lambda, nu, lo = -0.1, hi = 1e5, N = 50, tol = 0.10
 head(out3$draws)
 ```
 
-@fig-bessel-linear-draws plots the empirical distribution of the draws and compares them to the density. @fig-bessel-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
+@fig-bessel-refine plots the bound for the rejection probability for this sampler after each step of refining, along with the bounds from the previous two versions. A substantial improvement in efficiency is seen here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection. @fig-bessel-majorizers and @fig-bessel-proposals display the three versions of majorized weight functions and proposal distributions, respectively, after refinement. It is seen that the majorizer from @sec-bessel-const-default does not provide a tight bound, even with many knots, because our numerical optimization is not specific to the integers in the support. This is rectified by the manual optimization from @sec-bessel-const-custom. The linear majorizer provides a tight bound with fewer knots.
 
-**TBD: describe the final figure**
-
-```{r}
-#| out-width: 60%
-#| fig-cap: |
-#|   Empirical distribution of draws versus target for Bessel example
-#|   with constant majorizer. Target pmf values are displayed for reference as
-#|   points.
-#| label: fig-bessel-linear-draws
-#| echo: false
-
-plot_pmf(out3$draws) +
-	geom_point(data = data.frame(x = xseq, y = fseq), aes(x,y)) +
-	scale_x_continuous(breaks = xseq[xseq %% 2 == 0])
-```
+Because the mass of our selected $\text{Bessel}(\lambda, \nu)$ distribution is focused on a relatively small set of integers, the second and third versions of the proposal can be made practically equivalent to the target with a sufficient number of regions. After being refined to this point, candidates are rarely discarded in rejection sampling.
 
 ```{r}
 #| out-width: 60%
@@ -2195,7 +2196,7 @@ ggplot(df) +
 #|   Majorizers (on the log-scale) for Bessel example for three sampler
 #|   versions. The blue curve with is the majorizer with a blue dot marking the
 #|   right endpoint of each region. The black triangle displays the value of
-#|   $\log w$ at integers $0, 1, \ldots$.
+#|   $\log w(x)$ at integers $x \in \{ 0, 1, \ldots \}$.
 #| fig-subcap:
 #|   - v1.
 #|   - v2.
@@ -2285,8 +2286,6 @@ data.frame(x = xseq, h = out3$hx) %>%
 	ylab("Density") +
 	theme_minimal()
 ```
-
-**TBD:** Because the mass of this particular $\text{Bessel}(\lambda, \nu)$ distribution is focused on a small set of integers, the proposal can be made practically equivalent to the target with a sufficient number of regions. After being refined to this point, it becomes extremely rare in rejection sampling to reject any candidates.
 
 \clearpage
 
