@@ -11,7 +11,7 @@ Rcpp::List r_ln_norm_v3(unsigned int n, double z, double mu, double sigma,
     args.max_rejects = max_rejects;
     args.report = report;
 
-    // Initially partition at y0, where convexity of the weight function changes
+    // Initially partition at y0 where convexity of the weight function changes
     double y0 = exp(mu - std::pow(sigma, 2) + 1);
     LinearVWSRegion r1(lo, y0, z, mu, sigma, lambda);
     LinearVWSRegion r2(y0, hi, z, mu, sigma, lambda);

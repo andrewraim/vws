@@ -24,27 +24,27 @@ editor_options:
   chunk_output_type: console
 classoption: abstract
 abstract: |
-  The `vws` package facilitates rejection sampling using the vertical weighted
-  strips (VWS) method in R. VWS is an approach to constructing proposals for
-  rejection sampling which is explored in @VWS2025. The `vws` package provides
-  an API to program the necessary components for the proposal and carry out
-  rejection sampling. The API of the `vws` package is in C++ and makes use of
-  templates and object-oriented programming; a working understanding of these
-  techniques is assumed. The primary intended usage is that sampler logic is
-  implemented in C++ and embedded into a variate generation function which is
-  exposed in R for use in applications. This vignette presents the API and
-  several complete examples; multiple variations of VWS samplers are presented
-  with each example. The `vws` package and this vignette have been written
-  primarily for univariate targets; however, it is intended that the framework
-  can be used to handle multivariate problems as well.
+  The `vws` package facilitates the vertical weighted strips (VWS) method in R.
+  VWS is an approach to constructing proposals for rejection sampling which is
+  explored in @VWS2025. The `vws` package provides an API to program the
+  necessary components for the proposal and carry out rejection sampling. The
+  API of the `vws` package is in C++ and makes use of templates and
+  object-oriented programming; a working understanding of these techniques is
+  assumed. The primary intended usage is that sampler logic is implemented in
+  C++ as a variate generation function; this is exposed in R for use in
+  applications. This vignette presents the API and several complete examples;
+  multiple variations of VWS samplers are presented with each example. The
+  `vws` package and this vignette have been written primarily for univariate
+  targets; however, it is intended that the framework can be used to handle
+  multivariate problems as well.
 thanks: |
-  Center for Statistical Research & Methodology, U.S. Census Bureau,
-  Washington, DC, 20233, U.S.A.
+  # Center for Statistical Research & Methodology, U.S. Census Bureau,
+  # Washington, DC, 20233, U.S.A.
   **For correspondence**`:` <andrew.raim@gmail.com>.
   Document was compiled `{r} format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")`.
 geometry:
-  - left=0.5in
-  - right=0.5in
+  - left=0.75in
+  - right=0.75in
   - top=0.75in
   - bottom=1.00in
 execute:
@@ -66,24 +66,27 @@ set.seed(1234)
 
 # Disclaimer and Acknowledgments {.unnumbered}
 
+<!--
 This document is released to inform interested parties of ongoing research and to encourage discussion of work in progress. Any views expressed are those of the authors and not those of the U.S. Census Bureau.
+-->
 
 Although there are no guarantees of correctness of the `vws` package, reasonable efforts will be made to address shortcomings. Comments, questions, corrections, and possible improvements can be communicated through the project’s Github repository (<https://github.com/andrewraim/vws>).
 
 # Introduction
 
-The `vws` package facilitates vertical weighted strips (VWS) sampling [@VWS2025]. VWS is an approach to construct proposals distributions for rejection sampling. Here, the target density is regarded as a weighted density - the product of a nonnegative weight function and a base density. The weight function is majorized by some given function (which bounds it above) to yield an envelope that is combined with the base density to form the a proposal distribution. If it is convenient to generate draws from the proposal and the distance between the original and majorized weight function is not too large, such a proposal can be effectively used in rejection sampling. When the weight function is majorized in a piecewise manner over the support, the resulting proposal can be regarded as a finite mixture. This mixture can be refined to reduce the rejection probability to an acceptable tolerance.
+The `vws` package facilitates vertical weighted strips (VWS) sampling [@VWS2025]. VWS is an approach to construct proposals distributions for rejection sampling. Here, the target density is regarded as a weighted density - the product of a nonnegative weight function and a base density. The weight function is majorized by a given function (which bounds it above) to yield an envelope which is recombined with the base density to form a proposal distribution. If it is convenient to generate draws from the proposal, and the distance between the original and majorized weight function is not too large, such a proposal can be effectively used in rejection sampling. When the weight function is majorized in a piecewise manner over the support, the resulting proposal can be regarded as a finite mixture. Such a mixture can be refined to reduce the rejection probability to an acceptable tolerance.
 
-The `vws` package provides tools to construct VWS proposal distributions. Variate generation functions are constructed in C++ and may be exposed for use in R via the Rcpp package [@Eddelbuettel2103]. C++ is taken as the primary programming language because of its efficiency as a compiled language and its formal approach to object-oriented programming. The `fntl` package [@fntl] is integral to `vws` usage; it provides a simplified C++ interface to routines in the R API [@RExtensions], as well as other useful numerical routines, where functions supplied as lambdas. The `vws` package has been designed primarily to generate from (continuous and discrete) univariate distributions. It is also possible to construct proposals for multivariate distributions using the VWS approach; the `vws` package is intended to support code development for such settings as well.
+The `vws` package provides tools to construct and utilize VWS proposal distributions. Variate generation functions are constructed in C++ and may be exposed for use in R via the Rcpp package [@Eddelbuettel2103]. C++ is taken as the primary programming language because of its efficiency as a compiled language and its formal approach to object-orientation and template programming. The `fntl` package [@fntl] is integral to `vws` usage; it provides a simplified C++ interface to useful routines in the R application programming interface (API) which is described in @RExtensions, as well as other useful numerical routines, where functions are supplied as lambdas. The `vws` package has been designed primarily to generate from univariate distributions (both continuous and discrete). It is also possible to construct proposals for multivariate distributions using the VWS approach; the `vws` package is intended to support code development for such settings as well.
 
-This vignette presents an overview of the package, the application programming interface (API), and several examples of working samplers. An `R>` prompt is shown in some code displays to emphasize interaction via the console. Examples make liberal use of the `tidyverse` [@Tidyverse2019], especially using `ggplot2` to plot and `dplyr` to manipulate tables. Some of the lengthier codes for the examples are not presented in this document; however, the complete codes are provided with the package. They can be accessed by the reader in the `doc/examples` folder of the installed `vws` package. This path can be accessed in R with the following command.
+This vignette presents an overview of the package, its API, and several examples of working samplers. An `R>` prompt is shown in some code displays to emphasize interaction via the console. Examples make liberal use of the `tidyverse` [@Tidyverse2019], especially `ggplot2` to plot and `dplyr` to manipulate tables. Some of the lengthier codes for the examples are not presented in this document; however, complete codes are provided with the package. They can be accessed in the `doc/examples` folder of the installed `vws` package. This path can be accessed in R with the following command.
 
 ```{r}
 #| eval: false
+#| prompt: true
 file.path(path.package("vws"), "doc", "examples")
 ```
 
-The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-cpp-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von-Mises Fisher (VMF) distribution following the application example in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002].
+The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-cpp-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002].
 
 ::: {.callout-tip title="Quick Start"}
 Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described with the highest amount of detail.
@@ -91,7 +94,7 @@ Readers looking for a quick start can go directly to the first example in @sec-v
 
 # A Brief Review of Vertical Weighted Strips {#sec-vws}
 
-The objective of VWS is to sample from a weighted density
+The objective of VWS is to sample from a weighted target density
 <!-- -->
 \begin{align}
 f(x) = f_0(x) / \psi, \quad
@@ -108,13 +111,13 @@ h_0(x) = \overline{w}(x) g(x), \quad
 \psi_N = \int_\Omega h_0(x) d\nu(x).
 \end{align*}
 <!-- -->
-The construction assumes that $\Omega$ is partitioned into regions $\mathscr{D}_1, \ldots, \mathscr{D}_N$ and there are corresponding functions $\overline{w}_j$ such that $\overline{w}_j(x) \geq w(x)$ for each $x \in \mathscr{D}_j$. We say that $\overline{w}_j$ *majorizes* $w$ on $\Omega$. Let $\ind\{ x \in A \}$ denote the indicator function for $x \in A$. Taking $\overline{w}$ as $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathscr{D}_j\}$, the unnormalized proposal becomes
+We will say that a function $\phi$ *majorizes* $w$ on $A \subseteq \Omega$ if $\phi(x) \geq w(x)$ for $x \in A$. Let $\ind\{ x \in A \}$ denote the indicator function for $x \in A$. Suppose $\Omega$ is partitioned into regions $\mathscr{D}_1, \ldots, \mathscr{D}_N$ and there are corresponding functions $\overline{w}_1, \ldots, \overline{w}_N$ where $\overline{w}_j$ majorizes $w$ on $\mathscr{D}_j$. Then $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathscr{D}_j\}$ majorizes $w$ on $\Omega$ and the unnormalized proposal becomes
 <!-- -->
 \begin{align*}
 h_0(x) = g(x) \sum_{j=1}^N \overline{w}_j(x) \ind\{x \in \mathscr{D}_j\}.
 \end{align*}
 <!-- -->
-With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. The normalized $h$ can be obtained by defining
+With this construction, $f_0(x) \leq h_0(x)$ for all $x \in \Omega$. Therefore, classical rejection sampling can be carried out by drawing $u$ from $\text{Uniform}(0,1)$, $x$ from $h$, and accepting $x$ as a draw from $f$ if $u \leq f_0(x) / h_0(x)$. A benefit of this construction is that the functional form of the density can help to guide proposal selection. The normalized $h$ can be obtained by defining
 <!-- -->
 \begin{align*}
 \overline{\xi}_j = \int_{\mathscr{D}_j} \overline{w}_j(x) g(x) d\nu(x)
@@ -144,7 +147,13 @@ g_j(x) =
 \overline{w}_j(x) g(x) \ind\{x \in \mathscr{D}_j\} / \overline{\xi}_j,
 \end{align*}
 <!-- -->
-respectively. The $g_j$ are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a minorizer of $w$ so that $0 \leq \underline{w}_j(x) \leq w(x)$ for all $x \in \mathscr{D}_j$, and let $\underline{\xi}_j = \E[\underline{w}_j(T) \ind\{T \in \mathscr{D}_j\}]$ with $T \sim g$. When $h$ is used as a proposal in rejection sampling, an upper bound for the probability of rejection is
+respectively. The $g_j$ are truncated and reweighted versions of base distribution $g$. In addition to the majorizer, suppose that $\underline{w}_j$ is a *minorizer* of $w$ so that $0 \leq \underline{w}_j(x) \leq w(x)$ for all $x \in \mathscr{D}_j$, and let 
+<!-- -->
+\begin{math}
+\underline{\xi}_j = \int_{\mathscr{D}_j} \underline{w}_j(x) g(x) d\nu(x).
+\end{math}
+<!-- -->
+Note that the majorizer and minorizer need not have the same functional form. When $h$ is used as a proposal in rejection sampling, an upper bound for the probability of rejection is
 <!-- -->
 \begin{align}
 \rho_+ = \sum_{j=1}^N \rho_j,
@@ -157,7 +166,7 @@ respectively. The $g_j$ are truncated and reweighted versions of base distributi
 \label{eqn:bound}
 \end{align}
 <!-- -->
-The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to \eqref{eqn:bound}. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling. If the bound is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear.
+The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to $\rho_+$. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling; if it is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear. @sec-vws-knots reviews several knot selection methods.
 
 ## Constant Majorizer {#sec-vws-constant}
 
@@ -219,7 +228,7 @@ and
 \nabla(x) = \frac{d}{dx} \log w(x).
 \end{math}
 <!-- -->
-For the accompanying minorizer, let $\lambda \in [0,1]$ for a given $x \in \mathscr{D}_j$ so that $x = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$. Concavity of $\log w(x)$ gives
+For an accompanying minorizer, let $\lambda \in [0,1]$ for a given $x \in \mathscr{D}_j$ so that $x = (1 - \lambda) \alpha_{j-1} + \lambda \alpha_j$. Concavity of $\log w(x)$ gives
 <!-- -->
 \begin{align}
 \log w(x) &\geq (1-\lambda) \log w(\alpha_{j-1}) + \lambda \log w(\alpha_j) \nonumber \\
@@ -289,7 +298,7 @@ where
 and
 <!-- -->
 \begin{math}
-M_j(s) = \int_a^b e^{xs} g(x) d\nu(x).
+M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{xs} g(x) d\nu(x).
 \end{math}
 <!-- -->
 A similar choice of $c$ for a minorizer in the log-convex case is
@@ -306,14 +315,15 @@ c^* &= \argmin_{c \in \mathscr{D}_j} \int_{\mathscr{D}_j} [w(x) - \underline{w}_
 where 
 <!-- -->
 \begin{math}
-\overline{w}_j(x) = \exp\{ \underline{\beta}_{j0} + \underline{\beta}_{j1} \cdot x \}, \end{math}
-<!-- -->
-\begin{math}
-\underline{\beta}_{j0} = \log w(c) - c \cdot \nabla(c), \quad
+\overline{w}_j(x) = \exp\{ \underline{\beta}_{j0} + \underline{\beta}_{j1} \cdot x \},
 \end{math}
 <!-- -->
 \begin{math}
-\underline{\beta}_{j1} = \nabla(c), \quad
+\underline{\beta}_{j0} = \log w(c) - c \cdot \nabla(c),
+\end{math}
+<!-- -->
+\begin{math}
+\underline{\beta}_{j1} = \nabla(c),
 \end{math}
 <!-- -->
 \begin{math}
@@ -325,9 +335,9 @@ where
 
 ## Knot Selection {#sec-vws-knots}
 
-After selecting a decomposition of the target into weighted form \eqref{eqn:weighted-target}, the choice of knots is important to obtaining an efficient proposal distribution. One option is to specify knots at known locations. For example, we can consider using evenly spaced points on a given interval within the support; however, this may not take into account important features of the target and add wasteful mixture components which do not contribute much to the quality of the approximation. An automated option that often achieves much better results is the rule of thumb proposed in @VWS2025. This is shown here as Algorithm \ref{alg:refine}. This method sequentially refines an initial partitioning of the support; this may be a single region that contains the entire support. At least step a region is selected and bifurcated at its midpoint. The selection is probabilistic, with probability proportional to $\rho_\ell$. A deterministic ("greedy") variation can be considered by instead always selecting a region $\ell$ whose value $\rho_\ell$ is largest.
+After selecting a decomposition of the target into weighted form \eqref{eqn:weighted-target}, the choice of knots is important to obtain an efficient proposal distribution. One option is to specify knots at known locations. For example, we can consider using evenly spaced points on a given interval within the support; however, this may not take into account important features of the target and add wasteful components to the finite mixture which do not contribute much to the quality of the approximation. An automated option that often achieves much better results is the rule of thumb proposed by @VWS2025, shown here as Algorithm \ref{alg:refine}. This method sequentially refines an initial partition of the support consisting of one or more regions. At each step a region is selected and bifurcated at its midpoint. The selection is probabilistic, with probabilities proportional to $\rho_1, \ldots, \rho_N$. A deterministic ("greedy") variation can be considered by instead always selecting a region $\ell$ whose value $\rho_\ell$ is largest.
 
-Bifurcation at a midpoint is mostly straightforward in univariate settings where the support is a subset of the real line. However, there may be multiple ways to characterize this operation when the support is multivariate or structured like a multinomial sample space. These operations can be defined for such settings within the `vws` framework; however, this document does not consider such cases in detail.
+Bifurcation at a midpoint is mostly straightforward in univariate settings where the support is a subset of the real line. However, there may be multiple ways to characterize this operation when the support is multivariate, perhaps with more structure like a multinomial sample space. The necessary operations can be coded for such settings within the `vws` framework; however, this document does not consider such cases in detail.
 
 \begin{algorithm}
 \caption{Probabilistic rule of thumb for sequential knot selection.}
@@ -380,19 +390,20 @@ Rcpp::List sample(unsigned int n)
 }
 ```
 
-1.  This annotation ensures that `vws` and `fntl` packages are linked during compilation. `fntl` is not explicitly used in this example, but it is needed for linking regardless.
+1.  This annotation ensures that `vws` and `fntl` packages are linked during compilation. `fntl` is not explicitly used in this example, but it is needed for linking by the `vws` library regardless.
 2.  Include the main header for the `vws` package so that the API is accessible.
 3.  This annotation exports the `sample` function for use in R. This is not needed if the `sample` function will be used only in C++.
-4.  Construct a region of type `MyRegion` which we have presumably defined in `MyRegion.h`. The symbol `...` here isz a placeholder for any arguments needed by the constructor.
+4.  Construct a region of type `MyRegion` which we have presumably defined in `MyRegion.h`. The symbol `...` here is a placeholder for any arguments needed by the constructor.
 5.  Construct an `FMMProposal` based on a single region `supp`. Note that it is a template class that needs two template arguments: the first (`double`) indicates the data type of the distribution and the second (`MyRegion`) indicates the type of region it will contain.
-6.  Refine the proposal using Algorithm \ref{alg:refine} up to $N-1$ times or until tolerance `0.01` is achieved.
+6.  Refine the proposal using Algorithm \ref{alg:refine} up to $N-1$ times or until tolerance `0.01` is achieved for \eqref{eqn:bound}.
 7.  Carry out rejection sampling with the refined proposal `h`.
-8.  Pack up elements of the struct `out` into an `Rcpp::List` and return them to the caller.
+8.  Pack elements of the struct `out` into an `Rcpp::List` and return them to the caller.
 
-Note that `FMMProposal` class, the `rejection` function, and other elements of the `vws` API are in the `vws` namespace. Details for the API are given in @sec-cpp-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual.
+Note that the `FMMProposal` class, the `rejection` function, and other elements of the `vws` API are accessed in the `vws` namespace. Details for the API are given in @sec-cpp-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual.
 
 ```{r}
 #| eval: false
+#| prompt: true
 Rcpp::sourceCpp("sample.cpp")
 out = sample(n = 100)
 head(out$draws)
@@ -400,13 +411,13 @@ head(out$rejects)
 ```
 
 ::: {.callout-tip title="Working Examples"}
-A complete VWS example is given in @sec-vmf-const-default; this demonstrates the use of `RealConstRegion` to implement a sampler with a minimal amount of coding. @sec-vmf-const-custom is an improvement which requires more coding; here we provide functions to determine values of the constant majorizer and minorizer which can be computed analytically. Finally, @sec-vmf-linear demonstrates how to subclass `Region` to implement a linear majorizer. This requires more intricate coding and a basic level of familiarity with object-oriented programming in C++. Subsequent examples are given in @sec-ln-norm and @sec-bessel, but with less explanation.
+A complete VWS example is given in @sec-vmf-const-default; this demonstrates the use of `RealConstRegion` to implement a sampler with a minimal amount of coding. @sec-vmf-const-custom is an improvement which requires more coding; here we provide functions to determine values of the constant majorizer and minorizer analytically. Finally, @sec-vmf-linear demonstrates how to subclass `Region` to implement a linear majorizer, which requires more intricate coding. Subsequent examples are given in @sec-ln-norm and @sec-bessel, but with less explanation.
 :::
 
 It is useful to mention several other preliminaries for the `vws` package; see the following remarks.
 
 ::: {#rem-lambdas}
-Lambdas in C++ are functions which can be defined within the course of a program, saved as objects which can be passed to other functions, and capture variables in the environment so that they do not need to be passed as arguments. They should feel very familiar to R programmers who likely use R functions in this way. Here is a snippet with several examples of lambdas.
+Lambdas in C++ are functions which can be defined within the course of a program, regarded as objects which can be passed to other functions, and capture variables in the environment so that they do not need to be passed as arguments. They should feel very familiar to R programmers who likely use R functions in this way. Here is a snippet with several examples of lambdas.
 
 ```{cpp}
 double z = 3;
@@ -423,7 +434,7 @@ These four functions carry out the same operation and may be invoked in the usua
 double out = f1(1, 2);
 ```
 
-The typedef `dfdd` is given as a shorthand for a Standard Template Library (STL) [`function`](https://en.cppreference.com/w/cpp/utility/functional/function.html) which takes two `double`s as arguments and returns a `double`. An STL `function` can be passed to other functions like any other variable. Function `f1` explicitly states the return type of the lambda using `-> double` while it is omitted in the others to be inferred by the compiler. The variable `z` is *captured* by `f1`, `f2`, and `f3`; in other words, it is "baked in" to the function definition without needing to be passed as an argument. Functions `f1` and `f2` capture `z` by reference while `f3` captures `z` by value, indicated with the syntaxes `[&]` and `[=]` respectively. Function `f4` uses empty square brackets `[]` to indicate that it does not capture any outside variables.
+The typedef `dfdd` is given as a shorthand for a Standard Template Library (STL) [`function`](https://en.cppreference.com/w/cpp/utility/functional/function.html) which takes two `double` variables as arguments and returns a `double`. An STL `function` can be passed to other functions like any other variable. Function `f1` explicitly states the return type of the lambda using `-> double` while it is omitted in the others to be inferred by the compiler. The variable `z` is *captured* by `f1`, `f2`, and `f3`; in other words, it is "baked in" to the function definition without needing to be passed as an argument. Functions `f1` and `f2` capture `z` by reference while `f3` captures `z` by value, indicated with the syntaxes `[&]` and `[=]` respectively. Function `f4` uses empty square brackets `[]` to indicate that it does not capture any outside variables.
 
 The `fntl` package defines several function typedefs used in the `vws` package, and also provides access to numerical tools such as integration, differentiation, and optimization which take STL `function`s as arguments. \remarkqed
 :::
@@ -442,19 +453,7 @@ This section documents functions, classes, and other components in the C++ API.
 
 ## Typedefs {#sec-cpp-api-typedefs}
 
-We define a shorthand for the maximum value of an unsigned integer.
-
-```{cpp}
-unsigned int uint_max = std::numeric_limits<unsigned int>::max();
-```
-
-The following typedef represents an indicator function.
-
-```{cpp}
-typedef std::function<bool(double x)> indicator;
-```
-
-The following typedef is used to represent functions that take `double` and `boolean` arguments and return a `double`. It is used as the type for weight functions in particular, with `x` the argument of the weight function and `log = true` if the result is to be returned on the log-scale.
+The following typedef is used to represent functions that take `double` and `bool` arguments and return a `double`. It is used as the type for weight functions in particular, with `x` the argument of the weight function and `log = true` if the result is to be returned on the log-scale.
 
 ```{cpp}
 typedef std::function<double(double x, bool log)> dfdb;
@@ -586,11 +585,11 @@ The second variant uses the rule of thumb for sequential knot selection from @VW
 
 ```{cpp}
 Rcpp::NumericVector refine(
-	unsigned int N,                  // <1>
-	double tol = 0,                  // <2>
-	bool greedy = false,             // <3>
-	unsigned int report = uint_max,  // <4>
-	bool log = true                  // <5>
+	unsigned int N,                        // <1>
+	double tol = 0,                        // <2>
+	bool greedy = false,                   // <3>
+	unsigned int report = fntl::uint_max,  // <4>
+	bool log = true                        // <5>
 );
 ```
 
@@ -988,16 +987,16 @@ struct optimize_hybrid_result {
 |------------------------------------|------------------------------------|
 | `"Brent"` | Brent optimization method was used. |
 | `"BFGS"` | BFGS method was used. |
-| `"Lower Limit Inf"` | For maximization problem, lower limit taken as `par` because its value `= inf`. |
-| `"Upper Limit Inf"` | For maximization problem, upper limit taken as `par` because its value `= inf`. |
-| `"Lower Limit NegInf"` | For minimization problem, lower limit taken as `par` because its value `= -inf`. |
-| `"Upper Limit NegInf"` | For minimization problem, upper limit taken as `par` because its value `= -inf`. |
-| `"Max at Lower Limit"` | Numerical maximization used, but a larger value was found at lower limit. |
-| `"Max at Upper Limit"` | Numerical maximization used, but a larger value was found at upper limit. |
-| `"Min at Lower Limit"` | Numerical minimization used, but a smaller value was found at lower limit. |
-| `"Min at Upper Limit"` | Numerical minimization used, but a smaller value was found at upper limit. |
+| `"Lower Limit Inf"` | For maximization, lower limit taken as `par` because its value `= inf`. |
+| `"Upper Limit Inf"` | For maximization, upper limit taken as `par` because its value `= inf`. |
+| `"Lower Limit NegInf"` | For minimization, lower limit taken as `par` because its value `= -inf`. |
+| `"Upper Limit NegInf"` | For minimization, upper limit taken as `par` because its value `= -inf`. |
+| `"Max at Lower Limit"` | Numerical maximization used, but larger value found at lower limit. |
+| `"Max at Upper Limit"` | Numerical maximization used, but larger value found at upper limit. |
+| `"Min at Lower Limit"` | Numerical minimization used, but smaller value found at lower limit. |
+| `"Min at Upper Limit"` | Numerical minimization used, but smaller value found at upper limit. |
 
-: Possible values for `method` field of `optimize_hybrid_result` struct. {#tbl-method tbl-colwidths="\[25,75\]"}
+: Possible values for `method` field of `optimize_hybrid_result` struct. {#tbl-method tbl-colwidths="\[28,72\]"}
 
 ## Log-Scale Arithmetic {#sec-cpp-api-logscale}
 
@@ -1171,12 +1170,11 @@ g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \ind\{x \in (-1,
 
 ::: {#rem-vmf-caveat}
 A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \infty$ as $x$ approaches $\pm 1$. One way to avoid this is by truncating the support to $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for a small $\epsilon > 0$. Rejection sampling can proceed using the truncated support if the exclusion of $(-1, -1 + \epsilon] \cup (1 - \epsilon, 1]$ is known to have a negligible impact on the result. Otherwise, @VWS2025 mention another strategy where the support is initially truncated and gradually expanded as rejections are encountered. In this document, we assume $(\alpha_0, \alpha_N] = (-1, 1]$ for $d > 3$ and a fixed truncation $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for $d < 3$.
-
-**TBD: left off here** \remarkqed
 :::
 
 ```{r}
 #| echo: false
+#| prompt: true
 Rcpp::sourceCpp("examples/vmf/functions.cpp")
 ```
 
@@ -1233,9 +1231,8 @@ ggplot(df) +
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Empirical distribution of draws versus target for VMF example with
-#|   constant majorizer. The target density is displayed for reference as the
-#|   dashed curve.
+#|   Empirical distribution of draws (solid) versus target (dashed) for VMF
+#|   example with constant majorizer.
 #| label: fig-vmf-const-draws
 #| echo: false
 
@@ -1380,9 +1377,8 @@ This code will fail if we attempt to use it with $d = 2$. Here, $\log w(x) \righ
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Empirical distribution of draws versus target for VMF example with
-#|   linear majorizer. The target density is displayed for reference as the
-#|   dashed curve.
+#|   Empirical distribution of draws (solid) versus target (dashed) for VMF
+#|   example with linear majorizer.
 #| label: fig-vmf-linear-draws
 #| echo: false
 
@@ -1422,7 +1418,7 @@ ggplot(df) +
 
 # Example: Lognormal-Normal Conditional Distribution {#sec-ln-norm}
 
-Suppose an official statistics agency collects sensitive data from respondents in a survey or census. The agency then seeks to disseminate a tabulation of the data to users while protecting the privacy of the respondents. The agency can consider adding random noise $\gamma$ to the tabulation $Y$ and releasing $Z = Y + \gamma$. This setting is the basis of a modeling scenario considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025 where the distribution for $\gamma$ have been selected by the agency to satisfy given mathematical criteria for privacy, and the objective is to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies the design of noise mechanisms to satisfy mathematical criteria for privacy [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; the interested reader is encouraged to see the given references as a starting point on privacy protection and differential privacy.
+Suppose an official statistics agency collects sensitive data from respondents in a survey or census. The agency then seeks to disseminate a tabulation to data users while protecting the privacy of the respondents. The agency can consider adding random noise $\gamma$ to the tabulation $Y$ and releasing $Z = Y + \gamma$. This setting is the basis of a modeling scenario considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025 where the distribution for $\gamma$ has selected by the agency and the data have been disseminated; the objective is then to carry out inference on $Y$ given an observed $Z = z$. The field of differential privacy studies the design of noise mechanisms (e.g., distributions of $gamma$) to satisfy mathematical criteria for privacy [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$; see the given references for further reading on privacy protection and differential privacy.
 
 Suppose $Y$ and $\gamma$ are independently distributed with $Y \sim \text{Lognormal}(\mu, \sigma^2)$ and $\gamma \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ is assumed to be known and provided with the noisy data. Such transparency into the noise mechanism is often a feature of differential privacy.
 
@@ -1478,6 +1474,7 @@ lambda = 10
 Jointly draw values of $Y$ and $Z$ from the model; $Z$ is considered observed while $Y$ is latent and the objective for inference.
 
 ```{r}
+#| prompt: true
 source("examples/ln-norm/functions.R")
 y_true = rlnorm(1, mu, sigma)
 z = rnorm(1, y_true, lambda)
@@ -1574,11 +1571,10 @@ ggplot(df) +
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Empirical distribution of draws versus target for lognormal-normal example
-#|   with constant majorizer. The target density is displayed for reference as
-#|   the dashed curve. Observed value of $z$ (blue line) and latent value
-#|   of $y$ (red line) are displayed along with a 95\% interval (blue ribbon)
-#|   based on draws from $[Y \mid Z = z]$.
+#|   Empirical distribution of draws (solid black) versus target (dashed black)
+#|   for lognormal-normal example with constant majorizer. Observed value of
+#|   $z$ (blue line) and latent value of $y$ (red line) are displayed along
+#|   with a 95\% interval (blue ribbon) based on draws from $[Y \mid Z = z]$.
 #| label: fig-ln-norm-const-draws
 #| echo: false
 
@@ -1622,9 +1618,11 @@ for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zet
 Therefore, on a region $\mathscr{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$. @fig-ln-norm-weight displays a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
 
 ```{r}
+#| prompt: true
 y_star = exp(mu - sigma^2)
 w_star = -mu + sigma^2 / 2
-vws::printf("Maximizer y = %g obtains value log w(%g) = %g.\n", y_star, y_star, w_star)
+vws::printf("Maximizer y = %g obtains value log w(%g) = %g.\n",
+	y_star, y_star, w_star)
 ```
 
 ```{r}
@@ -1713,6 +1711,7 @@ We can obtain a linear majorizer by noting the convexity of $\zeta$. Its second 
 which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathscr{D}_1 = (0, \exp(\mu - \sigma^2 + 1)]$ and $\mathscr{D}_2 = (\exp(\mu - \sigma^2 + 1), \infty]$; this will to ensure that all partitions considered thereafter consist of regions on which $\zeta$ is entirely concave or convex.
 
 ```{r}
+#| prompt: true
 y0 = exp(mu - sigma^2 + 1)
 printf("Convexity changes at y = %g.\n", y0)
 ```
@@ -1832,9 +1831,8 @@ head(out3$draws)
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Empirical distribution of draws versus target for lognormal-normal example
-#|   with constant majorizer. The target density is displayed for reference as
-#|   the dashed curve.
+#|   Empirical distribution of draws (solid) versus target (dashed) for
+#|   lognormal-normal example with constant majorizer.
 #| label: fig-ln-norm-linear-draws
 #| echo: false
 
@@ -1951,6 +1949,7 @@ vws::UnivariateHelper helper(df, pf, qf);
 The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
+#| prompt: true
 Rcpp::sourceCpp("examples/bessel/bessel-v1.cpp")
 out1 = r_bessel_v1(n = 1000, lambda, nu, N = 50, tol = 0.10)
 head(out1$draws)
@@ -1979,9 +1978,8 @@ ggplot(df) +
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
-#|   Empirical distribution of draws versus target for Bessel example
-#|   with constant majorizer. Target pmf values are displayed for reference as
-#|   points.
+#|   Empirical distribution of draws (bars) versus target (points) for Bessel
+#|   example with constant majorizer.
 #| label: fig-bessel-const-draws
 #| echo: false
 
@@ -2023,6 +2021,7 @@ vws::IntConstRegion supp(-0.1, R_PosInf, w, helper, maxopt, minopt);
 The following R code builds the complete example and invokes the sampling function.
 
 ```{r}
+#| prompt: true
 Rcpp::sourceCpp("examples/bessel/bessel-v2.cpp")
 out2 = r_bessel_v2(n = 1000, lambda, nu, N = 50, tol = 0.10)
 head(out2$draws)

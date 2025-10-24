@@ -206,7 +206,7 @@ public:
 	* step. The values are returned on the log-scale if `log = true`.
 	*/
 	Rcpp::NumericVector refine(unsigned int N, double tol = 0,
-		bool greedy = false, unsigned int report = uint_max, bool log = true);
+		bool greedy = false, unsigned int report = fntl::uint_max, bool log = true);
 
 private:
 
@@ -388,7 +388,7 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 
 		// Rprintf("Pushed back\n");
 
-		if (j % report == 0 && report < uint_max) {
+		if (j % report == 0 && report < fntl::uint_max) {
 			logger("After %d steps log Pr{rejection} <= %g\n", j, lbdd_hist[j+1]);
 		}
 

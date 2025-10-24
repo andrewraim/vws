@@ -8,15 +8,9 @@
 namespace vws {
 
 /*
-* A constant that represents the maximum value of unsigned int.
-*/
-static const unsigned int uint_max = std::numeric_limits<unsigned int>::max();
-
-/*
 * Typedefs for several functions used in VWS programming.
 */
 typedef std::function<double(double, bool)> dfdb;
-typedef std::function<bool(double)> indicator;
 typedef std::function<double(const dfdb& w, double lo, double hi,
 	bool log)> optimizer;
 
