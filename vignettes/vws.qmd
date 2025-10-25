@@ -1154,7 +1154,7 @@ Rcpp::NumericVector r_gumbel(
 
 # Example: Von Mises Fisher Distribution {#sec-vmf}
 
-Let us consider generating from the von Mises Fisher (VMF) distribution as in @VWS2025. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
+Let us consider generating from the von Mises Fisher (VMF) distribution as in @VWS2025. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$ [e.g., @MardiaJupp1999]. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
 <!-- -->
 \begin{align*}
 f_{\text{VMF}}(\vec{v}) = \frac{
@@ -1256,7 +1256,7 @@ We now give our first example demonstrating the `vws` package. We consider a con
 12. Carry out rejection sampling with proposal `h`.
 13. Assemble an `Rcpp::List` to return to the caller. It contains the draws in element `draws`, a vector of rejection counts in `rejects` where the $i$th element represents the number of rejections for the $i$th draw, and a vector in element `lbdd` with the $N$ bounds $\rho_+^{(1)}, \ldots, \rho_+^{(N)}$, where $\rho_+^{(j)}$ is the value achieved with $j$ regions.
 
-The name of the function `r_vmf_pre_v1` reflects that this is our first version of the sampler for target \eqref{eqn:vmf-target}, which is a precursor to transformation \eqref{eqn:vmf-tx} to obtain a VMF random variable. We may invoke the exported R function as follows.
+The name of the function `r_vmf_pre_v1` reflects that this is our first version of the sampler for target \eqref{eqn:vmf-target}, which is a precursor to transformation \eqref{eqn:vmf-tx} to obtain a VMF random variable. The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
@@ -1361,7 +1361,7 @@ vws::UnivariateHelper helper(df, pf, qf);
 vws::RealConstRegion supp(-1, 1, w, helper, *maxopt, *minopt);
 ```
 
-The following R code builds the complete example and invokes the sampling function.
+The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
@@ -1415,7 +1415,7 @@ which we compute using numerical integration. The proposal is implemented with t
 ``` {.cpp include="examples/vmf/vmf-v3.cpp" code-line-numbers="true"}
 ```
 
-The following R code builds the complete example and invokes the sampling function.
+The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
@@ -1589,7 +1589,7 @@ fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
 vws::UnivariateHelper helper(df, pf, qf);
 ```
 
-The following R code builds the complete example and invokes the sampling function.
+The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
@@ -1739,7 +1739,7 @@ We can construct the proposal using a single `RealConstRegion` that represents t
 vws::RealConstRegion supp(0, R_PosInf, w, helper, maxopt, minopt);
 ```
 
-The following R code builds the complete example and invokes the sampling function.
+The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
@@ -1843,7 +1843,7 @@ g_j(y)
 %
 &= \frac{
 \frac{1}{\lambda \sqrt{2\pi}}
-\exp\left\{ -\frac{1}{2 \lambda^2} (y - \lambda^2 \overline{\beta}_{1j})^2 \right\}
+\exp\left\{ -\frac{1}{2 \lambda^2} (y - z - \lambda^2 \overline{\beta}_{1j})^2 \right\}
 }{
 \Prob(\alpha_{j-1} < \overline{T} \leq \alpha_j)
 }
@@ -1866,7 +1866,7 @@ Adapting the code from @sec-vmf-linear to the present problem, we implement `Lin
 ``` {.cpp include="examples/ln-norm/ln-norm-v3.cpp" code-line-numbers="true"}
 ```
 
-The following R code builds the complete example and invokes the sampling function.
+The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
@@ -1969,6 +1969,8 @@ fseq = d_bessel(xseq, lambda, nu)
 lwseq = w(xseq, log = T)
 ```
 
+Three variations of VWS samplers are considered in subsections. @sec-bessel-const-default uses a constant majorizer obtained by numerical optimization. @sec-bessel-const-custom replaces numerical optimization with a closed-form solution. @sec-bessel-linear uses a linear majorizer and subclasses the abstract `Region` class. All codes for this example are in the folder `examples/bessel`. The function `d_bessel` defined in `examples/bessel/bessel.R` computes the target density.
+
 ## Constant Majorizer with Numerical Optimization {#sec-bessel-const-default}
 
 The weight function may be coded as a lambda in C++ as follows.
@@ -1996,7 +1998,7 @@ fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
 vws::UnivariateHelper helper(df, pf, qf);
 ```
 
-The following R code builds the complete example and invokes the sampling function.
+The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
@@ -2075,7 +2077,7 @@ We can construct the proposal using a single `IntConstRegion` that represents th
 vws::IntConstRegion supp(-0.1, R_PosInf, w, helper, maxopt, minopt);
 ```
 
-The following R code builds the complete example and invokes the sampling function.
+The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
@@ -2208,7 +2210,7 @@ M_j(s)
 <!-- -->
 where $T \sim \text{Poisson}(e^s \lambda^2 / 4)$.
 
-The following R code builds the complete example and invokes the sampling function.
+The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
