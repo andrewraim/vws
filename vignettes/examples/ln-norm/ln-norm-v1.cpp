@@ -9,7 +9,7 @@ Rcpp::List r_ln_norm_v1(unsigned int n, double z, double mu,
 	vws::rejection_args args;
 	args.max_rejects = max_rejects;
 	args.report = report;
-	args.action = vws::error_action::STOP;
+	args.action = fntl::error_action::STOP;
 
 	const vws::dfdb& w =
 	[&](double x, bool log = true) {

@@ -117,3 +117,4 @@ inline rejection_result<T> rejection(const FMMProposal<T,R>& h, unsigned int n)
 }
 
 #endif
+

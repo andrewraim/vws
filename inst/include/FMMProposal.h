@@ -49,14 +49,14 @@ public:
 	* - `bifurcatable`: vector of indicators of whether regions are
 	*   bifurcatable.
 	* - `pi`: mixing weights $(\pi_1, \ldots, \pi_N)$.
-	* - `rejection_bound_regions`: vector of contributions to the rejection
-	*   bound. These sum to the value of `rejection_bound`.
+	* - `bound_contribs`: vector of contributions to the rejection
+	*   bound. These sum to the value of `bound`.
 	*/
 	Rcpp::NumericVector xi_upper(bool log = true) const;
 	Rcpp::NumericVector xi_lower(bool log = true) const;
 	Rcpp::LogicalVector bifurcatable() const;
 	Rcpp::NumericVector pi(bool log = false) const;
-	Rcpp::NumericVector rejection_bound_regions(bool log = false) const;
+	Rcpp::NumericVector bound_contribs(bool log = false) const;
 
 	/*
 	* Access number of regions.
@@ -100,7 +100,7 @@ public:
 	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
 	*   on the original scale.
 	*/
-	double rejection_bound(bool log = false) const;
+	double bound(bool log = false) const;
 
 	/*
 	* Normalizing constant for the proposal distribution.
@@ -237,7 +237,7 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots, bool l
 
 	std::vector<double> log_bdd_hist;
 
-	log_bdd_hist.push_back(rejection_bound(true));
+	log_bdd_hist.push_back(bound(true));
 
 	for (unsigned int j = 0; j < knots.size(); j++) {
 		unsigned int L = _regions.size();
@@ -276,7 +276,7 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots, bool l
 		_regions.insert(bif_out.second);
 		recache();
 
-		log_bdd_hist.push_back(rejection_bound(true));
+		log_bdd_hist.push_back(bound(true));
 	}
 
 	Rcpp::NumericVector out(log_bdd_hist.begin(), log_bdd_hist.end());
@@ -291,35 +291,20 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 		Rcpp::stop("tol must be nonnegative");
 	}
 
-	// Rprintf("refine checkpoint 0\n");
-
 	std::vector<double> lbdd_hist;
-
-	// Rprintf("refine checkpoint 1\n");
-
-	lbdd_hist.push_back(rejection_bound(true));
-
-	// Rprintf("refine checkpoint 2\n");
+	lbdd_hist.push_back(bound(true));
 
 	for (unsigned int j = 0; j < N; j++) {
-		// Rprintf("refine checkpoint 2.1\n");
-
 		// If we can beat the tolerance before we reach N steps, return now
 		if (lbdd_hist[j] <= std::log(tol)) {
 			break;
 		}
 
-		// Rprintf("refine checkpoint 2.2\n");
-
 		unsigned int L = _regions.size();
 
-		// Rprintf("refine checkpoint 2.3\n");
-
 		// Each region's contribution to the rejection rate
-		const Rcpp::NumericVector& log_volume0 = rejection_bound_regions(true);
+		const Rcpp::NumericVector& log_volume0 = bound_contribs(true);
 		Rcpp::NumericVector log_volume(log_volume0.size());
-
-		// Rprintf("refine checkpoint 2.4\n");
 
 		// Identify the regions which are bifurcatable; for the rest, we set
 		// their log-volume to -inf so they will not be selected.
@@ -329,21 +314,14 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 				Rcpp::stop("nan found in log_volume(%d)", l);
 			}
 
-			// Rprintf("Region %d (%s) has _bifurcatable(%d) = %d\n",
-			// 	l, _regions_vec[l].description().c_str(), l, (*_bifurcatable)(l));
-
 			log_volume(l) = (*_bifurcatable)(l) ? log_volume0(l) : R_NegInf;
 			n_bif += (log_volume(l) > R_NegInf);
 		}
-
-		// Rprintf("refine checkpoint 2.5, n_bif = %d\n", n_bif);
 
 		if (n_bif == 0) {
 			Rcpp::warning("No regions left to bifurcate");
 			break;
 		}
-
-		// Rprintf("refine checkpoint 2.5\n");
 
 		unsigned int jdx;
 		if (greedy) {
@@ -352,62 +330,27 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 			jdx = r_categ(log_volume, true);
 		}
 
-		// Rcpp::print(log_volume);
-
-		// Rprintf("refine checkpoint 2.5, jdx = %d\n", jdx);
-
 		const R& r = _regions_vec[jdx];
-
-		// Rprintf("refine checkpoint 2.6\n");
-
-		// Rprintf("Partitioning region %s\n", r.description().c_str());
 
 		// Split the target region and make another proposal with it.
 		//
 		// TBD: we may not need to recache each time through the loop.
 		// Perhaps we can insert into the end and zero out the removed entries?
 		const std::pair<R,R>& bif_out = r.bifurcate();
-		// Rprintf("refine checkpoint 2.6.1\n");
 		typename std::set<R>::iterator itr = _regions.find(r);
-		// Rprintf("refine checkpoint 2.6.2\n");
 		_regions.erase(itr);
-		// Rprintf("refine checkpoint 2.6.3\n");
 		_regions.insert(bif_out.first);
-		// Rprintf("refine checkpoint 2.6.4\n");
 		_regions.insert(bif_out.second);
-		// Rprintf("refine checkpoint 2.6.5\n");
 		recache();
 
-		// Rprintf("refine checkpoint 2.7\n");
-
-		// Rprintf("Make a bifurcation at %d\n", jdx);
-
-		lbdd_hist.push_back(rejection_bound(true));
-
-		// Rprintf("refine checkpoint 2.8\n");
-
-		// Rprintf("Pushed back\n");
+		lbdd_hist.push_back(bound(true));
 
 		if (j % report == 0 && report < fntl::uint_max) {
 			logger("After %d steps log Pr{rejection} <= %g\n", j, lbdd_hist[j+1]);
 		}
-
-		// Rprintf("refine checkpoint 2.9\n");
 	}
 
-	// Rprintf("refine checkpoint 3\n");
-
 	Rcpp::NumericVector out(lbdd_hist.begin(), lbdd_hist.end());
-
-	// Rprintf("refine checkpoint 4\n");
-
-	// Rprintf("Almost finished adapt\n");
-	// Rcpp::print(out);
-
-	// print(100);
-
-	// print(1000);
-	// Rcpp::stop("PAUSE!");
 	if (log) { return out; } else { return Rcpp::exp(out); }
 }
 
@@ -486,7 +429,7 @@ Rcpp::NumericVector FMMProposal<T,R>::pi(bool log) const
 
 
 template <class T, class R>
-double FMMProposal<T,R>::rejection_bound(bool log) const
+double FMMProposal<T,R>::bound(bool log) const
 {
 	// Each region's contribution to the rejection rate bound
 	const Rcpp::NumericVector& lxl = *_log_xi_lower;
@@ -499,14 +442,12 @@ double FMMProposal<T,R>::rejection_bound(bool log) const
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::rejection_bound_regions(bool log) const
+Rcpp::NumericVector FMMProposal<T,R>::bound_contribs(bool log) const
 {
 	// Each region's contribution to the rejection rate bound.
 	const Rcpp::NumericVector& lxl = *_log_xi_lower;
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
-	// Rcpp::print(lxl);
-	// Rcpp::print(lxu);
 	if (log) { return out; } else { return exp(out); }
 }
 
@@ -536,32 +477,22 @@ FMMProposal<T,R>::r_ext(unsigned int n) const
 {
 	// Draw from the mixing weights, which are given on the log scale and not
 	// normalized.
-	// Rprintf("r_ext: checkpoint 1\n");
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
-	// Rprintf("r_ext: checkpoint 2\n");
 	const Rcpp::IntegerVector& idx = r_categ(n, lxu, true);
-	// Rprintf("r_ext: checkpoint 3\n");
 
 	// Draw the values from the respective mixture components.
 	std::vector<T> x;
 	for (unsigned int i = 0; i < n; i++) {
-		// Rprintf("r_ext: checkpoint 3.1, idx(%d) = %d, _regions_vec.size() = %d\n",
-		// 	i, idx(i), _regions_vec.size());
-		// _regions_vec[idx(i)].print();
 		const std::vector<T>& draws = _regions_vec[idx(i)].r(1);
-		// Rprintf("r_ext: checkpoint 3.2\n");
 		x.push_back(draws[0]);
 	}
 
-	// Rprintf("r_ext: checkpoint 5\n");
 	return std::make_pair(x, Rcpp::as<std::vector<unsigned int>>(idx));
 }
 
 template <class T, class R>
 double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 {
-	//// print(1000);
-
 	double lnc = normalize ? nc(true) : 0;
 
 	/*
@@ -577,48 +508,20 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 	* 4. Make sure this region contains x; otherwise, throw an error.
 	*/
 	const R& x_singleton = _regions.begin()->singleton(x);
-
-	//// Rprintf("x_singleton: %s\n", x_singleton.description().c_str());
-
 	typename std::set<R>::const_iterator itr_lower = _regions.upper_bound(x_singleton);
-	// Rprintf("Upper bound: %s\n", itr_lower->description().c_str());
 	--itr_lower;
-	// Rprintf("Adjusted upper bound: %s\n", itr_lower->description().c_str());
-
-	/*
-	typename std::set<R>::const_iterator itr_lower = _regions.lower_bound(x_singleton);
-
-	if (itr_lower != _regions.end()) {
-		Rprintf("Initial lower bound: %s\n", itr_lower->description().c_str());
-	} else {
-		Rprintf("Initial lower bound was end\n");
-	}
-
-	if (!itr_lower->s(x)) {
-		// x is in the boundary of this region, so go to the previous region.
-		// TBD: do we need to check the condition to decrement the iterator?
-	 	--itr_lower;
-	}
-	Rprintf("Decremented lower bound: %s\n", itr_lower->description().c_str());
-	*/
 
 	double out;
 
 	if (itr_lower == _regions.end()) {
 		// Could not find region which is upper bound for x. Assume that x is
 		// outside of the support
-		//// Rprintf("Checkpoint 1: Reached end of regions\n");
 		out = R_NegInf;
 	} else if (!itr_lower->s(x)) {
 		// Could not find a region that contains x. Assume that x is outside of
 		// the support.
 		out = R_NegInf;
-		//// Rprintf("Checkpoint 2: %s\n", itr_lower->description().c_str());
 	} else {
-		//// Rprintf("Checkpoint 3\n");
-		//// Rprintf("itr_lower->w_major(x, true) = %g\n", itr_lower->w_major(x, true));
-		//// Rprintf("itr_lower->d_base(x, true) = %g\n", itr_lower->d_base(x, true));
-		//// Rprintf("lnc = %g\n", lnc);
 		out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - lnc;
 	}
 

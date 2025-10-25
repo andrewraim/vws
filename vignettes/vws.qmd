@@ -523,31 +523,31 @@ double d_target_unnorm(const T& x, bool log = true) const;            // <5>
 
 For the `log` argument, the value on the log-scale is returned if `true`; otherwise, the value on the original scale is returned.
 
-### Accessors {.unlisted} {#sec-api-proposal-accessors}
+### Accessors {.unlisted #sec-api-proposal-accessors}
 
 The following accessors are provided.
 
 ```{cpp}
-Rcpp::NumericVector xi_upper(bool log = true) const;                  // <1>
-Rcpp::NumericVector xi_lower(bool log = true) const;                  // <2>
-Rcpp::LogicalVector bifurcatable() const;                             // <3>
-Rcpp::NumericVector pi(bool log = false) const;                       // <4>
-Rcpp::NumericVector rejection_bound_regions(bool log = false) const;  // <5>
-double rejection_bound(bool log = false) const;                       // <6>
-double nc(bool log = false) const;                                    // <7>
-unsigned int size() const;                                            // <8>
+Rcpp::NumericVector xi_upper(bool log = true) const;         // <1>
+Rcpp::NumericVector xi_lower(bool log = true) const;         // <2>
+Rcpp::LogicalVector bifurcatable() const;                    // <3>
+Rcpp::NumericVector pi(bool log = false) const;              // <4>
+Rcpp::NumericVector bound_contribs(bool log = false) const;  // <5>
+double bound(bool log = false) const;                        // <6>
+double nc(bool log = false) const;                           // <7>
+unsigned int size() const;                                   // <8>
 ```
 
-1.  Get the constants $\overline{\xi}_1, \ldots, \overline{\xi}_N$.
-2.  Get the constants $\underline{\xi}_1, \ldots, \underline{\xi}_N$.
-3.  Get a vector of $N$ logical values indicating whether the corresponding regions can be bifurcated. For example, when the support `T` is `int`, a region $(a,b]$ containing one integer should not be bifurcated because one of the two resulting regions will not contain any points of the support.
-4.  Get the mixing proportions $\pi_1, \ldots, \pi_N$.
-5.  Get the contributions $\rho_1, \ldots, \rho_N$ to bound \eqref{eqn:bound} corresponding to the $N$ regions.
-6.  Get the overall rejection bound \eqref{eqn:bound}.
-7.  Get the normalizing constant $\psi_N$
-8.  Get the number of regions $N$.
+1. Get the constants $\overline{\xi}_1, \ldots, \overline{\xi}_N$.
+2. Get the constants $\underline{\xi}_1, \ldots, \underline{\xi}_N$.
+3. Get a vector of $N$ logical values indicating whether the corresponding regions can be bifurcated. For example, when the support `T` is `int`, a region $(a,b]$ containing one integer should not be bifurcated because one of the two resulting regions will not contain any points of the support.
+4. Get the mixing proportions $\pi_1, \ldots, \pi_N$.
+5. Get the contributions $\rho_1, \ldots, \rho_N$ to bound \eqref{eqn:bound} corresponding to the $N$ regions.
+6. Get the overall rejection bound \eqref{eqn:bound}.
+7. Get the normalizing constant $\psi_N$
+8. Get the number of regions $N$.
 
-Methods above with the a `log` argument return values on the log-scale when `log = true`.
+Methods above with the a `log` argument return values on the log-scale when `log = true`; values are returned on the original scale otherwise.
 
 ### Iterators {.unlisted}
 
@@ -610,7 +610,7 @@ std::vector<double> seq(double lo, double hi, unsigned int N,
 
 ### Summary Methods {.unlisted}
 
-Several methods are provided to summarize the regions in the proposal.
+Several methods are provided to summarize the regions in the proposal. @tbl-summary describes the columns in the summary and rows correspond to the $N$ regions.
 
 ```{cpp}
 Rcpp::DataFrame summary() const;       // <1>
@@ -619,6 +619,15 @@ void print(unsigned int n = 5) const;  // <2>
 
 1.  Get a data frame with the summary.
 2.  Print summary to the console.
+
+| Column | Description |
+|-----|-----|
+`Region` | String describing region $j$.
+`log_xi_upper` | $\log \overline{\xi}_j$
+`log_xi_lower` | $\log \underline{\xi}_j$
+`log_volume` | $\log \rho_j$
+
+: Data frame returned by summary method of `FMMProposal`. {#tbl-summary tbl-colwidths="\[30,70\]"}
 
 ## Region Base Class {#sec-api-region}
 
@@ -728,13 +737,15 @@ In particular, the current implementation is
 \begin{align*}
 \text{midpoint}(a,b) =
 \begin{cases}
-0 & \text{if $a = -\infty$ and $b = \infty$}, \\
-b - |b| - 1 & \text{if $a = -\infty$ and $b < \infty$}, \\
-a + |a| + 1 & \text{if $a > -\infty$ and $b = \infty$}, \\
-(a + b) / 2 & \text{otherwise}.
+0, & \text{if $a = -\infty$ and $b = \infty$}, \\
+b, \cdot 2^{-\text{sign}(b)} - 1 & \text{if $a = -\infty$ and $b < \infty$}, \\
+a, \cdot 2^{\text{sign}(a)} + 1 & \text{if $a > -\infty$ and $b = \infty$}, \\
+(a + b) / 2, & \text{otherwise},
 \end{cases}
 \end{align*}
 <!-- -->
+where $\text{sign}(x) = \ind(x > 0) - \ind(x < 0)$. Here we make an exponential adjustment to the finite endpoint when the other endpoint is infinite.
+
 The `bifurcate` method returns two disjoint regions whose union is the current region. The result is given as an STL pair. The first version bifurcates at the midpoint of the current region, determined by the `midpoint` method. The second version partitions at the given $x$.
 
 ```{cpp}
@@ -857,7 +868,7 @@ UnivariateHelper(
 ```
 
 1.  A function to evaluate density $g$.
-2.  A function to evaluate the CDF $G$.
+2.  A function to evaluate the cumulative distribution function (CDF) $G$.
 3.  A function to evaluate the quantile function $G^{-}$.
 
 The following methods on `UnivariateHelper` utilize the lambdas specified above.
@@ -869,7 +880,7 @@ double q(double p, bool lower = true, bool log = false) const;  // <3>
 ```
 
 1.  Evaluate the density function at argument $x$. Result is on the log-scale if `log = true`.
-2.  Evaluate the cumulative distribution function (CDF) at argument $q$. Result is on the log-scale if `log = true`. Result represents $P(X \leq q)$ if `lower = true` and $P(X > q)$ otherwise.
+2.  Evaluate the CDF at argument $q$. Result is on the log-scale if `log = true`. Result represents $P(X \leq q)$ if `lower = true` and $P(X > q)$ otherwise.
 3.  Evaluate the quantile function at argument $p$. Assume $p$ is specified on the log-scale if `log = true`. Request $p$ quantile if `lower = true` and $1-p$ quantile otherwise.
 
 ## Rejection Sampling {#sec-api-rejection}
@@ -913,12 +924,19 @@ struct rejection_args {
 1.  Maximum number of rejections to tolerate overall (among all $n$ attempted draws) before bailing out.
 2.  Determines period at which progress is logged to the console.
 3.  Maximum allowed value for the ratio $f_0(x) / h_0(x)$, which may be slightly larger than 1 due to numerical precision. An error is thrown if the ratio is larger than this value.
-4.  The action to take if `max_rejects` rejections is exceeded. The definition of the enum `fntl::error_action` is given in Section 2 of @fntl.
+4.  The action to take if `max_rejects` rejections is exceeded; see @tbl-action. The definition of the enum `fntl::error_action` is given in Section 2 of @fntl.
 5.  Constructor that takes no arguments and initializes to default values.
 6.  Convert an `Rcpp::List` to a `rejection_args` struct.
 7.  Return a `Rcpp::List` from a `rejection_args` struct.
 
-If `action = fntl::error_action::STOP`, the `rejection` functions halts when an error condition is encountered. If `action = fntl::error_action::WARNING` or `action = fntl::error_action::MESSAGE`, a warning or message is emitted without halting. Otherwise, if `action = fntl::error_action::NONE`, the error condition is ignored.
+| `action` | Effect |
+|-----|-----|
+`fntl::error_action::NONE`    | Error condition is ignored.
+`fntl::error_action::MESSAGE` | A message is emitted without halting.
+`fntl::error_action::WARNING` | A warning is emitted without halting.
+`fntl::error_action::STOP`    | Halts when an error condition is encountered.
+
+: Value of `action` used in `rejection_args.action` and its effect in `rejection`. {#tbl-action tbl-colwidths="\[30,70\]"}
 
 The return value of `rejection` is a struct of the following type.
 
@@ -981,7 +999,7 @@ struct optimize_hybrid_result {
 5.  Return an `Rcpp::List` from a `optimize_hybrid_result` struct.
 
 | Message | Description |
-|------------------------------------|------------------------------------|
+|-----|-----|
 | `"Brent"` | Brent optimization method was used. |
 | `"BFGS"` | BFGS method was used. |
 | `"Lower Limit Inf"` | For maximization, lower limit taken as `par` because its value is `inf`. |
@@ -1491,13 +1509,7 @@ w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
 \ind\{ y \in (0,\infty) \},
 \end{math}
 <!-- -->
-from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution whose density $g$ is $\text{N}(z, \lambda^2)$. The conditional $[\vec{y} \mid \sigma^2, \vec{\mu}, \vec{z}]$ in \eqref{eqn:ln-norm} would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:ln-norm}. Let us define
-<!-- -->
-\begin{align}
-\zeta(y) = \log w(y)
-= -\log y - \frac{(\log y - \mu)^2}{2 \sigma^2} + \log \ind(y > 0).
-\label{eqn:ln-norm-log-weight-fn}
-\end{align}
+from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution whose density $g$ is $\text{N}(z, \lambda^2)$. The conditional $[\vec{y} \mid \sigma^2, \vec{\mu}, \vec{z}]$ in \eqref{eqn:ln-norm} would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:ln-norm}.
 
 Before proceeding, let us fix the following values for the parameters.
 
@@ -1634,20 +1646,20 @@ data.frame(x = out1$draws) %>%
 
 ## Constant Majorizer with Custom Optimization {#sec-ln-norm-const-custom}
 
-The log-weight function $\zeta$ from \eqref{eqn:ln-norm-log-weight-fn} can be both maximized and minimized in closed form. Coding it explicitly reduces computational overhead and avoids convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `RealConstRegion`.
+The log-weight function can be both maximized and minimized in closed form. Coding it explicitly reduces computational overhead and avoids convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `RealConstRegion`.
 
 We have first derivative
 <!-- -->
 \begin{align*}
-&\zeta'(y) = -\frac{1}{y}\left(
+\frac{d}{dy} \log w(y) = -\frac{1}{y}\left(
 1 + \frac{\log y - \mu}{\sigma^2}
 \right),
 \end{align*}
 <!-- -->
-for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\zeta'(y)$ is positive when $y < y^*$, negative when $y > y^*$, and takes value zero at $y = y^*$. Therefore, $\zeta$ is unimodal and $y^*$ maximizes $\zeta$ with
+for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\frac{d}{dy} \log w(y)$ is positive when $y < y^*$, negative when $y > y^*$, and takes value zero at $y = y^*$. Therefore, $\log w(y)$ is unimodal and $y^*$ maximizes $\log w(y)$ with
 <!-- -->
 \begin{align*}
-\zeta(y^*)
+\log w(y^*)
 &= -\log[\exp(\mu - \sigma^2)]  - \frac{(\log [\exp(\mu - \sigma^2)] - \mu)^2}{2 \sigma^2} \\
 &= -\mu + \sigma^2 - \frac{(\sigma^2)^2}{2 \sigma^2} \\
 &= -\mu + \sigma^2 / 2.
@@ -1738,15 +1750,15 @@ head(out2$draws)
 
 ## Linear Majorizer {#sec-ln-norm-linear}
 
-We can obtain a linear majorizer by noting the convexity of $\zeta$. Its second derivative is seen to be
+We can obtain a linear majorizer by noting the convexity of $\log w(y)$. Its second derivative is seen to be
 <!-- -->
 \begin{align*}
-&\zeta''(y) = -\frac{1}{y^2} \left(
+&\frac{d^2}{dy^2} \log w(y) = -\frac{1}{y^2} \left(
 1 + \frac{\log y - \mu - 1}{\sigma^2}
 \right),
 \end{align*}
 <!-- -->
-which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathscr{D}_1 = (0, y_0]$ and $\mathscr{D}_2 = (y_0, \infty]$ so that all partitions considered thereafter consist of regions on which $\zeta$ is entirely concave or convex.
+which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathscr{D}_1 = (0, y_0]$ and $\mathscr{D}_2 = (y_0, \infty]$ so that all partitions considered thereafter consist of regions on which $\log w(y)$ is entirely concave or convex.
 
 ```{r}
 #| prompt: true

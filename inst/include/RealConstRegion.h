@@ -217,10 +217,12 @@ inline double RealConstRegion::midpoint() const
 		out = 0;
 	} else if (std::isinf(_a) && _a < 0) {
 		// Left endpoint is -inf. Split based on right endpoint.
-		out = _b - std::fabs(_b) - 1;
+		double sgn = (_b > 0) - (_b < 0);
+		out = _b * std::pow(2, -sgn) - 1;
 	} else if (std::isinf(_b) && _b > 0) {
 		// Right endpoint is inf. Split based on left endpoint.
-		out = _a + std::fabs(_a) + 1;
+		double sgn = (_a > 0) - (_a < 0);
+		out = _a * std::pow(2, sgn) + 1;
 	} else {
 		out = (_a + _b) / 2;
 	}
