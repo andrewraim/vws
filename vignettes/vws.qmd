@@ -38,10 +38,10 @@ abstract: |
   targets; however, it is intended that the framework can be used to handle
   multivariate problems as well.
 thanks: |
-  # Center for Statistical Research & Methodology, U.S. Census Bureau,
-  # Washington, DC, 20233, U.S.A.
   **For correspondence**`:` <andrew.raim@gmail.com>.
   Document was compiled `{r} format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")`.
+  # Center for Statistical Research & Methodology, U.S. Census Bureau,
+  # Washington, DC, 20233, U.S.A.
 geometry:
   - left=0.75in
   - right=0.75in
