@@ -6,7 +6,8 @@
 //' Sequence
 //'
 //' @export
-Rcpp::NumericVector rcpp_seq(double lo, double hi, unsigned int N, bool endpoints = false);
+Rcpp::NumericVector rcpp_seq(double lo, double hi, unsigned int N,
+	bool endpoints = false);
 
 #endif
 

@@ -139,3 +139,4 @@ inline const IntConstRegion& IntConstRegion::operator=(const IntConstRegion& x)
 }
 
 #endif
+

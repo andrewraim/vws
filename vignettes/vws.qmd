@@ -1017,13 +1017,20 @@ struct optimize_hybrid_result {
 
 As mentioned in @rem-logscale, calculations in the package are carried out on the log-scale, where possible, to avoid issues from floating point numbers with very small or very large magnitudes. Users may want to follow this convention when implementing their own sampling problems. Several included functions help to avoid explicit exponentiation.
 
-The following computes the scalar $f(x) = \log\{ \sum_{i=1}^n \exp(x_i) \}$ from a vector $x \in \mathbb{R}^n$.
+The following computes the scalar $f(x) = \log\{ \sum_{i=1}^n \exp(x_i) \}$ from a vector $x \in \mathbb{R}^n$ using the method described in [this StackExchange post](https://stats.stackexchange.com/a/381937).
 
 ```{cpp}
 double log_sum_exp(const Rcpp::NumericVector& x);
 ```
 
-The following carry out addition on the log scale using the property $\log(e^x + e^y)$ TBD. The first form takes scalar $x$ and $y$. The second and third forms take $x, y \in \mathbb{R}^n$ and produce a vector with elements $\log(e^{x_i} + e^{y_i})$, $i = 1, \ldots, n$.
+The following functions carry out addition on the log scale using the property
+<!-- -->
+\begin{displaymath}
+\log(e^x + e^y) = t + \log\{1 + \exp[s - t]\},
+\quad s = \min(x,y), \quad t = \max(x,y).
+\end{displaymath}
+<!-- -->
+The first form takes scalar arguments $x$ and $y$. The second and third forms take $x, y \in \mathbb{R}^n$ and produce a vector with elements $\log(e^{x_i} + e^{y_i})$, $i = 1, \ldots, n$.
 
 ```{cpp}
 double log_add2_exp(double x, double y);
@@ -1038,7 +1045,13 @@ Rcpp::NumericVector log_add2_exp(
 );
 ```
 
-The following carry out subtraction on the log scale using the property $\log(e^x - e^y)$ TBD. The first form takes scalar $x$ and $y$. The second and third forms take $x, y \in \mathbb{R}^n$ and produce a vector with elements $\log(e^{x_i} - e^{y_i})$, $i = 1, \ldots, n$. Here, elements of $x$ smaller than $y$ result in `nan` values.
+The following carry out subtraction on the log scale using the property
+<!-- -->
+\begin{displaymath}
+\log(e^x - e^y) = x + \log\{1 - \exp[y - x]\}.
+\end{displaymath}
+<!-- -->
+When $x$ is smaller than $y$, the results is assumed to be `nan`. The first form takes scalar arguments $x$ and $y$. The second and third forms take $x, y \in \mathbb{R}^n$ and produce a vector with elements $\log(e^{x_i} - e^{y_i})$, $i = 1, \ldots, n$. 
 
 ```{cpp}
 double log_sub2_exp(double x, double y);

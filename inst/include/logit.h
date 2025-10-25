@@ -44,3 +44,4 @@ inline Rcpp::NumericVector inv_logit(const Rcpp::NumericVector& x)
 }
 
 #endif
+

@@ -94,3 +94,4 @@ inline rejection_result<T>::operator SEXP() const
 }
 
 #endif
+

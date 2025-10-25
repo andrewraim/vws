@@ -137,3 +137,4 @@ inline double log_sum_exp(const Rcpp::NumericVector& x)
 }
 
 #endif
+;

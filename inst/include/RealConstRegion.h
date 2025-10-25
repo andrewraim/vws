@@ -300,3 +300,4 @@ inline const RealConstRegion& RealConstRegion::operator=(const RealConstRegion& 
 }
 
 #endif
+

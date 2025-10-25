@@ -35,3 +35,4 @@ inline static const optimizer minopt_default = [](const dfdb& w,
 }
 
 #endif
+

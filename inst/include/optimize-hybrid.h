@@ -136,3 +136,4 @@ inline optimize_hybrid_result optimize_hybrid(const fntl::dfd& f, double init,
 }
 
 #endif
+

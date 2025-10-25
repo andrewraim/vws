@@ -41,3 +41,4 @@ inline int logger(const char* fmt, ...)
 }
 
 #endif
+

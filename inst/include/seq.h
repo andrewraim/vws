@@ -18,7 +18,8 @@ namespace vws {
 * - `N`: Number of desired intervals.
 * - `endpoints`: logical; if `true`, include endpoints
 */
-inline std::vector<double> seq(double lo, double hi, unsigned int N, bool endpoints = false)
+inline std::vector<double> seq(double lo, double hi, unsigned int N,
+	bool endpoints = false)
 {
 	if (N == 0) { Rcpp::stop("N must be positive"); }
 	if (std::isinf(lo)) { Rcpp::stop("lo must be finite"); };
@@ -45,3 +46,4 @@ inline std::vector<double> seq(double lo, double hi, unsigned int N, bool endpoi
 }
 
 #endif
+

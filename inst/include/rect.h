@@ -134,3 +134,4 @@ inline Rcpp::NumericVector inv_rect(const Rcpp::NumericVector& x,
 }
 
 #endif
+

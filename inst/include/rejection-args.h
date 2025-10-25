@@ -103,3 +103,4 @@ inline rejection_args::operator SEXP() const
 }
 
 #endif
+
