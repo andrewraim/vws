@@ -12,4 +12,3 @@ Rcpp::NumericVector inv_rect_rcpp(const Rcpp::NumericVector& x,
 {
 	return vws::inv_rect(x, a, b);
 }
-

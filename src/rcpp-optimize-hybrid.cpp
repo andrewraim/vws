@@ -18,4 +18,3 @@ Rcpp::List optimize_hybrid_rcpp(const Rcpp::Function& f, double init,
 		Rcpp::Named("method") = out.method
 	);
 }
-

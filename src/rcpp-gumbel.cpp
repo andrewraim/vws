@@ -23,4 +23,3 @@ Rcpp::NumericVector q_gumbel_rcpp(const Rcpp::NumericVector& p, double mu,
 {
 	return vws::q_gumbel(p, mu, sigma, lower, log);
 }
-

@@ -49,14 +49,14 @@ public:
 	* - `bifurcatable`: vector of indicators of whether regions are
 	*   bifurcatable.
 	* - `pi`: mixing weights $(\pi_1, \ldots, \pi_N)$.
-	* - `bound_contribs`: vector of contributions to the rejection
+	* - `bound_contrib`: vector of contributions to the rejection
 	*   bound. These sum to the value of `bound`.
 	*/
 	Rcpp::NumericVector xi_upper(bool log = true) const;
 	Rcpp::NumericVector xi_lower(bool log = true) const;
 	Rcpp::LogicalVector bifurcatable() const;
 	Rcpp::NumericVector pi(bool log = false) const;
-	Rcpp::NumericVector bound_contribs(bool log = false) const;
+	Rcpp::NumericVector bound_contrib(bool log = false) const;
 
 	/*
 	* Access number of regions.
@@ -303,7 +303,7 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 		unsigned int L = _regions.size();
 
 		// Each region's contribution to the rejection rate
-		const Rcpp::NumericVector& log_volume0 = bound_contribs(true);
+		const Rcpp::NumericVector& log_volume0 = bound_contrib(true);
 		Rcpp::NumericVector log_volume(log_volume0.size());
 
 		// Identify the regions which are bifurcatable; for the rest, we set
@@ -442,7 +442,7 @@ double FMMProposal<T,R>::bound(bool log) const
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::bound_contribs(bool log) const
+Rcpp::NumericVector FMMProposal<T,R>::bound_contrib(bool log) const
 {
 	// Each region's contribution to the rejection rate bound.
 	const Rcpp::NumericVector& lxl = *_log_xi_lower;

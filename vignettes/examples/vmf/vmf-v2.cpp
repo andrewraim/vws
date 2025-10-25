@@ -32,14 +32,13 @@ Rcpp::List r_vmf_pre_v2(unsigned int n, double kappa, double d, unsigned int N,
 	vws::optimizer opt1 = [&](const vws::dfdb& w, double lo, double hi,
 		bool log)
 	{
-		double out;
-		if (lo <= 0 && 0 < hi) {
-			out = w(0, true);
-		} else if (hi < 0) {
-			out = w(hi, true);
-		} else {
-			out = w(lo, true);
+		double x = 0;
+		if (hi < 0) {
+			x = hi;
+		} else if (lo > 0){
+			x = lo;
 		}
+		double out = w(x, true);
 		return log ? out : std::exp(out);
 	};
 

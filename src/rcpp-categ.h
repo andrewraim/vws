@@ -37,4 +37,3 @@ Rcpp::IntegerVector r_categ_rcpp(unsigned int n, const Rcpp::NumericVector& p,
 	bool log = false, bool one_based = false);
 
 #endif
-

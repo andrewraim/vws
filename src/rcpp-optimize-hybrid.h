@@ -42,4 +42,3 @@ Rcpp::List optimize_hybrid_rcpp(const Rcpp::Function& f, double init,
 	unsigned maxiter = 10000);
 
 #endif
-

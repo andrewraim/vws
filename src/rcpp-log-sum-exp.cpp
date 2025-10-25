@@ -18,4 +18,3 @@ Rcpp::NumericVector log_sub2_exp_rcpp(const Rcpp::NumericVector& x,
 {
 	return vws::log_sub2_exp(x, y);
 }
-

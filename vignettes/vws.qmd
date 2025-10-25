@@ -528,14 +528,14 @@ For the `log` argument, the value on the log-scale is returned if `true`; otherw
 The following accessors are provided.
 
 ```{cpp}
-Rcpp::NumericVector xi_upper(bool log = true) const;         // <1>
-Rcpp::NumericVector xi_lower(bool log = true) const;         // <2>
-Rcpp::LogicalVector bifurcatable() const;                    // <3>
-Rcpp::NumericVector pi(bool log = false) const;              // <4>
-Rcpp::NumericVector bound_contribs(bool log = false) const;  // <5>
-double bound(bool log = false) const;                        // <6>
-double nc(bool log = false) const;                           // <7>
-unsigned int size() const;                                   // <8>
+Rcpp::NumericVector xi_upper(bool log = true) const;        // <1>
+Rcpp::NumericVector xi_lower(bool log = true) const;        // <2>
+Rcpp::LogicalVector bifurcatable() const;                   // <3>
+Rcpp::NumericVector pi(bool log = false) const;             // <4>
+Rcpp::NumericVector bound_contrib(bool log = false) const;  // <5>
+double bound(bool log = false) const;                       // <6>
+double nc(bool log = false) const;                          // <7>
+unsigned int size() const;                                  // <8>
 ```
 
 1. Get the constants $\overline{\xi}_1, \ldots, \overline{\xi}_N$.
@@ -738,8 +738,8 @@ In particular, the current implementation is
 \text{midpoint}(a,b) =
 \begin{cases}
 0, & \text{if $a = -\infty$ and $b = \infty$}, \\
-b, \cdot 2^{-\text{sign}(b)} - 1 & \text{if $a = -\infty$ and $b < \infty$}, \\
-a, \cdot 2^{\text{sign}(a)} + 1 & \text{if $a > -\infty$ and $b = \infty$}, \\
+b \cdot 2^{-\text{sign}(b)} - 1, & \text{if $a = -\infty$ and $b < \infty$}, \\
+a \cdot 2^{\text{sign}(a)} + 1, & \text{if $a > -\infty$ and $b = \infty$}, \\
 (a + b) / 2, & \text{otherwise},
 \end{cases}
 \end{align*}
@@ -929,14 +929,14 @@ struct rejection_args {
 6.  Convert an `Rcpp::List` to a `rejection_args` struct.
 7.  Return a `Rcpp::List` from a `rejection_args` struct.
 
-| `action` | Effect |
+| Action | Effect |
 |-----|-----|
 `fntl::error_action::NONE`    | Error condition is ignored.
 `fntl::error_action::MESSAGE` | A message is emitted without halting.
 `fntl::error_action::WARNING` | A warning is emitted without halting.
 `fntl::error_action::STOP`    | Halts when an error condition is encountered.
 
-: Value of `action` used in `rejection_args.action` and its effect in `rejection`. {#tbl-action tbl-colwidths="\[30,70\]"}
+: Value of `action` used in `rejection_args.action` and its effect in `rejection`. {#tbl-action tbl-colwidths="\[35,65\]"}
 
 The return value of `rejection` is a struct of the following type.
 
@@ -1331,14 +1331,13 @@ Therefore, it is seen that $\log w(x)$ is concave when $d > 3$, convex when $d =
 ```{cpp}
 vws::optimizer opt1 = [&](const vws::dfdb& w, double lo, double hi, bool log)
 {
-	double out;
-	if (lo <= 0 && 0 < hi) {
-		out = w(0, true);
-	} else if (hi < 0) {
-		out = w(hi, true);
-	} else {
-		out = w(lo, true);
+	double x = 0;
+	if (hi < 0) {
+		x = hi;
+	} else if (lo > 0){
+		x = lo;
 	}
+	double out = w(x, true);
 	return log ? out : std::exp(out);
 };
 ```
@@ -1719,16 +1718,15 @@ const vws::optimizer& maxopt = [&](const vws::dfdb& w, double lo,
 	double hi, bool log)
 {
 	double y_star = exp(mu - sigma2);
-	double out;
 
+	double y = y_star;
 	if (y_star > hi) {
-		out = w(hi, true);
+		y = hi;
 	} else if (y_star < lo) {
-		out = w(lo, true);
-	} else {
-		out = w(y_star, true);
+		y = lo;
 	}
 
+	double out = w(y, true);
 	return log ? out : exp(out);
 };
 ```

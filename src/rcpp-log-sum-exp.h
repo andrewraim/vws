@@ -61,4 +61,3 @@ Rcpp::NumericVector log_sub2_exp_rcpp(const Rcpp::NumericVector& x,
 	const Rcpp::NumericVector& y);
 
 #endif
-

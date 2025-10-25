@@ -6,4 +6,3 @@ Rcpp::NumericVector rcpp_seq(double lo, double hi, unsigned int N, bool endpoint
 	std::vector<double> out = vws::seq(lo, hi, N, endpoints);
 	return Rcpp::NumericVector(out.begin(), out.end());
 }
-

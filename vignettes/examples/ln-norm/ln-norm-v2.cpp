@@ -34,16 +34,15 @@ Rcpp::List r_ln_norm_v2(unsigned int n, double z, double mu,
 		double hi, bool log)
 	{
 		double y_star = exp(mu - sigma2);
-		double out;
 
+		double y = y_star;
 		if (y_star > hi) {
-			out = w(hi, true);
+			y = hi;
 		} else if (y_star < lo) {
-			out = w(lo, true);
-		} else {
-			out = w(y_star, true);
+			y = lo;
 		}
 
+		double out = w(y, true);
 		return log ? out : exp(out);
 	};
 

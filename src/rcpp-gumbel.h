@@ -68,4 +68,3 @@ Rcpp::NumericVector q_gumbel_rcpp(const Rcpp::NumericVector& p, double mu = 0,
 	double sigma = 1, bool lower = true, bool log = false);
 
 #endif
-

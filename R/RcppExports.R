@@ -195,8 +195,8 @@ optimize_hybrid <- function(f, init, lower, upper, maximize = FALSE, maxiter = 1
 
 #' Rectangular transformation
 #'
-#' A transformation from Euclidean to a rectangle in \eqn{\mathbb{R}^n}, and
-#' its inverse transformation.
+#' A transformation from unconstrained \eqn{\mathbb{R}^n} to a rectangle in
+#' \eqn{\mathbb{R}^n}, and its inverse transformation.
 #'
 #' @param x A point in \eqn{\mathbb{R}^{d}}.
 #' @param z A point in the rectangle \eqn{[a_1,b_1] \times \cdots \times [a_d,b_d]}.
