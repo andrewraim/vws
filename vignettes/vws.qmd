@@ -449,7 +449,7 @@ To help automate computation of constant majorizers and minorizers for use with 
 
 # C++ API {#sec-api}
 
-This section documents functions, classes, and other components in the C++ API.
+This section documents functions, classes, and other components in the C++ API. Note that some functions in the C++ API are also exposed as R functions; see the `vws` package manual for these.
 
 ## Typedefs {#sec-api-typedefs}
 
