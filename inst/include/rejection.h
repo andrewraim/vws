@@ -2,7 +2,7 @@
 #define VWS_REJECTION_H
 
 #include <Rcpp.h>
-#include "logger.h"
+#include "timestamp.h"
 #include "Region.h"
 #include "FMMProposal.h"
 #include "result.h"
@@ -67,8 +67,8 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 			// Report progress after `report` candidates
 			unsigned int N_accepts = i + accept;
 			if ((N_rejects + N_accepts) % report == 0) {
-				logger("After %d candidates, %d accepts and %d rejects\n",
-					N_accepts + N_rejects, N_accepts, N_rejects);
+				Rprintf("%s - After %d candidates, %d accepts and %d rejects\n",
+					timestamp().c_str(), N_accepts + N_rejects, N_accepts, N_rejects);
 			}
 		}
 	}
@@ -89,13 +89,9 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 		}
 	}
 
-	// Rprintf("Rejection checkpoint 4\n");
-
 	rejection_result<T> out;
 	out.draws = draws;
 	out.rejects = rejects;
-
-	// Rprintf("Rejection checkpoint 5\n");
 	return out;
 }
 

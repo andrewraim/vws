@@ -1,7 +1,7 @@
 Package: vws
 Type: Package
 Title: Vertical Weighted Strips
-Version: 0.2.0
+Version: 0.3.0
 Author: Andrew M. Raim, James A. Livsey, Kyle M. Irimata
 Maintainer: Andrew M. Raim <andrew.raim@gmail.com>
 Description: A reference implementation of Vertical Weighted Strips method for
@@ -14,7 +14,8 @@ RoxygenNote: 7.3.3
 Depends:
     R (>= 4.1.0)
 Imports:
-    Rcpp
+    Rcpp,
+    fntl
 LinkingTo:
     Rcpp,
     fntl

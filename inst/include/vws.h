@@ -18,7 +18,6 @@
 #include "gumbel.h"
 #include "IntConstRegion.h"
 #include "log-sum-exp.h"
-#include "logger.h"
 #include "logit.h"
 #include "optimize-hybrid.h"
 #include "Region.h"
@@ -27,6 +26,7 @@
 #include "rejection.h"
 #include "rejection-args.h"
 #include "seq.h"
+#include "timestamp.h"
 #include "typedefs.h"
 #include "UnivariateHelper.h"
 

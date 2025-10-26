@@ -5,7 +5,7 @@
 #include "typedefs.h"
 #include "log-sum-exp.h"
 #include "categ.h"
-#include "logger.h"
+#include "timestamp.h"
 #include "Region.h"
 #include <iterator>
 
@@ -346,7 +346,8 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 		lbdd_hist.push_back(bound(true));
 
 		if (j % report == 0 && report < fntl::uint_max) {
-			logger("After %d steps log Pr{rejection} <= %g\n", j, lbdd_hist[j+1]);
+			Rprintf("%s - After %d steps log Pr{rejection} <= %g\n",
+				timestamp().c_str(), j, lbdd_hist[j+1]);
 		}
 	}
 

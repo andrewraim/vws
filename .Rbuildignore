@@ -1,4 +1,7 @@
 ^.*\.Rproj$
+^.*\.xopp$
+^.*\.o$
+^.*\.log$
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^doc$
@@ -6,6 +9,8 @@
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
-vignettes/bak
-vignettes/.quarto
-^.*.o$
+^vignettes/bak$
+^vignettes/\.quarto$
+^vignettes/Makefile$
+^vignettes/vws.*\.pdf$
+^vignettes/software-design$

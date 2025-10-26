@@ -256,20 +256,20 @@ inline bool RealConstRegion::is_bifurcatable() const
 
 inline double RealConstRegion::xi_upper(bool log) const
 {
-	double log_xi_upper = _log_w_max + _log_prob;
-	return log ? log_xi_upper : exp(log_xi_upper);
+	double out = _log_w_max + _log_prob;
+	return log ? out : exp(out);
 }
 
 inline double RealConstRegion::xi_lower(bool log) const
 {
-	double log_xi_lower = _log_w_min + _log_prob;
-	return log ? log_xi_lower : exp(log_xi_lower);
+	double out = _log_w_min + _log_prob;
+	return log ? out : exp(out);
 }
 
 inline std::string RealConstRegion::description() const
 {
 	char buf[32];
-	sprintf(buf, "(%g, %g]", _a, _b);
+	snprintf(buf, sizeof(buf), "(%g, %g]", _a, _b);
 	return buf;
 }
 

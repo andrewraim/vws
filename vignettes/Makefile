@@ -1,9 +1,9 @@
 PROJNAME := vws
 
-.PHONY: main
+.PHONY: main clean
 
 main:
-	quarto render vws.qmd 
+	quarto render vws.qmd
 
 clean:
 	$(PROJNAME)_files
