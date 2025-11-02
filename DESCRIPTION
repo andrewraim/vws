@@ -2,7 +2,7 @@ Package: vws
 Type: Package
 Title: Vertical Weighted Strips
 Version: 0.3.0
-Author: Andrew M. Raim, James A. Livsey, Kyle M. Irimata
+Author: Andrew M. Raim
 Maintainer: Andrew M. Raim <andrew.raim@gmail.com>
 Description: A reference implementation of Vertical Weighted Strips method for
     rejection sampling in R <arxiv:2401.09696>.

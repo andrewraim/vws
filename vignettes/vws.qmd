@@ -1,6 +1,6 @@
 ---
 title: "`vws`: Vertical Weighted Strips in R using C++"
-author: Andrew M. Raim, James A. Livsey, and Kyle M. Irimata
+author: Andrew M. Raim
 format:
   pdf:
     mathspec: true
@@ -40,8 +40,6 @@ abstract: |
 thanks: |
   **For correspondence**`:` <andrew.raim@gmail.com>.
   Document was compiled `{r} format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")`.
-  # Center for Statistical Research & Methodology, U.S. Census Bureau,
-  # Washington, DC, 20233, U.S.A.
 geometry:
   - left=0.75in
   - right=0.75in
@@ -54,6 +52,8 @@ code-block-border-left: "#B2DEED"
 filters:
   - include-code-files
 callout-icon: false
+# Center for Statistical Research & Methodology, U.S. Census Bureau,
+# Washington, DC, 20233, U.S.A.
 ---
 
 ```{r}
