@@ -15,3 +15,7 @@ Useful links:
 }
 
 }
+\author{
+\strong{Maintainer}: Andrew M. Raim \email{andrew.raim@gmail.com}
+
+}
