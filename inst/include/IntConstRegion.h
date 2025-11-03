@@ -2,9 +2,10 @@
 #define VWS_INT_CONST_REGION_H
 
 #include <Rcpp.h>
-#include "RealConstRegion.h"
-#include "UnivariateHelper.h"
 #include "typedefs.h"
+#include "RealConstRegion.h"
+#include "RealConstRegion-defaults.h"
+#include "UnivariateHelper.h"
 
 namespace vws {
 
@@ -25,13 +26,18 @@ public:
 	* - `helper`: contains operations of the base distribution $g$.
 	* - `maxopt`: a function of type `optimizer` that maximizes `w`.
 	* - `minopt`: a function of type `optimizer` that minimizes `w`.
+	* - `mid`: a function of type `midpoint` to compute the midpoint of interval
+	*   regions.
 	*
 	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
+	* If `mid` is not specified, we use a version of the arithmetic midpoint
+	* with special handling of infinite endpoints.
 	*/
 	IntConstRegion(double a, const dfdb& w,
 		const UnivariateHelper& helper,
 		const optimizer& maxopt = maxopt_default,
-		const optimizer& minopt = minopt_default);
+		const optimizer& minopt = minopt_default,
+		const vws::midpoint& mid = midpoint_default);
 
 	/*
 	* Construct a region based on interval $(a,b]$.
@@ -41,13 +47,18 @@ public:
 	* - `helper`: contains operations of the base distribution $g$.
 	* - `maxopt`: a function of type `optimizer` that maximizes `w`.
 	* - `minopt`: a function of type `optimizer` that minimizes `w`.
+	* - `mid`: a function of type `midpoint` to compute the midpoint of interval
+	*   regions.
 	*
 	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
+	* If `mid` is not specified, we use a version of the arithmetic midpoint
+	* with special handling of infinite endpoints.
 	*/
 	IntConstRegion(double a, double b, const dfdb& w,
 		const UnivariateHelper& helper,
 		const optimizer& maxopt = maxopt_default,
-		const optimizer& minopt = minopt_default);
+		const optimizer& minopt = minopt_default,
+		const vws::midpoint& mid = midpoint_default);
 
 	/*
 	* The following functions override methods in `RealConstRegion`. See that
@@ -82,15 +93,15 @@ public:
 
 inline IntConstRegion::IntConstRegion(double a,
 	const dfdb& w, const UnivariateHelper& helper,
-	const optimizer& maxopt, const optimizer& minopt)
-: RealConstRegion(a, w, helper, maxopt, minopt)
+	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
+: RealConstRegion(a, w, helper, maxopt, minopt, mid)
 {
 }
 
 inline IntConstRegion::IntConstRegion(double a, double b,
 	const dfdb& w, const UnivariateHelper& helper,
-	const optimizer& maxopt, const optimizer& minopt)
-: RealConstRegion(a, b, w, helper, maxopt, minopt)
+	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
+: RealConstRegion(a, b, w, helper, maxopt, minopt, mid)
 {
 }
 
@@ -103,14 +114,14 @@ IntConstRegion::bifurcate() const
 inline std::pair<IntConstRegion,IntConstRegion>
 IntConstRegion::bifurcate(const double& x) const
 {
-	IntConstRegion r1(_a, x, *_w, *_helper, _maxopt, _minopt);
-	IntConstRegion r2(x, _b, *_w, *_helper, _maxopt, _minopt);
+	IntConstRegion r1(_a, x, *_w, *_helper, _maxopt, _minopt, _mid);
+	IntConstRegion r2(x, _b, *_w, *_helper, _maxopt, _minopt, _mid);
 	return std::make_pair(r1, r2);
 }
 
 inline IntConstRegion IntConstRegion::singleton(const double& x) const
 {
-	return IntConstRegion(x, *_w, *_helper, _maxopt, _minopt);
+	return IntConstRegion(x, *_w, *_helper, _maxopt, _minopt, _mid);
 }
 
 inline bool IntConstRegion::is_bifurcatable() const

@@ -475,6 +475,12 @@ typedef std::function<double(
 3.  Upper bound of the interval; may be `R_PosInf`.
 4.  Logical; `log = true` specifies that the result should be the optimal value $\log w(x^*)$, given on the log-scale. Otherwise, the result should be the optimal value $w(x^*)$ on the original scale.
 
+The following typedef represents a function that computes the midpoint of a given interval. Note that this type name can clash with the `midpoint` function in the STL; therefore, it is reference using its namespace `vws::midpoint` within the `vws` package.
+
+```{cpp}
+typedef std::function<double(double a, double b)> midpoint;
+```
+
 ## Finite Mixture Proposal {#sec-api-proposal}
 
 The class `FMMProposal` represents a VWS proposal in the form of \eqref{eqn:fmm-proposal}.
@@ -692,7 +698,7 @@ public:
 
 `RealConstRegion` is a subclass of `Region`, defined in @sec-api-region, specifically for univariate problems with continuous support where $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. It assumes a constant a minorizer $\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$. The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical optimization by default; however, user-supplied methods can be supplied to identify these values when it is possible.
 
-### Constructors {.unlisted}
+### Constructors {.unlisted #sec-api-realconstregion-constructors}
 
 `RealConstRegion` has the following constructors. The first creates a region based on the interval $(a,b]$; the second creates a region based on the singleton set $\{a\}$, which is intended primarily for internal use.
 
@@ -703,7 +709,8 @@ RealConstRegion(
 	const dfdb& w,                            // <3>
 	const UnivariateHelper& helper,           // <4>
     const optimizer& maxopt = maxopt_default, // <5>
-    const optimizer& minopt = minopt_default  // <6>
+    const optimizer& minopt = minopt_default, // <6>
+	const midpoint& mid = midpoint_default    // <7>
 );
 
 RealConstRegion(
@@ -711,28 +718,22 @@ RealConstRegion(
 	const dfdb& w,                            // <3>
 	const UnivariateHelper& helper            // <4>
     const optimizer& maxopt = maxopt_default, // <5>
-    const optimizer& minopt = minopt_default  // <6>
+    const optimizer& minopt = minopt_default, // <6>
+	const midpoint& mid = midpoint_default    // <7>
 );
 ```
 
-1.  Lower limit of interval that defines this region.
-2.  Upper limit of interval that defines this region.
-3.  Weight function $w$ for the target distribution.
-4.  A container with operations of the base distribution $g$.
-5.  A function of type `optimizer` that maximizes `w` on the given region.
-6.  A function of type `optimizer` that minimizes `w` on the given region.
+1. Lower limit of interval that defines this region.
+2. Upper limit of interval that defines this region.
+3. Weight function $w$ for the target distribution.
+4. A container with operations of the base distribution $g$.
+5. A function of type `optimizer` that maximizes `w` on the given region.
+6. A function of type `optimizer` that minimizes `w` on the given region.
+7. A function of type `midpoint` to compute the midpoint of region's interval.
 
-The default optimizers, `maxopt_default` and `minopt_default`, use the hybrid numerical optimization method in @sec-api-opt to optimize `w`.
+The default optimizers, `maxopt_default` and `minopt_default`, use a hybrid numerical optimization method in @sec-api-opt to optimize `w`.
 
-### Methods {.unlisted}
-
-The `midpoint` method returns a point between endpoints $a$ and $b$ of the region. It is used especially to bifurcate a given region into two smaller regions. If $a$ and $b$ are both finite, return the standard midpoint. If both are infinite, zero is returned. If only $a$ is finite, return a larger point in the support. If only $b$ is finite, return a smaller point in the support.
-
-```{cpp}
-double midpoint() const;
-```
-
-In particular, the current implementation is
+The function `midpoint_default` is a version of the arithmetic midpoint with special handling for infinite endpoints. It is used primarily to bifurcate a given region into two smaller regions. In particular, the current implementation is
 <!-- -->
 \begin{align*}
 \text{midpoint}(a,b) =
@@ -744,7 +745,15 @@ a \cdot 2^{\text{sign}(a)} + 1, & \text{if $a > -\infty$ and $b = \infty$}, \\
 \end{cases}
 \end{align*}
 <!-- -->
-where $\text{sign}(x) = \ind(x > 0) - \ind(x < 0)$. Here we make an exponential adjustment to the finite endpoint when the other endpoint is infinite.
+where $\text{sign}(x) = \ind(x > 0) - \ind(x < 0)$. If both endpoints are infinite, zero is returned. When one endpoint is infinite, the finite endpoint is reduced in magnitude by a factor of $1/2$ and brought in by an additional unit of one. The exponential factor helps to avoid large numbers of wasted regions during knot selection. The additive factor accommodates endpoints that are near zero; without it, $\text{midpoint}(a,b)$ only brings the finite endpoint closer to zero which likely to create wasteful bifurcations.
+
+### Methods {.unlisted}
+
+The `midpoint` method returns a midpoint for the current region.
+
+```{cpp}
+double RealConstRegion::midpoint() const
+```
 
 The `bifurcate` method returns two disjoint regions whose union is the current region. The result is given as an STL pair. The first version bifurcates at the midpoint of the current region, determined by the `midpoint` method. The second version partitions at the given $x$.
 
@@ -797,7 +806,8 @@ IntConstRegion(
 	const dfdb& w,                            // <3>
 	const UnivariateHelper& helper,           // <4>
     const optimizer& maxopt = maxopt_default, // <5>
-    const optimizer& minopt = minopt_default  // <6>
+    const optimizer& minopt = minopt_default, // <6>
+	const midpoint& mid = midpoint_default    // <7>
 );
 
 IntConstRegion(
@@ -805,20 +815,20 @@ IntConstRegion(
 	const dfdb& w,                            // <3>
 	const UnivariateHelper& helper            // <4>
     const optimizer& maxopt = maxopt_default, // <5>
-    const optimizer& minopt = minopt_default  // <6>
+    const optimizer& minopt = minopt_default, // <6>
+	const midpoint& mid = midpoint_default    // <7>
 );
 ```
 
-1.  Lower limit of interval that defines this region.
-2.  Upper limit of interval that defines this region.
-3.  Weight function $w$ for the target distribution.
-4.  A container with operations of the base distribution $g$.
-5.  A function of type `optimizer` that maximizes `w` on the given region.
-6.  A function of type `optimizer` that minimizes `w` on the given region.
+1. Lower limit of interval that defines this region.
+2. Upper limit of interval that defines this region.
+3. Weight function $w$ for the target distribution.
+4. A container with operations of the base distribution $g$.
+5. A function of type `optimizer` that maximizes `w` on the given region.
+6. A function of type `optimizer` that minimizes `w` on the given region.
+7. A function of type `midpoint` to compute the midpoint of region's interval.
 
-The first constructor creates a region based on the interval $(a,b]$; the second creates a region based on the singleton set $(a,a]$, which is intended primarily for internal use. Note that `a` and `b` need not be integers.
-
-The default optimizers, `maxopt_default` and `minopt_default`, use the hybrid numerical optimization method in @sec-api-opt to optimize `w`.
+The arguments here are analogous to those in @sec-api-realconstregion-constructors. Note that `a` and `b` need not be integers here.
 
 ### Methods {.unlisted}
 

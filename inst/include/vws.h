@@ -22,6 +22,7 @@
 #include "optimize-hybrid.h"
 #include "Region.h"
 #include "RealConstRegion.h"
+#include "RealConstRegion-defaults.h"
 #include "rect.h"
 #include "rejection.h"
 #include "rejection-args.h"

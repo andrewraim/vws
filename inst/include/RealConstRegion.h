@@ -2,11 +2,11 @@
 #define VWS_REAL_CONST_REGION_H
 
 #include <Rcpp.h>
-//#include <memory>
+#include "typedefs.h"
 #include "Region.h"
+#include "RealConstRegion-defaults.h"
 #include "UnivariateHelper.h"
 #include "log-sum-exp.h"
-#include "typedefs.h"
 
 namespace vws {
 
@@ -26,14 +26,18 @@ public:
 	* - `helper`: contains operations of the base distribution $g$.
 	* - `maxopt`: a function of type `optimizer` that maximizes `w`.
 	* - `minopt`: a function of type `optimizer` that minimizes `w`.
+	* - `mid`: a function of type `midpoint` to compute the midpoint of interval
+	*   regions.
 	*
 	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
-	*
+	* If `mid` is not specified, we use a version of the arithmetic midpoint
+	* with special handling of infinite endpoints.
 	*/
 	RealConstRegion(double a, const dfdb& w,
 		const UnivariateHelper& helper,
 		const optimizer& maxopt = maxopt_default,
-		const optimizer& minopt = minopt_default);
+		const optimizer& minopt = minopt_default,
+		const vws::midpoint& mid = midpoint_default);
 
 	/*
 	* Construct a region based on interval $(a,b]$.
@@ -45,11 +49,14 @@ public:
 	* - `minopt`: a function of type `optimizer` that minimizes `w`.
 	*
 	* If `maxopt` and `minopt` are not specified, we use numerical optimization.
+	* If `mid` is not specified, we use a version of the arithmetic midpoint
+	* with special handling of infinite endpoints.
 	*/
 	RealConstRegion(double a, double b, const dfdb& w,
 		const UnivariateHelper& helper,
 		const optimizer& maxopt = maxopt_default,
-		const optimizer& minopt = minopt_default);
+		const optimizer& minopt = minopt_default,
+		const vws::midpoint& mid = midpoint_default);
 
 	/*
 	* The following functions override abstract methods in `Region`. See that
@@ -69,10 +76,7 @@ public:
 	std::string description() const;
 
 	/*
-	* A midpoint between limits $a$ and $b$ of region. If $a$ and $b$ are both
-	* finite, return the standard midpoint. If both are infinite, return zero.
-	* If only $a$ is finite, return a larger point in the support. If only $b$
-	* is finite, return a smaller point in the support.
+	* Return the midpoint of this region using the function _mid.
 	*/
 	double midpoint() const;
 
@@ -120,22 +124,23 @@ protected:
 	double _log_prob;
 	optimizer _maxopt;
 	optimizer _minopt;
+	vws::midpoint _mid;
 };
 
 inline RealConstRegion::RealConstRegion(double a,
 	const dfdb& w, const UnivariateHelper& helper,
-	const optimizer& maxopt, const optimizer& minopt)
+	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
 : _a(a), _b(a), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
-  _log_prob(NAN), _maxopt(maxopt), _minopt(minopt)
+  _log_prob(NAN), _maxopt(maxopt), _minopt(minopt), _mid(mid)
 {
 	RealConstRegion::init();
 }
 
 inline RealConstRegion::RealConstRegion(double a, double b,
 	const dfdb& w, const UnivariateHelper& helper,
-	const optimizer& maxopt, const optimizer& minopt)
+	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
 : _a(a), _b(b), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
-  _log_prob(NAN), _maxopt(maxopt), _minopt(minopt)
+  _log_prob(NAN), _maxopt(maxopt), _minopt(minopt), _mid(mid)
 {
 	RealConstRegion::init();
 }
@@ -210,24 +215,7 @@ inline double RealConstRegion::w_minor(const double& x, bool log) const
 
 inline double RealConstRegion::midpoint() const
 {
-	double out;
-
-	if (std::isinf(_a) && std::isinf(_b) && _a < 0 && _b > 0) {
-		// In this case, we have an interval (-inf, inf). Make a split at zero.
-		out = 0;
-	} else if (std::isinf(_a) && _a < 0) {
-		// Left endpoint is -inf. Split based on right endpoint.
-		double sgn = (_b > 0) - (_b < 0);
-		out = _b * std::pow(2, -sgn) - 1;
-	} else if (std::isinf(_b) && _b > 0) {
-		// Right endpoint is inf. Split based on left endpoint.
-		double sgn = (_a > 0) - (_a < 0);
-		out = _a * std::pow(2, sgn) + 1;
-	} else {
-		out = (_a + _b) / 2;
-	}
-
-	return out;
+	return _mid(_a, _b);
 }
 
 inline std::pair<RealConstRegion,RealConstRegion>
@@ -239,14 +227,14 @@ RealConstRegion::bifurcate() const
 inline std::pair<RealConstRegion,RealConstRegion>
 RealConstRegion::bifurcate(const double& x) const
 {
-	RealConstRegion r1(_a, x, *_w, *_helper, _maxopt, _minopt);
-	RealConstRegion r2(x, _b, *_w, *_helper, _maxopt, _minopt);
+	RealConstRegion r1(_a, x, *_w, *_helper, _maxopt, _minopt, _mid);
+	RealConstRegion r2(x, _b, *_w, *_helper, _maxopt, _minopt, _mid);
 	return std::make_pair(r1, r2);
 }
 
 inline RealConstRegion RealConstRegion::singleton(const double& x) const
 {
-	return RealConstRegion(x, *_w, *_helper, _maxopt, _minopt);
+	return RealConstRegion(x, *_w, *_helper, _maxopt, _minopt, _mid);
 }
 
 inline bool RealConstRegion::is_bifurcatable() const
@@ -294,6 +282,7 @@ inline const RealConstRegion& RealConstRegion::operator=(const RealConstRegion& 
 	_log_prob = x._log_prob;
 	_maxopt = x._maxopt;
 	_minopt = x._minopt;
+	_mid = x._mid;
 	return *this;
 }
 
