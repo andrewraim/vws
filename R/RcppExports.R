@@ -251,3 +251,46 @@ inv_rect <- function(x, a, b) {
     .Call(`_vws_inv_rect_rcpp`, x, a, b)
 }
 
+#' Produce a sequence of knots
+#'
+#' Produce knots which define \eqn{N} equally-spaced intervals between
+#' (finite) endpoints `lo` and `hi`.
+#'
+#' @param lo Left endpoint; must be finite.
+#' @param hi Right endpoint; must be finite.
+#' @param N Number of desired intervals.
+#' @param endpoints logical; if `TRUE`, include the endpoints.
+#'
+#' @returns A sequence of numbers.
+#'
+#' @details
+#' If `endpoints = TRUE`, return \eqn{N+1} evenly-spaced knots that
+#' represent \eqn{N} regions with endpoints included. If `endpoints = FALSE`,
+#' return \eqn{N-1} evenly-spaced knots that represent \eqn{N} regions with
+#' endpoints excluded.
+#'
+#' @examples
+#'
+#' seq_knots(0, 1, N = 5)
+#' seq_knots(0, 1, N = 5, endpoints = TRUE)
+#'
+#' # Trivial case: make endpoints for just one interval
+#' seq_knots(0, 1, N = 1)
+#' seq_knots(0, 1, N = 1, endpoints = TRUE)
+#'
+#' # The following calls throw errors
+#' tryCatch({
+#'   seq_knots(0, 1, N = 0)
+#' }, error = function(e) { print(e) })
+#' tryCatch({
+#'   seq_knots(0, Inf, N = 5)
+#' }, error = function(e) { print(e) })
+#' tryCatch({
+#'   seq_knots(-Inf, 1, N = 5)
+#' }, error = function(e) { print(e) })
+#'
+#' @export
+seq_knots <- function(lo, hi, N, endpoints = FALSE) {
+    .Call(`_vws_rcpp_seq`, lo, hi, N, endpoints)
+}
+
