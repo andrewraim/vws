@@ -1520,7 +1520,7 @@ f(y \mid z, \mu, \sigma^2)
 \right\}}_{g(y)} \cdot
 \underbrace{\frac{1}{y} \exp\left\{
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
-\right\} \ind\{y \in (0,\infty)\}}_{w(y)}.
+\right\} \ind(y > 0)}_{w(y)}.
 \label{eqn:ln-norm}
 \end{align}
 <!-- -->
