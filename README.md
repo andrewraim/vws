@@ -33,12 +33,12 @@ $$
 f(y \mid z, \mu, \sigma^2)
 %
 \propto
-\underbrace{\frac{1}{\lambda \sqrt{2\pi}} \exp\left\{
+\underbrace{\frac{1}{\lambda \sqrt{2\pi}} \exp\left[
 -\frac{1}{2\lambda^2} (z - y)^2
-\right\}}_{g(y)} \cdot
-\underbrace{\frac{1}{y} \exp\left\{
+\right]}_{g(y)} \cdot
+\underbrace{\frac{1}{y} \exp\left[
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
-\right\} \mathrm{I}(y > 0)}_{w(y)}.
+\right] \mathrm{I}(y > 0)}_{w(y)}.
 $$
 
 Create the file `example.cpp` with the following contents.
