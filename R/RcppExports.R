@@ -51,11 +51,13 @@ r_categ <- function(n, p, log = FALSE, one_based = FALSE) {
 #' @param sigma Scale parameter.
 #' @param lower Logical; if `TRUE` (default), probabilities are
 #' \eqn{P[X \leq x]} otherwise, \eqn{P[X > x]}.
-#' @param log Logical; if `TRUE`, probabilities p are given as \eqn{log(p)}
+#' @param log Logical; if `TRUE`, probabilities \eqn{p} are given as
+#' \eqn{\log(p)}.
 #'
 #' @return
 #' `d_gumbel` computes the density, `r_gumbel` generates random deviates,
-#' `p_gumbel` computes the CDF, and `q_gumbel` computes quantiles.
+#' `p_gumbel` computes the CDF, and `q_gumbel` computes quantiles. A vector is
+#' returned by each.
 #'
 #' @examples
 #' mu = 1
@@ -100,17 +102,26 @@ q_gumbel <- function(p, mu = 0, sigma = 1, lower = TRUE, log = FALSE) {
 
 #' Log-Sum-Exp
 #'
-#' Compute `log(sum(exp(x)))` in a more stable way.
+#' Compute arithmetic on the log-scale in a more stable way than directly
+#' taking logarithm and exponentiating.
 #'
-#' @param x A numeric vector
-#' @param y A numeric vector
+#' @param x A numeric vector.
+#' @param y A numeric vector; it should have the same length as `x`.
 #'
-#' @details Computed using the method described by user Ben in StackExchange
-#' thread \url{https://stats.stackexchange.com/questions/381936/vectorised-computation-of-logsumexp}.
+#' @details
+#' The function `log_sum_exp` computes `log(sum(exp(x)))` using the method in
+#' StackExchange post \url{https://stats.stackexchange.com/a/381937}.
 #'
+#' The functions `log_add2_exp` and `log_sub2_exp` compute
+#' `log(exp(x) + exp(y))` and `log(exp(x) - exp(y))`, respectively.
 #' The function `log_sub2_exp` expects that each element of `x` is
 #' larger than or equal to its corresponding element in `y`. Otherwise,
 #' `NaN` will be returned with a warning.
+#'
+#' @return
+#' `log_add2_exp` and `log_sub2_exp` return a vector of pointwise results
+#' whose \eqn{i}th element is the result based on `x[i]` and `y[i]`.
+#' `log_sum_exp` returns a single scalar.
 #'
 #' @examples
 #' pi = 1:6 / sum(1:6)
@@ -169,7 +180,7 @@ log_sub2_exp <- function(x, y) {
 #' Otherwise, it will be a minimization.
 #' @param maxiter Maximum number of iterations.
 #'
-#' @returns
+#' @returns A list with the following elements.
 #' \item{par}{Value of optimization variable.}
 #' \item{value}{Value of optimization function.}
 #' \item{method}{Description of result.}
@@ -195,13 +206,16 @@ optimize_hybrid <- function(f, init, lower, upper, maximize = FALSE, maxiter = 1
 
 #' Rectangular transformation
 #'
-#' A transformation from unconstrained \eqn{\mathbb{R}^n} to a rectangle in
-#' \eqn{\mathbb{R}^n}, and its inverse transformation.
+#' A transformation from unconstrained \eqn{\mathbb{R}^d} to a rectangle in
+#' \eqn{\mathbb{R}^d}, and its inverse transformation.
 #'
 #' @param x A point in \eqn{\mathbb{R}^{d}}.
 #' @param z A point in the rectangle \eqn{[a_1,b_1] \times \cdots \times [a_d,b_d]}.
 #' @param a A vector \eqn{(a_1, \ldots, a_d)}, Elements may be `-Inf`.
 #' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be `+Inf`.
+#'
+#' @return
+#' A vector of length \eqn{d}.
 #'
 #' @examples
 #' n = 20
@@ -261,16 +275,12 @@ inv_rect <- function(x, a, b) {
 #' @param N Number of desired intervals.
 #' @param endpoints logical; if `TRUE`, include the endpoints.
 #'
-#' @returns A sequence of numbers.
-#'
-#' @details
-#' If `endpoints = TRUE`, return \eqn{N+1} evenly-spaced knots that
-#' represent \eqn{N} regions with endpoints included. If `endpoints = FALSE`,
-#' return \eqn{N-1} evenly-spaced knots that represent \eqn{N} regions with
-#' endpoints excluded.
+#' @returns
+#' A vector that represents a sequence of knots. If `endpoints = TRUE`, it
+#' contains \eqn{N+1} evenly-spaced knots that represent \eqn{N} regions with
+#' endpoints included. If `endpoints = FALSE`, the endpoints are excluded.
 #'
 #' @examples
-#'
 #' seq_knots(0, 1, N = 5)
 #' seq_knots(0, 1, N = 5, endpoints = TRUE)
 #'

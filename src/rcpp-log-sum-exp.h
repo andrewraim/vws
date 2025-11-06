@@ -5,17 +5,26 @@
 
 //' Log-Sum-Exp
 //'
-//' Compute `log(sum(exp(x)))` in a more stable way.
+//' Compute arithmetic on the log-scale in a more stable way than directly
+//' taking logarithm and exponentiating.
 //'
-//' @param x A numeric vector
-//' @param y A numeric vector
+//' @param x A numeric vector.
+//' @param y A numeric vector; it should have the same length as `x`.
 //'
-//' @details Computed using the method described by user Ben in StackExchange
-//' thread \url{https://stats.stackexchange.com/questions/381936/vectorised-computation-of-logsumexp}.
+//' @details
+//' The function `log_sum_exp` computes `log(sum(exp(x)))` using the method in
+//' StackExchange post \url{https://stats.stackexchange.com/a/381937}.
 //'
+//' The functions `log_add2_exp` and `log_sub2_exp` compute
+//' `log(exp(x) + exp(y))` and `log(exp(x) - exp(y))`, respectively.
 //' The function `log_sub2_exp` expects that each element of `x` is
 //' larger than or equal to its corresponding element in `y`. Otherwise,
 //' `NaN` will be returned with a warning.
+//'
+//' @return
+//' `log_add2_exp` and `log_sub2_exp` return a vector of pointwise results
+//' whose \eqn{i}th element is the result based on `x[i]` and `y[i]`.
+//' `log_sum_exp` returns a single scalar.
 //'
 //' @examples
 //' pi = 1:6 / sum(1:6)

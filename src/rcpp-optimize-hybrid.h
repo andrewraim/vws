@@ -16,7 +16,7 @@
 //' Otherwise, it will be a minimization.
 //' @param maxiter Maximum number of iterations.
 //'
-//' @returns
+//' @returns A list with the following elements.
 //' \item{par}{Value of optimization variable.}
 //' \item{value}{Value of optimization function.}
 //' \item{method}{Description of result.}

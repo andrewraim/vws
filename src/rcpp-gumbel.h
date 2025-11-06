@@ -20,11 +20,13 @@
 //' @param sigma Scale parameter.
 //' @param lower Logical; if `TRUE` (default), probabilities are
 //' \eqn{P[X \leq x]} otherwise, \eqn{P[X > x]}.
-//' @param log Logical; if `TRUE`, probabilities p are given as \eqn{log(p)}
+//' @param log Logical; if `TRUE`, probabilities \eqn{p} are given as
+//' \eqn{\log(p)}.
 //'
 //' @return
 //' `d_gumbel` computes the density, `r_gumbel` generates random deviates,
-//' `p_gumbel` computes the CDF, and `q_gumbel` computes quantiles.
+//' `p_gumbel` computes the CDF, and `q_gumbel` computes quantiles. A vector is
+//' returned by each.
 //'
 //' @examples
 //' mu = 1

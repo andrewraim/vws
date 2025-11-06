@@ -18,9 +18,12 @@ inv_rect(x, a, b)
 
 \item{x}{A point in \eqn{\mathbb{R}^{d}}.}
 }
+\value{
+A vector of length \eqn{d}.
+}
 \description{
-A transformation from unconstrained \eqn{\mathbb{R}^n} to a rectangle in
-\eqn{\mathbb{R}^n}, and its inverse transformation.
+A transformation from unconstrained \eqn{\mathbb{R}^d} to a rectangle in
+\eqn{\mathbb{R}^d}, and its inverse transformation.
 }
 \examples{
 n = 20

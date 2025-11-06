@@ -5,13 +5,16 @@
 
 //' Rectangular transformation
 //'
-//' A transformation from unconstrained \eqn{\mathbb{R}^n} to a rectangle in
-//' \eqn{\mathbb{R}^n}, and its inverse transformation.
+//' A transformation from unconstrained \eqn{\mathbb{R}^d} to a rectangle in
+//' \eqn{\mathbb{R}^d}, and its inverse transformation.
 //'
 //' @param x A point in \eqn{\mathbb{R}^{d}}.
 //' @param z A point in the rectangle \eqn{[a_1,b_1] \times \cdots \times [a_d,b_d]}.
 //' @param a A vector \eqn{(a_1, \ldots, a_d)}, Elements may be `-Inf`.
 //' @param b A vector \eqn{(b_1, \ldots, b_d)}, Elements may be `+Inf`.
+//'
+//' @return
+//' A vector of length \eqn{d}.
 //'
 //' @examples
 //' n = 20

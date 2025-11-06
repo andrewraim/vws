@@ -25,7 +25,8 @@ q_gumbel(p, mu = 0, sigma = 1, lower = TRUE, log = FALSE)
 
 \item{x}{Vector; argument of density.}
 
-\item{log}{Logical; if \code{TRUE}, probabilities p are given as \eqn{log(p)}}
+\item{log}{Logical; if \code{TRUE}, probabilities \eqn{p} are given as
+\eqn{\log(p)}.}
 
 \item{q}{Vector; argument of quantile function.}
 
@@ -36,7 +37,8 @@ q_gumbel(p, mu = 0, sigma = 1, lower = TRUE, log = FALSE)
 }
 \value{
 \code{d_gumbel} computes the density, \code{r_gumbel} generates random deviates,
-\code{p_gumbel} computes the CDF, and \code{q_gumbel} computes quantiles.
+\code{p_gumbel} computes the CDF, and \code{q_gumbel} computes quantiles. A vector is
+returned by each.
 }
 \description{
 Functions for the Gumbel distribution with density

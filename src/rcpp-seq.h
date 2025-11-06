@@ -13,16 +13,12 @@
 //' @param N Number of desired intervals.
 //' @param endpoints logical; if `TRUE`, include the endpoints.
 //'
-//' @returns A sequence of numbers.
-//'
-//' @details
-//' If `endpoints = TRUE`, return \eqn{N+1} evenly-spaced knots that
-//' represent \eqn{N} regions with endpoints included. If `endpoints = FALSE`,
-//' return \eqn{N-1} evenly-spaced knots that represent \eqn{N} regions with
-//' endpoints excluded.
+//' @returns
+//' A vector that represents a sequence of knots. If `endpoints = TRUE`, it
+//' contains \eqn{N+1} evenly-spaced knots that represent \eqn{N} regions with
+//' endpoints included. If `endpoints = FALSE`, the endpoints are excluded.
 //'
 //' @examples
-//'
 //' seq_knots(0, 1, N = 5)
 //' seq_knots(0, 1, N = 5, endpoints = TRUE)
 //'

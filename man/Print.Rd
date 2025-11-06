@@ -24,6 +24,9 @@ fprintf(file, fmt, ...)
 
 \item{file}{A connection, or a character string naming the file to print to}
 }
+\value{
+None (invisible \code{NULL}); functions are called for side effects.
+}
 \description{
 Functions to print messages using an \code{sprintf} syntax.
 }

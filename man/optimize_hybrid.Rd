@@ -21,6 +21,7 @@ Otherwise, it will be a minimization.}
 \item{maxiter}{Maximum number of iterations.}
 }
 \value{
+A list with the following elements.
 \item{par}{Value of optimization variable.}
 \item{value}{Value of optimization function.}
 \item{method}{Description of result.}

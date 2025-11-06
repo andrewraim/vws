@@ -13,17 +13,25 @@ log_add2_exp(x, y)
 log_sub2_exp(x, y)
 }
 \arguments{
-\item{x}{A numeric vector}
+\item{x}{A numeric vector.}
 
-\item{y}{A numeric vector}
+\item{y}{A numeric vector; it should have the same length as \code{x}.}
+}
+\value{
+\code{log_add2_exp} and \code{log_sub2_exp} return a vector of pointwise results
+whose \eqn{i}th element is the result based on \code{x[i]} and \code{y[i]}.
+\code{log_sum_exp} returns a single scalar.
 }
 \description{
-Compute \code{log(sum(exp(x)))} in a more stable way.
+Compute arithmetic on the log-scale in a more stable way than directly
+taking logarithm and exponentiating.
 }
 \details{
-Computed using the method described by user Ben in StackExchange
-thread \url{https://stats.stackexchange.com/questions/381936/vectorised-computation-of-logsumexp}.
+The function \code{log_sum_exp} computes \code{log(sum(exp(x)))} using the method in
+StackExchange post \url{https://stats.stackexchange.com/a/381937}.
 
+The functions \code{log_add2_exp} and \code{log_sub2_exp} compute
+\code{log(exp(x) + exp(y))} and \code{log(exp(x) - exp(y))}, respectively.
 The function \code{log_sub2_exp} expects that each element of \code{x} is
 larger than or equal to its corresponding element in \code{y}. Otherwise,
 \code{NaN} will be returned with a warning.

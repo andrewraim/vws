@@ -16,20 +16,15 @@ seq_knots(lo, hi, N, endpoints = FALSE)
 \item{endpoints}{logical; if \code{TRUE}, include the endpoints.}
 }
 \value{
-A sequence of numbers.
+A vector that represents a sequence of knots. If \code{endpoints = TRUE}, it
+contains \eqn{N+1} evenly-spaced knots that represent \eqn{N} regions with
+endpoints included. If \code{endpoints = FALSE}, the endpoints are excluded.
 }
 \description{
 Produce knots which define \eqn{N} equally-spaced intervals between
 (finite) endpoints \code{lo} and \code{hi}.
 }
-\details{
-If \code{endpoints = TRUE}, return \eqn{N+1} evenly-spaced knots that
-represent \eqn{N} regions with endpoints included. If \code{endpoints = FALSE},
-return \eqn{N-1} evenly-spaced knots that represent \eqn{N} regions with
-endpoints excluded.
-}
 \examples{
-
 seq_knots(0, 1, N = 5)
 seq_knots(0, 1, N = 5, endpoints = TRUE)
 

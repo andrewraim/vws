@@ -8,6 +8,9 @@
 #' @param join A string to place between the timestamp and the message.
 #' @param ... Additional arguments
 #'
+#' @return
+#' None (invisible `NULL`); functions are called for side effects.
+#'
 #' @examples
 #' printf("Hello world %f %d\n", 0.1, 5)
 #' logger("Hello world\n")
