@@ -46,8 +46,8 @@ geometry:
   - top=0.75in
   - bottom=1.00in
 execute:
-  eval: false
-code-block-bg: "#fafafa"
+  eval: true
+code-block-bg: "#FAFAFA"
 code-block-border-left: "#B2DEED"
 filters:
   - include-code-files
