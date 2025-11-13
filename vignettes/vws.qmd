@@ -39,6 +39,8 @@ abstract: |
   multivariate problems as well.
 thanks: |
   **For correspondence**`:` <andrew.raim@gmail.com>.
+  Center for Statistical Research & Methodology, U.S. Census Bureau,
+  Washington, DC, 20233, U.S.A.
   Document was compiled `{r} format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")`.
 geometry:
   - left=0.75in
@@ -52,8 +54,6 @@ code-block-border-left: "#B2DEED"
 filters:
   - include-code-files
 callout-icon: false
-# Center for Statistical Research & Methodology, U.S. Census Bureau,
-# Washington, DC, 20233, U.S.A.
 ---
 
 ```{r}
@@ -66,9 +66,7 @@ set.seed(1234)
 
 # Disclaimer and Acknowledgments {.unnumbered}
 
-<!--
 This document is released to inform interested parties of ongoing research and to encourage discussion of work in progress. Any views expressed are those of the authors and not those of the U.S. Census Bureau.
--->
 
 Although there are no guarantees of correctness of the `vws` package, reasonable efforts will be made to address shortcomings. Comments, questions, corrections, and possible improvements can be communicated through the project’s Github repository (<https://github.com/andrewraim/vws>).
 
@@ -577,7 +575,7 @@ Rcpp::LogicalVector::const_iterator bifurcatable_end() const;
 
 ### Refining the Proposal {.unlisted}
 
-Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition. Both variants return a vector $\rho_+^(0), \ldots, \rho_+^{(N_0)}$ which represents values of the bound \eqref{eqn:bound} at each refinement step; $N_0$ is the number of steps taken, $\rho_+^(j)$ represents the value at refinement $j = 0, \ldots, N_0$, and $\rho_+^(j)$ represents the initial value. The first variant partitions at a given vector of knots.
+Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition. Both variants return a vector $\rho_+^{(0)}, \ldots, \rho_+^{(N_0)}$ which represents values of the bound \eqref{eqn:bound} at each refinement step; $N_0$ is the number of steps taken, $\rho_+^{(j)}$ represents the value at refinement $j = 0, \ldots, N_0$, and $\rho_+^{(j)}$ represents the initial value. The first variant partitions at a given vector of knots.
 
 ```{cpp}
 Rcpp::NumericVector refine(
