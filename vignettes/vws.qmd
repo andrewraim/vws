@@ -165,7 +165,7 @@ Note that the majorizer and minorizer need not have the same functional form. Wh
 \label{eqn:bound}
 \end{align}
 <!-- -->
-The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to $\rho_+$. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling; if it is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear. @sec-vws-knots reviews several knot selection methods.
+The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to $\rho_+$. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling; if it is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in the remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear. @sec-vws-knots reviews several knot selection methods.
 
 ## Constant Majorizer {#sec-vws-constant}
 
@@ -474,7 +474,7 @@ typedef std::function<double(
 3.  Upper bound of the interval; may be `R_PosInf`.
 4.  Logical; `log = true` specifies that the result should be the optimal value $\log w(x^*)$, given on the log-scale. Otherwise, the result should be the optimal value $w(x^*)$ on the original scale.
 
-The following typedef represents a function that computes the midpoint of a given interval. Note that this type name can clash with the `midpoint` function in the STL; therefore, it is reference using its namespace `vws::midpoint` within the `vws` package.
+The following typedef represents a function that computes the midpoint of a given interval. Note that this type name can clash with the `midpoint` function in the STL; therefore, it is referenced using its namespace `vws::midpoint` within the `vws` package.
 
 ```{cpp}
 typedef std::function<double(double a, double b)> midpoint;
@@ -576,7 +576,7 @@ Rcpp::LogicalVector::const_iterator bifurcatable_end() const;
 
 ### Refining the Proposal {.unlisted}
 
-Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition. Both variants return a vector $\rho_+^{(0)}, \ldots, \rho_+^{(N_0)}$ which represents values of the bound \eqref{eqn:bound} at each refinement step; $N_0$ is the number of steps taken, $\rho_+^{(j)}$ represents the value at refinement $j = 0, \ldots, N_0$, and $\rho_+^{(j)}$ represents the initial value. The first variant partitions at a given vector of knots.
+Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition. Both variants return a vector $\rho_+^{(0)}, \ldots, \rho_+^{(N_0)}$ which represents values of the bound \eqref{eqn:bound} at each refinement step; $N_0$ is the number of steps taken, $\rho_+^{(j)}$ represents the value at refinement $j = 1, \ldots, N_0$, and $\rho_+^{(0)}$ represents the initial value. The first variant partitions at a given vector of knots.
 
 ```{cpp}
 Rcpp::NumericVector refine(
@@ -695,7 +695,7 @@ public:
 
 ## Region on Real-Valued Support with Constant Majorizer {#sec-api-realconstregion}
 
-`RealConstRegion` is a subclass of `Region`, defined in @sec-api-region, specifically for univariate problems with continuous support where $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. It assumes a constant a minorizer $\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$. The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical optimization by default; however, user-supplied methods can be supplied to identify these values when it is possible.
+`RealConstRegion` is a subclass of `Region`, defined in @sec-api-region, specifically for univariate problems with continuous support where $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. It assumes a constant minorizer $\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$. The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical optimization by default; however, user-supplied methods can be supplied to identify these values when it is possible.
 
 ### Constructors {.unlisted #sec-api-realconstregion-constructors}
 
