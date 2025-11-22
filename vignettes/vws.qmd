@@ -2273,7 +2273,7 @@ ggplot(df) +
 ```{r}
 #| fig-cap: |
 #|   Majorizers (on the log-scale) for Bessel example for three sampler
-#|   versions. The blue curve with is the majorizer with a blue dot marking the
+#|   versions. The blue curve is the majorizer with a blue dot marking the
 #|   right endpoint of each region. The black triangle displays the value of
 #|   $\log w(x)$ at integers $x \in \mathbb{N}$.
 #| fig-subcap:
