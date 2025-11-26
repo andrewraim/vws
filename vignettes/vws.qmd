@@ -11,6 +11,7 @@ format:
     colorlinks: true
     link-citations: true
     prompt: false
+    fig-pos: H
     include-in-header:
       text: |
         \usepackage{common}
@@ -25,7 +26,7 @@ editor_options:
 classoption: abstract
 abstract: |
   The `vws` package facilitates the vertical weighted strips (VWS) method in R.
-  VWS is an approach to constructing proposals for rejection sampling which is
+  VWS is an approach to construct proposals for rejection sampling which is
   explored in @VWS2025. The `vws` package provides an API to program the
   necessary components for the proposal and carry out rejection sampling. The
   API of the `vws` package is in C++ and makes use of templates and
@@ -39,6 +40,8 @@ abstract: |
   multivariate problems as well.
 thanks: |
   **For correspondence**`:` <andrew.raim@gmail.com>.
+  Center for Statistical Research & Methodology, U.S. Census Bureau,
+  Washington, DC, 20233, U.S.A.
   Document was compiled `{r} format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")`.
 geometry:
   - left=0.75in
@@ -52,8 +55,6 @@ code-block-border-left: "#B2DEED"
 filters:
   - include-code-files
 callout-icon: false
-# Center for Statistical Research & Methodology, U.S. Census Bureau,
-# Washington, DC, 20233, U.S.A.
 ---
 
 ```{r}
@@ -66,15 +67,15 @@ set.seed(1234)
 
 # Disclaimer and Acknowledgments {.unnumbered}
 
-<!--
 This document is released to inform interested parties of ongoing research and to encourage discussion of work in progress. Any views expressed are those of the authors and not those of the U.S. Census Bureau.
--->
+
+The author is grateful to Drs. James Livsey and Kyle Irimata for discussions that motivated development of this package. Thanks to Drs. Kyle Irimata and Tommy Wright for their reviews of this manuscript.
 
 Although there are no guarantees of correctness of the `vws` package, reasonable efforts will be made to address shortcomings. Comments, questions, corrections, and possible improvements can be communicated through the project’s Github repository (<https://github.com/andrewraim/vws>).
 
 # Introduction
 
-The `vws` package facilitates vertical weighted strips (VWS) sampling [@VWS2025]. VWS is an approach to construct proposals distributions for rejection sampling. Here, the target density is regarded as a weighted density - the product of a nonnegative weight function and a base density. The weight function is majorized by a given function (which bounds it above) to yield an envelope which is recombined with the base density to form a proposal distribution. If it is convenient to generate draws from the proposal, and the distance between the original and majorized weight function is not too large, such a proposal can be effectively used in rejection sampling. When the weight function is majorized in a piecewise manner over the support, the resulting proposal can be regarded as a finite mixture. Such a mixture can be refined to reduce the rejection probability to an acceptable tolerance.
+The `vws` package facilitates vertical weighted strips (VWS) sampling [@VWS2025]. VWS is an approach to construct proposal distributions for rejection sampling. Here, the target density is regarded as a weighted density - the product of a nonnegative weight function and a base density. The weight function is majorized by a given function (which bounds it above) to yield an envelope which is recombined with the base density to form a proposal distribution. If it is convenient to generate draws from the proposal, and the distance between the original and majorized weight function is not too large, such a proposal can be effectively used in rejection sampling. When the weight function is majorized in a piecewise manner over the support, the resulting proposal can be regarded as a finite mixture. Such a mixture can be refined to reduce the rejection probability to an acceptable tolerance. The term "vertical weighted strips" emphasizes that it is an extension of a method referred to as "vertical strips" in Section 3.6.1 of @MartinoLuengoMiguez2018, and was previously described in Chapter VIII of @Devroye1986. Partitioning in VWS is done to facilitate majorization of the weight function rather than to majorize the entire target density as in vertical strips.
 
 The `vws` package provides tools to construct and utilize VWS proposal distributions. Variate generation functions are constructed in C++ and may be exposed for use in R via the Rcpp package [@Eddelbuettel2103]. C++ is taken as the primary programming language because of its efficiency as a compiled language and its formal approach to object-orientation and template programming. The `fntl` package [@fntl] is integral to `vws` usage; it provides a simplified C++ interface to useful routines in the R application programming interface (API) which is described in @RExtensions, as well as other useful numerical routines, where functions are supplied as lambdas. The `vws` package has been designed primarily to generate from univariate distributions (both continuous and discrete). It is also possible to construct proposals for multivariate distributions using the VWS approach; the `vws` package is intended to support code development for such settings as well.
 
@@ -86,7 +87,7 @@ This vignette presents an overview of the package, its API, and several examples
 file.path(path.package("vws"), "doc", "examples")
 ```
 
-The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002].
+The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting relevant to the U.S. Census Bureau, which is considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002].
 
 ::: {.callout-tip title="Quick Start"}
 Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described with the highest amount of detail.
@@ -166,7 +167,7 @@ Note that the majorizer and minorizer need not have the same functional form. Wh
 \label{eqn:bound}
 \end{align}
 <!-- -->
-The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to $\rho_+$. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling; if it is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear. @sec-vws-knots reviews several knot selection methods.
+The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to $\rho_+$. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling; if it is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in the remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear. @sec-vws-knots reviews several knot selection methods.
 
 ## Constant Majorizer {#sec-vws-constant}
 
@@ -203,23 +204,23 @@ Suppose $w$ is log-concave on $\mathscr{D}_j$. For any $c \in \mathscr{D}_j$,
 \begin{align}
 \log w(x)
 &\leq \log w(c) + (x - c) \nabla(c) \nonumber \\
-&= \overline{\beta}_{j0} + \overline{\beta}_{j1} \cdot x,
+&= \overline{\beta}_{0j} + \overline{\beta}_{1j} \cdot x,
 \label{eqn:linear-concave-majorizer}
 \end{align}
 <!-- -->
 so that
 \begin{math}
-\overline{w}_j(x) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} \cdot x \}
+\overline{w}_j(x) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} \cdot x \}
 \end{math}
 <!-- -->
 with
 <!-- -->
 \begin{math}
-\overline{\beta}_{j0} = \log w(c) - c \cdot \nabla(c),
+\overline{\beta}_{0j} = \log w(c) - c \cdot \nabla(c),
 \end{math}
 <!-- -->
 \begin{math}
-\overline{\beta}_{j1} = \nabla(c),
+\overline{\beta}_{1j} = \nabla(c),
 \end{math}
 <!-- -->
 and
@@ -233,26 +234,26 @@ For an accompanying minorizer, let $\lambda \in [0,1]$ for a given $x \in \maths
 \begin{align}
 \log w(x) &\geq (1-\lambda) \log w(\alpha_{j-1}) + \lambda \log w(\alpha_j) \nonumber \\
 &= \log w(\alpha_{j-1}) + \frac{x - \alpha_{j-1}}{\alpha_j - \alpha_{j-1}} [ \log w(\alpha_j) - \log w(\alpha_{j-1})] \nonumber \\
-&= \underline{\beta}_{j0} + \underline{\beta}_{j1} \cdot x,
+&= \underline{\beta}_{0j} + \underline{\beta}_{1j} \cdot x,
 \label{eqn:linear-concave-minorizer}
 \end{align}
 <!-- -->
 so that
 <!-- -->
 \begin{math}
-\underline{w}_j(x) = \exp\{ \underline{\beta}_{j0} + \underline{\beta}_{j1} \cdot x \}
+\underline{w}_j(x) = \exp\{ \underline{\beta}_{0j} + \underline{\beta}_{1j} \cdot x \}
 \end{math}
 <!-- -->
 with
 <!-- -->
 \begin{math}
-\underline{\beta}_{j0} = \log w(\alpha_{j-1}) - \alpha_{j-1} \underline{\beta}_{j1}
+\underline{\beta}_{0j} = \log w(\alpha_{j-1}) - \alpha_{j-1} \underline{\beta}_{1j}
 \end{math}
 <!-- -->
 and
 <!-- -->
 \begin{math}
-\underline{\beta}_{j1} = \{\log w(\alpha_j) - \log w(\alpha_{j-1}) \} / \{ \alpha_j - \alpha_{j-1} \}.
+\underline{\beta}_{1j} = \{\log w(\alpha_j) - \log w(\alpha_{j-1}) \} / \{ \alpha_j - \alpha_{j-1} \}.
 \end{math}
 \remarkqed
 :::
@@ -280,15 +281,15 @@ c^*
 where 
 <!-- -->
 \begin{math}
-\overline{w}_j(x) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} \cdot x \},
+\overline{w}_j(x) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} \cdot x \},
 \end{math}
 <!-- -->
 \begin{math}
-\overline{\beta}_{j0} = \log w(c) - c \cdot \nabla(c),
+\overline{\beta}_{0j} = \log w(c) - c \cdot \nabla(c),
 \end{math}
 <!-- -->
 \begin{math}
-\overline{\beta}_{j1} = \nabla(c),
+\overline{\beta}_{1j} = \nabla(c),
 \end{math}
 <!-- -->
 \begin{math}
@@ -315,15 +316,15 @@ c^* &= \argmin_{c \in \mathscr{D}_j} \int_{\mathscr{D}_j} [w(x) - \underline{w}_
 where 
 <!-- -->
 \begin{math}
-\overline{w}_j(x) = \exp\{ \underline{\beta}_{j0} + \underline{\beta}_{j1} \cdot x \},
+\overline{w}_j(x) = \exp\{ \underline{\beta}_{0j} + \underline{\beta}_{1j} \cdot x \},
 \end{math}
 <!-- -->
 \begin{math}
-\underline{\beta}_{j0} = \log w(c) - c \cdot \nabla(c),
+\underline{\beta}_{0j} = \log w(c) - c \cdot \nabla(c),
 \end{math}
 <!-- -->
 \begin{math}
-\underline{\beta}_{j1} = \nabla(c),
+\underline{\beta}_{1j} = \nabla(c),
 \end{math}
 <!-- -->
 \begin{math}
@@ -368,7 +369,7 @@ The `rejection` function takes an object `h` of class `FMMProposal` and carries 
 
 ![Design of `vws` package.](software-design.pdf){#fig-software-design}
 
-The following display outlines a typical workflow for VWS rejection sampling in C++. Suppose this code is saved is in a file named `sample.cpp`.
+The following display outlines a typical workflow for VWS rejection sampling in C++. Some of the lines are labeled with numbers; descriptions of these labels are given after the code.
 
 ```{cpp}
 // [[Rcpp::depends(vws, fntl)]]                 // <1>
@@ -399,7 +400,7 @@ Rcpp::List sample(unsigned int n)
 7.  Carry out rejection sampling with the refined proposal `h`.
 8.  Pack elements of the struct `out` into an `Rcpp::List` and return them to the caller.
 
-Note that the `FMMProposal` class, the `rejection` function, and other elements of the `vws` API are accessed in the `vws` namespace. Details for the API are given in @sec-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual.
+Note that the `FMMProposal` class, the `rejection` function, and other elements of the `vws` API are accessed in the `vws` namespace. Details for the API are given in @sec-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual. Suppose the code in the previous display is saved is in a file named `sample.cpp`.
 
 ```{r}
 #| eval: false
@@ -475,7 +476,7 @@ typedef std::function<double(
 3.  Upper bound of the interval; may be `R_PosInf`.
 4.  Logical; `log = true` specifies that the result should be the optimal value $\log w(x^*)$, given on the log-scale. Otherwise, the result should be the optimal value $w(x^*)$ on the original scale.
 
-The following typedef represents a function that computes the midpoint of a given interval. Note that this type name can clash with the `midpoint` function in the STL; therefore, it is reference using its namespace `vws::midpoint` within the `vws` package.
+The following typedef represents a function that computes the midpoint of a given interval. Note that this type name can clash with the `midpoint` function in the STL; therefore, it is referenced using its namespace `vws::midpoint` within the `vws` package.
 
 ```{cpp}
 typedef std::function<double(double a, double b)> midpoint;
@@ -496,7 +497,7 @@ class FMMProposal { ... };
 
 ### Constructor {.unlisted}
 
-The primary constructor takes a vector of regions of type `R`. There must be at least one region in the vector These regions are expected to be a partition of the support $\Omega$.
+The primary constructor takes a vector of regions of type `R`. There must be at least one region in the vector. These regions are expected to be a partition of the support $\Omega$.
 
 ```{cpp}
 FMMProposal(const std::vector<R>& regions);
@@ -577,7 +578,7 @@ Rcpp::LogicalVector::const_iterator bifurcatable_end() const;
 
 ### Refining the Proposal {.unlisted}
 
-Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition. Both variants return a vector $\rho_+^(0), \ldots, \rho_+^{(N_0)}$ which represents values of the bound \eqref{eqn:bound} at each refinement step; $N_0$ is the number of steps taken, $\rho_+^(j)$ represents the value at refinement $j = 0, \ldots, N_0$, and $\rho_+^(j)$ represents the initial value. The first variant partitions at a given vector of knots.
+Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \mathscr{D}_N$ into a finer partition. Both variants return a vector $\rho_+^{(0)}, \ldots, \rho_+^{(N_0)}$ which represents values of the bound \eqref{eqn:bound} at each refinement step; $N_0$ is the number of steps taken, $\rho_+^{(j)}$ represents the value at refinement $j = 1, \ldots, N_0$, and $\rho_+^{(0)}$ represents the initial value. The first variant partitions at a given vector of knots.
 
 ```{cpp}
 Rcpp::NumericVector refine(
@@ -601,7 +602,7 @@ Rcpp::NumericVector refine(
 );
 ```
 
-1.  Number of refinements to make.
+1.  Maximum number of refinements to make.
 2.  Tolerance for \eqref{eqn:bound}; refinement will halt if $\rho_+$ reaches this.
 3.  If `greedy = true`, the region with the largest $\rho_\ell$ is always selected for partitioning; otherwise, regions are selected with probabilities proportional to $\rho_1, \ldots, \rho_N$.
 4.  If `log = true` return bound values $\rho_+^{(0)}, \ldots, \rho_+^{(N)}$ on the log-scale.
@@ -696,7 +697,7 @@ public:
 
 ## Region on Real-Valued Support with Constant Majorizer {#sec-api-realconstregion}
 
-`RealConstRegion` is a subclass of `Region`, defined in @sec-api-region, specifically for univariate problems with continuous support where $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. It assumes a constant a minorizer $\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$. The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical optimization by default; however, user-supplied methods can be supplied to identify these values when it is possible.
+`RealConstRegion` is a subclass of `Region`, defined in @sec-api-region, specifically for univariate problems with continuous support where $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. It assumes a constant minorizer $\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$. The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical optimization by default; however, user-supplied methods can be supplied to identify these values when it is possible.
 
 ### Constructors {.unlisted #sec-api-realconstregion-constructors}
 
@@ -1394,13 +1395,13 @@ head(out2$draws)
 
 ## Linear Majorizer {#sec-vmf-linear}
 
-We noted in @sec-vmf-const-custom that $w$ is log-convex when $d < 3$, log-concave when $d > 3$, and a constant otherwise. Therefore, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j(x) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} x \}$. This yields the expression
+We noted in @sec-vmf-const-custom that $w$ is log-convex when $d < 3$, log-concave when $d > 3$, and a constant otherwise. Therefore, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j(x) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} x \}$. This yields the expression
 <!-- -->
 \begin{align*}
 \overline{\xi}_j
 = \int_{\alpha_{j-1}}^{\alpha_j} \overline{w}_j(x) g(x) dx
-= \frac{\kappa \exp\{ \overline{\beta}_{j0} \}}{(\kappa + \overline{\beta}_{j1}) (e^{\kappa \alpha_N} - e^{\kappa \alpha_0})} \left\{
-\exp\{(\kappa + \overline{\beta}_{j1}) \alpha_j\} - \exp\{(\kappa + \overline{\beta}_{j1}) \alpha_{j-1} \}
+= \frac{\kappa \exp\{ \overline{\beta}_{0j} \}}{(\kappa + \overline{\beta}_{1j}) (e^{\kappa \alpha_N} - e^{\kappa \alpha_0})} \left\{
+\exp\{(\kappa + \overline{\beta}_{1j}) \alpha_j\} - \exp\{(\kappa + \overline{\beta}_{1j}) \alpha_{j-1} \}
 \right\}.
 \end{align*}
 <!-- -->
@@ -1410,14 +1411,14 @@ The proposal $h$ is then a finite mixture $h(x) = \sum_{j=1}^N \pi_j g_j(x)$ wit
 g_j(x)
 &= \overline{w}_j(x) g(x) \ind\{ x \in \mathscr{D}_j \} / \overline{\xi}_j \\
 &= \frac{
-(\kappa + \overline{\beta}_{j1}) \exp\{(\kappa + \overline{\beta}_{j1}) x\}
+(\kappa + \overline{\beta}_{1j}) \exp\{(\kappa + \overline{\beta}_{1j}) x\}
 }{
-\exp\{(\kappa + \overline{\beta}_{j1}) \alpha_j\} - \exp\{(\kappa + \overline{\beta}_{j1}) \alpha_{j-1} \}
+\exp\{(\kappa + \overline{\beta}_{1j}) \alpha_j\} - \exp\{(\kappa + \overline{\beta}_{1j}) \alpha_{j-1} \}
 }
 \cdot \ind(\alpha_{j-1} < x \leq \alpha_j),
 \end{align*}
 <!-- -->
-the density of $\text{Exp}_{(\alpha_{j-1}, \alpha_j]}(\kappa + \overline{\beta}_{j1})$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case, with
+the density of $\text{Exp}_{(\alpha_{j-1}, \alpha_j]}(\kappa + \overline{\beta}_{1j})$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case, with
 <!-- -->
 \begin{align*}
 M_j(s) = \int_{\alpha_{j-1}}^{\alpha_j} e^{sx} g(x) dx
@@ -1805,7 +1806,7 @@ ggplot() +
 	theme_minimal()
 ```
 
-As in @sec-vmf-linear, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j(y) = \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} y \}$. Here, we also assume a minorizer of the form $\underline{w}_j(y) = \exp\{ \underline{\beta}_{j0} + \underline{\beta}_{j1} y \}$. Before proceeding, the following remark gives an integral that will be used several times.
+As in @sec-vmf-linear, we can majorize $w$ with exponentiated linear functions of the form $\overline{w}_j(y) = \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y \}$. Here, we also assume a minorizer of the form $\underline{w}_j(y) = \exp\{ \underline{\beta}_{0j} + \underline{\beta}_{1j} y \}$. Before proceeding, the following remark gives an integral that will be used several times.
 
 ::: {#rem-normal-mgf-integral}
 Let $\phi(\cdot \mid \mu, \sigma^2)$ and $\Phi(\cdot \mid \mu, \sigma^2)$ be the density and CDF of $Y \sim \text{N}(\mu, \sigma^2)$, respectively. If $a < b$ are scalars (possibly infinite), then
@@ -1828,8 +1829,8 @@ where $T \sim \text{N}(\mu + t \sigma^2, \sigma^2)$. The special case $a = -\inf
 \overline{\xi}_j
 &= \int_{\alpha_{j-1}}^{\alpha_j} \overline{w}_j(y) g(y) dy \\
 %
-&= \exp\{ \overline{\beta}_{j0} \} \int_{\alpha_{j-1}}^{\alpha_j} 
-\exp\{ \overline{\beta}_{j1} y \}
+&= \exp\{ \overline{\beta}_{0j} \} \int_{\alpha_{j-1}}^{\alpha_j} 
+\exp\{ \overline{\beta}_{1j} y \}
 \frac{1}{\lambda \sqrt{2\pi}}
 \exp\left\{ -\frac{1}{2 \lambda^2} (y - z)^2 \right\} dy \\
 %
@@ -1857,7 +1858,7 @@ where $\underline{T} \sim \text{N}(z + \underline{\beta}_{1j} \lambda^2, \lambda
 g_j(y)
 &= \overline{w}_j(y) g(y) \ind\{ y \in \mathscr{D}_j \} / \overline{\xi}_j \\
 %
-&= \exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} y \}
+&= \exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} y \}
 \frac{1}{\lambda \sqrt{2\pi}}
 \exp\left\{ -\frac{1}{2 \lambda^2} (y - z)^2 \right\}
 \cdot \ind(\alpha_{j-1} < y \leq \alpha_j) / \overline{\xi}_j  \\
@@ -2161,35 +2162,35 @@ We have the expression
 \overline{\xi}_j
 &= \int_{\alpha_{j-1}}^{\alpha_j} \overline{w}_j(x) g(x) d\nu(x) \\
 %
-&= \exp\{ \overline{\beta}_{j0} \}
+&= \exp\{ \overline{\beta}_{0j} \}
 \sum_{k \in (\alpha_{j-1}, \alpha_j]}
-\exp\{ \overline{\beta}_{j1} x \}
+\exp\{ \overline{\beta}_{1j} x \}
 \frac{(\lambda^2 / 4)^x e^{-\lambda^2 / 4} }{x!} \\
 %
-%&= \exp\{ \overline{\beta}_{j0} \}
+%&= \exp\{ \overline{\beta}_{0j} \}
 %\exp\{ -\lambda^2 / 4 \}
 %\sum_{k \in (\alpha_{j-1}, \alpha_j]}
 %\frac{1}{x!}
-%\left[ e^{ \frac{\lambda^2}{4}\overline{\beta}_{j1} } \right]^x \\
+%\left[ e^{ \frac{\lambda^2}{4}\overline{\beta}_{1j} } \right]^x \\
 %
 &= \exp\left(
-\overline{\beta}_{j0} - \frac{\lambda^2}{4}
-+ \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)
+\overline{\beta}_{0j} - \frac{\lambda^2}{4}
++ \frac{\lambda^2}{4} e^{ \overline{\beta}_{1j} } \right)
 \Prob(\alpha_{j-1} < \overline{T} \leq \alpha_j),
 \end{align*}
 <!-- -->
-where $\overline{T} \sim \text{Poisson}(e^{ \overline{\beta}_{j1}} \lambda^2 / 4)$, and similarly,
+where $\overline{T} \sim \text{Poisson}(e^{ \overline{\beta}_{1j}} \lambda^2 / 4)$, and similarly,
 <!-- -->
 \begin{align*}
 \underline{\xi}_j
 %
 &= \exp\left(
-\overline{\beta}_{j0} - \frac{\lambda^2}{4}
-+ \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)
+\overline{\beta}_{0j} - \frac{\lambda^2}{4}
++ \frac{\lambda^2}{4} e^{ \overline{\beta}_{1j} } \right)
 \Prob(\alpha_{j-1} < \underline{T} \leq \alpha_j).
 \end{align*}
 <!-- -->
-where $\underline{T} \sim \text{Poisson}(e^{ \underline{\beta}_{j1}} \lambda^2 / 4)$. The proposal $h$ is a finite mixture $h(x) = \sum_{j=1}^N \pi_j g_j(x)$ with
+where $\underline{T} \sim \text{Poisson}(e^{ \underline{\beta}_{1j}} \lambda^2 / 4)$. The proposal $h$ is a finite mixture $h(x) = \sum_{j=1}^N \pi_j g_j(x)$ with
 <!-- -->
 \begin{align*}
 g_j(x)
@@ -2197,26 +2198,26 @@ g_j(x)
 %
 &= 
 \frac{
-\exp\{ \overline{\beta}_{j0} + \overline{\beta}_{j1} x \}
+\exp\{ \overline{\beta}_{0j} + \overline{\beta}_{1j} x \}
 (\lambda^2 / 4)^x e^{-\lambda^2 / 4} / x!
 }{
 \exp\left(
-\overline{\beta}_{j0} - \frac{\lambda^2}{4}
-+ \frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)
+\overline{\beta}_{0j} - \frac{\lambda^2}{4}
++ \frac{\lambda^2}{4} e^{ \overline{\beta}_{1j} } \right)
 \Prob(\alpha_{j-1} < \overline{T} \leq \alpha_j)
 } \ind\{ x \in \mathscr{D}_j \} \\
 %
 &=
 \frac{1}{x!}
-\left(\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)^x
-\exp\left( -\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1} } \right)
+\left(\frac{\lambda^2}{4} e^{ \overline{\beta}_{1j} } \right)^x
+\exp\left( -\frac{\lambda^2}{4} e^{ \overline{\beta}_{1j} } \right)
 \frac{1}{
 \Prob(\alpha_{j-1} < \overline{T} \leq \alpha_j)
 }
 \ind(\alpha_{j-1} < x \leq \alpha_j),
 \end{align*}
 <!-- -->
-which is the density of $\text{Poisson}(\frac{\lambda^2}{4} e^{ \overline{\beta}_{j1}})$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case, with
+which is the density of $\text{Poisson}(\frac{\lambda^2}{4} e^{ \overline{\beta}_{1j}})$ truncated to the interval $(\alpha_{j-1}, \alpha_j]$. @rem-expansion-point is used to select the expansion point $c$ to determine coefficients for the majorizer in the log-concave case, with
 <!-- -->
 \begin{align*}
 M_j(s)
@@ -2274,7 +2275,7 @@ ggplot(df) +
 ```{r}
 #| fig-cap: |
 #|   Majorizers (on the log-scale) for Bessel example for three sampler
-#|   versions. The blue curve with is the majorizer with a blue dot marking the
+#|   versions. The blue curve is the majorizer with a blue dot marking the
 #|   right endpoint of each region. The black triangle displays the value of
 #|   $\log w(x)$ at integers $x \in \mathbb{N}$.
 #| fig-subcap:
