@@ -96,7 +96,7 @@ inline rejection_args::operator SEXP() const
 		Rcpp::Named("max_rejects") = max_rejects,
 		Rcpp::Named("report") = report,
 		Rcpp::Named("ratio_ub") = ratio_ub,
-		Rcpp::Named("action") = fntl::to_underlying(action)
+		Rcpp::Named("action") = static_cast<unsigned int>(action)
 	);
 }
 
