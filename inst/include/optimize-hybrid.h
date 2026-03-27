@@ -101,7 +101,7 @@ inline optimize_hybrid_result optimize_hybrid(const fntl::dfd& f, double init,
 		out.par = tx(opt_out.par[0]);
 		out.value = opt_out.value;
 		out.method = "BFGS";
-		out.status = fntl::to_underlying(opt_out.status);
+		out.status = static_cast<unsigned int>(opt_out.status);
 	}
 
 	// In case the function is strictly increasing or decreasing, check the
