@@ -1,5 +1,6 @@
 source("../common/plots.R")
 Rcpp::sourceCpp("vmf-v1.cpp")
+Rcpp::sourceCpp("vmf-v1-xptr.cpp")
 Rcpp::sourceCpp("vmf-v2.cpp")
 Rcpp::sourceCpp("vmf-v3.cpp")
 
@@ -18,6 +19,11 @@ out = r_vmf_pre_v1(n, kappa, d, N, tol, max_rejects, report)
 plot_density(out$draws) +
 	geom_function(fun = d_target, args = list(kappa = kappa, d = d), lty = 2)
 plot_bounds(out$lbdd)
+
+# ----- Version 1 with Xptr -----
+h = r_vmf_pre_v1_xptr(kappa, d)
+refine(h, N, tol)
+draw(h, n, max_rejects, report)
 
 # ----- Version 2 -----
 # Use custom optimization routine to compute constants in majorizer
