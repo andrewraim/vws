@@ -117,8 +117,8 @@ protected:
 	void init();
 	double _a;
 	double _b;
-	const dfdb* _w;
-	const UnivariateHelper* _helper;
+	dfdb _w;
+	UnivariateHelper _helper;
 	double _log_w_max;
 	double _log_w_min;
 	double _log_prob;
@@ -130,7 +130,7 @@ protected:
 inline RealConstRegion::RealConstRegion(double a,
 	const dfdb& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
-: _a(a), _b(a), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
+: _a(a), _b(a), _w(w), _helper(helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt), _mid(mid)
 {
 	RealConstRegion::init();
@@ -139,7 +139,7 @@ inline RealConstRegion::RealConstRegion(double a,
 inline RealConstRegion::RealConstRegion(double a, double b,
 	const dfdb& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
-: _a(a), _b(b), _w(&w), _helper(&helper), _log_w_max(NAN), _log_w_min(NAN),
+: _a(a), _b(b), _w(w), _helper(helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt), _mid(mid)
 {
 	RealConstRegion::init();
@@ -153,13 +153,13 @@ inline void RealConstRegion::init()
 	} else if (_a < _b) {
 		// Nontrivial interval (a,b].
 		// Compute $P(a < X <= b)$ for $X \sim g$ on the log scale.
-		_log_w_max = _maxopt(*_w, _a, _b, true);
-		_log_w_min = _minopt(*_w, _a, _b, true);
-		_log_prob = log_sub2_exp(_helper->p(_b, true, true), _helper->p(_a, true, true));
+		_log_w_max = _maxopt(_w, _a, _b, true);
+		_log_w_min = _minopt(_w, _a, _b, true);
+		_log_prob = log_sub2_exp(_helper.p(_b, true, true), _helper.p(_a, true, true));
 	} else {
 		// Singleton interval (a,a].
-		_log_w_max = (*_w)(_a, true);
-		_log_w_min = (*_w)(_a, true);
+		_log_w_max = _w(_a, true);
+		_log_w_min = _w(_a, true);
 		_log_prob = R_NegInf;
 	}
 
@@ -172,7 +172,7 @@ inline void RealConstRegion::init()
 
 inline double RealConstRegion::d_base(const double& x, bool log) const
 {
-	return _helper->d(x, log);
+	return _helper.d(x, log);
 }
 
 inline std::vector<double> RealConstRegion::r(unsigned int n) const
@@ -180,12 +180,12 @@ inline std::vector<double> RealConstRegion::r(unsigned int n) const
 	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this
 	// region. Compute g$q((pb - pa) * u + pa) on the log scale.
 	const Rcpp::NumericVector& u = Rcpp::runif(n);
-	double log_pa = _helper->p(_a, true, true);
+	double log_pa = _helper.p(_a, true, true);
 	const Rcpp::NumericVector& log_p = log_add2_exp(_log_prob + log(u), Rcpp::rep(log_pa, n));
 
 	std::vector<double> out;
 	for (unsigned int i = 0; i < n; i++) {
-		out.push_back(_helper->q(log_p(i), true, true));
+		out.push_back(_helper.q(log_p(i), true, true));
 	}
 
 	return out;
@@ -198,7 +198,7 @@ inline bool RealConstRegion::s(const double& x) const
 
 inline double RealConstRegion::w(const double& x, bool log) const
 {
-	return (*_w)(x, log);
+	return _w(x, log);
 }
 
 inline double RealConstRegion::w_major(const double& x, bool log) const
@@ -227,14 +227,14 @@ RealConstRegion::bifurcate() const
 inline std::pair<RealConstRegion,RealConstRegion>
 RealConstRegion::bifurcate(const double& x) const
 {
-	RealConstRegion r1(_a, x, *_w, *_helper, _maxopt, _minopt, _mid);
-	RealConstRegion r2(x, _b, *_w, *_helper, _maxopt, _minopt, _mid);
+	RealConstRegion r1(_a, x, _w, _helper, _maxopt, _minopt, _mid);
+	RealConstRegion r2(x, _b, _w, _helper, _maxopt, _minopt, _mid);
 	return std::make_pair(r1, r2);
 }
 
 inline RealConstRegion RealConstRegion::singleton(const double& x) const
 {
-	return RealConstRegion(x, *_w, *_helper, _maxopt, _minopt, _mid);
+	return RealConstRegion(x, _w, _helper, _maxopt, _minopt, _mid);
 }
 
 inline bool RealConstRegion::is_bifurcatable() const

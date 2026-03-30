@@ -9,35 +9,37 @@ typedef Rcpp::XPtr<t_proposal> t_proposal_xptr;
 // [[Rcpp::export]]
 t_proposal_xptr r_vmf_pre_v1_xptr(double kappa, double d)
 {
-    auto w = new vws::dfdb(
+    vws::dfdb w =
     [=](double x, bool log = true) {
         double out = R_NegInf;
         if (std::fabs(x) < 1){
             out = 0.5 * (d - 3) * std::log1p(-std::pow(x, 2));
         }
         return log ? out : std::exp(out);
-    });
+    };
 
-    auto df = new fntl::density(
-    [=](double x, bool log = false) {
+    /*
+    * We need to capture by value here (using [=]) because kappa and d are
+    * defined locally in this function.
+    */
+
+    fntl::density df = [=](double x, bool log = false) {
         return d_texp(x, kappa, -1, 1, log);
-    });
+    };
 
-    auto pf = new fntl::cdf(
-    [=](double q, bool lower = true, bool log = false) {
+    fntl::cdf pf = [=](double q, bool lower = true, bool log = false) {
         return p_texp(q, kappa, -1, 1, lower, log);
-    });
+    };
 
-    auto qf = new fntl::quantile(
-    [=](double p, bool lower = true, bool log = false) {
+    fntl::quantile qf = [=](double p, bool lower = true, bool log = false) {
         return q_texp(p, kappa, -1, 1, lower, log);
-    });
+    };
 
-	auto helper = new vws::UnivariateHelper(*df, *pf, *qf);
-    auto supp = new vws::RealConstRegion(-1, 1, *w, *helper);
-    auto h = new t_proposal(*supp);
+	vws::UnivariateHelper helper(df, pf, qf);
+    vws::RealConstRegion supp(-1, 1, w, helper);
 
-    return t_proposal_xptr(h, true);
+    auto out = new t_proposal(supp);
+    return t_proposal_xptr(out, true);
 }
 
 // [[Rcpp::export]]

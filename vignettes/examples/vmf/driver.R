@@ -24,7 +24,7 @@ plot_bounds(out$lbdd)
 h = r_vmf_pre_v1_xptr(kappa, d)
 lbdd = refine(h, N, tol)
 out = draw(h, n, max_rejects, report)
-destruct(h)
+rm(h)
 
 plot_density(out$draws) +
 	geom_function(fun = d_target, args = list(kappa = kappa, d = d), lty = 2)
