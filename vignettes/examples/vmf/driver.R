@@ -22,8 +22,13 @@ plot_bounds(out$lbdd)
 
 # ----- Version 1 with Xptr -----
 h = r_vmf_pre_v1_xptr(kappa, d)
-refine(h, N, tol)
-draw(h, n, max_rejects, report)
+lbdd = refine(h, N, tol)
+out = draw(h, n, max_rejects, report)
+destruct(h)
+
+plot_density(out$draws) +
+	geom_function(fun = d_target, args = list(kappa = kappa, d = d), lty = 2)
+plot_bounds(lbdd)
 
 # ----- Version 2 -----
 # Use custom optimization routine to compute constants in majorizer
