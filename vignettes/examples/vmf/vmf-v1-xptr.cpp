@@ -2,12 +2,14 @@
 #include "vws.h"
 #include "texp.h"
 
-// Define types for the proposal and its XPtr
+/*
+* Define typedefs for the proposal and its XPtr
+*/
 typedef vws::FMMProposal<double, vws::RealConstRegion> t_proposal;
 typedef Rcpp::XPtr<t_proposal> t_proposal_xptr;
 
 // [[Rcpp::export]]
-t_proposal_xptr r_vmf_pre_v1_xptr(double kappa, double d)
+t_proposal_xptr vmf_pre_v1_xptr(double kappa, double d)
 {
     vws::dfdb w =
     [=](double x, bool log = true) {
@@ -62,23 +64,4 @@ Rcpp::List draw(t_proposal_xptr h, unsigned int n,
         Rcpp::Named("draws") = out.draws,
         Rcpp::Named("rejects") = out.rejects
     );
-}
-
-// [[Rcpp::export]]
-void destruct(t_proposal_xptr h)
-{
-	/*
-	* TBD: We don't have a great way to access the original pointers to delete
-	* them right now. We can add accessors to Region or FMMProposal, but it's
-	* not good to be able to delete an object's member data.
-	*
-	* This might be a good time to change the pointers to shared_ptr ...
-	*/
-	// delete h->regions_begin()->get_w;
-
-	/*
-	* TBD: Same issue here. We might be able to have Helper take care of
-	* deleting the additional function pointers it has as members ...
-	*/
-	// delete h->regions_begin()->get_helper;
 }
