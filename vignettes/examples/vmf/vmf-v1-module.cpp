@@ -18,10 +18,10 @@ public:
 	{
 	}
 
-	Rcpp::List draw(unsigned int n, unsigned int max_rejects = 10000,
-		unsigned int report = 10000);
+	Rcpp::List draw(unsigned int n, unsigned int max_rejects,
+		unsigned int report);
 
-	Rcpp::NumericVector refine(unsigned int N, double tol = 0) {
+	Rcpp::NumericVector refine(unsigned int N, double tol) {
 		return t_proposal::refine(N, tol);
 	}
 

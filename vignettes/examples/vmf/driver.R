@@ -22,6 +22,14 @@ plot_density(out$draws) +
 plot_bounds(out$lbdd)
 
 # ----- Version 1 with Xptr -----
+tryCatch({
+	g = test_vector()
+	refine(g, N, tol)
+}, error = function(e) {
+	cat("Caught an expected error:\n")
+	print(e)
+})
+
 h = vmf_pre_v1_xptr(kappa, d)
 lbdd = refine(h, N, tol)
 out = draw(h, n, max_rejects, report)
