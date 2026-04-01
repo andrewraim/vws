@@ -114,14 +114,14 @@ IntConstRegion::bifurcate() const
 inline std::pair<IntConstRegion,IntConstRegion>
 IntConstRegion::bifurcate(const double& x) const
 {
-	IntConstRegion r1(_a, x, *_w, *_helper, _maxopt, _minopt, _mid);
-	IntConstRegion r2(x, _b, *_w, *_helper, _maxopt, _minopt, _mid);
+	IntConstRegion r1(_a, x, _w, _helper, _maxopt, _minopt, _mid);
+	IntConstRegion r2(x, _b, _w, _helper, _maxopt, _minopt, _mid);
 	return std::make_pair(r1, r2);
 }
 
 inline IntConstRegion IntConstRegion::singleton(const double& x) const
 {
-	return IntConstRegion(x, *_w, *_helper, _maxopt, _minopt, _mid);
+	return IntConstRegion(x, _w, _helper, _maxopt, _minopt, _mid);
 }
 
 inline bool IntConstRegion::is_bifurcatable() const

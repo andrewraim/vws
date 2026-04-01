@@ -9,8 +9,7 @@ namespace vws {
 class UnivariateHelper
 {
 public:
-	UnivariateHelper(const fntl::density& d, const fntl::cdf& p,
-		const fntl::quantile& q)
+	UnivariateHelper(fntl::density d, fntl::cdf p, fntl::quantile q)
 	: _d(d), _p(p), _q(q)
 	{
 	}
