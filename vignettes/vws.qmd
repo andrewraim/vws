@@ -87,7 +87,7 @@ This vignette presents an overview of the package, its API, and several examples
 file.path(path.package("vws"), "doc", "examples")
 ```
 
-The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting relevant to the U.S. Census Bureau, which is considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002].
+The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting relevant to the U.S. Census Bureau, which is considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002]. In some applications, it may be desirable to have a persistent VWS proposal object that can gradually be refined and reused to draw samples; @sec-persistent presents several mechanisms to achieve this.
 
 ::: {.callout-tip title="Quick Start"}
 Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described with the highest amount of detail.
@@ -2522,10 +2522,10 @@ tryCatch({
 })
 ```
 
-TBD
-
-- Make a remark about passing large objects by value using `shared_ptr`. Make
-  sure it actually works though.
+::: {#rem-capture-value}
+In the current implementation of `vws`, lambdas `w`, `df`, `pf`, and `qf` are copied to all regions used in the sampler. The overhead created by copying will likely not be significant in most instances, but could be an issue when very large objects are captured by value. In such cases, users may consider using pointers rather than values to capture these objects.
+\remarkqed
+:::
 
 ## Modules {#sec-persistent-module}
 
@@ -2591,10 +2591,10 @@ print(lbdd)
 head(out$draws)
 ```
 
-TBD
-
-- Note that we can capture by reference here if we need to, to avoid copying
-  large objects
+::: {#rem-capture-value-2}
+The lambdas `w`, `df`, `pf`, and `qf` in this code capture `kappa` and `d` by value as in @sec-persistent-xptr, which can lead to unwanted overhead from copying mentioned in @rem-capture-value. In the present case, we can consider storing a single copy of any large objects as member variables of the `RcppProposal` class and capturing them by reference (rather than by value) in the lambdas.
+\remarkqed
+:::
 
 \clearpage
 
