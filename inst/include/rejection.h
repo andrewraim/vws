@@ -104,7 +104,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 *  Returns a structure with saved draws and rejection counts.
 */
 template <typename T, typename R>
-inline rejection_result<T> rejection(const FMMProposal<T,R>& h, unsigned int n)
+inline rejection_result<T> rejection(const FMMProposal<T,R>& h, unsigned int n = 1)
 {
 	rejection_args ctrl;
 	return rejection(h, n, ctrl);

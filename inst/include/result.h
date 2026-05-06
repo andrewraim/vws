@@ -57,6 +57,7 @@ struct rejection_result
 {
 	std::vector<T> draws;
 	std::vector<unsigned int> rejects;
+	std::vector<unsigned int> tunes;
 
 	operator SEXP() const;
 };

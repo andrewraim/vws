@@ -55,6 +55,11 @@ public:
 	virtual bool is_bifurcatable() const = 0;
 
 	/*
+	* Indicator of whether this region is mergeable with argument x.
+	*/
+	virtual bool is_mergeable(const Region<T>& x) const = 0;
+
+	/*
 	* The quantity $\overline{\xi}_j$ for this region.
 	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
 	*   on the original scale.

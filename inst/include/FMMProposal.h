@@ -44,9 +44,9 @@ public:
 	* Return vectors which are ordered so that elements correspond to regions
 	* $1, \ldots, N$.
 	*
- 	* - `xi_upper`: get $(\overline{\xi}_1, \ldots \overline{\xi}_1)$.
-	* - `xi_lower`: get $(\underline{\xi}_1, \ldots \underline{\xi}_1)$.
-	* - `bifurcatable`: vector of indicators of whether regions are
+ 	* - `xi_upper`: get $(\overline{\xi}_1, \ldots \overline{\xi}_N)$.
+	* - `xi_lower`: get $(\underline{\xi}_1, \ldots \underline{\xi}_N)$.
+	* - `bifurcatable`: vector of indicators for whether regions are
 	*   bifurcatable.
 	* - `pi`: mixing weights $(\pi_1, \ldots, \pi_N)$.
 	* - `bound_contrib`: vector of contributions to the rejection
@@ -57,6 +57,13 @@ public:
 	Rcpp::LogicalVector bifurcatable() const;
 	Rcpp::NumericVector pi(bool log = false) const;
 	Rcpp::NumericVector bound_contrib(bool log = false) const;
+
+	// TBD: This could be a sparse matrix ... Also it's symmetric ...
+	Rcpp::LogicalMatrix mergeable() const;
+
+	// TBD: This version could return a vector of indices which are mergeable
+	// to region i.
+	Rcpp::IntegerVector mergeable(unsigned int i) const;
 
 	/*
 	* Access number of regions.
@@ -163,6 +170,8 @@ public:
 	* Limit the display to `n` regions.
 	*/
 	void print(unsigned int n = 5) const;
+
+	double merge(unsigned int i, unsigned int j, bool log = true);
 
 	/*
 	* Refine the proposal.

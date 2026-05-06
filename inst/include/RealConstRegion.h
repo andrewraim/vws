@@ -69,11 +69,17 @@ public:
 	double w_major(const double& x, bool log = true) const;
 	double w_minor(const double& x, bool log = true) const;
 	bool is_bifurcatable() const;
+	bool is_mergeable(const RealConstRegion& x);
 	double lower() const { return _a; }
 	double upper() const { return _b; }
 	double xi_upper(bool log = true) const;
 	double xi_lower(bool log = true) const;
 	std::string description() const;
+
+	/*
+	*
+	*/
+	RealConstRegion merge(const RealConstRegion& x) const;
 
 	/*
 	* Return the midpoint of this region using the function _mid.
@@ -213,6 +219,19 @@ inline double RealConstRegion::w_minor(const double& x, bool log) const
 	return log ? out : exp(out);
 }
 
+inline RealConstRegion RealConstRegion::merge(const RealConstRegion& x) const
+{
+	if (!is_mergeable(*this, x)) {
+		Rcpp::stop("Cannot merge these regions");
+	}
+
+	if (_a < x._a) {
+		return RealConstRegion(_a, x._b, _w, _helper, _maxopt, _minopt, _mid);
+	} else {
+		return RealConstRegion(x._a, _b, _w, _helper, _maxopt, _minopt, _mid);
+	}
+}
+
 inline double RealConstRegion::midpoint() const
 {
 	return _mid(_a, _b);
@@ -241,6 +260,12 @@ inline bool RealConstRegion::is_bifurcatable() const
 {
 	return true;
 }
+
+inline bool RealConstRegion::is_mergeable(const RealConstRegion& x)
+{
+	return (this->_a == x._b || this->_b == x._a);
+}
+
 
 inline double RealConstRegion::xi_upper(bool log) const
 {
