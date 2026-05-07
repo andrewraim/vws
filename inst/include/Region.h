@@ -57,7 +57,7 @@ public:
 	/*
 	* Indicator of whether this region is mergeable with argument x.
 	*/
-	virtual bool is_mergeable(const Region<T>& x) const = 0;
+	// virtual bool is_mergeable(const Region<T>& x) const = 0;
 
 	/*
 	* The quantity $\overline{\xi}_j$ for this region.
@@ -65,6 +65,14 @@ public:
 	*   on the original scale.
 	*/
 	virtual double xi_upper(bool log = true) const = 0;
+
+	virtual double bound(bool log) const
+	{
+		double lxu = xi_upper(true);
+		double lxl = xi_lower(true);
+		double out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
+		return log ? out : exp(out);
+	}
 
 	/*
 	* The quantity $\underline{\xi}_j$ for this region.

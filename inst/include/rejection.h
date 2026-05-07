@@ -52,7 +52,8 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 			double log_ratio = log_fx - log_hx - log_M;
 
 			if (log_ratio > log_ratio_ub) {
-				Rcpp::stop("log_ratio %g exceeded %g; with x = %g, log f(x) = %g, and log h(x) = %g",
+				Rcpp::stop("log_ratio %g exceeded %g; with x = %g, "
+					"log f(x) = %g, and log h(x) = %g",
 					log_ratio, log_ratio_ub, x, log_fx, log_hx);
 			} else if (log(v) < log_ratio) {
 				// Accept x as a draw from f(x)
@@ -67,8 +68,9 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 			// Report progress after `report` candidates
 			unsigned int N_accepts = i + accept;
 			if ((N_rejects + N_accepts) % report == 0) {
-				Rprintf("%s - After %d candidates, %d accepts and %d rejects\n",
-					timestamp().c_str(), N_accepts + N_rejects, N_accepts, N_rejects);
+				Rprintf("%s - %d candidates  %d accepts  %d rejects\n",
+					timestamp().c_str(), N_accepts + N_rejects, N_accepts,
+					N_rejects);
 			}
 		}
 	}

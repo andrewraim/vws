@@ -69,7 +69,7 @@ public:
 	double w_major(const double& x, bool log = true) const;
 	double w_minor(const double& x, bool log = true) const;
 	bool is_bifurcatable() const;
-	bool is_mergeable(const RealConstRegion& x);
+	bool is_mergeable(const RealConstRegion& x) const;
 	double lower() const { return _a; }
 	double upper() const { return _b; }
 	double xi_upper(bool log = true) const;
@@ -77,7 +77,7 @@ public:
 	std::string description() const;
 
 	/*
-	*
+	* TBD
 	*/
 	RealConstRegion merge(const RealConstRegion& x) const;
 
@@ -221,7 +221,7 @@ inline double RealConstRegion::w_minor(const double& x, bool log) const
 
 inline RealConstRegion RealConstRegion::merge(const RealConstRegion& x) const
 {
-	if (!is_mergeable(*this, x)) {
+	if (!is_mergeable(x)) {
 		Rcpp::stop("Cannot merge these regions");
 	}
 
@@ -261,7 +261,7 @@ inline bool RealConstRegion::is_bifurcatable() const
 	return true;
 }
 
-inline bool RealConstRegion::is_mergeable(const RealConstRegion& x)
+inline bool RealConstRegion::is_mergeable(const RealConstRegion& x) const
 {
 	return (this->_a == x._b || this->_b == x._a);
 }

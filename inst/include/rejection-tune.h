@@ -2,66 +2,58 @@
 #define REJECTION_TUNE_H
 
 #include <RcppArmadillo.h>
-#include "ConstSAEMajorizer.h"
-#include "VWSStepOutput.h"
 #include "local-util.h"
 
-unsigned int tune(h, x, tol1, tol2)
+/*
+* For regions that contribute very little (i.e., whose log-bound contribution
+* is smaller than tol2), merge them with other regions. Only do this merge if
+* the overall bound is small enough, and dropping the region would not put us
+* back over tol1 threshold.
+*
+* Return `true` if we complete a merge; the caller can then call again to
+* attempt another merge if they like. This is to prevent mistakes in
+* iterators and indices when the underlying data is modified.
+*/
+template <typename T, typename R>
+unsigned int tune_merge_one(FMMProposal<T,R>& h, const T& x, double tol1, double tol2)
 {
 	/*
-	* Drop regions that contribute very little. But only if
-	* overall bound is small enough, and dropping the region
-	* does not put us back over tol1 threshold.
-	*
-	* Go through all mergeable pairs and see if we should merge
-	* from our criteria. If we find any matches, do the merge and
-	* start the process over. Keep doing this until we find no more
-	* pairs to merge.
+	* Go through all mergeable pairs and check if we should merge (using our
+	* criteria) without modifying the proposal. If we find a match, do the
+	* merge in the proposal and return.
 	*/
 
-	bool repeat = true;
-	unsigned int tunes = 0;
-
-	while (repeat)
+	for (unsigned int j = 0; j < h.size(); j++)
 	{
-		repeat = false;
+		const Rcpp::NumericVector& lbdd = h.bound_contrib(true);
+		if (lbdd(j) >= log(tol2)) { continue; }
 
-		for (unsigned int j = 0; j < h.size(); j++)
+		const Rcpp::IntegerVector& idx = h.mergeable(j);
+		auto itr1 = std::next(h.regions_begin(), j);
+
+		for (unsigned int l = 0; l < idx.size(); l++)
 		{
-			const Rcpp::NumericVector& lbdd = h.bound_contrib(true);
-			if (lbdd(j) >= log(tol2)) { continue; }
+			// Merge regions j and l without modifying the proposal
+			auto itr2 = std::next(h.regions_begin(), idx(j));
+			const R& merged = itr1->merge(*itr2);
 
-			const Rcpp::IntegerVector& idx = h.mergeable(j);
+			// Compute the overall bound if we replaced regions j and l
+			// with a merge of those two regions.
+			double lbdd0 = vws::log_add2_exp(h.bound(true), merged.bound(true));
+			lbdd0 = vws::log_sub2_exp(lbdd0, lbdd(j));
+			lbdd0 = vws::log_sub2_exp(lbdd0, lbdd(l));
 
-			for (unsigned int l = 0; l < idx.size(); l++)
+			// If the bound of the merged region has not increased beyond
+			// threshold tol1, perform the merge in the proposal.
+			if (lbdd0 < log(tol1))
 			{
-				// Merge regions j and l without modifying the proposal
-				auto itr1 = std::next(h.regions_begin(), j);
-				const R& merged = itr1->merge(*itr2);
-
-				double lxu0 = xi_upper(true);
-				double lxl0 = xi_lower(true);
-				double lbdd0 = vws::log_sub2_exp(lxu0, lxl0) - vws::log_sum_exp(lxu0);
-
-				// TBD: compute the overall bound if we replaced j and l with
-				// the merged region.
-
-				/*
-				* If the bound of the merged region has not increased beyond
-				* the threshold, carry out the same merge in the proposal.
-				*/
-
-				if (merged.log_bound < log(tol1)) {
-					repeat = false;
-					tunes++;
-				}
+				h.merge(j, l);
+				return true;
 			}
 		}
-
-		finished_merge = true
 	}
 
-	return tunes;
+	return false;
 }
 
 /*
@@ -78,10 +70,10 @@ inline rejection_result<T>
 rejection_tune(FMMProposal<T,R>& h, unsigned int n,
 	const rejection_args& args)
 {
-
 	rejection_result<T> out;
 
 	unsigned int N_rejects = 0;
+	unsigned int N_tunes = 0;
 	bool accept = false;
 
 	unsigned int max_rejects = args.max_rejects;
@@ -106,7 +98,8 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n,
 			double log_ratio = log_fx - log_hx - log_M;
 
 			if (log_ratio > log_ratio_ub) {
-				Rcpp::stop("log_ratio %g exceeded %g; with x = %g, log f(x) = %g, and log h(x) = %g",
+				Rcpp::stop("log_ratio %g exceeded %g; with x = %g, "
+					"log f(x) = %g, and log h(x) = %g",
 					log_ratio, log_ratio_ub, x, log_fx, log_hx);
 			} else if (log(v) < log_ratio) {
 				// Accept x as a draw from f(x)
@@ -121,19 +114,33 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n,
 			// Report progress after `report` candidates
 			unsigned int N_accepts = i + accept;
 			if ((N_rejects + N_accepts) % report == 0) {
-				Rprintf("%s - After %d candidates, %d accepts and %d rejects\n",
-					timestamp().c_str(), N_accepts + N_rejects, N_accepts, N_rejects);
+				Rprintf("%s - %d candidates  %d accepts  %d rejects  %d tunes\n",
+					timestamp().c_str(), N_accepts + N_rejects, N_accepts,
+					N_rejects, N_tunes);
 			}
 
 			/* Consider tuning the proposal if the draw was rejected */
 			if (!accept && h.bound(true) < log(tol1)) {
 				// Identify regions that contribute very little and merge them
-				// with larger regions.
-				out.tunes(i) += tune_merge(h, x, tol1, tol2);
-			} else if (!accept) {
+				// with other regions.
+				bool repeat = true;
+
+				/*
+				* Go through all mergeable pairs and check if we should merge, using our
+				* criteria, without modifying the proposal. If we find a match, do the
+				* merge in the proposal and start the process over. Repeat until we find no
+				* more pairs to merge.
+				*/
+				while (repeat) {
+					bool merged = tune_merge_one(h, x, tol1, tol2);
+					repeat = merged;
+					out.tunes(i) += merged;
+				}
+			} else if (!accept && h.bound(true) < log(tol1)) {
 				// Add the rejected draw as a knot
 				h.({x});
 				out.tunes(i)++;
+				N_tunes++;
 			}
 		}
 	}
