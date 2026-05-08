@@ -240,14 +240,14 @@ template <class T, class R>
 double FMMProposal<T,R>::merge(unsigned int i, unsigned int j, bool log)
 {
 	// Merge the regions with the given indices. Remove the two individual
-	// regions and add the merged region. Recache to update internal data
+	// regions and add the merged region. Call recache to update internal data
 	// structures.
 	auto itr1 = std::next(_regions.begin(), i);
 	auto itr2 = std::next(_regions.begin(), j);
 	const R& merged = itr1->merge(*itr2);
-	_regions.insert(merged);
 	_regions.erase(itr1);
 	_regions.erase(itr2);
+	_regions.insert(merged);
 	recache();
 
 	double out = bound(true);
@@ -482,16 +482,18 @@ template <class T, class R>
 Rcpp::IntegerVector FMMProposal<T,R>::mergeable(unsigned int i) const
 {
 	unsigned int N = size();
-	const Rcpp::IntegerVector& out = Rcpp::seq(0, N-1);
-	Rcpp::LogicalVector val(N);
+	std::vector<unsigned int> out;
 
 	auto itr1 = std::next(_regions.begin(), i);
-	for (unsigned int j = 0; j < size(); j++) {
+
+	for (unsigned int j = 0; j < N; j++) {
 		auto itr2 = std::next(_regions.begin(), j);
-		val(j) = (i == j) ? false : itr1->is_mergeable(*itr2);
+		if (i != j && itr1->is_mergeable(*itr2)) {
+			out.push_back(j);
+		}
 	}
 
-	return out[val];
+	return Rcpp::IntegerVector(out.begin(), out.end());
 }
 
 template <class T, class R>
@@ -560,12 +562,16 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 		// Could not find region which is upper bound for x. Assume that x is
 		// outside of the support
 		out = R_NegInf;
+		// Rprintf("FMMProposal<T,R>::d, case 1: out = %g\n", out);
 	} else if (!itr_lower->s(x)) {
 		// Could not find a region that contains x. Assume that x is outside of
 		// the support.
 		out = R_NegInf;
+		// Rprintf("FMMProposal<T,R>::d, case 2: out = %g\n", out);
 	} else {
 		out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - lnc;
+		// Rprintf("FMMProposal<T,R>::d, case 3: out = %g  log-wmajor = %g  log-base-density = %g  log-nc = %g\n",
+		// 	out, itr_lower->w_major(x, true), itr_lower->d_base(x, true), lnc);
 	}
 
 	return log ? out : exp(out);

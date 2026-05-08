@@ -70,7 +70,7 @@ public:
 	{
 		double lxu = xi_upper(true);
 		double lxl = xi_lower(true);
-		double out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
+		double out = log_sub2_exp(lxu, lxl) - lxu;
 		return log ? out : exp(out);
 	}
 
