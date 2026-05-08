@@ -58,11 +58,8 @@ public:
 	Rcpp::NumericVector pi(bool log = false) const;
 	Rcpp::NumericVector bound_contrib(bool log = false) const;
 
-	// TBD: This could be a sparse matrix ... Also it's symmetric ...
-	Rcpp::LogicalMatrix mergeable() const;
-
-	// TBD: This version could return a vector of indices which are mergeable
-	// to region i.
+	// Return a vector of indices for regions which are mergeable to region i.
+	// Does not include i itself and may be empty.
 	Rcpp::IntegerVector mergeable(unsigned int i) const;
 
 	/*
@@ -238,6 +235,25 @@ private:
 	std::unique_ptr<Rcpp::NumericVector> _log_xi_lower;
 	std::unique_ptr<Rcpp::LogicalVector> _bifurcatable;
 };
+
+template <class T, class R>
+double FMMProposal<T,R>::merge(unsigned int i, unsigned int j, bool log)
+{
+	// Merge the regions with the given indices. Remove the two individual
+	// regions and add the merged region. Recache to update internal data
+	// structures.
+	auto itr1 = std::next(_regions.begin(), i);
+	auto itr2 = std::next(_regions.begin(), j);
+	const R& merged = itr1->merge(*itr2);
+	_regions.insert(merged);
+	_regions.erase(itr1);
+	_regions.erase(itr2);
+	recache();
+
+	double out = bound(true);
+	return log ? out : std::exp(out);
+}
+
 
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots, bool log)
@@ -460,6 +476,22 @@ Rcpp::NumericVector FMMProposal<T,R>::bound_contrib(bool log) const
 	const Rcpp::NumericVector& lxu = *_log_xi_upper;
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
 	if (log) { return out; } else { return exp(out); }
+}
+
+template <class T, class R>
+Rcpp::IntegerVector FMMProposal<T,R>::mergeable(unsigned int i) const
+{
+	unsigned int N = size();
+	const Rcpp::IntegerVector& out = Rcpp::seq(0, N-1);
+	Rcpp::LogicalVector val(N);
+
+	auto itr1 = std::next(_regions.begin(), i);
+	for (unsigned int j = 0; j < size(); j++) {
+		auto itr2 = std::next(_regions.begin(), j);
+		val(j) = (i == j) ? false : itr1->is_mergeable(*itr2);
+	}
+
+	return out[val];
 }
 
 template <class T, class R>

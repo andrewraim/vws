@@ -58,6 +58,8 @@ struct rejection_result
 	std::vector<T> draws;
 	std::vector<unsigned int> rejects;
 	std::vector<unsigned int> tunes;
+	std::vector<unsigned int> regions;
+	std::vector<unsigned int> log_bounds;
 
 	operator SEXP() const;
 };

@@ -49,8 +49,8 @@ struct rejection_args
 	unsigned int report = std::numeric_limits<unsigned int>::max();
 	double ratio_ub = std::exp(1e-5);
 	fntl::error_action action = fntl::error_action::STOP;
-	double tol1 = 0.85;
-	double tol2 = 0.01;
+	double tol_suff = 0.85;
+	double tol_merge = 0.01;
 
 	rejection_args() { };
 	rejection_args(SEXP obj);
