@@ -1,8 +1,7 @@
 #ifndef REJECTION_TUNE_H
 #define REJECTION_TUNE_H
 
-#include <RcppArmadillo.h>
-#include "local-util.h"
+namespace vws {
 
 /*
 * For regions that contribute very little (i.e., whose log-bound contribution
@@ -43,9 +42,9 @@ unsigned int tune_merge_one(FMMProposal<T,R>& h, const T& x, double tol1, double
 			lbdd0 = vws::log_sub2_exp(lbdd0, lbdd(j));
 			lbdd0 = vws::log_sub2_exp(lbdd0, lbdd(l));
 
-			// If the bound of the merged region has not increased beyond
-			// threshold tol1, perform the merge in the proposal.
-			if (lbdd0 < log(tol1))
+			// If the total bound with the merged region has not decreased
+			// below threshold tol1, perform the merge in the proposal.
+			if (lbdd0 >= log(tol1))
 			{
 				h.merge(j, l);
 				return true;
@@ -67,8 +66,7 @@ unsigned int tune_merge_one(FMMProposal<T,R>& h, const T& x, double tol1, double
 */
 template <typename T, typename R>
 inline rejection_result<T>
-rejection_tune(FMMProposal<T,R>& h, unsigned int n,
-	const rejection_args& args)
+rejection_tune(FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 {
 	rejection_result<T> out;
 
@@ -80,6 +78,8 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n,
 	unsigned int report = args.report;
 	fntl::error_action action = args.action;
 	double log_ratio_ub = std::exp(args.ratio_ub);
+	double tol1 = args.tol1;
+	double tol2 = args.tol2;
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
@@ -119,8 +119,23 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n,
 					N_rejects, N_tunes);
 			}
 
-			/* Consider tuning the proposal if the draw was rejected */
-			if (!accept && h.bound(true) < log(tol1)) {
+			/*
+			 *  Consider tuning the proposal.
+			 *
+			 * If the draw was rejected and the bound for rejection
+			 * rate is "sufficient", see if we can merge some of the regions
+			 * to simplify the proposal. We merge two regions at a time,
+			 * repeating until the next merge would make the rejection bound
+			 * "insufficient".
+			 *
+			 *
+			 * Otherwise, if the draw was rejected and the bound for rejection
+			 * rate is is "insufficient", partition using the rejected x.
+			 *
+			 * Note that we do not do both on a single rejection.
+			*/
+
+			if (!accept && h.bound(true) >= log(tol1)) {
 				// Identify regions that contribute very little and merge them
 				// with other regions.
 				bool repeat = true;
@@ -134,12 +149,13 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n,
 				while (repeat) {
 					bool merged = tune_merge_one(h, x, tol1, tol2);
 					repeat = merged;
-					out.tunes(i) += merged;
+					out.tunes[i] += merged;
 				}
 			} else if (!accept && h.bound(true) < log(tol1)) {
 				// Add the rejected draw as a knot
-				h.({x});
-				out.tunes(i)++;
+				const std::vector<T>& knots = { x };
+				h.refine(knots);
+				out.tunes[i]++;
 				N_tunes++;
 			}
 		}
@@ -178,6 +194,8 @@ inline rejection_result<T> rejection_tune(const FMMProposal<T,R>& h, unsigned in
 {
 	rejection_args ctrl;
 	return rejection_tune(h, n, ctrl);
+}
+
 }
 
 #endif

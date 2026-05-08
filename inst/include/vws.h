@@ -26,6 +26,7 @@
 #include "rect.h"
 #include "rejection.h"
 #include "rejection-args.h"
+#include "rejection-tune.h"
 #include "seq.h"
 #include "timestamp.h"
 #include "typedefs.h"

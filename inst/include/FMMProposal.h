@@ -242,14 +242,15 @@ private:
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots, bool log)
 {
-	unsigned int N = knots.size() + 1;
+	// unsigned int N = knots.size() + 1;
 
 	std::vector<double> log_bdd_hist;
 
 	log_bdd_hist.push_back(bound(true));
 
-	for (unsigned int j = 0; j < knots.size(); j++) {
-		unsigned int L = _regions.size();
+	for (unsigned int j = 0; j < knots.size(); j++)
+	{
+		// unsigned int L = _regions.size();
 
 		const T& x = knots[j];
 		const R& reg0 = _regions.begin()->singleton(x);
