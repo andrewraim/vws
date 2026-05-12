@@ -79,6 +79,12 @@ public:
 	/*
 	* TBD
 	*/
+	void set(const dfdb& w);
+	void set(const UnivariateHelper& helper);
+
+	/*
+	* TBD
+	*/
 	RealConstRegion merge(const RealConstRegion& x) const;
 
 	/*
@@ -133,13 +139,25 @@ protected:
 	vws::midpoint _mid;
 };
 
+inline void RealConstRegion::set(const dfdb& w)
+{
+	_w = w;
+	init();
+}
+
+inline void RealConstRegion::set(const UnivariateHelper& helper)
+{
+	_helper = helper;
+	init();
+}
+
 inline RealConstRegion::RealConstRegion(double a,
 	const dfdb& w, const UnivariateHelper& helper,
 	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
 : _a(a), _b(a), _w(w), _helper(helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt), _mid(mid)
 {
-	RealConstRegion::init();
+	init();
 }
 
 inline RealConstRegion::RealConstRegion(double a, double b,
@@ -148,7 +166,7 @@ inline RealConstRegion::RealConstRegion(double a, double b,
 : _a(a), _b(b), _w(w), _helper(helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt), _mid(mid)
 {
-	RealConstRegion::init();
+	init();
 }
 
 inline void RealConstRegion::init()

@@ -36,6 +36,11 @@ public:
 	FMMProposal(const R& region);
 
 	/*
+	* TBD: copy constructor
+	*/
+	FMMProposal(const FMMProposal& p);
+
+	/*
 	* Access region characteristics
 	*
 	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
@@ -214,7 +219,7 @@ public:
 	Rcpp::NumericVector refine(unsigned int N, double tol = 0,
 		bool greedy = false, unsigned int report = fntl::uint_max, bool log = true);
 
-private:
+protected:
 
 	/*
 	* Recompute internal auxiliary data structures.
@@ -253,7 +258,6 @@ double FMMProposal<T,R>::merge(unsigned int i, unsigned int j, bool log)
 	double out = bound(true);
 	return log ? out : std::exp(out);
 }
-
 
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots, bool log)
@@ -394,6 +398,14 @@ FMMProposal<T,R>::FMMProposal(const R& region)
 : _regions(), _regions_vec()
 {
 	_regions.insert(region);
+	recache();
+}
+
+template <class T, class R>
+FMMProposal<T,R>::FMMProposal(const FMMProposal& p)
+: _regions(), _regions_vec()
+{
+	_regions.insert(p._regions.begin(), p._regions.end());
 	recache();
 }
 
