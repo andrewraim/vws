@@ -81,6 +81,7 @@ public:
 	*/
 	void set(const dfdb& w);
 	void set(const UnivariateHelper& helper);
+	void set(const dfdb& w, const UnivariateHelper& helper);
 
 	/*
 	* TBD
@@ -147,6 +148,13 @@ inline void RealConstRegion::set(const dfdb& w)
 
 inline void RealConstRegion::set(const UnivariateHelper& helper)
 {
+	_helper = helper;
+	init();
+}
+
+inline void RealConstRegion::set(const dfdb& w, const UnivariateHelper& helper)
+{
+	_w = w;
 	_helper = helper;
 	init();
 }
