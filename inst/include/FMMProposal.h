@@ -173,6 +173,9 @@ public:
 	*/
 	void print(unsigned int n = 5) const;
 
+	/*
+	* TBD
+	*/
 	double merge(unsigned int i, unsigned int j, bool log = true);
 
 	/*

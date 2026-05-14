@@ -1,8 +1,6 @@
 #ifndef REJECTION_TUNE_H
 #define REJECTION_TUNE_H
 
-namespace vws {
-
 /*
 * For regions that contribute very little (i.e., whose log-bound contribution
 * is smaller than tol_merge), merge them with other regions. Only do this merge if
@@ -14,50 +12,40 @@ namespace vws {
 * iterators and indices when the underlying data is modified.
 */
 template <typename T, typename R>
-unsigned int tune_merge_one(FMMProposal<T,R>& h, const T& x, double tol_suff, double tol_merge)
+unsigned int tune_merge_one(vws::FMMProposal<T,R>& h, const T& x, double tol_suff, double tol_merge)
 {
-	// Rprintf("tune_merge_one 1: Made it inside\n");
-
 	/*
 	* Go through all mergeable pairs and check if we should merge (using our
 	* criteria) without modifying the proposal. If we find a match, do the
 	* merge in the proposal and return.
 	*/
 
+	const Rcpp::NumericVector& lbdd = h.bound_contrib(true);
+	if (Rcpp::min(lbdd) >= log(tol_merge)) { return false; }
+
 	for (unsigned int j = 0; j < h.size(); j++)
 	{
-		const Rcpp::NumericVector& lbdd = h.bound_contrib(true);
 		if (lbdd(j) >= log(tol_merge)) { continue; }
-		// Rprintf("tune_merge_one 1.1: Region %d has lbdd = %g, smaller than log(tol_merge) = %g\n", j, lbdd, log(tol_merge));
-
 		const Rcpp::IntegerVector& idx = h.mergeable(j);
 		auto itr1 = std::next(h.regions_begin(), j);
-		// Rprintf("tune_merge_one 1.2: Region %d has %d mergeable neighbors\n", j, idx.size());
 
 		for (unsigned int l = 0; l < idx.size(); l++)
 		{
 			// Merge regions j and l without modifying the proposal
-			// Rprintf("tune_merge_one 2.1: Get iterator for region %d (%d)\n", idx(l), l);
 			auto itr2 = std::next(h.regions_begin(), idx(l));
-			// Rprintf("tune_merge_one 2.2: About to merge regions in isolation\n");
 			const R& merged = itr1->merge(*itr2);
-			// Rprintf("tune_merge_one 2.3: Merged regions in isolation\n");
 
 			// Compute the overall bound if we replaced regions j and l
 			// with a merge of those two regions.
-			// Rprintf("tune_merge_one 2.4: Merged region's log-bound is %g\n", merged.bound(true));
 			double lbdd0 = vws::log_add2_exp(h.bound(true), merged.bound(true));
 			lbdd0 = vws::log_sub2_exp(lbdd0, itr1->bound(true));
 			lbdd0 = vws::log_sub2_exp(lbdd0, itr2->bound(true));
-			// Rprintf("tune_merge_one 2.5: New lbdd = %g and log(tol_suff) = %g\n", lbdd0, log(tol_suff));
 
 			// If the total bound with the merged region has not decreased
 			// below threshold tol_suff, perform the merge in the proposal.
-			if (lbdd0 <= log(tol_suff))
+			if (lbdd0 < log(tol_suff))
 			{
-				// Rprintf("tune_merge_one 3.2: About to merge regions %d and %d in proposal\n", j, idx(l));
 				h.merge(j, idx(l));
-				// Rprintf("tune_merge_one 3.3: Called merge on regions %d and %d in proposal\n", j, idx(l));
 				return true;
 			}
 		}
@@ -65,6 +53,8 @@ unsigned int tune_merge_one(FMMProposal<T,R>& h, const T& x, double tol_suff, do
 
 	return false;
 }
+
+namespace vws {
 
 /*
 *  Accept-reject algorithm using a VWS proposal.
@@ -151,7 +141,7 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 			 * Note that we do not do both on a single rejection.
 			*/
 
-			if (!accept && h.bound(true) <= log(tol_suff))
+			if (!accept && h.bound(true) < log(tol_suff))
 			{
 				// Rprintf("Trying to merge some regions ...\n");
 
@@ -166,12 +156,12 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 				* more pairs to merge.
 				*/
 				while (repeat) {
-					bool merged = tune_merge_one(h, x, tol_suff, tol_merge);
+					bool merged = ::tune_merge_one(h, x, tol_suff, tol_merge);
 					repeat = merged;
 					out.tunes[i] += merged;
 				}
 			}
-			else if (!accept && h.bound(true) > log(tol_suff))
+			else if (!accept && h.bound(true) >= log(tol_suff))
 			{
 				// Rprintf("Partition new region at x = %g\n", x);
 

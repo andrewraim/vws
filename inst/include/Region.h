@@ -52,7 +52,7 @@ public:
 	/*
 	* Indicator of whether this region is bifurcatable.
 	*/
-	virtual bool is_bifurcatable() const = 0;
+	// virtual bool is_bifurcatable() const = 0;
 
 	/*
 	* Indicator of whether this region is mergeable with argument x.
