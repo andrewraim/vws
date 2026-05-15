@@ -2370,8 +2370,7 @@ data.frame(x = xseq, h = out3$hx) %>%
 
 # Persistent Proposals in R {#sec-persistent}
 
-The samplers developed in previous sections each expose a function in R which could be used to draw samples. A proposal is constructed each time the function is called which only exists for the duration of the call. It may be desirable to have a persistent proposal that can be gradually refined and reused. This section demonstrates several Rcpp mechanisms to enable this workflow: first using external pointers them using using modules. The latter requires some object-oriented programming but is safer and recommended over the former. We will demonstrate by revisiting the example from @sec-vmf-const-default. For more information on external pointers and modules, refer to
-the vignette "Exposing C++ functions and classes with Rcpp modules" in the `Rcpp` package [@Rcpp] and section "External pointers and weak references" of the guide "Writing R Extensions" [@WritingRExtensions].
+The samplers developed in previous sections each expose a function in R which can be used to generate samples. A proposal is constructed each time the function is called which exists only for the duration of the call. For purposes of efficiency and otherwise, it may be desirable to have a persistent proposal that can be gradually refined and reused. This section demonstrates several Rcpp mechanisms to enable this workflow: first using external pointers then using using modules. The latter is based on object-oriented programming but recommended over the former as it is less susceptible to crashing R. We demonstrate the two approaches by revisiting the example from @sec-vmf-const-default. For more information on external pointers and modules, refer to the vignette "Exposing C++ functions and classes with Rcpp modules" in the `Rcpp` package [@Rcpp] and section "External pointers and weak references" of the guide "Writing R Extensions" [@WritingRExtensions].
 
 ## External Pointers {#sec-persistent-xptr}
 
@@ -2486,14 +2485,12 @@ void set_tag(Rcpp::XPtr<T> x, const char* tag)
 Now let us demonstrate use of these functions from R.
 
 ```{r}
-#| prompt: false
+#| prompt: true
 Rcpp::sourceCpp("examples/vmf/vmf-v1-xptr.cpp")
-
 h = vmf_pre_v1_xptr(kappa = 5, d = 4)
 lbdd = refine(h, N = 50, tol = 0.10)
 out = draw(h, n = 1000, max_rejects = 10000)
 rm(h)
-
 print(lbdd)
 head(out$draws)
 ```
@@ -2531,12 +2528,11 @@ In the current implementation of `vws`, lambdas `w`, `df`, `pf`, and `qf` are co
 
 The external pointer approach in @sec-persistent-xptr lets us operate on a proposal object from R through C++ functions. We can take this one step further with object-oriented programming so that the proposal appears as a class in R that includes its methods. The complete C++ code for this example is in `examples/vmf/vmf-v1-module.cpp`.
 
-The following typedef provides a more readable names for the proposal.
+The following typedef provides a more readable name for the proposal.
 
 ```{cpp}
 typedef vws::FMMProposal<double, vws::RealConstRegion> t_proposal;
 ```
-
 
 We now define a class named `RcppProposal` which will be exposed as an Rcpp module. This class inherits from ("is a") `t_proposal`. Its constructor, `refine` operation, and `draw` operation are analogous to those in @sec-persistent-xptr.
 
@@ -2560,7 +2556,7 @@ private:
 	vws::RealConstRegion supp(double kappa, double d);            // <2>
 };
 ```
-1. `t_proposal::refine` is derived from the base class; it is possible to expose this directly from the module, but we opt to call it from `RcppProposal::refine` for simplicity.
+1. `t_proposal::refine` is the method in the base class; it is possible to expose this directly from the module, but we opt to call it from `RcppProposal::refine` for simplicity.
 2. The `supp` function handles most of the constructor work; it returns a single region `supp` with all of the necessary operations. The `RcppProposal` constructor creates an instance of itself from region.
 
 The following code exposes `RcppProposal` as an Rcpp module.
@@ -2580,13 +2576,11 @@ See `examples/vmf/vmf-v1-module.cpp` for the implementations for the `draw` and 
 Now let us demonstrate use of these functions from R.
 
 ```{r}
-#| prompt: false
+#| prompt: true
 Rcpp::sourceCpp("examples/vmf/vmf-v1-module.cpp")
-
 h = new(RcppProposal, kappa = 5, d = 4)
 lbdd = h$refine(N = 50 - 1, tol = 0.10)
 out = h$draw(n = 1000, max_rejects = 1000, max_rejects = 10000)
-
 print(lbdd)
 head(out$draws)
 ```
@@ -2599,3 +2593,4 @@ The lambdas `w`, `df`, `pf`, and `qf` in this code capture `kappa` and `d` by va
 \clearpage
 
 # References
+
