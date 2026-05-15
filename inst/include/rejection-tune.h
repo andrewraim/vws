@@ -12,7 +12,7 @@
 * iterators and indices when the underlying data is modified.
 */
 template <typename T, typename R>
-unsigned int tune_merge_one(vws::FMMProposal<T,R>& h, const T& x, double tol_suff, double tol_merge)
+unsigned int merge_once(vws::FMMProposal<T,R>& h, const T& x, double tol_suff, double tol_merge)
 {
 	/*
 	* Go through all mergeable pairs and check if we should merge (using our
@@ -156,7 +156,7 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 				* more pairs to merge.
 				*/
 				while (repeat) {
-					bool merged = ::tune_merge_one(h, x, tol_suff, tol_merge);
+					bool merged = ::merge_once(h, x, tol_suff, tol_merge);
 					repeat = merged;
 					out.tunes[i] += merged;
 				}

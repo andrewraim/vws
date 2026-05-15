@@ -4,7 +4,7 @@ author: Andrew M. Raim
 format:
   pdf:
     mathspec: true
-    fontsize: 12pt
+    fontsize: 10pt
     indent: false
     toc: true
     number-sections: true
@@ -49,7 +49,7 @@ geometry:
   - top=0.75in
   - bottom=1.00in
 execute:
-  eval: true
+  eval: false
 code-block-bg: "#FAFAFA"
 code-block-border-left: "#B2DEED"
 filters:
@@ -361,52 +361,74 @@ Bifurcation at a midpoint is mostly straightforward in univariate settings where
 
 ## Self Tuning {#sec-self-tune}
 
-**TBD: write this up nicely**
+VWS may be used to generate from conditional distributions in a Gibbs sampler; however, the amount of computation can become arduous if new proposals are constructed in each step of the Gibbs sampler. In this setting, @saevws-2025 consider a persistent VWS proposal that is gradually tuned to track a particular conditional distribution in the Gibbs sampler as the MCMC chain evolves. If the target does not change much as the chain approaches the posterior distribution, the amount of tuning needed to maintain a rejection rate which is sufficiently below 1 should also diminish.
 
-VWS may be used to generate from conditional distributions in a Gibbs sampler; however, the amount of computation can become laborious if a new proposal (or collection of proposals) is constructed in each step of the Gibbs sampler. In this setting, @saevws-2025 consider a persistent VWS proposal that is gradually tuned to track target a particular conditional distribution of the Gibbs sampler as the MCMC chain advances. If the target does not change too much as the chain approaches the posterior distribution, the number of necessary updates to the proposal should also diminish.
+Two types of updates are considered when a proposed draw $x$ is rejected. If bound $\rho_+$ is larger than a given threshold $\epsilon_1 \in (0,1)$, $x$ is used to refine the current set of regions. The region $\mathscr{D}_j$ containing $x$ is selected for bifurcation, but the specific way that $x$ is used to bifurcate depends on the nature of the regions. For example, there are a number of possibilities to bifurcate a multivariate region at point $x$. On the other hand, if $\rho_+$ is smaller than $\epsilon_1$, we check for regions with small contributions of $\rho_\ell$ to $\rho_+$. In particular regions with $\rho_\ell$ smaller than a given threshold $\epsilon_2 \in (0,1)$ are coarsened (i.e., merged with a neighboring region) if doing so does not increase $\rho_+$ beyond $\epsilon_1$. This process is repeated until no further merges can be completed. 
 
-Two types of updates are considered. If bound $\rho_+$ is larger than some threshold $\epsilon_1$, a rejected draw is used to refine the current set of regions. On the other hand, if $\rho_+$ is smaller than $\epsilon_1$, we check for regions with relatively small contributions $\rho_\ell$ to $\rho_+$; such regions are coarsened (i.e., merged with neighboring regions) if doing so does not increase $\rho_+$ beyond $\epsilon_1$.
+To emphasize, $\epsilon_1$ represents a threshold for a sufficiently small rejection rate while $\epsilon_2$ represents a tolerance for low contribution. In practice, a sufficiently small rejection rate need not be far from 1 if rejections are computationally inexpensive; a value such as $\epsilon_1 = 0.85$ may yield good performance.
 
-- $\epsilon_1$: "sufficient" tolerance
-- $\epsilon_2$: "merge" tolerance
+Algorithm \ref{alg:self-tune} represents rejection sampling with self-tuning described in the manner above. It makes use of Algorithm \ref{alg:merge} to handle merges. Note that only certain pairs of regions are eligible to be merged, and eligibility is determined by the particular type of region. For example, the regions implemented in @sec-api-realconstregion and @sec-api-intconstregion are based on univariate intervals; here, only adjacent intervals having a common endpoint can be merged together. There may be multiple merges possible with a given partition, where different choices on line  \ref{step:merge} of Algorithm \ref{alg:merge} yield different configurations after the loop on line \ref{step:merge-loop} of Algorithm \ref{alg:self-tune}. For the sake of simplicity, the current implementation performs the first eligible merge in each traversal of the loop rather than considering all possible sequences of merges.
 
 \begin{algorithm}
 \caption{Generate a single draw from $f$ using self-tuned VWS with tolerances $\epsilon_1$ and $\epsilon_2$.}
 \label{alg:self-tune}
 \begin{algorithmic}[1]
+\Function{RejectionTune}{$h$ by reference, $\epsilon_1$, $\epsilon_2$}
 \Do
 \State Draw $u$ from $\text{Uniform}(0,1)$ and $x$ from $h$.
 \State $\text{Accept} \gets \ind\{ u \leq f_0(x) / h_0(x) \}$ where $f_0(x) = w(x) g(x)$ and $h_0(x) = \overline{w}(x) g(x)$.
-\State Let $N$ be the current number of knots in $h$.
-\State Let $\alpha_0, \ldots, \alpha_N$ be the current knots of $h$.
-\State Let $\rho_{+}$ be current value of bound \eqref{eqn:bound}.
-\State Let $\rho_1, \ldots, \rho_N$ be the current contribution of each region.
+\State Let $\rho_{+}$ be the current value of bound \eqref{eqn:bound}.
 \If{$\text{Accept} = 0$ and $\rho_{+} < \epsilon_1$}
-\For{$j = 1, \ldots, N-1$}
-\If{$\rho_j < \epsilon_2$}
-\State Let $\tilde{h}$ be equal to $h$ with knot $\alpha_j$ excluded.
-\State Let $\tilde{\rho}_+$ be the bound \eqref{eqn:bound} for $\tilde{h}$.
-\State Assign $h$ to $\tilde{h}$ if $\tilde{\rho}_+ < \epsilon_1$.
-\EndIf
-\EndFor
+\Do
+\label{step:merge-loop}
+\State $\text{Repeat} \leftarrow \text{MergeOnce}(h, \epsilon_1, \epsilon_2)$.
+\doWhile{$\text{Repeat} = 1$}
 \ElsIf{$\text{Accept} = 0$ and $\rho_{+} \geq \epsilon_1$}
-\State Add $x$ as a knot in $h$.
+\State Refine $h$ at $x$.
 \EndIf
 \doWhile{$\text{Accept} = 0$}
 \State \Return $x$ and $h$.
+\EndFunction
 \end{algorithmic}
 \end{algorithm}
 
+\begin{algorithm}
+\caption{Attempt to merge a single pair of regions in $h$. Return $1$ if a merge was completed and $0$ otherwise.}
+\label{alg:merge}
+\begin{algorithmic}[1]
+\Function{MergeOnce}{$h$ by reference, $\epsilon_1$, $\epsilon_2$}
+\State Let $\mathscr{D}_1, \ldots, \mathscr{D}_N$ be the regions corresponding to current mixture components of $h$.
+\State Let $\rho_{+}$ be the current value of bound \eqref{eqn:bound} and $\rho_1, \ldots, \rho_N$ be contribution of each region.
+\For{$j = 1, \ldots, N$}
+\If{$\rho_j < \epsilon_2$}
+\State Let $\ell$ ($\neq j$) be the index of a region that can be merged with $\mathscr{D}_j$.
+\label{step:merge}
+\State Let $\tilde{h}$ be equal to $h$ with regions $\mathscr{D}_j$ and $\mathscr{D}_\ell$ merged.
+\State Let $\tilde{\rho}_+$ be the bound \eqref{eqn:bound} for $\tilde{h}$.
+\If{$\tilde{\rho}_+ < \epsilon_1$}
+\State Modify $h$ to $\tilde{h}$.
+\State \Return $1$.
+\EndIf
+\EndIf
+\EndFor
+\State \Return $0$.
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
 
 # Overview of Package {#sec-overview}
 
-The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples.
+The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples. Some useful preliminaries are also presented.
+
+## Design {#sec-overview-design}
 
 Use of the `vws` package centers on two classes. The `FMMProposal` class represents a finite mixture of the form \eqref{eqn:fmm-proposal} and encapsulates the operations needed for rejection sampling. The `Region` class represents region $\mathscr{D}_j$ and the operations required for VWS. `Region` itself is an abstract base class which defines an interface needed by the framework. All problem-specific logic is coded within a subclass of `Region`: either by using one of the provided subclasses or by coding a new subclass. The subclasses `RealConstRegion` and `IntConstRegion` provide implementations of the constant majorizer from @sec-vws-constant, for continuous and discrete univariate distributions, respectively. The linear majorizer described in @sec-vws-linear requires more customization than the constant majorizer; here, users should create a subclass of `Region`. An `FMMProposal` object is created from $N \geq 1$ `Region` objects that represent the partition $\mathscr{D}_1, \ldots, \mathscr{D}_N$ of $\Omega$.
 
 The `rejection` function takes an object `h` of class `FMMProposal` and carries out rejection sampling to obtain $n$ draws. The `rejection` function returns a vector of accepted draws along with information about the number of rejections. @fig-software-design displays a diagram of the high-level design just described.
 
 ![Design of `vws` package.](software-design.pdf){#fig-software-design}
+
+## Typical Workflow {#sec-overview-workflow}
 
 The following display outlines a typical workflow for VWS rejection sampling in C++. Some of the lines are labeled with numbers; descriptions of these labels are given after the code.
 
@@ -454,9 +476,8 @@ head(out$rejects)
 A complete VWS example is given in @sec-vmf-const-default; this demonstrates the use of `RealConstRegion` to implement a sampler with a minimal amount of coding. @sec-vmf-const-custom is an improvement which requires more coding; here we provide functions to determine values of the constant majorizer and minorizer analytically. Finally, @sec-vmf-linear demonstrates how to subclass `Region` to implement a linear majorizer, which requires more intricate coding. Subsequent examples are given in @sec-ln-norm and @sec-bessel, but with less explanation.
 :::
 
-It is useful to mention several other preliminaries for the `vws` package; see the following remarks.
+## Lambdas {#sec-overview-lambdas}
 
-::: {#rem-lambdas}
 Lambdas in C++ are functions which can be defined within the course of a program, regarded as objects which can be passed to other functions, and capture variables in the environment so that they do not need to be passed as arguments. They should feel very familiar to R programmers who likely use R functions in this way. Here is a snippet with several examples of lambdas.
 
 ```{cpp}
@@ -477,15 +498,14 @@ double out = f1(1, 2);
 The typedef `dfdd` is given as a shorthand for a Standard Template Library (STL) [`function`](https://en.cppreference.com/w/cpp/utility/functional/function.html) which takes two `double` variables as arguments and returns a `double`. An STL `function` can be passed to other functions like any other variable. Function `f1` explicitly states the return type of the lambda using `-> double` while it is omitted in the others to be inferred by the compiler. The variable `z` is *captured* by `f1`, `f2`, and `f3`; in other words, it is "baked in" to the function definition without needing to be passed as an argument. Functions `f1` and `f2` capture `z` by reference while `f3` captures `z` by value, indicated with the syntaxes `[&]` and `[=]` respectively. Function `f4` uses empty square brackets `[]` to indicate that it does not capture any outside variables.
 
 The `fntl` package defines several function typedefs used in the `vws` package, and also provides access to numerical tools such as integration, differentiation, and optimization which take STL `function`s as arguments. \remarkqed
-:::
 
-::: {#rem-logscale}
+## Computations on the Log-Scale {#sec-logscale}
+
 Many of the computations in this vignette and within the `vws` package are carried out on the logarithmic scale. This is to avoid loss of precision when working with very large or small magnitude numbers. Several functions to support log-scale arithmetic are given in @sec-api-logscale. \remarkqed
-:::
 
-::: {#rem-optimization}
+## Optimization {#sec-overview-optimization}
+
 To help automate computation of constant majorizers and minorizers for use with `RealConstRegion` and `IntConstRegion`, the default is to use numerical optimization to find appropriate constants on each region in the partition. The particular optimization method is presented in @sec-api-opt. This can be somewhat of a computational burden; it can sometimes be avoided when there is a closed form solution or other informed way to arrive at maximizing / minimizing constants. The API for `RealConstRegion` and `IntConstRegion` accepts user-specified lambdas to specify alternative methods. \remarkqed
-:::
 
 # C++ API {#sec-api}
 
@@ -1149,7 +1169,7 @@ struct optimize_hybrid_result {
 
 ## Log-Scale Arithmetic {#sec-api-logscale}
 
-As mentioned in @rem-logscale, calculations in the package are carried out on the log-scale, where possible, to avoid issues from floating point numbers with very small or very large magnitudes. Users may want to follow this convention when implementing their own sampling problems. Several included functions help to avoid explicit exponentiation.
+As mentioned in @sec-logscale, calculations in the package are carried out on the log-scale, where possible, to avoid issues from floating point numbers with very small or very large magnitudes. Users may want to follow this convention when implementing their own sampling problems. Several included functions help to avoid explicit exponentiation.
 
 The following computes the scalar $f(x) = \log\{ \sum_{i=1}^n \exp(x_i) \}$ from a vector $x \in \mathbb{R}^n$ using the method described in [this StackExchange post](https://stats.stackexchange.com/a/381937).
 
@@ -2497,7 +2517,7 @@ The samplers developed in previous sections each expose a function in R which ca
 
 ## External Pointers {#sec-persistent-xptr}
 
-An Rcpp external pointer (`XPtr`) can be used to construct objects in C++ and return them to R so that they persist and can be accessed in subsequent calls to C++. This is especially useful for use with complicated data structures that are not easy to directly represent as R objects. A VWS proposal is an example of such as structure. The full C++ code is given in `examples/vmf/vmf-v1-xptr.cpp`. Here we describe the components of that file.
+An Rcpp external pointer (`XPtr`) can be used to construct objects in C++ and return them to R so that they persist and can be accessed in subsequent calls to C++. This is especially useful with complicated data structures that are not easy to directly represent as R objects. A VWS proposal is an example of such as structure. The full C++ code is given in `examples/vmf/vmf-v1-xptr.cpp`. Here we describe the components of that file.
 
 The following typedefs provide more readable names for the proposal and its `XPtr`.
 
@@ -2543,9 +2563,9 @@ t_proposal_xptr vmf_pre_v1_xptr(double kappa, double d)                  // <1>
 }
 ```
 1. The function returns an `XPtr` to a proposal rather than the result of sample generation.
-2. Capture by value with the lambdas here using `[=]`. Variables `kappa` and `d` may not be available in the environment when evaluating the lambdas later; this ensure that they can still be accessed by the lambdas.
+2. Capture by value with the lambdas here using `[=]`. Variables `kappa` and `d` may not be available in the environment when evaluating the lambdas later. Capture by value ensures that variables can still be accessed by the lambdas.
 3. Create a proposal object on the heap using `new` and wrap it in an `XPtr` to be returned to R.
-4. The function `set_tag` a utility we will define; more explanation is provided below.
+4. The function `set_tag` is a utility we will define; more explanation is provided below.
 
 The following functions make use of the proposal `XPtr`. The `refine` function
 modifies the proposal by applying up to `N` refinement steps of Algorithm \ref{alg:refine} until toleration `tol` is achieved. The `draw` function draws
@@ -2618,7 +2638,7 @@ print(lbdd)
 head(out$draws)
 ```
 
-For demonstration purposes, let us define a C++ function that returns an `XPtr` to a vector. When an `XPtr` to a proposal is expected but an `XPtr` to a vector is encountered, ensure that an appropriate exception is thrown.
+For demonstration purposes, let us define a C++ function that returns an `XPtr` to a vector (i.e., something which is not a proposal object). When an `XPtr` to a proposal is expected but an `XPtr` to a vector is encountered, ensure that an appropriate exception is thrown.
 
 ```{cpp}
 // [[Rcpp::export]]
@@ -2657,7 +2677,7 @@ The following typedef provides a more readable name for the proposal.
 typedef vws::FMMProposal<double, vws::RealConstRegion> t_proposal;
 ```
 
-We now define a class named `RcppProposal` which will be exposed as an Rcpp module. This class inherits from ("is a") `t_proposal`. Its constructor, `refine` operation, and `draw` operation are analogous to those in @sec-persistent-xptr.
+We now define a class named `RcppProposal` which will be exposed as an Rcpp module. This class inherits from `t_proposal`. (I.e., `RcppProposal` "is a" `t_proposal`.) Its constructor, `refine` operation, and `draw` operation are analogous to those in @sec-persistent-xptr.
 
 ```{cpp}
 class RcppProposal : t_proposal
