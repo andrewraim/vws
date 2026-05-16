@@ -27,12 +27,12 @@ unsigned int merge_once(vws::FMMProposal<T,R>& h, const T& x, double tol_suff, d
 	{
 		if (lbdd(j) >= log(tol_merge)) { continue; }
 		const Rcpp::IntegerVector& idx = h.mergeable(j);
-		auto itr1 = std::next(h.regions_begin(), j);
+		auto itr1 = std::next(h.begin(), j);
 
 		for (unsigned int l = 0; l < idx.size(); l++)
 		{
 			// Merge regions j and l without modifying the proposal
-			auto itr2 = std::next(h.regions_begin(), idx(l));
+			auto itr2 = std::next(h.begin(), idx(l));
 			const R& merged = itr1->merge(*itr2);
 
 			// Compute the overall bound if we replaced regions j and l

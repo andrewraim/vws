@@ -90,7 +90,10 @@ inline rejection_result<T>::operator SEXP() const
 {
 	return Rcpp::List::create(
 		Rcpp::Named("draws") = draws,
-		Rcpp::Named("rejects") = rejects
+		Rcpp::Named("rejects") = rejects,
+		Rcpp::Named("tunes") = tunes,
+		Rcpp::Named("regions") = regions,
+		Rcpp::Named("log_bounds") = log_bounds
 	);
 }
 

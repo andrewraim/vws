@@ -130,8 +130,8 @@ protected:
 	void init();
 	double _a;
 	double _b;
-	dfdb _w;
-	UnivariateHelper _helper;
+	mutable dfdb _w;
+	mutable UnivariateHelper _helper;
 	double _log_w_max;
 	double _log_w_min;
 	double _log_prob;
