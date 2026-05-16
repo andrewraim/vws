@@ -143,7 +143,7 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 
 			if (!accept && h.bound(true) < log(tol_suff))
 			{
-				// Rprintf("Trying to merge some regions ...\n");
+				// Rprintf("Merge some regions ...\n");
 
 				// Identify regions that contribute very little and merge them
 				// with other regions.
@@ -163,7 +163,7 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 			}
 			else if (!accept && h.bound(true) >= log(tol_suff))
 			{
-				// Rprintf("Partition new region at x = %g\n", x);
+				// Rprintf("Refine at x = %g ...\n", x);
 
 				// Add the rejected draw as a knot
 				const std::vector<T>& knots = { x };

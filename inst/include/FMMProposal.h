@@ -503,8 +503,8 @@ template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::bound_contrib(bool log) const
 {
 	// Each region's contribution to the rejection rate bound.
-	const Rcpp::NumericVector& lxl = xi_upper(true);
-	const Rcpp::NumericVector& lxu = xi_lower(true);
+	const Rcpp::NumericVector& lxu = xi_upper(true);
+	const Rcpp::NumericVector& lxl = xi_lower(true);
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
 	if (log) { return(out); } else { return Rcpp::exp(out); }
 }
@@ -660,8 +660,8 @@ Rcpp::DataFrame FMMProposal<T,R>::summary() const
 	unsigned int j = 0;
 
 	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
-		double lxl = itr->xi_lower(true);
 		double lxu = itr->xi_upper(true);
+		double lxl = itr->xi_lower(true);
 		v1[j] = itr->description();
 		v2[j] = lxu;
 		v3[j] = lxl;
