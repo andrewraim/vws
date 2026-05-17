@@ -79,9 +79,12 @@ public:
 	/*
 	* TBD
 	*/
-	void set(const dfdb& w);
-	void set(const UnivariateHelper& helper);
-	void set(const dfdb& w, const UnivariateHelper& helper);
+	void set_w(const dfdb& w);
+	void set_helper(const UnivariateHelper& helper);
+	void set_maxopt(const optimizer& maxopt);
+	void set_minopt(const optimizer& minopt);
+	void set_mid(const vws::midpoint& mid);
+	void init();
 
 	/*
 	* TBD
@@ -127,11 +130,10 @@ public:
 	const RealConstRegion& operator=(const RealConstRegion& x);
 
 protected:
-	void init();
 	double _a;
 	double _b;
-	mutable dfdb _w;
-	mutable UnivariateHelper _helper;
+	dfdb _w;
+	UnivariateHelper _helper;
 	double _log_w_max;
 	double _log_w_min;
 	double _log_prob;
@@ -140,23 +142,29 @@ protected:
 	vws::midpoint _mid;
 };
 
-inline void RealConstRegion::set(const dfdb& w)
+inline void RealConstRegion::set_w(const dfdb& w)
 {
 	_w = w;
-	init();
 }
 
-inline void RealConstRegion::set(const UnivariateHelper& helper)
+inline void RealConstRegion::set_helper(const UnivariateHelper& helper)
 {
 	_helper = helper;
-	init();
 }
 
-inline void RealConstRegion::set(const dfdb& w, const UnivariateHelper& helper)
+inline void RealConstRegion::set_maxopt(const optimizer& maxopt)
 {
-	_w = w;
-	_helper = helper;
-	init();
+	_maxopt = maxopt;
+}
+
+inline void RealConstRegion::set_minopt(const optimizer& minopt)
+{
+	_minopt = minopt;
+}
+
+inline void RealConstRegion::set_mid(const vws::midpoint& mid)
+{
+	_mid = mid;
 }
 
 inline RealConstRegion::RealConstRegion(double a,

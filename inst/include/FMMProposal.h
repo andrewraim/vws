@@ -219,7 +219,8 @@ public:
 	* step. The values are returned on the log-scale if `log = true`.
 	*/
 	Rcpp::NumericVector refine(unsigned int N, double tol = 0,
-		bool greedy = false, unsigned int report = fntl::uint_max, bool log = true);
+		bool greedy = false, unsigned int report = fntl::uint_max,
+		bool log = true);
 
 protected:
 
@@ -253,10 +254,7 @@ double FMMProposal<T,R>::merge(unsigned int i, unsigned int j, bool log)
 	_regions.erase(itr1);
 	_regions.erase(itr2);
 	_regions.insert(merged);
-	// recache();
-
-	double out = bound(true);
-	return log ? out : std::exp(out);
+	return bound(log);
 }
 
 template <class T, class R>
@@ -447,8 +445,9 @@ void FMMProposal<T,R>::recache()
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::xi_upper(bool log) const
 {
-	unsigned int i = 0;
 	Rcpp::NumericVector out(size());
+
+	unsigned int i = 0;
 	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
 		out(i) = itr->xi_upper(log);
 		i++;
@@ -460,8 +459,9 @@ Rcpp::NumericVector FMMProposal<T,R>::xi_upper(bool log) const
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::xi_lower(bool log) const
 {
-	unsigned int i = 0;
 	Rcpp::NumericVector out(size());
+
+	unsigned int i = 0;
 	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
 		out(i) = itr->xi_lower(log);
 		i++;
@@ -473,8 +473,9 @@ Rcpp::NumericVector FMMProposal<T,R>::xi_lower(bool log) const
 template <class T, class R>
 Rcpp::LogicalVector FMMProposal<T,R>::bifurcatable() const
 {
-	unsigned int i = 0;
 	Rcpp::LogicalVector out(size());
+
+	unsigned int i = 0;
 	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
 		out(i) = itr->is_bifurcateable();
 		i++;
