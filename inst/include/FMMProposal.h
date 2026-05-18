@@ -17,7 +17,7 @@ namespace vws {
 *
 * - `T`: the data type of the support. For example, for a continuous
 *   univariate support, we may use `double`.
-* - `R`: a subclass of `Region` toused by the proposal. `Region` subclasses
+* - `R`: a subclass of `Region` to be used by the proposal. `Region` subclasses
 *   implement any problem-specific logic used in the proposal.
 */
 template <class T, class R>
@@ -83,25 +83,6 @@ public:
 	typename std::set<R>::const_iterator end() const {
 		return _regions.end();
 	}
-
-	// Rcpp::NumericVector::const_iterator log_xi_upper_begin() const {
-	// 	return _log_xi_upper->begin();
-	// }
-	// Rcpp::NumericVector::const_iterator log_xi_upper_end() const {
-	// 	return _log_xi_upper->end();
-	// }
-	// Rcpp::NumericVector::const_iterator log_xi_lower_begin() const {
-	// 	return _log_xi_lower->begin();
-	// }
-	// Rcpp::NumericVector::const_iterator log_xi_lower_end() const {
-	// 	return _log_xi_lower->end();
-	// }
-	// Rcpp::LogicalVector::const_iterator bifurcatable_begin() const {
-	// 	return _bifurcatable->begin();
-	// }
-	// Rcpp::LogicalVector::const_iterator bifurcatable_end() const {
-	// 	return _bifurcatable->end();
-	// }
 
 	/*
 	* Upper bound for rejection probability.
@@ -224,22 +205,7 @@ public:
 
 protected:
 
-	/*
-	* Recompute internal auxiliary data structures.
-	*
-	* The following data structures are based on the set `_regions`:
-	* - `_log_xi_upper`
-	* - `_log_xi_lower`
-	* - `_bifurcatable`
-	*
-	* Here we construct them from the current state of `_regions`.
-	*/
-	// void recache();
-
 	std::set<R> _regions;
-	// std::unique_ptr<Rcpp::NumericVector> _log_xi_upper;
-	// std::unique_ptr<Rcpp::NumericVector> _log_xi_lower;
-	// std::unique_ptr<Rcpp::LogicalVector> _bifurcatable;
 };
 
 template <class T, class R>
@@ -302,7 +268,6 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots, bool l
 		_regions.erase(itr);
 		_regions.insert(bif_out.first);
 		_regions.insert(bif_out.second);
-		// recache();
 
 		log_bdd_hist.push_back(bound(true));
 	}
@@ -329,10 +294,6 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 		}
 
 		unsigned int L = _regions.size();
-
-		// Each region's contribution to the rejection rate
-		// const Rcpp::NumericVector& log_volume0 = bound_contrib(true);
-		Rcpp::NumericVector log_volume(size());
 		double lxusum = log_sum_exp(xi_upper(true));
 
 		// Identify the regions which are bifurcatable; for the rest, we set
@@ -340,7 +301,8 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 		unsigned int n_bif = 0;
 		unsigned int l = 0;
 
-		// for (unsigned int l = 0; l < L; l++) {
+		// Each region's contribution to the rejection rate
+		Rcpp::NumericVector log_volume(size());
 		for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
 			double lxu = itr->xi_upper(true);
 			double lxl = itr->xi_lower(true);
@@ -378,7 +340,6 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 		_regions.erase(itr);
 		_regions.insert(bif_out.first);
 		_regions.insert(bif_out.second);
-		// recache();
 
 		lbdd_hist.push_back(bound(true));
 
@@ -397,7 +358,6 @@ FMMProposal<T,R>::FMMProposal(const std::vector<R>& regions)
 : _regions()
 {
 	_regions.insert(regions.begin(), regions.end());
-	// recache();
 }
 
 template <class T, class R>
@@ -405,7 +365,6 @@ FMMProposal<T,R>::FMMProposal(const R& region)
 : _regions()
 {
 	_regions.insert(region);
-	// recache();
 }
 
 template <class T, class R>
@@ -413,34 +372,7 @@ FMMProposal<T,R>::FMMProposal(const FMMProposal& p)
 : _regions()
 {
 	_regions.insert(p._regions.begin(), p._regions.end());
-	// recache();
 }
-
-/*
-template <class T, class R>
-void FMMProposal<T,R>::recache()
-{
-	// TBD: This might be a good place to check for no overlaps, and perhaps to
-	// make sure there are no gaps?
-
-	unsigned int N = _regions.size();
-	_log_xi_upper = std::make_unique<Rcpp::NumericVector>(N);
-	_log_xi_lower = std::make_unique<Rcpp::NumericVector>(N);
-	_bifurcatable = std::make_unique<Rcpp::LogicalVector>(N);
-
-	unsigned int j = 0;
-	for (auto itr = _regions.begin(); itr != _regions.end(); ++itr) {
-		(*_log_xi_upper)[j] = itr->xi_upper(true);
-		(*_log_xi_lower)[j] = itr->xi_lower(true);
-		(*_bifurcatable)[j] = itr->is_bifurcatable();
-		j++;
-
-		if (itr->xi_lower(true) > itr->xi_upper(true)) {
-			Rcpp::stop("xi_lower > xi_upper");
-		}
-	}
-}
-*/
 
 template <class T, class R>
 Rcpp::NumericVector FMMProposal<T,R>::xi_upper(bool log) const
@@ -507,7 +439,7 @@ Rcpp::NumericVector FMMProposal<T,R>::bound_contrib(bool log) const
 	const Rcpp::NumericVector& lxu = xi_upper(true);
 	const Rcpp::NumericVector& lxl = xi_lower(true);
 	const Rcpp::NumericVector& out = log_sub2_exp(lxu, lxl) - log_sum_exp(lxu);
-	if (log) { return(out); } else { return Rcpp::exp(out); }
+	if (log) { return out; } else { return Rcpp::exp(out); }
 }
 
 template <class T, class R>
@@ -560,7 +492,6 @@ FMMProposal<T,R>::r_ext(unsigned int n) const
 	// Draw the values from the respective mixture components.
 	std::vector<T> x;
 	for (unsigned int i = 0; i < n; i++) {
-		// const std::vector<T>& draws = _regions_vec[idx(i)].r(1);
 		auto itr = std::next(_regions.begin(), idx(i));
 		const std::vector<T>& draws = itr->r(1);
 		x.push_back(draws[0]);
@@ -596,16 +527,12 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 		// Could not find region which is upper bound for x. Assume that x is
 		// outside of the support
 		out = R_NegInf;
-		// Rprintf("FMMProposal<T,R>::d, case 1: out = %g\n", out);
 	} else if (!itr_lower->s(x)) {
 		// Could not find a region that contains x. Assume that x is outside of
 		// the support.
 		out = R_NegInf;
-		// Rprintf("FMMProposal<T,R>::d, case 2: out = %g\n", out);
 	} else {
 		out = itr_lower->w_major(x, true) + itr_lower->d_base(x, true) - lnc;
-		// Rprintf("FMMProposal<T,R>::d, case 3: out = %g  log-wmajor = %g  log-base-density = %g  log-nc = %g\n",
-		// 	out, itr_lower->w_major(x, true), itr_lower->d_base(x, true), lnc);
 	}
 
 	return log ? out : exp(out);
