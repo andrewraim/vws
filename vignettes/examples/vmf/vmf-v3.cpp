@@ -1,6 +1,6 @@
 // [[Rcpp::depends(vws, fntl)]]
 #include "vws.h"
-#include "LinearVWSRegion.h"
+#include "linear-vws-region.h"
 
 // [[Rcpp::export]]
 Rcpp::List r_vmf_pre_v3(unsigned int n, double kappa, double d, unsigned int N,
@@ -11,8 +11,8 @@ Rcpp::List r_vmf_pre_v3(unsigned int n, double kappa, double d, unsigned int N,
     args.max_rejects = max_rejects;
     args.report = report;
 
-    LinearVWSRegion supp(-1, 1, kappa, d);
-    vws::FMMProposal<double, LinearVWSRegion> h(supp);
+    linear_vws_region supp(-1, 1, kappa, d);
+    vws::fmm_proposal<double, linear_vws_region> h(supp);
 
     auto lbdd = h.refine(N - 1, tol);
     auto out = vws::rejection(h, n, args);

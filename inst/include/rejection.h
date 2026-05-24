@@ -3,8 +3,8 @@
 
 #include <Rcpp.h>
 #include "timestamp.h"
-#include "Region.h"
-#include "FMMProposal.h"
+#include "region.h"
+#include "fmm-proposal.h"
 #include "result.h"
 #include "typedefs.h"
 #include "rejection-args.h"
@@ -22,7 +22,7 @@ namespace vws {
 */
 template <typename T, typename R>
 inline rejection_result<T>
-rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
+rejection(const fmm_proposal<T,R>& h, unsigned int n, const rejection_args& args)
 {
 	std::vector<T> draws;
 	std::vector<unsigned int> rejects;
@@ -106,7 +106,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 *  Returns a structure with saved draws and rejection counts.
 */
 template <typename T, typename R>
-inline rejection_result<T> rejection(const FMMProposal<T,R>& h, unsigned int n = 1)
+inline rejection_result<T> rejection(const fmm_proposal<T,R>& h, unsigned int n = 1)
 {
 	rejection_args ctrl;
 	return rejection(h, n, ctrl);

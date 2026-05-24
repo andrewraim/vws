@@ -49,7 +49,7 @@ geometry:
   - top=0.75in
   - bottom=1.00in
 execute:
-  eval: false
+  eval: true
 code-block-bg: "#FAFAFA"
 code-block-border-left: "#B2DEED"
 filters:
@@ -422,9 +422,9 @@ The `vws` package aims to support the methodology which was described in the pre
 
 ## Design {#sec-overview-design}
 
-Use of the `vws` package centers on two classes. The `FMMProposal` class represents a finite mixture of the form \eqref{eqn:fmm-proposal} and encapsulates the operations needed for rejection sampling. The `Region` class represents region $\mathscr{D}_j$ and the operations required for VWS. `Region` itself is an abstract base class which defines an interface needed by the framework. All problem-specific logic is coded within a subclass of `Region`: either by using one of the provided subclasses or by coding a new subclass. The subclasses `RealConstRegion` and `IntConstRegion` provide implementations of the constant majorizer from @sec-vws-constant, for continuous and discrete univariate distributions, respectively. The linear majorizer described in @sec-vws-linear requires more customization than the constant majorizer; here, users should create a subclass of `Region`. An `FMMProposal` object is created from $N \geq 1$ `Region` objects that represent the partition $\mathscr{D}_1, \ldots, \mathscr{D}_N$ of $\Omega$.
+Use of the `vws` package centers on two classes. The `fmm_proposal` class represents a finite mixture of the form \eqref{eqn:fmm-proposal} and encapsulates the operations needed for rejection sampling. The `Region` class represents region $\mathscr{D}_j$ and the operations required for VWS. `Region` itself is an abstract base class which defines an interface needed by the framework. All problem-specific logic is coded within a subclass of `Region`: either by using one of the provided subclasses or by coding a new subclass. The subclasses `real_const_region` and `int_const_region` provide implementations of the constant majorizer from @sec-vws-constant, for continuous and discrete univariate distributions, respectively. The linear majorizer described in @sec-vws-linear requires more customization than the constant majorizer; here, users should create a subclass of `Region`. An `fmm_proposal` object is created from $N \geq 1$ `Region` objects that represent the partition $\mathscr{D}_1, \ldots, \mathscr{D}_N$ of $\Omega$.
 
-The `rejection` function takes an object `h` of class `FMMProposal` and carries out rejection sampling to obtain $n$ draws. The `rejection` function returns a vector of accepted draws along with information about the number of rejections. @fig-software-design displays a diagram of the high-level design just described.
+The `rejection` function takes an object `h` of class `fmm_proposal` and carries out rejection sampling to obtain $n$ draws. The `rejection` function returns a vector of accepted draws along with information about the number of rejections. @fig-software-design displays a diagram of the high-level design just described.
 
 ![Design of `vws` package.](software-design.pdf){#fig-software-design}
 
@@ -441,7 +441,7 @@ The following display outlines a typical workflow for VWS rejection sampling in 
 Rcpp::List sample(unsigned int n)
 {
     MyRegion supp( ... );                       // <4>
-    vws::FMMProposal<double, MyRegion> h(supp); // <5>
+    vws::fmm_proposal<double, MyRegion> h(supp); // <5>
     h.refine(N - 1, 0.01);                      // <6>
     auto out = vws::rejection(h, n);            // <7>
 
@@ -456,12 +456,12 @@ Rcpp::List sample(unsigned int n)
 2. Include the main header for the `vws` package so that the API is accessible.
 3. This annotation exports the `sample` function for use in R. This is not needed if the `sample` function will be used only in C++.
 4. Construct a region of type `MyRegion` which we have presumably defined in `MyRegion.h`. The symbol `...` here is a placeholder for any arguments needed by the constructor.
-5. Construct an `FMMProposal` based on a single region `supp`. Note that it is a template class that needs two template arguments: the first (`double`) indicates the data type of the distribution and the second (`MyRegion`) indicates the type of region it will contain.
+5. Construct an `fmm_proposal` based on a single region `supp`. Note that it is a template class that needs two template arguments: the first (`double`) indicates the data type of the distribution and the second (`MyRegion`) indicates the type of region it will contain.
 6. Refine the proposal using Algorithm \ref{alg:refine} up to $N-1$ times or until tolerance `0.01` is achieved for \eqref{eqn:bound}.
 7. Carry out rejection sampling with the refined proposal `h`.
 8. Pack elements of the struct `out` into an `Rcpp::List` and return them to the caller.
 
-Note that the `FMMProposal` class, the `rejection` function, and other elements of the `vws` API are accessed in the `vws` namespace. Details for the API are given in @sec-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual. Suppose the code in the previous display is saved is in a file named `sample.cpp`.
+Note that the `fmm_proposal` class, the `rejection` function, and other elements of the `vws` API are accessed in the `vws` namespace. Details for the API are given in @sec-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual. Suppose the code in the previous display is saved is in a file named `sample.cpp`.
 
 ```{r}
 #| eval: false
@@ -473,7 +473,7 @@ head(out$rejects)
 ```
 
 ::: {.callout-tip title="Working Examples"}
-A complete VWS example is given in @sec-vmf-const-default; this demonstrates the use of `RealConstRegion` to implement a sampler with a minimal amount of coding. @sec-vmf-const-custom is an improvement which requires more coding; here we provide functions to determine values of the constant majorizer and minorizer analytically. Finally, @sec-vmf-linear demonstrates how to subclass `Region` to implement a linear majorizer, which requires more intricate coding. Subsequent examples are given in @sec-ln-norm and @sec-bessel, but with less explanation.
+A complete VWS example is given in @sec-vmf-const-default; this demonstrates the use of `real_const_region` to implement a sampler with a minimal amount of coding. @sec-vmf-const-custom is an improvement which requires more coding; here we provide functions to determine values of the constant majorizer and minorizer analytically. Finally, @sec-vmf-linear demonstrates how to subclass `Region` to implement a linear majorizer, which requires more intricate coding. Subsequent examples are given in @sec-ln-norm and @sec-bessel, but with less explanation.
 :::
 
 ## Lambdas {#sec-overview-lambdas}
@@ -505,13 +505,13 @@ Many of the computations in this vignette and within the `vws` package are carri
 
 ## Optimization {#sec-overview-optimization}
 
-To help automate computation of constant majorizers and minorizers for use with `RealConstRegion` and `IntConstRegion`, the default is to use numerical optimization to find appropriate constants on each region in the partition. The particular optimization method is presented in @sec-api-opt. This can be somewhat of a computational burden; it can sometimes be avoided when there is a closed form solution or other informed way to arrive at maximizing / minimizing constants. The API for `RealConstRegion` and `IntConstRegion` accepts user-specified lambdas to specify alternative methods. \remarkqed
+To help automate computation of constant majorizers and minorizers for use with `real_const_region` and `int_const_region`, the default is to use numerical optimization to find appropriate constants on each region in the partition. The particular optimization method is presented in @sec-api-opt. This can be somewhat of a computational burden; it can sometimes be avoided when there is a closed form solution or other informed way to arrive at maximizing / minimizing constants. The API for `real_const_region` and `int_const_region` accepts user-specified lambdas to specify alternative methods. \remarkqed
 
 # C++ API {#sec-api}
 
 This section documents functions, classes, and other components in the C++ API. Note that some functions in the C++ API are also exposed as R functions; see the `vws` package manual for these.
 
-## Typedefs {#sec-api-typedefs}
+## Typedefs and Aliases {#sec-api-typedefs}
 
 The following typedef is used to represent functions that take `double` and `bool` arguments and return a `double`. It is used as the type for weight functions in particular, with `x` the argument of the weight function and `log = true` if the result is to be returned on the log-scale.
 
@@ -541,17 +541,31 @@ The following typedef represents a function that computes the midpoint of a give
 typedef std::function<double(double a, double b)> midpoint;
 ```
 
+The initial release of the `vws` package used a "camelcase" convention for class names, which has since changed to lowercase with underscores. The following aliases are defined for backward compatibility.
+
+```{cpp}
+template<class T, class R>
+using FMMProposal = fmm_proposal<T,R>;
+
+template<class T>
+using Region = region<T>;
+
+using RealConstRegion = real_const_region;
+using IntConstRegion = int_const_region;
+using UnivariateHelper = univariate_helper;
+```
+
 ## Finite Mixture Proposal {#sec-api-proposal}
 
-The class `FMMProposal` represents a VWS proposal in the form of \eqref{eqn:fmm-proposal}.
+The class `fmm_proposal` represents a VWS proposal in the form of \eqref{eqn:fmm-proposal}.
 
 ### Class Definition {.unlisted}
 
-`FMMProposal` has two template arguments: `T` is the data type for the underlying distribution (e.g., `T = double` for a real-valued univariate random variable) and `R` is the type of region which the proposal will be based upon.
+`fmm_proposal` has two template arguments: `T` is the data type for the underlying distribution (e.g., `T = double` for a real-valued univariate random variable) and `R` is the type of region which the proposal will be based upon.
 
 ```{cpp}
 template <class T, class R>
-class FMMProposal { ... };
+class fmm_proposal { ... };
 ```
 
 ### Constructor {.unlisted}
@@ -559,19 +573,19 @@ class FMMProposal { ... };
 The primary constructor takes a vector of regions of type `R`. There must be at least one region in the vector. These regions are expected to be a partition of the support $\Omega$.
 
 ```{cpp}
-FMMProposal(const std::vector<R>& regions);
+fmm_proposal(const std::vector<R>& regions);
 ```
 
 A second constructor takes a single region. This is a special case of the previous one which is provided for convenience.
 
 ```{cpp}
-FMMProposal(const R& region);
+fmm_proposal(const R& region);
 ```
 
 A copy constructor is also provided.
 
 ```{cpp}
-FMMProposal(const FMMProposal& p);
+fmm_proposal(const fmm_proposal& p);
 ```
 
 ### Distribution Methods {.unlisted}
@@ -729,7 +743,7 @@ void print(unsigned int n = 5) const;  // <2>
 `log_xi_lower` | $\log \underline{\xi}_j$
 `log_volume` | $\log \rho_j$
 
-: Data frame returned by summary method of `FMMProposal`. {#tbl-summary tbl-colwidths="\[30,70\]"}
+: Data frame returned by summary method of `fmm_proposal`. {#tbl-summary tbl-colwidths="\[30,70\]"}
 
 ## Region Base Class {#sec-api-region}
 
@@ -792,27 +806,27 @@ public:
 
 ## Region on Real-Valued Support with Constant Majorizer {#sec-api-realconstregion}
 
-`RealConstRegion` is a subclass of `Region`, defined in @sec-api-region, specifically for univariate problems with continuous support where $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. It assumes a constant minorizer $\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$. The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical optimization by default; however, user-supplied methods can be supplied to identify these values when it is possible.
+`real_const_region` is a subclass of `Region`, defined in @sec-api-region, specifically for univariate problems with continuous support where $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. It assumes a constant minorizer $\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$. The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical optimization by default; however, user-supplied methods can be supplied to identify these values when it is possible.
 
 ### Constructors {.unlisted #sec-api-realconstregion-constructors}
 
-`RealConstRegion` has the following constructors. The first creates a region based on the interval $(a,b]$; the second creates a region based on the singleton set $\{a\}$, which is intended primarily for internal use.
+`real_const_region` has the following constructors. The first creates a region based on the interval $(a,b]$; the second creates a region based on the singleton set $\{a\}$, which is intended primarily for internal use.
 
 ```{cpp}
-RealConstRegion(
+real_const_region(
 	double a,                                 // <1>
 	double b,                                 // <2>
 	const dfdb& w,                            // <3>
-	const UnivariateHelper& helper,           // <4>
+	const univariate_helper& helper,           // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
 );
 
-RealConstRegion(
+real_const_region(
 	double a,                                 // <1>
 	const dfdb& w,                            // <3>
-	const UnivariateHelper& helper            // <4>
+	const univariate_helper& helper            // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
@@ -848,14 +862,14 @@ where $\text{sign}(x) = \ind(x > 0) - \ind(x < 0)$. If both endpoints are infini
 The `midpoint` method returns a midpoint for the current region.
 
 ```{cpp}
-double RealConstRegion::midpoint() const
+double real_const_region::midpoint() const
 ```
 
 The `bifurcate` method returns two disjoint regions whose union is the current region. The result is given as an STL pair. The first version bifurcates at the midpoint of the current region, determined by the `midpoint` method. The second version partitions at the given $x$.
 
 ```{cpp}
-std::pair<RealConstRegion,RealConstRegion> bifurcate() const;
-std::pair<RealConstRegion,RealConstRegion> bifurcate(const double& x) const;
+std::pair<real_const_region,real_const_region> bifurcate() const;
+std::pair<real_const_region,real_const_region> bifurcate(const double& x) const;
 ```
 
 The `is_bifurcatable` function always returns `true` in the case of a continuous support.
@@ -867,69 +881,69 @@ bool is_bifurcatable() const;
 The `merge` method produces a region consisting of the current region and the argument `x` merged together.
 
 ```{cpp}
-RealConstRegion merge(const RealConstRegion& x) const;
+real_const_region merge(const real_const_region& x) const;
 ```
 
 The `is_mergeable` function is an indicator of whether the current region can be merged with the argument `x`. This equates to `true` if and only if the two regions are adjacent intervals whose endpoints meet at a common value (on either side).
 
 ```{cpp}
-bool is_mergeable(const RealConstRegion& x) const;
+bool is_mergeable(const real_const_region& x) const;
 ```
 
 Several `set` functions are provided to update the weight function and univariate helper which represents the base distribution. The third form updates both in the same call, to eliminate some overhead of calling both the first two forms.
 
 ```{cpp}
 void set(const dfdb& w);
-void set(const UnivariateHelper& helper);
-void set(const dfdb& w, const UnivariateHelper& helper);
+void set(const univariate_helper& helper);
+void set(const dfdb& w, const univariate_helper& helper);
 ```
 
 The `singleton` method returns a singleton interval $(x, x]$, using the current object's member data.
 
 ```{cpp}
-RealConstRegion singleton(const double& x) const;
+real_const_region singleton(const double& x) const;
 ```
 
 The following methods determine an ordering of the current region and an another region specified as argument `x`. Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $b_1 \leq a_2$. The regions are considered equal if $a_1 = a_2$ and $b_1 = b_2$. Note that other elements such as $w$ are $g$ are not explicitly checked, and are assumed to be the same.
 
 ```{cpp}
-bool operator<(const RealConstRegion& x) const;
-bool operator==(const RealConstRegion& x) const;
+bool operator<(const real_const_region& x) const;
+bool operator==(const real_const_region& x) const;
 ```
 
 The following method assigns the current region to be equal to the argument `x`.
 
 ```{cpp}
-const RealConstRegion& operator=(const RealConstRegion& x);
+const real_const_region& operator=(const real_const_region& x);
 ```
 
 ## Region on Integer-Valued Support with Constant Majorizer {#sec-api-intconstregion}
 
-The class `IntConstRegion` is a subclass of `RealConstRegion` that is specialized to integer-valued distributions.
+The class `int_const_region` is a subclass of `real_const_region` that is specialized to integer-valued distributions.
 
 ```{cpp}
-class IntConstRegion : public RealConstRegion { ... };
+class int_const_region : public real_const_region { ... };
 ```
 
 ### Constructors {.unlisted}
 
-`IntConstRegion` has the following constructors.
+`int_const_region` has the following constructors.
 
 ```{cpp}
-IntConstRegion(
+int_const_region(
 	double a,                                 // <1>
 	double b,                                 // <2>
 	const dfdb& w,                            // <3>
-	const UnivariateHelper& helper,           // <4>
+	const univariate_helper& helper,           // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
 );
 
-IntConstRegion(
+int_const_region(
 	double a,                                 // <1>
 	const dfdb& w,                            // <3>
-	const UnivariateHelper& helper            // <4>
+	const univariate_helper& helper            // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
@@ -948,11 +962,11 @@ The arguments here are analogous to those in @sec-api-realconstregion-constructo
 
 ### Methods {.unlisted}
 
-The following methods are specialized from `RealConstRegion`.
+The following methods are specialized from `real_const_region`.
 
 ```{cpp}
-std::pair<IntConstRegion,IntConstRegion> bifurcate() const;
-std::pair<IntConstRegion,IntConstRegion> bifurcate(const double& x) const;
+std::pair<int_const_region,int_const_region> bifurcate() const;
+std::pair<int_const_region,int_const_region> bifurcate(const double& x) const;
 ```
 
 The `is_bifurcatable` function returns `false` for regions whose width is smaller than $1$.
@@ -964,29 +978,29 @@ bool is_bifurcatable() const;
 The `singleton` method returns a singleton interval $(x, x]$, using the current object's weight function, base distribution, etc.
 
 ```{cpp}
-IntConstRegion singleton(const double& x) const;
+int_const_region singleton(const double& x) const;
 ```
 
 The following methods determine an ordering of the current region and an another region specified as argument `x`. Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $b_1 \leq a_2$. The regions are considered equal if $a_1 = a_2$ and $b_1 = b_2$. Note that other elements such as $w$ are $g$ are not explicitly checked, and are assumed to be the same.
 
 ```{cpp}
 
-bool operator<(const IntConstRegion& x) const;
-bool operator==(const IntConstRegion& x) const;
+bool operator<(const int_const_region& x) const;
+bool operator==(const int_const_region& x) const;
 ```
 
 The following method assigns the current region to be equal to the argument `x`.
 
 ```{cpp}
-const IntConstRegion& operator=(const IntConstRegion& x);
+const int_const_region& operator=(const int_const_region& x);
 ```
 
 ## Univariate Helper {#sec-api-helper}
 
-The class `UnivariateHelper` is intended for use with `RealConstRegion` and `IntConstRegion`. It encapsulates several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
+The class `univariate_helper` is intended for use with `real_const_region` and `int_const_region`. It encapsulates several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
 
 ```{cpp}
-UnivariateHelper(
+univariate_helper(
 	const fntl::density& d,  // <1>
 	const fntl::cdf& p,      // <2>
 	const fntl::quantile& q  // <3>
@@ -997,7 +1011,7 @@ UnivariateHelper(
 2. A function to evaluate the cumulative distribution function (CDF) $G$.
 3. A function to evaluate the quantile function $G^{-}$.
 
-The following methods on `UnivariateHelper` utilize the lambdas specified above.
+The following methods on `univariate_helper` utilize the lambdas specified above.
 
 ```{cpp}
 double d(double x, bool log = false) const;                     // <1>
@@ -1016,18 +1030,18 @@ The following functions perform rejection sampling using a VWS proposal describe
 ```{cpp}
 template <typename T, typename R>
 rejection_result<T> rejection(
-	const FMMProposal<T,R>& h,         // <1>
+	const fmm_proposal<T,R>& h,         // <1>
 	unsigned int n,                    // <2>
 	const rejection_args& args         // <3>
 );
 
 template <typename T, typename R>
 rejection_result<T> rejection(
-	const FMMProposal<T,R>& h,         // <1>
+	const fmm_proposal<T,R>& h,         // <1>
 	unsigned int n = 1                 // <2>
 );
 ```
-1. An `FMMProposal` object to use as the proposal.
+1. An `fmm_proposal` object to use as the proposal.
 2. The number of desired draws.
 3. Additional arguments for rejection sampling. Default values are assumed in the second form.
 
@@ -1039,18 +1053,18 @@ The following functions perform rejection sampling with tuning as described in @
 template <typename T, typename R>
 rejection_result<T>
 rejection_tune(
-	FMMProposal<T,R>& h,        // <1>
+	fmm_proposal<T,R>& h,        // <1>
 	unsigned int n,             // <2>
 	const rejection_args& args  // <3>
 );
 
 template <typename T, typename R>
 rejection_result<T> rejection_tune(
-	const FMMProposal<T,R>& h,  // <1>
+	const fmm_proposal<T,R>& h,  // <1>
 	unsigned int n = 1          // <2>
 );
 ```
-1. An `FMMProposal` object to use as the proposal.
+1. An `fmm_proposal` object to use as the proposal.
 2. The number of desired draws.
 3. Additional arguments for rejection sampling. Default values are assumed in the second form.
 
@@ -1417,8 +1431,8 @@ We now give our first example demonstrating the `vws` package. We consider a con
 6. Define the weight function as a lambda. We are careful to avoid `nan` values that can occur when $x = \pm 1$. Computations are carried out on the log-scale to avoid numerical loss of precision.
 7. Specify the density, CDF, and quantile function of the base distribution $\text{Exp}_{(-1,1)}(\kappa)$. The density, CDF, and quantile function types are defined in @sec-api-typedefs.
 8. Create a "helper" object as a container for the distribution functions.
-9. Construct a `RealConstRegion` which contains all problem-specific logic of the sampler. We construct one initial region which contains the entire support $(-1,1]$.
-10. Construct an `FMMProposal` based on our initial region `supp`. The first template argument specifies that the data type of the support is `double`; the second specifies that regions (which include the logic of the sampler) are of type `RealConstRegion`.
+9. Construct a `real_const_region` which contains all problem-specific logic of the sampler. We construct one initial region which contains the entire support $(-1,1]$.
+10. Construct an `fmm_proposal` based on our initial region `supp`. The first template argument specifies that the data type of the support is `double`; the second specifies that regions (which include the logic of the sampler) are of type `real_const_region`.
 11. Request the proposal `h` to refine itself `N-1` times using Algorithm \ref{alg:refine} so that there are `N` regions.
 12. Carry out rejection sampling with proposal `h`.
 13. Assemble an `Rcpp::List` to return to the caller. It contains the draws in element `draws`, a vector of rejection counts in `rejects` where the $i$th element represents the number of rejections for the $i$th draw, and a vector in element `lbdd` with the $N$ bounds $\rho_+^{(1)}, \ldots, \rho_+^{(N)}$, where $\rho_+^{(j)}$ is the value achieved with $j$ regions.
@@ -1523,8 +1537,8 @@ if (d >= 3) {
 Finally, we create the initial region `supp`. The `maxopt` and `minopt` functions are provided to the constructor as additional arguments. Note that we dereference our pointers and pass the function objects themselves (which are taken as references by the constructor).
 
 ```{cpp}
-vws::UnivariateHelper helper(df, pf, qf);
-vws::RealConstRegion supp(-1, 1, w, helper, *maxopt, *minopt);
+vws::univariate_helper helper(df, pf, qf);
+vws::real_const_region supp(-1, 1, w, helper, *maxopt, *minopt);
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
@@ -1739,7 +1753,7 @@ const vws::dfdb& w = [&](double x, bool log = true) {
 };
 ```
 
-The base distribution's density, CDF, and quantile function are coded as lambdas and packaged into a `UnivariateHelper` object. Here we can make use of the implementations of the normal distribution in R's API.
+The base distribution's density, CDF, and quantile function are coded as lambdas and packaged into a `univariate_helper` object. Here we can make use of the implementations of the normal distribution in R's API.
 
 ```{cpp}
 fntl::density df = [&](double x, bool log = false) {
@@ -1752,7 +1766,7 @@ fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
 	return R::qnorm(p, z, lambda, lower, log);
 };
 
-vws::UnivariateHelper helper(df, pf, qf);
+vws::univariate_helper helper(df, pf, qf);
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
@@ -1812,7 +1826,7 @@ data.frame(x = out1$draws) %>%
 
 ## Constant Majorizer with Custom Optimization {#sec-ln-norm-const-custom}
 
-The log-weight function can be both maximized and minimized in closed form. Coding it explicitly reduces computational overhead and avoids convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `RealConstRegion`.
+The log-weight function can be both maximized and minimized in closed form. Coding it explicitly reduces computational overhead and avoids convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `real_const_region`.
 
 We have first derivative
 <!-- -->
@@ -1898,10 +1912,10 @@ const vws::optimizer& minopt = [&](const vws::dfdb& w, double lo,
 };
 ```
 
-We can construct the proposal using a single `RealConstRegion` that represents the support; the `maxopt` and `minopt` arguments are specified here.
+We can construct the proposal using a single `real_const_region` that represents the support; the `maxopt` and `minopt` arguments are specified here.
 
 ```{cpp}
-vws::RealConstRegion supp(0, R_PosInf, w, helper, maxopt, minopt);
+vws::real_const_region supp(0, R_PosInf, w, helper, maxopt, minopt);
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
@@ -2147,7 +2161,7 @@ const vws::dfdb& w = [&](double x, bool log = true) {
 };
 ```
 
-The base distribution’s density, CDF, and quantile function may be supplied as a `UnivariateHelper` object using Poisson functions in the R API.
+The base distribution’s density, CDF, and quantile function may be supplied as a `univariate_helper` object using Poisson functions in the R API.
 
 ```{cpp}
 fntl::density df = [&](double x, bool log = false) {
@@ -2160,7 +2174,7 @@ fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
 	return R::qpois(p, mean, lower, log);
 };
 
-vws::UnivariateHelper helper(df, pf, qf);
+vws::univariate_helper helper(df, pf, qf);
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
@@ -2236,10 +2250,10 @@ const vws::optimizer& minopt = [](const vws::dfdb& w, double lo,
 };
 ```
 
-We can construct the proposal using a single `IntConstRegion` that represents the support; the `maxopt` and `minopt` arguments are specified here. Also note that we have specified a lower endpoint $\alpha_0$ below zero to ensure that the support $(\alpha_0, \alpha_N]$ contains zero.
+We can construct the proposal using a single `int_const_region` that represents the support; the `maxopt` and `minopt` arguments are specified here. Also note that we have specified a lower endpoint $\alpha_0$ below zero to ensure that the support $(\alpha_0, \alpha_N]$ contains zero.
 
 ```{cpp}
-vws::IntConstRegion supp(-0.1, R_PosInf, w, helper, maxopt, minopt);
+vws::int_const_region supp(-0.1, R_PosInf, w, helper, maxopt, minopt);
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
@@ -2522,7 +2536,7 @@ An Rcpp external pointer (`XPtr`) can be used to construct objects in C++ and re
 The following typedefs provide more readable names for the proposal and its `XPtr`.
 
 ```{cpp}
-typedef vws::FMMProposal<double, vws::RealConstRegion> t_proposal;
+typedef vws::fmm_proposal<double, vws::real_const_region> t_proposal;
 typedef Rcpp::XPtr<t_proposal> t_proposal_xptr;
 ```
 
@@ -2553,8 +2567,8 @@ t_proposal_xptr vmf_pre_v1_xptr(double kappa, double d)                  // <1>
 		return q_texp(p, kappa, -1, 1, lower, log);
 	};
 
-	vws::UnivariateHelper helper(df, pf, qf);
-	vws::RealConstRegion supp(-1, 1, w, helper);
+	vws::univariate_helper helper(df, pf, qf);
+	vws::real_const_region supp(-1, 1, w, helper);
 
 	auto p = new t_proposal(supp);                                       // <3>
 	auto out = t_proposal_xptr(p, true);
@@ -2674,16 +2688,16 @@ The external pointer approach in @sec-persistent-xptr lets us operate on a propo
 The following typedef provides a more readable name for the proposal.
 
 ```{cpp}
-typedef vws::FMMProposal<double, vws::RealConstRegion> t_proposal;
+typedef vws::fmm_proposal<double, vws::real_const_region> t_proposal;
 ```
 
-We now define a class named `RcppProposal` which will be exposed as an Rcpp module. This class inherits from `t_proposal`. (I.e., `RcppProposal` "is a" `t_proposal`.) Its constructor, `refine` operation, and `draw` operation are analogous to those in @sec-persistent-xptr.
+We now define a class named `rcpp_proposal` which will be exposed as an Rcpp module. This class inherits from `t_proposal`. (I.e., `rcpp_proposal` "is a" `t_proposal`.) Its constructor, `refine` operation, and `draw` operation are analogous to those in @sec-persistent-xptr.
 
 ```{cpp}
-class RcppProposal : t_proposal
+class rcpp_proposal : t_proposal
 {
 public:
-	RcppProposal(double kappa, double d)
+	rcpp_proposal(double kappa, double d)
 	: t_proposal(supp(kappa, d))
 	{
 	}
@@ -2696,20 +2710,20 @@ public:
 	}
 
 private:
-	vws::RealConstRegion supp(double kappa, double d);            // <2>
+	vws::real_const_region supp(double kappa, double d);            // <2>
 };
 ```
-1. `t_proposal::refine` is the method in the base class; it is possible to expose this directly from the module, but we opt to call it from `RcppProposal::refine` for simplicity.
-2. The `supp` function handles most of the constructor work; it returns a single region `supp` with all of the necessary operations. The `RcppProposal` constructor creates an instance of itself from region.
+1. `t_proposal::refine` is the method in the base class; it is possible to expose this directly from the module, but we opt to call it from `rcpp_proposal::refine` for simplicity.
+2. The `supp` function handles most of the constructor work; it returns a single region `supp` with all of the necessary operations. The `rcpp_proposal` constructor creates an instance of itself from region.
 
-The following code exposes `RcppProposal` as an Rcpp module.
+The following code exposes `rcpp_proposal` as an Rcpp module.
 
 ```{cpp}
 RCPP_MODULE(vws_module) {
-	Rcpp::class_<RcppProposal>("RcppProposal")
+	Rcpp::class_<rcpp_proposal>("rcpp_proposal")
 	.constructor<double,double>()
-	.method("draw", &RcppProposal::draw)
-	.method("refine", &RcppProposal::refine)
+	.method("draw", &rcpp_proposal::draw)
+	.method("refine", &rcpp_proposal::refine)
 	;
 }
 ```
@@ -2721,7 +2735,7 @@ Now let us demonstrate use of these functions from R.
 ```{r}
 #| prompt: true
 Rcpp::sourceCpp("examples/vmf/vmf-v1-module.cpp")
-h = new(RcppProposal, kappa = 5, d = 4)
+h = new(rcpp_proposal, kappa = 5, d = 4)
 lbdd = h$refine(N = 50 - 1, tol = 0.10)
 out = h$draw(n = 1000, max_rejects = 1000, max_rejects = 10000)
 print(lbdd)
@@ -2729,7 +2743,7 @@ head(out$draws)
 ```
 
 ::: {#rem-capture-value-2}
-The lambdas `w`, `df`, `pf`, and `qf` in this code capture `kappa` and `d` by value as in @sec-persistent-xptr, which can lead to unwanted overhead from copying mentioned in @rem-capture-value. In the present case, we can consider storing a single copy of any large objects as member variables of the `RcppProposal` class and capturing them by reference (rather than by value) in the lambdas.
+The lambdas `w`, `df`, `pf`, and `qf` in this code capture `kappa` and `d` by value as in @sec-persistent-xptr, which can lead to unwanted overhead from copying mentioned in @rem-capture-value. In the present case, we can consider storing a single copy of any large objects as member variables of the `rcpp_proposal` class and capturing them by reference (rather than by value) in the lambdas.
 \remarkqed
 :::
 

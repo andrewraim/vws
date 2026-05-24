@@ -3,20 +3,20 @@
 
 #include <Rcpp.h>
 #include "typedefs.h"
-#include "Region.h"
-#include "RealConstRegion-defaults.h"
-#include "UnivariateHelper.h"
+#include "region.h"
+#include "real-const-region-defaults.h"
+#include "univariate-helper.h"
 #include "log-sum-exp.h"
 
 namespace vws {
 
 /*
-* Real-Valued Region with Constant Majorizer
+* Real-Valued region with Constant Majorizer
 *
-* A subclass of Region based on univariate intervals and a constant majorizer
+* A subclass of region based on univariate intervals and a constant majorizer
 * for the weight function. This version is for continuous supports.
 */
-class RealConstRegion : public Region<double>
+class real_const_region : public region<double>
 {
 public:
 	/*
@@ -33,8 +33,8 @@ public:
 	* If `mid` is not specified, we use a version of the arithmetic midpoint
 	* with special handling of infinite endpoints.
 	*/
-	RealConstRegion(double a, const dfdb& w,
-		const UnivariateHelper& helper,
+	real_const_region(double a, const dfdb& w,
+		const univariate_helper& helper,
 		const optimizer& maxopt = maxopt_default,
 		const optimizer& minopt = minopt_default,
 		const vws::midpoint& mid = midpoint_default);
@@ -52,14 +52,14 @@ public:
 	* If `mid` is not specified, we use a version of the arithmetic midpoint
 	* with special handling of infinite endpoints.
 	*/
-	RealConstRegion(double a, double b, const dfdb& w,
-		const UnivariateHelper& helper,
+	real_const_region(double a, double b, const dfdb& w,
+		const univariate_helper& helper,
 		const optimizer& maxopt = maxopt_default,
 		const optimizer& minopt = minopt_default,
 		const vws::midpoint& mid = midpoint_default);
 
 	/*
-	* The following functions override abstract methods in `Region`. See that
+	* The following functions override abstract methods in `region`. See that
 	* class' documentation for their interfaces.
 	*/
 	double d_base(const double& x, bool log = false) const;
@@ -69,7 +69,7 @@ public:
 	double w_major(const double& x, bool log = true) const;
 	double w_minor(const double& x, bool log = true) const;
 	bool is_bifurcatable() const;
-	bool is_mergeable(const RealConstRegion& x) const;
+	bool is_mergeable(const real_const_region& x) const;
 	double lower() const { return _a; }
 	double upper() const { return _b; }
 	double xi_upper(bool log = true) const;
@@ -80,7 +80,7 @@ public:
 	* TBD
 	*/
 	void set_w(const dfdb& w);
-	void set_helper(const UnivariateHelper& helper);
+	void set_helper(const univariate_helper& helper);
 	void set_maxopt(const optimizer& maxopt);
 	void set_minopt(const optimizer& minopt);
 	void set_mid(const vws::midpoint& mid);
@@ -89,7 +89,7 @@ public:
 	/*
 	* TBD
 	*/
-	RealConstRegion merge(const RealConstRegion& x) const;
+	real_const_region merge(const real_const_region& x) const;
 
 	/*
 	* Return the midpoint of this region using the function _mid.
@@ -100,40 +100,40 @@ public:
 	* Return a pair of regions that result from bifurcating this region. The
 	* bifurcation point is chosen to be the midpoint of $(a, b]$.
 	*/
-	std::pair<RealConstRegion,RealConstRegion> bifurcate() const;
+	std::pair<real_const_region,real_const_region> bifurcate() const;
 
 	/*
 	* Return a pair of regions that result from bifurcating this region at $x$.
 	*/
-	std::pair<RealConstRegion,RealConstRegion> bifurcate(const double& x) const;
+	std::pair<real_const_region,real_const_region> bifurcate(const double& x) const;
 
 	/*
 	* Return a region based on the singleton interval $(x, x]$, using this
 	* object's weight function, base distribution, etc.
 	*/
-	RealConstRegion singleton(const double& x) const;
+	real_const_region singleton(const double& x) const;
 
 	/*
-	* Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $a_1 < a_2$.
+	* region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $a_1 < a_2$.
 	*/
-	bool operator<(const RealConstRegion& x) const;
+	bool operator<(const real_const_region& x) const;
 
 	/*
-	* Region $(a_1, b_1]$ is considered "equal to" $(a_2, b_2]$ if $a_1 = a_2$
+	* region $(a_1, b_1]$ is considered "equal to" $(a_2, b_2]$ if $a_1 = a_2$
 	* and $b_1 = b_2$.
 	*/
-	bool operator==(const RealConstRegion& x) const;
+	bool operator==(const real_const_region& x) const;
 
 	/*
-	* Set this Region to be equal to `x`.
+	* Set this region to be equal to `x`.
 	*/
-	const RealConstRegion& operator=(const RealConstRegion& x);
+	const real_const_region& operator=(const real_const_region& x);
 
 protected:
 	double _a;
 	double _b;
 	dfdb _w;
-	UnivariateHelper _helper;
+	univariate_helper _helper;
 	double _log_w_max;
 	double _log_w_min;
 	double _log_prob;
@@ -142,33 +142,33 @@ protected:
 	vws::midpoint _mid;
 };
 
-inline void RealConstRegion::set_w(const dfdb& w)
+inline void real_const_region::set_w(const dfdb& w)
 {
 	_w = w;
 }
 
-inline void RealConstRegion::set_helper(const UnivariateHelper& helper)
+inline void real_const_region::set_helper(const univariate_helper& helper)
 {
 	_helper = helper;
 }
 
-inline void RealConstRegion::set_maxopt(const optimizer& maxopt)
+inline void real_const_region::set_maxopt(const optimizer& maxopt)
 {
 	_maxopt = maxopt;
 }
 
-inline void RealConstRegion::set_minopt(const optimizer& minopt)
+inline void real_const_region::set_minopt(const optimizer& minopt)
 {
 	_minopt = minopt;
 }
 
-inline void RealConstRegion::set_mid(const vws::midpoint& mid)
+inline void real_const_region::set_mid(const vws::midpoint& mid)
 {
 	_mid = mid;
 }
 
-inline RealConstRegion::RealConstRegion(double a,
-	const dfdb& w, const UnivariateHelper& helper,
+inline real_const_region::real_const_region(double a,
+	const dfdb& w, const univariate_helper& helper,
 	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
 : _a(a), _b(a), _w(w), _helper(helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt), _mid(mid)
@@ -176,8 +176,8 @@ inline RealConstRegion::RealConstRegion(double a,
 	init();
 }
 
-inline RealConstRegion::RealConstRegion(double a, double b,
-	const dfdb& w, const UnivariateHelper& helper,
+inline real_const_region::real_const_region(double a, double b,
+	const dfdb& w, const univariate_helper& helper,
 	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
 : _a(a), _b(b), _w(w), _helper(helper), _log_w_max(NAN), _log_w_min(NAN),
   _log_prob(NAN), _maxopt(maxopt), _minopt(minopt), _mid(mid)
@@ -185,7 +185,7 @@ inline RealConstRegion::RealConstRegion(double a, double b,
 	init();
 }
 
-inline void RealConstRegion::init()
+inline void real_const_region::init()
 {
 	if (_a > _b) {
 		// Invalid interval
@@ -206,16 +206,16 @@ inline void RealConstRegion::init()
 	if ( (_log_w_max > 0) && std::isinf(_log_w_max) ) {
 		Rcpp::stop("%s. %s",
 			"Infinite maximum value found in optimize",
-			"Cannot be used with RealConstRegion");
+			"Cannot be used with real_const_region");
 	}
 }
 
-inline double RealConstRegion::d_base(const double& x, bool log) const
+inline double real_const_region::d_base(const double& x, bool log) const
 {
 	return _helper.d(x, log);
 }
 
-inline std::vector<double> RealConstRegion::r(unsigned int n) const
+inline std::vector<double> real_const_region::r(unsigned int n) const
 {
 	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this
 	// region. Compute g$q((pb - pa) * u + pa) on the log scale.
@@ -231,106 +231,106 @@ inline std::vector<double> RealConstRegion::r(unsigned int n) const
 	return out;
 }
 
-inline bool RealConstRegion::s(const double& x) const
+inline bool real_const_region::s(const double& x) const
 {
 	return _a < x && x <= _b;
 }
 
-inline double RealConstRegion::w(const double& x, bool log) const
+inline double real_const_region::w(const double& x, bool log) const
 {
 	return _w(x, log);
 }
 
-inline double RealConstRegion::w_major(const double& x, bool log) const
+inline double real_const_region::w_major(const double& x, bool log) const
 {
 	double out = _log_w_max;
 	return log ? out : exp(out);
 }
 
-inline double RealConstRegion::w_minor(const double& x, bool log) const
+inline double real_const_region::w_minor(const double& x, bool log) const
 {
 	double out = _log_w_min;
 	return log ? out : exp(out);
 }
 
-inline RealConstRegion RealConstRegion::merge(const RealConstRegion& x) const
+inline real_const_region real_const_region::merge(const real_const_region& x) const
 {
 	if (!is_mergeable(x)) {
 		Rcpp::stop("Cannot merge these regions");
 	}
 
 	if (_a < x._a) {
-		return RealConstRegion(_a, x._b, _w, _helper, _maxopt, _minopt, _mid);
+		return real_const_region(_a, x._b, _w, _helper, _maxopt, _minopt, _mid);
 	} else {
-		return RealConstRegion(x._a, _b, _w, _helper, _maxopt, _minopt, _mid);
+		return real_const_region(x._a, _b, _w, _helper, _maxopt, _minopt, _mid);
 	}
 }
 
-inline double RealConstRegion::midpoint() const
+inline double real_const_region::midpoint() const
 {
 	return _mid(_a, _b);
 }
 
-inline std::pair<RealConstRegion,RealConstRegion>
-RealConstRegion::bifurcate() const
+inline std::pair<real_const_region,real_const_region>
+real_const_region::bifurcate() const
 {
 	return bifurcate(midpoint());
 }
 
-inline std::pair<RealConstRegion,RealConstRegion>
-RealConstRegion::bifurcate(const double& x) const
+inline std::pair<real_const_region,real_const_region>
+real_const_region::bifurcate(const double& x) const
 {
-	RealConstRegion r1(_a, x, _w, _helper, _maxopt, _minopt, _mid);
-	RealConstRegion r2(x, _b, _w, _helper, _maxopt, _minopt, _mid);
+	real_const_region r1(_a, x, _w, _helper, _maxopt, _minopt, _mid);
+	real_const_region r2(x, _b, _w, _helper, _maxopt, _minopt, _mid);
 	return std::make_pair(r1, r2);
 }
 
-inline RealConstRegion RealConstRegion::singleton(const double& x) const
+inline real_const_region real_const_region::singleton(const double& x) const
 {
-	return RealConstRegion(x, _w, _helper, _maxopt, _minopt, _mid);
+	return real_const_region(x, _w, _helper, _maxopt, _minopt, _mid);
 }
 
-inline bool RealConstRegion::is_bifurcatable() const
+inline bool real_const_region::is_bifurcatable() const
 {
 	return true;
 }
 
-inline bool RealConstRegion::is_mergeable(const RealConstRegion& x) const
+inline bool real_const_region::is_mergeable(const real_const_region& x) const
 {
 	return (this->_a == x._b || this->_b == x._a);
 }
 
 
-inline double RealConstRegion::xi_upper(bool log) const
+inline double real_const_region::xi_upper(bool log) const
 {
 	double out = _log_w_max + _log_prob;
 	return log ? out : exp(out);
 }
 
-inline double RealConstRegion::xi_lower(bool log) const
+inline double real_const_region::xi_lower(bool log) const
 {
 	double out = _log_w_min + _log_prob;
 	return log ? out : exp(out);
 }
 
-inline std::string RealConstRegion::description() const
+inline std::string real_const_region::description() const
 {
 	char buf[32];
 	snprintf(buf, sizeof(buf), "(%g, %g]", _a, _b);
 	return buf;
 }
 
-inline bool RealConstRegion::operator<(const RealConstRegion& x) const
+inline bool real_const_region::operator<(const real_const_region& x) const
 {
 	return _b <= x._a;
 }
 
-inline bool RealConstRegion::operator==(const RealConstRegion& x) const
+inline bool real_const_region::operator==(const real_const_region& x) const
 {
 	return _a == x._a && _b == x._b;
 }
 
-inline const RealConstRegion& RealConstRegion::operator=(const RealConstRegion& x)
+inline const real_const_region& real_const_region::operator=(const real_const_region& x)
 {
 	_a = x._a;
 	_b = x._b;

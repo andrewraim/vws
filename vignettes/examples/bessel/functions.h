@@ -3,7 +3,7 @@
 
 #include <Rcpp.h>
 
-// MGF needed for choosing expansion point in LinearVWSRegion
+// MGF needed for choosing expansion point in linear_vws_region
 // [[Rcpp::export]]
 double mgf_truncpois(double s, double lambda, double a, double b,
 	bool log = false);

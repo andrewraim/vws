@@ -27,7 +27,7 @@ void set_tag(Rcpp::XPtr<T> x, const char* tag)
 /*
 * Define typedefs for the proposal and its XPtr
 */
-typedef vws::FMMProposal<double, vws::RealConstRegion> t_proposal;
+typedef vws::fmm_proposal<double, vws::real_const_region> t_proposal;
 typedef Rcpp::XPtr<t_proposal> t_proposal_xptr;
 
 // [[Rcpp::export]]
@@ -59,8 +59,8 @@ t_proposal_xptr vmf_pre_v1_xptr(double kappa, double d)
         return q_texp(p, kappa, -1, 1, lower, log);
     };
 
-	vws::UnivariateHelper helper(df, pf, qf);
-    vws::RealConstRegion supp(-1, 1, w, helper);
+	vws::univariate_helper helper(df, pf, qf);
+    vws::real_const_region supp(-1, 1, w, helper);
 
     auto p = new t_proposal(supp);
     auto out = t_proposal_xptr(p, true);

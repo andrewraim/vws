@@ -1,18 +1,22 @@
-#ifndef REJECTION_TUNE_H
-#define REJECTION_TUNE_H
+#ifndef VWS_REJECTION_TUNE_H
+#define VWS_REJECTION_TUNE_H
 
 /*
 * For regions that contribute very little (i.e., whose log-bound contribution
-* is smaller than tol_merge), merge them with other regions. Only do this merge if
-* the overall bound is small enough, and dropping the region would not put us
-* back over tol_suff threshold.
+* is smaller than tol_merge), merge them with other regions. Only do this merge
+* if the overall bound is small enough, and dropping the region would not put
+* us back over tol_suff threshold.
 *
 * Return `true` if we complete a merge; the caller can then call again to
 * attempt another merge if they like. This is to prevent mistakes in
 * iterators and indices when the underlying data is modified.
 */
 template <typename T, typename R>
-unsigned int merge_once(vws::FMMProposal<T,R>& h, const T& x, double tol_suff, double tol_merge)
+unsigned int merge_once(
+	vws::fmm_proposal<T,R>& h,
+	const T& x,
+	double tol_suff,
+	double tol_merge)
 {
 	/*
 	* Go through all mergeable pairs and check if we should merge (using our
@@ -67,7 +71,10 @@ namespace vws {
 */
 template <typename T, typename R>
 inline rejection_result<T>
-rejection_tune(FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
+rejection_tune(
+	fmm_proposal<T,R>& h,
+	unsigned int n,
+	const rejection_args& args)
 {
 	rejection_result<T> out;
 
@@ -196,7 +203,6 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 	return out;
 }
 
-
 /*
 *  Accept-reject algorithm using VWS proposal.
 *
@@ -206,7 +212,9 @@ rejection_tune(FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 *  Returns a structure with saved draws and rejection counts.
 */
 template <typename T, typename R>
-inline rejection_result<T> rejection_tune(const FMMProposal<T,R>& h, unsigned int n = 1)
+inline rejection_result<T> rejection_tune(
+	const fmm_proposal<T,R>& h,
+	unsigned int n = 1)
 {
 	rejection_args ctrl;
 	return rejection_tune(h, n, ctrl);

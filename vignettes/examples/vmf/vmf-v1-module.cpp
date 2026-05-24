@@ -5,15 +5,15 @@
 /*
 * Define a typedef for the proposal
 */
-typedef vws::FMMProposal<double, vws::RealConstRegion> t_proposal;
+typedef vws::fmm_proposal<double, vws::real_const_region> t_proposal;
 
 /*
-* Define a subclass of FMMProposal that we can expose to R via Modules
+* Define a subclass of fmm_proposal that we can expose to R via Modules
 */
-class RcppProposal : t_proposal
+class rcpp_proposal : t_proposal
 {
 public:
-	RcppProposal(double kappa, double d)
+	rcpp_proposal(double kappa, double d)
 	: t_proposal(supp(kappa, d))
 	{
 	}
@@ -26,17 +26,17 @@ public:
 	}
 
 private:
-	vws::RealConstRegion supp(double kappa, double d);
+	vws::real_const_region supp(double kappa, double d);
 };
 
 /*
-* Define module for RcppProposal
+* Define module for rcpp_proposal
 */
 RCPP_MODULE(vws_module) {
-	Rcpp::class_<RcppProposal>("RcppProposal")
+	Rcpp::class_<rcpp_proposal>("rcpp_proposal")
 	.constructor<double,double>()
-	.method("draw", &RcppProposal::draw)
-	.method("refine", &RcppProposal::refine)
+	.method("draw", &rcpp_proposal::draw)
+	.method("refine", &rcpp_proposal::refine)
 	;
 }
 
@@ -44,7 +44,7 @@ RCPP_MODULE(vws_module) {
 * Implementation of member functions is below
 */
 
-inline Rcpp::List RcppProposal::draw(
+inline Rcpp::List rcpp_proposal::draw(
 	unsigned int n,
 	unsigned int max_rejects,
 	unsigned int report)
@@ -61,7 +61,7 @@ inline Rcpp::List RcppProposal::draw(
     );
 }
 
-inline vws::RealConstRegion RcppProposal::supp(double kappa, double d)
+inline vws::real_const_region rcpp_proposal::supp(double kappa, double d)
 {
     vws::dfdb w =
     [=](double x, bool log = true) {
@@ -84,7 +84,7 @@ inline vws::RealConstRegion RcppProposal::supp(double kappa, double d)
         return q_texp(p, kappa, -1, 1, lower, log);
     };
 
-	vws::UnivariateHelper helper(df, pf, qf);
-    vws::RealConstRegion out(-1, 1, w, helper);
+	vws::univariate_helper helper(df, pf, qf);
+    vws::real_const_region out(-1, 1, w, helper);
     return out;
 }

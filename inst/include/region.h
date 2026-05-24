@@ -7,11 +7,11 @@
 namespace vws {
 
 /*
-* A Region contains all of the problem-specific logic for a VWS sampler.
+* A region contains all of the problem-specific logic for a VWS sampler.
 * This is an abstract class that defines the interface.
 */
 template <class T>
-class Region
+class region
 {
 public:
 	/*
@@ -57,7 +57,7 @@ public:
 	/*
 	* Indicator of whether this region is mergeable with argument x.
 	*/
-	// virtual bool is_mergeable(const Region<T>& x) const = 0;
+	// virtual bool is_mergeable(const region<T>& x) const = 0;
 
 	/*
 	* The quantity $\overline{\xi}_j$ for this region.

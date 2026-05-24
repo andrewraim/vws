@@ -1,6 +1,6 @@
 // [[Rcpp::depends(vws, fntl)]]
 #include "vws.h"
-#include "LinearVWSRegion.h"
+#include "linear-vws-region.h"
 
 // [[Rcpp::export]]
 Rcpp::List r_bessel_v3(unsigned int n, double lambda, double nu, double lo,
@@ -12,8 +12,8 @@ Rcpp::List r_bessel_v3(unsigned int n, double lambda, double nu, double lo,
 	args.max_rejects = max_rejects;
 	args.report = report;
 
-	LinearVWSRegion supp(lo, hi, lambda, nu);
-	vws::FMMProposal<double, LinearVWSRegion> h(supp);
+	linear_vws_region supp(lo, hi, lambda, nu);
+	vws::fmm_proposal<double, linear_vws_region> h(supp);
 
 	auto lbdd = h.refine(N - 1, tol);
 	auto out = vws::rejection(h, n, args);
@@ -38,9 +38,9 @@ Rcpp::List r_bessel_v3(unsigned int n, double lambda, double nu, double lo,
 	Rcpp::NumericVector beta0_min(N);
 	Rcpp::NumericVector beta1_min(N);
 
-	std::set<LinearVWSRegion>::const_iterator itr = h.regions_begin();
+	auto itr = h.begin();
 	unsigned int i = 0;
-	for (; itr != h.regions_end(); itr++) {
+	for (; itr != h.end(); itr++) {
 		lower(i) = itr->get_lower();
 		upper(i) = itr->get_upper();
 		beta0_max(i) = itr->get_beta0_max();

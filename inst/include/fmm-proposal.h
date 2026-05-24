@@ -6,39 +6,39 @@
 #include "log-sum-exp.h"
 #include "categ.h"
 #include "timestamp.h"
-#include "Region.h"
+#include "region.h"
 #include <iterator>
 
 namespace vws {
 
 /*
-* FMMProposal is a class which represents a VWS proposal: a finite mixture that
+* fmm_proposal is a class which represents a VWS proposal: a finite mixture that
 * implements certain operations. It takes two template arguments.
 *
 * - `T`: the data type of the support. For example, for a continuous
 *   univariate support, we may use `double`.
-* - `R`: a subclass of `Region` to be used by the proposal. `Region` subclasses
+* - `R`: a subclass of `region` to be used by the proposal. `region` subclasses
 *   implement any problem-specific logic used in the proposal.
 */
 template <class T, class R>
-class FMMProposal
+class fmm_proposal
 {
 public:
 	/*
-	* Constructor for FMMProposal based on a vector of one or more Regions.
+	* Constructor for fmm_proposal based on a vector of one or more regions.
 	*/
-	FMMProposal(const std::vector<R>& regions);
+	fmm_proposal(const std::vector<R>& regions);
 
 	/*
-	* Constructor for FMMProposal based on a single Region. This is for
+	* Constructor for fmm_proposal based on a single region. This is for
 	* convenience in this commonly used special case.
 	*/
-	FMMProposal(const R& region);
+	fmm_proposal(const R& region);
 
 	/*
 	* TBD: copy constructor
 	*/
-	FMMProposal(const FMMProposal& p);
+	fmm_proposal(const fmm_proposal& p);
 
 	/*
 	* Access region characteristics
@@ -209,7 +209,7 @@ protected:
 };
 
 template <class T, class R>
-double FMMProposal<T,R>::merge(unsigned int i, unsigned int j, bool log)
+double fmm_proposal<T,R>::merge(unsigned int i, unsigned int j, bool log)
 {
 	// Merge the regions with the given indices. Remove the two individual
 	// regions and add the merged region. Call recache to update internal data
@@ -224,7 +224,7 @@ double FMMProposal<T,R>::merge(unsigned int i, unsigned int j, bool log)
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots, bool log)
+Rcpp::NumericVector fmm_proposal<T,R>::refine(const std::vector<T>& knots, bool log)
 {
 	// unsigned int N = knots.size() + 1;
 
@@ -277,7 +277,7 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(const std::vector<T>& knots, bool l
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
+Rcpp::NumericVector fmm_proposal<T,R>::refine(unsigned int N, double tol,
 	bool greedy, unsigned int report, bool log)
 {
 	if (tol < 0) {
@@ -354,28 +354,28 @@ Rcpp::NumericVector FMMProposal<T,R>::refine(unsigned int N, double tol,
 }
 
 template <class T, class R>
-FMMProposal<T,R>::FMMProposal(const std::vector<R>& regions)
+fmm_proposal<T,R>::fmm_proposal(const std::vector<R>& regions)
 : _regions()
 {
 	_regions.insert(regions.begin(), regions.end());
 }
 
 template <class T, class R>
-FMMProposal<T,R>::FMMProposal(const R& region)
+fmm_proposal<T,R>::fmm_proposal(const R& region)
 : _regions()
 {
 	_regions.insert(region);
 }
 
 template <class T, class R>
-FMMProposal<T,R>::FMMProposal(const FMMProposal& p)
+fmm_proposal<T,R>::fmm_proposal(const fmm_proposal& p)
 : _regions()
 {
 	_regions.insert(p._regions.begin(), p._regions.end());
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::xi_upper(bool log) const
+Rcpp::NumericVector fmm_proposal<T,R>::xi_upper(bool log) const
 {
 	Rcpp::NumericVector out(size());
 
@@ -389,7 +389,7 @@ Rcpp::NumericVector FMMProposal<T,R>::xi_upper(bool log) const
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::xi_lower(bool log) const
+Rcpp::NumericVector fmm_proposal<T,R>::xi_lower(bool log) const
 {
 	Rcpp::NumericVector out(size());
 
@@ -403,7 +403,7 @@ Rcpp::NumericVector FMMProposal<T,R>::xi_lower(bool log) const
 }
 
 template <class T, class R>
-Rcpp::LogicalVector FMMProposal<T,R>::bifurcatable() const
+Rcpp::LogicalVector fmm_proposal<T,R>::bifurcatable() const
 {
 	Rcpp::LogicalVector out(size());
 
@@ -417,7 +417,7 @@ Rcpp::LogicalVector FMMProposal<T,R>::bifurcatable() const
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::pi(bool log) const
+Rcpp::NumericVector fmm_proposal<T,R>::pi(bool log) const
 {
 	const Rcpp::NumericVector& lxu = xi_upper(true);
 	const Rcpp::NumericVector& out = lxu - vws::log_sum_exp(lxu);
@@ -425,7 +425,7 @@ Rcpp::NumericVector FMMProposal<T,R>::pi(bool log) const
 }
 
 template <class T, class R>
-double FMMProposal<T,R>::bound(bool log) const
+double fmm_proposal<T,R>::bound(bool log) const
 {
 	// Overall rejection rate bound
 	double out = log_sum_exp(bound_contrib(true));
@@ -433,7 +433,7 @@ double FMMProposal<T,R>::bound(bool log) const
 }
 
 template <class T, class R>
-Rcpp::NumericVector FMMProposal<T,R>::bound_contrib(bool log) const
+Rcpp::NumericVector fmm_proposal<T,R>::bound_contrib(bool log) const
 {
 	// Each region's contribution to the rejection rate bound.
 	const Rcpp::NumericVector& lxu = xi_upper(true);
@@ -443,7 +443,7 @@ Rcpp::NumericVector FMMProposal<T,R>::bound_contrib(bool log) const
 }
 
 template <class T, class R>
-Rcpp::IntegerVector FMMProposal<T,R>::mergeable(unsigned int i) const
+Rcpp::IntegerVector fmm_proposal<T,R>::mergeable(unsigned int i) const
 {
 	unsigned int N = size();
 	std::vector<unsigned int> out;
@@ -461,7 +461,7 @@ Rcpp::IntegerVector FMMProposal<T,R>::mergeable(unsigned int i) const
 }
 
 template <class T, class R>
-double FMMProposal<T,R>::nc(bool log) const
+double fmm_proposal<T,R>::nc(bool log) const
 {
 	const Rcpp::NumericVector& lxu = xi_upper(true);
 	double out = log_sum_exp(lxu);
@@ -469,20 +469,20 @@ double FMMProposal<T,R>::nc(bool log) const
 }
 
 template <class T, class R>
-T FMMProposal<T,R>::r() const
+T fmm_proposal<T,R>::r() const
 {
 	return r_ext(1).first[0];
 }
 
 template <class T, class R>
-typename std::vector<T> FMMProposal<T,R>::r(unsigned int n) const
+typename std::vector<T> fmm_proposal<T,R>::r(unsigned int n) const
 {
 	return r_ext(n).first;
 }
 
 template <class T, class R>
 typename std::pair<std::vector<T>, std::vector<unsigned int>>
-FMMProposal<T,R>::r_ext(unsigned int n) const
+fmm_proposal<T,R>::r_ext(unsigned int n) const
 {
 	// Draw from the mixing weights, which are given on the log scale and not
 	// normalized.
@@ -501,7 +501,7 @@ FMMProposal<T,R>::r_ext(unsigned int n) const
 }
 
 template <class T, class R>
-double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
+double fmm_proposal<T,R>::d(const T& x, bool normalize, bool log) const
 {
 	double lnc = normalize ? nc(true) : 0;
 
@@ -539,7 +539,7 @@ double FMMProposal<T,R>::d(const T& x, bool normalize, bool log) const
 }
 
 template <class T, class R>
-double FMMProposal<T,R>::d_target_unnorm(const T& x, bool log) const
+double fmm_proposal<T,R>::d_target_unnorm(const T& x, bool log) const
 {
 	auto itr = _regions.begin();
 	double out = itr->w(x, true) + itr->d_base(x, true);
@@ -547,7 +547,7 @@ double FMMProposal<T,R>::d_target_unnorm(const T& x, bool log) const
 }
 
 template <class T, class R>
-double FMMProposal<T,R>::w_major(const T& x, bool log) const
+double fmm_proposal<T,R>::w_major(const T& x, bool log) const
 {
 	/*
 	* Search for the region containing x using std::set, similar to the `d`
@@ -576,7 +576,7 @@ double FMMProposal<T,R>::w_major(const T& x, bool log) const
 }
 
 template <class T, class R>
-Rcpp::DataFrame FMMProposal<T,R>::summary() const
+Rcpp::DataFrame fmm_proposal<T,R>::summary() const
 {
 	unsigned int N = _regions.size();
 	Rcpp::StringVector v1(N);
@@ -606,7 +606,7 @@ Rcpp::DataFrame FMMProposal<T,R>::summary() const
 }
 
 template <class T, class R>
-void FMMProposal<T,R>::print(unsigned int n) const
+void fmm_proposal<T,R>::print(unsigned int n) const
 {
 	const Rcpp::DataFrame& tbl = summary();
 	unsigned int N = tbl.nrows();
