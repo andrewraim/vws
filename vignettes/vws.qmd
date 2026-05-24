@@ -639,23 +639,14 @@ Methods above with the a `log` argument return values on the log-scale when `log
 
 ### Iterators {.unlisted}
 
-The following methods can be used to get (read-only) iterators to internal data structures. These can be more efficient than the accessors in @sec-api-proposal because they do not make a copy of the data.
+The following methods provide iterators to the set of regions in the proposal: const for read-only access and non-const for read and write access. Using them can be more efficient than the accessors in @sec-api-proposal because they do not make a copy of the data.
 
 ```{cpp}
-std::set<R>::const_iterator regions_begin() const;               // <1>
-std::set<R>::const_iterator regions_end() const;
-Rcpp::NumericVector::const_iterator log_xi_upper_begin() const;  // <2>
-Rcpp::NumericVector::const_iterator log_xi_upper_end() const;
-Rcpp::NumericVector::const_iterator log_xi_lower_begin() const;  // <3>
-Rcpp::NumericVector::const_iterator log_xi_lower_end() const;
-Rcpp::LogicalVector::const_iterator bifurcatable_begin() const;  // <4>
-Rcpp::LogicalVector::const_iterator bifurcatable_end() const;
+std::set<R>::const_iterator begin() const;
+std::set<R>::const_iterator end() const;
+std::set<R>::iterator begin() const;
+std::set<R>::iterator end() const;
 ```
-
-1. The start and end of the set of regions (of template type `R`) in the proposal.
-2. The start and end of the vector $(\overline{\xi}_1, \ldots, \overline{\xi}_N)$.
-3. The start and end of the vector $(\underline{\xi}_1, \ldots, \underline{\xi}_N)$.
-4. The start and end of the vector of indicators for whether regions are bifurcatable.
 
 ### Refining the Proposal {.unlisted}
 

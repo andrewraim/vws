@@ -83,6 +83,12 @@ public:
 	typename std::set<R>::const_iterator end() const {
 		return _regions.end();
 	}
+	typename std::set<R>::iterator begin() {
+		return _regions.begin();
+	}
+	typename std::set<R>::iterator end() {
+		return _regions.end();
+	}
 
 	/*
 	* Upper bound for rejection probability.
