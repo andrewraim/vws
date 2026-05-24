@@ -433,19 +433,19 @@ The `rejection` function takes an object `h` of class `fmm_proposal` and carries
 The following display outlines a typical workflow for VWS rejection sampling in C++. Some of the lines are labeled with numbers; descriptions of these labels are given after the code.
 
 ```{cpp}
-// [[Rcpp::depends(vws, fntl)]]                 // <1>
-#include "vws.h"                                // <2>
+// [[Rcpp::depends(vws, fntl)]]                  // <1>
+#include "vws.h"                                 // <2>
 #include "MyRegion.h"
 
-// [[Rcpp::export]]                             // <3>
+// [[Rcpp::export]]                              // <3>
 Rcpp::List sample(unsigned int n)
 {
-    MyRegion supp( ... );                       // <4>
+    MyRegion supp( ... );                        // <4>
     vws::fmm_proposal<double, MyRegion> h(supp); // <5>
-    h.refine(N - 1, 0.01);                      // <6>
-    auto out = vws::rejection(h, n);            // <7>
+    h.refine(N - 1, 0.01);                       // <6>
+    auto out = vws::rejection(h, n);             // <7>
 
-    return Rcpp::List::create(                  // <8>
+    return Rcpp::List::create(                   // <8>
         Rcpp::Named("draws") = out.draws,
         Rcpp::Named("rejects") = out.rejects
     );
@@ -573,19 +573,19 @@ class fmm_proposal { ... };
 The primary constructor takes a vector of regions of type `R`. There must be at least one region in the vector. These regions are expected to be a partition of the support $\Omega$.
 
 ```{cpp}
-fmm_proposal(const std::vector<R>& regions);
+fmm_proposal(const std::vector<R>& regions)
 ```
 
 A second constructor takes a single region. This is a special case of the previous one which is provided for convenience.
 
 ```{cpp}
-fmm_proposal(const R& region);
+fmm_proposal(const R& region)
 ```
 
 A copy constructor is also provided.
 
 ```{cpp}
-fmm_proposal(const fmm_proposal& p);
+fmm_proposal(const fmm_proposal& p)
 ```
 
 ### Distribution Methods {.unlisted}
@@ -665,7 +665,7 @@ Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \
 Rcpp::NumericVector refine(
 	const std::vector<T>& knots, // <1>
 	bool log = true              // <2>
-);
+)
 ```
 
 1. A vector of knots.
@@ -680,7 +680,7 @@ Rcpp::NumericVector refine(
 	bool greedy = false,                   // <3>
 	unsigned int report = fntl::uint_max,  // <4>
 	bool log = true                        // <5>
-);
+)
 ```
 
 1. Maximum number of refinements to make.
@@ -704,7 +704,7 @@ The `seq` function is provided as a convenience to generate equally-spaced knots
 
 ```{cpp}
 std::vector<double> seq(double lo, double hi, unsigned int N,
-	bool endpoints = false);
+	bool endpoints = false)
 ```
 
 ### Coarsening the Proposal {.unlisted}
@@ -712,7 +712,7 @@ std::vector<double> seq(double lo, double hi, unsigned int N,
 The `merge` function merges the pair of regions with indices `i` and `j` so that number of regions $N$ in the proposal is reduced by one. The return value is the updated value of bound \eqref{eqn:bound} after merging; this value is returned on the log-scale if argument `log = true`.
 
 ```{cpp}
-double merge(unsigned int i, unsigned int j, bool log = true);
+double merge(unsigned int i, unsigned int j, bool log = true)
 ```
 
 The `merge` function depends on methods `is_mergeable` and `merge` of the region. These determine how to merge two regions and whether they are eligible to merged. For a subclass `MyRegion` of `Region`, these methods should be defined as follows.
@@ -817,20 +817,20 @@ real_const_region(
 	double a,                                 // <1>
 	double b,                                 // <2>
 	const dfdb& w,                            // <3>
-	const univariate_helper& helper,           // <4>
+	const univariate_helper& helper,          // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
-);
+)
 
 real_const_region(
 	double a,                                 // <1>
 	const dfdb& w,                            // <3>
-	const univariate_helper& helper            // <4>
+	const univariate_helper& helper,          // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
-);
+)
 ```
 
 1. Lower limit of interval that defines this region.
@@ -893,28 +893,28 @@ bool is_mergeable(const real_const_region& x) const;
 Several `set` functions are provided to update the weight function and univariate helper which represents the base distribution. The third form updates both in the same call, to eliminate some overhead of calling both the first two forms.
 
 ```{cpp}
-void set(const dfdb& w);
-void set(const univariate_helper& helper);
-void set(const dfdb& w, const univariate_helper& helper);
+void set(const dfdb& w)
+void set(const univariate_helper& helper)
+void set(const dfdb& w, const univariate_helper& helper)
 ```
 
 The `singleton` method returns a singleton interval $(x, x]$, using the current object's member data.
 
 ```{cpp}
-real_const_region singleton(const double& x) const;
+real_const_region singleton(const double& x) const
 ```
 
 The following methods determine an ordering of the current region and an another region specified as argument `x`. Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $b_1 \leq a_2$. The regions are considered equal if $a_1 = a_2$ and $b_1 = b_2$. Note that other elements such as $w$ are $g$ are not explicitly checked, and are assumed to be the same.
 
 ```{cpp}
-bool operator<(const real_const_region& x) const;
-bool operator==(const real_const_region& x) const;
+bool operator<(const real_const_region& x) const
+bool operator==(const real_const_region& x) const
 ```
 
 The following method assigns the current region to be equal to the argument `x`.
 
 ```{cpp}
-const real_const_region& operator=(const real_const_region& x);
+const real_const_region& operator=(const real_const_region& x)
 ```
 
 ## Region on Integer-Valued Support with Constant Majorizer {#sec-api-intconstregion}
@@ -934,20 +934,20 @@ int_const_region(
 	double a,                                 // <1>
 	double b,                                 // <2>
 	const dfdb& w,                            // <3>
-	const univariate_helper& helper,           // <4>
+	const univariate_helper& helper,          // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
-);
+)
 
 int_const_region(
 	double a,                                 // <1>
 	const dfdb& w,                            // <3>
-	const univariate_helper& helper            // <4>
+	const univariate_helper& helper,          // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
-);
+)
 ```
 
 1. Lower limit of interval that defines this region.
@@ -985,14 +985,14 @@ The following methods determine an ordering of the current region and an another
 
 ```{cpp}
 
-bool operator<(const int_const_region& x) const;
-bool operator==(const int_const_region& x) const;
+bool operator<(const int_const_region& x) const
+bool operator==(const int_const_region& x) const
 ```
 
 The following method assigns the current region to be equal to the argument `x`.
 
 ```{cpp}
-const int_const_region& operator=(const int_const_region& x);
+const int_const_region& operator=(const int_const_region& x)
 ```
 
 ## Univariate Helper {#sec-api-helper}
@@ -1004,7 +1004,7 @@ univariate_helper(
 	const fntl::density& d,  // <1>
 	const fntl::cdf& p,      // <2>
 	const fntl::quantile& q  // <3>
-);
+)
 ```
 
 1. A function to evaluate density $g$.
@@ -1033,13 +1033,13 @@ rejection_result<T> rejection(
 	const fmm_proposal<T,R>& h,         // <1>
 	unsigned int n,                    // <2>
 	const rejection_args& args         // <3>
-);
+)
 
 template <typename T, typename R>
 rejection_result<T> rejection(
 	const fmm_proposal<T,R>& h,         // <1>
 	unsigned int n = 1                 // <2>
-);
+)
 ```
 1. An `fmm_proposal` object to use as the proposal.
 2. The number of desired draws.
@@ -1053,22 +1053,20 @@ The following functions perform rejection sampling with tuning as described in @
 template <typename T, typename R>
 rejection_result<T>
 rejection_tune(
-	fmm_proposal<T,R>& h,        // <1>
+	fmm_proposal<T,R>& h,       // <1>
 	unsigned int n,             // <2>
 	const rejection_args& args  // <3>
-);
+)
 
 template <typename T, typename R>
 rejection_result<T> rejection_tune(
-	const fmm_proposal<T,R>& h,  // <1>
+	const fmm_proposal<T,R>& h, // <1>
 	unsigned int n = 1          // <2>
-);
+)
 ```
 1. An `fmm_proposal` object to use as the proposal.
 2. The number of desired draws.
 3. Additional arguments for rejection sampling. Default values are assumed in the second form.
-
-**TBD: Remove semicolons at the end of functions!**
 
 Additional arguments to `rejection` are provided via the following struct.
 
@@ -1137,7 +1135,7 @@ optimize_hybrid_result optimize_hybrid(
 	double upper,             // <4>
 	bool maximize,            // <5>
 	unsigned maxiter = 100000 // <6>
-);
+)
 ```
 
 1. Objective function.
@@ -1188,7 +1186,7 @@ As mentioned in @sec-logscale, calculations in the package are carried out on th
 The following computes the scalar $f(x) = \log\{ \sum_{i=1}^n \exp(x_i) \}$ from a vector $x \in \mathbb{R}^n$ using the method described in [this StackExchange post](https://stats.stackexchange.com/a/381937).
 
 ```{cpp}
-double log_sum_exp(const Rcpp::NumericVector& x);
+double log_sum_exp(const Rcpp::NumericVector& x)
 ```
 
 The following functions carry out addition on the log scale using the property
@@ -1201,16 +1199,17 @@ The following functions carry out addition on the log scale using the property
 The first form takes scalar arguments $x$ and $y$. The second and third forms take $x, y \in \mathbb{R}^n$ and produce a vector with elements $\log(e^{x_i} + e^{y_i})$, $i = 1, \ldots, n$.
 
 ```{cpp}
-double log_add2_exp(double x, double y);
+double log_add2_exp(double x, double y)
 
 std::vector<double> log_add2_exp(
 	const std::vector<double>& x,
 	const std::vector<double>& y
-);
+)
+
 Rcpp::NumericVector log_add2_exp(
 	const Rcpp::NumericVector& x,
 	const Rcpp::NumericVector& y
-);
+)
 ```
 
 The following carry out subtraction on the log scale using the property
@@ -1222,16 +1221,17 @@ The following carry out subtraction on the log scale using the property
 When $x$ is smaller than $y$, the results is assumed to be `nan`. The first form takes scalar arguments $x$ and $y$. The second and third forms take $x, y \in \mathbb{R}^n$ and produce a vector with elements $\log(e^{x_i} - e^{y_i})$, $i = 1, \ldots, n$. 
 
 ```{cpp}
-double log_sub2_exp(double x, double y);
+double log_sub2_exp(double x, double y)
 
 std::vector<double> log_sub2_exp(
 	const std::vector<double>& x,
 	const std::vector<double>& y
-);
+)
+
 Rcpp::NumericVector log_sub2_exp(
 	const Rcpp::NumericVector& x,
 	const Rcpp::NumericVector& y
-);
+)
 ```
 
 ## Generating from a Discrete Distribution {#sec-api-discrete}
@@ -1254,13 +1254,14 @@ unsigned int r_categ(
 	const Rcpp::NumericVector& p,  // <2>
 	bool log = false,              // <3>
 	bool one_based = false         // <4>
-);
+)
+
 Rcpp::IntegerVector r_categ(
 	unsigned int n,                // <1>
 	const Rcpp::NumericVector& p,  // <2>
 	bool log = false,              // <3>
 	bool one_based = false         // <4>
-);
+)
 ```
 
 1. Desired sample size.
@@ -1278,51 +1279,57 @@ double d_gumbel(
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool log = false               // <7>
-);
+)
+
 double p_gumbel(
 	double q,                      // <2>
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool lower = true,             // <8>
 	bool log = false               // <7>
-);
+)
+
 double q_gumbel(
 	double p,                      // <3>
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool lower = true,             // <8>
 	bool log = false               // <7>
-);
+)
+
 double r_gumbel(
 	double mu = 0,                 // <5>
 	double sigma = 1               // <7>
-);
+)
 
 Rcpp::NumericVector d_gumbel(
 	const Rcpp::NumericVector& x,  // <1>
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool log = false               // <7>
-);
+)
+
 Rcpp::NumericVector p_gumbel(
 	const Rcpp::NumericVector& q,  // <2>
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool lower = true,             // <8>
 	bool log = false               // <7>
-);
+)
+
 Rcpp::NumericVector q_gumbel(
 	const Rcpp::NumericVector& p,  // <3>
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool lower = true,             // <8>
 	bool log = false               // <7>
-);
+)
+
 Rcpp::NumericVector r_gumbel(
 	unsigned int n,                // <4>
 	double mu = 0,                 // <5>
 	double sigma = 1               // <6>
-);
+)
 ```
 1. Argument to the density.
 2. Argument to the CDF.
@@ -1537,8 +1544,8 @@ if (d >= 3) {
 Finally, we create the initial region `supp`. The `maxopt` and `minopt` functions are provided to the constructor as additional arguments. Note that we dereference our pointers and pass the function objects themselves (which are taken as references by the constructor).
 
 ```{cpp}
-vws::univariate_helper helper(df, pf, qf);
-vws::real_const_region supp(-1, 1, w, helper, *maxopt, *minopt);
+vws::univariate_helper helper(df, pf, qf)
+vws::real_const_region supp(-1, 1, w, helper, *maxopt, *minopt)
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
