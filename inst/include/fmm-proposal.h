@@ -299,7 +299,7 @@ Rcpp::NumericVector fmm_proposal<T,R>::refine(unsigned int N, double tol,
 			break;
 		}
 
-		unsigned int L = _regions.size();
+		// unsigned int L = _regions.size();
 		double lxusum = log_sum_exp(xi_upper(true));
 
 		// Identify the regions which are bifurcatable; for the rest, we set
