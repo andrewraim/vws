@@ -1,7 +1,7 @@
 Package: vws
 Type: Package
 Title: Vertical Weighted Strips
-Version: 0.3.0
+Version: 0.3.1
 Authors@R: person(given = c("Andrew", "M."),
     family = "Raim",
     role = c("aut", "cre"),
