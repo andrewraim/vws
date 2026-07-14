@@ -6,7 +6,7 @@
 const double SEC_PER_MICROSEC = 1e-6;
 
 // [[Rcpp::export]]
-Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
+Rcpp::List gibbs(const arma::vec& y, const arma::vec& lambda,
 	const arma::mat& X, const Rcpp::List& init, const Rcpp::List& control,
 	const Rcpp::List& fixed)
 {
@@ -14,7 +14,7 @@ Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
 	unsigned int d = X.n_cols;
 
 	stopifnot(X.n_rows == m, "X.n_rows == m");
-	stopifnot(sigma.n_elem == m, "sigma2.n_elems == m");
+	stopifnot(lambda.n_elem == m, "lambda2.n_elems == m");
 
 	const arma::mat& XtX = crossprod(X);
 
@@ -37,7 +37,7 @@ Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
 
 	// Set up histories
 	arma::mat beta_hist(R_keep, d);
-	arma::vec tau2_hist(R_keep);
+	arma::vec sigma2_hist(R_keep);
 	arma::mat mu_hist(R_keep, save_latent.size());
 
 	arma::uvec rejects_hist(R);
@@ -60,14 +60,14 @@ Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
 	stopifnot(init.inherits("init"), "init inherits from init");
 	arma::vec beta = init["beta"];
 	arma::vec mu = init["mu"];
-	double tau2 = init["tau2"];
+	double sigma2 = init["sigma2"];
 
 	arma::vec Xbeta = X * beta;
 
 	// Initialize self-tuned VWS proposals
-	std::vector<unmatch_sae_proposal> proposals;
+	std::vector<ln_norm_proposal> proposals;
 	for (unsigned int i = 0; i < m; i++) {
-	 	unmatch_sae_proposal x(y(i), sigma(i), Xbeta(i), std::sqrt(tau2));
+	 	ln_norm_proposal x(y(i), lambda(i), Xbeta(i), std::sqrt(sigma2));
 	 	proposals.push_back(x);
 	}
 
@@ -78,7 +78,7 @@ Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
 
 	// Set up timers
 	double elapsed_beta = 0;
-	double elapsed_tau2 = 0;
+	double elapsed_sigma2 = 0;
 	double elapsed_mu = 0;
 
 	for (unsigned int rep = 0; rep < R; rep++)
@@ -91,7 +91,7 @@ Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
 			* Self-tuned VWS using vws package
 			*/
 			for (unsigned int i = 0; i < m; i++) {
-				proposals[i].update(Xbeta(i), std::sqrt(tau2));
+				proposals[i].update(Xbeta(i), std::sqrt(sigma2));
 
 				if (rep < tune) {
 					const auto& vws_out = vws::rejection_tune(proposals[i], 1, args);
@@ -117,7 +117,7 @@ Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
 		if (!fixed["beta"]) {
 			auto st = std::chrono::system_clock::now();
 			const arma::vec& mm = arma::solve(XtX, crossprod(X, arma::log(mu)));
-			const arma::mat& Omega = (1 / tau2) * XtX;
+			const arma::mat& Omega = (1 / sigma2) * XtX;
 			beta = r_mvnorm_prec(mm, Omega);
 			Xbeta = X * beta;
 			auto et = std::chrono::system_clock::now();
@@ -125,15 +125,15 @@ Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
 			elapsed_beta += td.count() * SEC_PER_MICROSEC;
 		}
 
-		// Draw [tau2 | rest]
-		if (!fixed["tau2"]) {
+		// Draw [sigma2 | rest]
+		if (!fixed["sigma2"]) {
 			auto st = std::chrono::system_clock::now();
 			double aa = m / 2.0;
 			double bb = 1 / 2.0 * dot(log(mu) - Xbeta);
-			tau2 = r_invgamma(aa, bb);
+			sigma2 = r_invgamma(aa, bb);
 			auto et = std::chrono::system_clock::now();
 			auto td = std::chrono::duration_cast<std::chrono::microseconds>(et - st);
-			elapsed_tau2 += td.count() * SEC_PER_MICROSEC;
+			elapsed_sigma2 += td.count() * SEC_PER_MICROSEC;
 		}
 
 		// Save total number of mixture components at this point
@@ -145,7 +145,7 @@ Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
 
 		if (rep >= burn && rep % thin == 0) {
 			beta_hist.row(rep_keep) = beta.t();
-			tau2_hist[rep_keep] = tau2;
+			sigma2_hist[rep_keep] = sigma2;
 
 			for (unsigned int l = 0; l < save_latent.size(); l++) {
 				unsigned int i = save_latent(l);
@@ -158,15 +158,9 @@ Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
 		if ((rep + 1) % report == 0) {
 			unsigned int s = (rep >= report) ? rep - report : 0;
 			unsigned int rejects = arma::sum(rejects_hist(arma::span(s, rep)));
-
-			if (strcmp(inner_method.get_cstring(), "vws-tune") == 0)
-			{
-				unsigned int tunes = arma::sum(tunes_hist(arma::span(s, rep)));
-				logger("[%d] avg-N: %0.4f  tunes: %d  rejects: %d\n", rep + 1,
-					avg_comps, tunes, rejects);
-			} else {
-				logger("[%d] rejects: %d\n", rep + 1, rejects);
-			}
+			unsigned int tunes = arma::sum(tunes_hist(arma::span(s, rep)));
+			logger("[%d] avg-N: %0.4f  tunes: %d  rejects: %d\n", rep + 1,
+				avg_comps, tunes, rejects);
 		}
 
 		Rcpp::checkUserInterrupt();
@@ -175,13 +169,13 @@ Rcpp::List gibbs(const arma::vec& y, const arma::vec& sigma,
 
 	Rcpp::List elapsed = Rcpp::List::create(
 		Rcpp::Named("beta") = elapsed_beta,
-		Rcpp::Named("tau2") = elapsed_tau2,
+		Rcpp::Named("sigma2") = elapsed_sigma2,
 		Rcpp::Named("mu") = elapsed_mu
 	);
 
 	return Rcpp::List::create(
 		Rcpp::Named("beta") = beta_hist,
-		Rcpp::Named("tau2") = tau2_hist,
+		Rcpp::Named("sigma2") = sigma2_hist,
 		Rcpp::Named("mu") = mu_hist,
 		Rcpp::Named("R_keep") = R_keep,
 		Rcpp::Named("elapsed") = elapsed,
