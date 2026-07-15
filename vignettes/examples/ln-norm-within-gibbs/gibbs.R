@@ -1,4 +1,5 @@
-Rcpp::sourceCpp("gibbs.cpp")
+# Rcpp::sourceCpp("gibbs.cpp")
+source("mvnorm.R")
 
 printf = function (fmt, ...)
 {
@@ -53,25 +54,198 @@ init_gibbs = function(n, d, beta = NULL, sigma2 = NULL, y = NULL)
 	return(ret)
 }
 
-gibbs = function(z, lambda, X, init = init_gibbs(n = length(y), d = ncol(X)),
-	prior = prior_gibbs(), control = control_gibbs(), fixed = fixed_gibbs())
+gibbs = function(z, lambda, X,
+	init = init_gibbs(n = length(y), d = ncol(X)),
+	prior = prior_gibbs(),
+	control = control_gibbs(),
+	fixed = fixed_gibbs())
 {
 	n = length(z)
+	d = ncol(X)
 	stopifnot(n == length(lambda))
 	stopifnot(n == nrow(X))
+
+	XtX = crossprod(X)
+
+	stopifnot(class(control) == "control_gibbs")
+	R = control$R
+	burn = control$burn
+	thin = control$thin
+	report = control$report
+	save_latent = control$save_latent
+	inner_ctrl = control$inner
 
 	## Ensure several conditions for indices:
 	## - No duplicate values,
 	## - All values are in 1:n.
 	## Convert to 0-based indices to pass to C++
-	save_latent = control$save_latent
 	stopifnot(table(save_latent) == 1)
 	stopifnot(all(save_latent %in% 1:n))
-	control$save_latent = save_latent - 1
 
-	out = gibbs_cpp(z, lambda, X, init, prior, control, fixed)
-	out$fixed = fixed
-	out$method = control$inner$method
+	inner_method = inner_ctrl$method
+	max_rejects = inner_ctrl$max_rejects
+	tol_suff = inner_ctrl$tol_suff
+	tol_merge = inner_ctrl$tol_merge
+	tune = inner_ctrl$tune
+	N = inner_ctrl$N
+
+	rep_keep = 0
+	R_keep = ceiling((R - burn) / thin)
+
+	# Set up histories
+	beta_hist = matrix(NA, R_keep, d)
+	sigma2_hist = numeric(R_keep)
+	y_hist = matrix(NA, R_keep, length(save_latent))
+
+	# Some statistics on tuning
+	rejects_hist = integer(R)
+	comps_hist = integer(R)
+	tunes_hist = integer(R)
+	tuned_hist = integer(R)
+
+	# Set up initial values
+	stopifnot(class(init) == "init_gibbs")
+	beta = init$beta
+	y = init$y
+	sigma2 = init$sigma2
+
+	Xbeta = X %*% beta
+
+	# Initialize self-tuned VWS proposals
+	proposals = list()
+	for (i in 1:n) {
+	 	proposals[[i]] = ln_norm_proposal$new(z[i], lambda[i], Xbeta[i], sqrt(sigma2))
+	}
+
+	# Set up fixed parameters
+	stopifnot(class(fixed) == "fixed_gibbs")
+
+	# Set up prior
+	stopifnot(class(prior) == "prior_gibbs")
+	sigma_beta = prior$sigma_beta
+	a_sigma = prior$a_sigma
+	b_sigma = prior$b_sigma
+	sigma2_beta = sigma_beta*sigma_beta
+
+	# Set up timers
+	elapsed = list(beta = 0, sigma2 = 0, y = 0)
+
+	for (rep in 1:R)
+	{
+		# Draw [y | rest]
+		if (!fixed$y)
+		{
+			st = Sys.time()
+
+			if (inner_method == "vws-tune")
+			{
+				# Self-tuned VWS
+				for (i in 1:n) {
+					proposals[[i]]$update(Xbeta[i], sqrt(sigma2))
+
+					if (rep < tune) {
+						vws_out = proposals[[i]]$draw_tune(tol_suff, tol_merge, max_rejects)
+						y[i] = vws_out$draws
+						rejects_hist[rep] = rejects_hist[rep] + vws_out$rejects
+						tunes_hist[rep] = tunes_hist[rep] + vws_out$tunes
+						tuned_hist[rep] = tuned_hist[rep] + (vws_out$tunes > 0)
+					} else {
+						vws_out = proposals[[i]]$draw(max_rejects)
+						y[i] = vws_out$draws
+						rejects_hist[rep] = rejects_hist[rep] + vws_out$rejects
+					}
+				}
+			}
+			else if (inner_method == "vws-basic")
+			{
+				# VWS without tuning
+				for (i in 1:n) {
+					vws_out = draw_ln_norm(z[i], lambda[i], Xbeta[i],
+						sqrt(sigma2), tol_suff, N, max_rejects)
+					y[i] = vws_out$draws
+					rejects_hist[rep] = rejects_hist[rep] + vws_out$rejects
+                }
+            }
+			else
+            {
+                stop("Unrecognized method in inner_ctrl")
+            }
+
+			elapsed$y = elapsed$y + as.numeric(Sys.time() - st, units = "secs")
+		}
+
+		# Draw [beta | rest]
+		if (!fixed$beta) {
+			st = Sys.time()
+			Omega = (1 / sigma2) * XtX + (1 / sigma2_beta) * diag(d)
+			mm = solve(Omega, crossprod(X, log(y) / sigma2))
+			beta = r_mvnorm_prec(mm, Omega)
+			Xbeta = X %*% beta
+			elapsed$beta = elapsed$beta + as.numeric(Sys.time() - st, units = "secs")
+		}
+
+		# Draw [sigma2 | rest]
+		if (!fixed$sigma2) {
+			st = Sys.time()
+			e = log(y) - Xbeta
+			aa = a_sigma + n / 2
+			bb = b_sigma + 1 / 2 * crossprod(e)
+			sigma2 = 1 / rgamma(1, aa, bb)
+			elapsed$sigma2 = elapsed$sigma2 + as.numeric(Sys.time() - st, units = "secs")
+		}
+
+		# Save total number of mixture components at this point
+		comps_hist[rep] = 0
+		for (i in 1:n) {
+		 	comps_hist[rep] = comps_hist[rep] + proposals[[i]]$size()
+		}
+		avg_comps = comps_hist[rep] / n
+
+		if (rep > burn && rep %% thin == 0) {
+			rep_keep = rep_keep + 1
+			beta_hist[rep_keep,] = beta
+			sigma2_hist[rep_keep] = sigma2
+
+			for (l in 1:length(save_latent)) {
+				i = save_latent[l]
+				y_hist[rep_keep, l] = y[i]
+			}
+		}
+
+		if (rep %% report == 0) {
+			if (inner_method == "vws-tune") {
+				s = ifelse(rep > report, rep - report, 1)
+				idx = seq(s, rep)
+				rejects = sum(rejects_hist[idx])
+				tunes = sum(tunes_hist[idx])
+				vws::logger("[%d] avg-N: %0.4f  tunes: %d  rejects: %d\n", rep,
+					avg_comps, tunes, rejects)
+			} else {
+				s = ifelse(rep > report, rep - report, 1)
+				idx = seq(s, rep)
+				rejects = sum(rejects_hist[idx])
+				vws::logger("[%d] rejects: %d\n", rep, rejects)
+			}
+		}
+	}
+
+	out = list(
+		beta = beta_hist,
+		sigma2 = sigma2_hist,
+		y = y_hist,
+		R_keep = R_keep,
+		elapsed = elapsed,
+		R = R,
+		burn = burn,
+		thin = thin,
+		rejects = rejects_hist,
+		comps = comps_hist,
+		tunes = tunes_hist,
+		tuned = tuned_hist,
+		n = n,
+		fixed = fixed,
+		method = control$inner$method
+	)
 	class(out) = "gibbs"
 	return(out)
 }

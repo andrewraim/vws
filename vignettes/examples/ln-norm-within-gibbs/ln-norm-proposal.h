@@ -21,13 +21,54 @@ public:
 
 	void update(double xbeta, double sigma);
 
+	vws::rejection_result<double> draw(unsigned int max_rejects);
+
+	vws::rejection_result<double> draw_tune(double tol_suff, double tol_merge,
+		unsigned int max_rejects);
+
+	unsigned int size() const {
+		return vws::fmm_proposal<double, vws::real_const_region>::size();
+	}
+
 private:
 	vws::real_const_region supp(double z, double lambda, double xbeta, double sigma);
 };
 
+RCPP_MODULE(vws_module) {
+	Rcpp::class_<ln_norm_proposal>("ln_norm_proposal")
+	.constructor<double,double,double,double>()
+	.method("update", &ln_norm_proposal::update)
+	.method("draw", &ln_norm_proposal::draw)
+	.method("draw_tune", &ln_norm_proposal::draw_tune)
+	.method("size", &ln_norm_proposal::size)
+	;
+}
+
 /*
 * Implementation of member functions is below
 */
+
+inline vws::rejection_result<double>
+ln_norm_proposal::draw(unsigned int max_rejects)
+{
+    vws::rejection_args args;
+    args.max_rejects = max_rejects;
+    args.report = 1e6;
+
+	return vws::rejection(*this, 1, args);
+}
+
+inline vws::rejection_result<double>
+ln_norm_proposal::draw_tune(double tol_suff, double tol_merge, unsigned int max_rejects)
+{
+	vws::rejection_args args;
+    args.max_rejects = max_rejects;
+    args.report = 1e6;
+	args.tol_suff = tol_suff;
+	args.tol_merge = tol_merge;
+
+	return vws::rejection_tune(*this, 1, args);
+}
 
 inline void ln_norm_proposal::update(double xbeta, double sigma)
 {

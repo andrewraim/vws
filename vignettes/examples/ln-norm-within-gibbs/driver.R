@@ -16,7 +16,7 @@ lambda = rep(0.5, n)
 z = rnorm(n, y_true, lambda)
 
 # ----- Fit the model using self-tuned VWS -----
-fixed = fixed_gibbs(y = FALSE)
+fixed = fixed_gibbs()
 init = init_gibbs(n, d, y = y_true)
 inner = control_inner(tol_suff = 0.85, tol_merge = 0.01, tune = 100, , method = "vws-tune")
 prior = prior_gibbs()
