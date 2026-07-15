@@ -87,7 +87,7 @@ This vignette presents an overview of the package, its API, and several examples
 file.path(path.package("vws"), "doc", "examples")
 ```
 
-The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting relevant to the U.S. Census Bureau, which is considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002]. In some applications, it may be desirable to have a persistent VWS proposal object that can gradually be refined and reused to draw samples; @sec-persistent presents several mechanisms to achieve this.
+The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @VWS2025. @sec-privacy develops samplers in a disclosure avoidance setting relevant to the U.S. Census Bureau, which is considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002]. In some applications, it may be desirable to have a persistent VWS proposal object that can gradually be refined and reused to draw samples; @sec-persistent presents several mechanisms to achieve this.
 
 ::: {.callout-tip title="Quick Start"}
 Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described with the highest amount of detail.
@@ -263,7 +263,7 @@ Suppose $w$ is log-convex on $\mathscr{D}_j$. A majorizer and minorizer are obta
 \remarkqed
 :::
 
-The following remark describes one possible choice for the expansion point $c$ which will be utilized in the examples in Sections [-@sec-vmf-linear], [-@sec-ln-norm-linear], and [-@sec-bessel-linear].
+The following remark describes one possible choice for the expansion point $c$ which will be utilized in the examples in Sections [-@sec-vmf-linear], [-@sec-privacy-linear], and [-@sec-bessel-linear].
 
 ::: {#rem-expansion-point}
 For a majorizer in the log-concave case, we choose $c$ to minimize the L1 distance between unnormalized densities,
@@ -367,7 +367,9 @@ Two types of updates are considered when a proposed draw $x$ is rejected. If bou
 
 To emphasize, $\epsilon_1$ represents a threshold for a sufficiently small rejection rate while $\epsilon_2$ represents a tolerance for low contribution. In practice, a sufficiently small rejection rate need not be far from 1 if rejections are computationally inexpensive; a value such as $\epsilon_1 = 0.85$ may yield good performance.
 
-Algorithm \ref{alg:self-tune} represents rejection sampling with self-tuning described in the manner above. It makes use of Algorithm \ref{alg:merge} to handle merges. Note that only certain pairs of regions are eligible to be merged, and eligibility is determined by the particular type of region. For example, the regions implemented in @sec-api-realconstregion and @sec-api-intconstregion are based on univariate intervals; here, only adjacent intervals having a common endpoint can be merged together. There may be multiple merges possible with a given partition, where different choices on line  \ref{step:merge} of Algorithm \ref{alg:merge} yield different configurations after the loop on line \ref{step:merge-loop} of Algorithm \ref{alg:self-tune}. For the sake of simplicity, the current implementation performs the first eligible merge in each traversal of the loop rather than considering all possible sequences of merges.
+Algorithm \ref{alg:self-tune} represents rejection sampling with self-tuning described in the manner above. It makes use of Algorithm \ref{alg:merge} to handle merges. Note that only certain pairs of regions are eligible to be merged, and eligibility is determined by the particular type of region. For example, the regions implemented in @sec-api-realconstregion and @sec-api-intconstregion are based on univariate intervals; here, only adjacent intervals having a common endpoint can be merged together. There may be multiple merges possible with a given partition, where different choices on line  \ref{step:merge} of Algorithm \ref{alg:merge} yield different configurations after the loop on line \ref{step:merge-loop} of Algorithm \ref{alg:self-tune}. For the sake of simplicity, the current implementation performs the first eligible merge in each traversal of the loop rather than considering all possible merges.
+
+@saevws-2025 present several examples where tuning can effectively be limited to an initial part of the MCMC chain and discontinued for the remainder of the chain. The number of rejections per iteration can be monitored to ensure that the proposals remain adequate as the chain progresses. If rejections increase dramatically after tuning is halted, a longer tuning period may be needed.
 
 \begin{algorithm}
 \caption{Generate a single draw from $f$ using self-tuned VWS with tolerances $\epsilon_1$ and $\epsilon_2$.}
@@ -473,7 +475,7 @@ head(out$rejects)
 ```
 
 ::: {.callout-tip title="Working Examples"}
-A complete VWS example is given in @sec-vmf-const-default; this demonstrates the use of `real_const_region` to implement a sampler with a minimal amount of coding. @sec-vmf-const-custom is an improvement which requires more coding; here we provide functions to determine values of the constant majorizer and minorizer analytically. Finally, @sec-vmf-linear demonstrates how to subclass `Region` to implement a linear majorizer, which requires more intricate coding. Subsequent examples are given in @sec-ln-norm and @sec-bessel, but with less explanation.
+A complete VWS example is given in @sec-vmf-const-default; this demonstrates the use of `real_const_region` to implement a sampler with a minimal amount of coding. @sec-vmf-const-custom is an improvement which requires more coding; here we provide functions to determine values of the constant majorizer and minorizer analytically. Finally, @sec-vmf-linear demonstrates how to subclass `Region` to implement a linear majorizer, which requires more intricate coding. Subsequent examples are given in @sec-privacy and @sec-bessel, but with less explanation.
 :::
 
 ## Lambdas {#sec-overview-lambdas}
@@ -1651,11 +1653,11 @@ ggplot(df) +
 	theme_minimal()
 ```
 
-# Example: Lognormal-Normal Conditional Distribution {#sec-ln-norm}
+# Example: Privacy Protected Data {#sec-privacy}
 
 Suppose an official statistics agency collects sensitive data from respondents in a survey or census. The agency then seeks to disseminate a tabulation to data users while protecting the privacy of the respondents. The agency can consider adding random noise $\gamma$ to the tabulation $Y$ and releasing $Z = Y + \gamma$. This setting is the basis of a modeling scenario considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025 where the distribution for $\gamma$ has been selected by the agency and the data have been disseminated; the objective in these works is to carry out inference on the unobserved $Y$ given observed $Z = z$. The field of differential privacy studies the design of noise mechanisms (including distributions of $\gamma$ in the present setting) to satisfy mathematical criteria for privacy [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census.
 
-Our present motivation is to focus on a specific target that arises in analysis of the released $z$. @sec-ln-norm-within-gibbs considers a data analysis situation with $n$ subjects and a regression underlying $y$. To reduce the amount of computation under repeated use within a Gibbs sampler, we will consider proposals that persist over the MCMC chain and get updated with the current state.
+Our present motivation is to focus on a specific target that arises in analysis of the released $z$. @sec-privacy-within-gibbs considers a data analysis situation with $n$ subjects and a regression underlying $y$. To reduce the amount of computation under repeated use within a Gibbs sampler, we will consider proposals that persist over the MCMC chain and get updated with the current state.
 
 Suppose $Y$ and $\gamma$ are independently distributed with $Y \sim \text{Lognormal}(\mu, \sigma^2)$ and $\gamma \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ is assumed to be known and provided with the noisy data. Such transparency into the noise mechanism is often featured in differential privacy.
 
@@ -1679,7 +1681,7 @@ f(y \mid z, \mu, \sigma^2)
 \underbrace{\frac{1}{y} \exp\left\{
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
 \right\} \ind(y > 0)}_{w(y)}.
-\label{eqn:ln-norm}
+\label{eqn:privacy}
 \end{align}
 <!-- -->
 We have decomposed $f$ into weight function
@@ -1689,7 +1691,7 @@ w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
 \ind\{ y \in (0,\infty) \},
 \end{math}
 <!-- -->
-from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution whose density $g$ is $\text{N}(z, \lambda^2)$. The conditional $[\vec{y} \mid \sigma^2, \vec{\mu}, \vec{z}]$ in \eqref{eqn:ln-norm} would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:ln-norm}.
+from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution whose density $g$ is $\text{N}(z, \lambda^2)$. The conditional $[\vec{y} \mid \sigma^2, \vec{\mu}, \vec{z}]$ in \eqref{eqn:privacy} would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:privacy}.
 
 
 Before proceeding, let us fix the following values for the parameters.
@@ -1705,7 +1707,7 @@ Jointly draw values of $Y$ and $Z$ from the model; $Z$ will be observed by users
 
 ```{r}
 #| prompt: true
-source("examples/ln-norm/functions.R")
+source("examples/privacy/functions.R")
 y_true = rlnorm(1, mu, sigma)
 z = rnorm(1, y_true, lambda)
 vws::printf("y_true = %g and z = %g\n", y_true, z)
@@ -1737,9 +1739,9 @@ q(x) = \ind\left( z > \sqrt{2} \lambda x \right)
 <!-- -->
 is used with `gauss.quad`.
 
-We will consider three variations of a VWS sampler, progressing from easier-to-implement to more computationally efficient. @sec-ln-norm-const-default considers a constant majorizer where the constant for each region is obtained by numerical optimization. @sec-ln-norm-const-custom replaces numerical optimization with code for a closed-form solution. @sec-ln-norm-linear makes use of a linear majorizer which subclasses the abstract `Region` class. All codes for this example are in the folder `examples/ln-norm`. The function `d_target` defined in `examples/ln-norm/functions.R` computes the target density.
+We will consider three variations of a VWS sampler, progressing from easier-to-implement to more computationally efficient. @sec-privacy-const-default considers a constant majorizer where the constant for each region is obtained by numerical optimization. @sec-privacy-const-custom replaces numerical optimization with code for a closed-form solution. @sec-privacy-linear makes use of a linear majorizer which subclasses the abstract `Region` class. All codes for this example are in the folder `examples/privacy`. The function `d_target` defined in `examples/privacy/functions.R` computes the target density.
 
-## Constant Majorizer with Numerical Optimization {#sec-ln-norm-const-default}
+## Constant Majorizer with Numerical Optimization {#sec-privacy-const-default}
 
 We may adapt the code from @sec-vmf-const-default to the target density in the present problem. The present weight function may be coded as follows.
 
@@ -1774,18 +1776,18 @@ The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
-Rcpp::sourceCpp("examples/ln-norm/ln-norm-v1.cpp")
+Rcpp::sourceCpp("examples/privacy/ln-norm-v1.cpp")
 out1 = r_ln_norm_v1(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
 head(out1$draws)
 ```
 
-@fig-ln-norm-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`. @fig-ln-norm-const-draws plots the empirical distribution of the draws and compares them to the density. It displays an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
+@fig-privacy-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`. @fig-privacy-const-draws plots the empirical distribution of the draws and compares them to the density. It displays an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
 #|   Refinement for lognormal-normal example with constant majorizer.
-#| label: fig-ln-norm-const-refine
+#| label: fig-privacy-const-refine
 #| echo: false
 
 df = data.frame(bdd = exp(out1$lbdd)) %>%
@@ -1806,7 +1808,7 @@ ggplot(df) +
 #|   for lognormal-normal example with constant majorizer. Observed value of
 #|   $z$ (blue line) and latent value of $y$ (red line) are displayed along
 #|   with a 95\% interval (blue ribbon) based on draws from $[Y \mid Z = z]$.
-#| label: fig-ln-norm-const-draws
+#| label: fig-privacy-const-draws
 #| echo: false
 
 interval_lo = quantile(out1$draws, probs = 0.025)
@@ -1825,7 +1827,7 @@ data.frame(x = out1$draws) %>%
 	theme_minimal()
 ```
 
-## Constant Majorizer with Custom Optimization {#sec-ln-norm-const-custom}
+## Constant Majorizer with Custom Optimization {#sec-privacy-const-custom}
 
 The log-weight function can be both maximized and minimized in closed form. Coding it explicitly reduces computational overhead and avoids convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `real_const_region`.
 
@@ -1846,7 +1848,7 @@ for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\fra
 &= -\mu + \sigma^2 / 2.
 \end{align*}
 <!-- -->
-Therefore, on a region $\mathscr{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$. @fig-ln-norm-weight displays a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
+Therefore, on a region $\mathscr{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$. @fig-privacy-weight displays a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
 
 ```{r}
 #| prompt: true
@@ -1861,7 +1863,7 @@ vws::printf("Maximizer y = %g obtains value log w(%g) = %g.\n",
 #| fig-cap: |
 #|   Weight function for Lognormal-Normal example on the log-scale, with the
 #|   maximizer $y^* = \exp(\mu - \sigma^2)$ highlighted.
-#| label: fig-ln-norm-weight
+#| label: fig-privacy-weight
 #| echo: false
 
 xlim = y_star + c(-10,10)
@@ -1923,12 +1925,12 @@ The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
-Rcpp::sourceCpp("examples/ln-norm/ln-norm-v2.cpp")
+Rcpp::sourceCpp("examples/privacy/ln-norm-v2.cpp")
 out2 = r_ln_norm_v2(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
 head(out2$draws)
 ```
 
-## Linear Majorizer {#sec-ln-norm-linear}
+## Linear Majorizer {#sec-privacy-linear}
 
 We can obtain a linear majorizer by noting the convexity of $\log w(y)$. Its second derivative is seen to be
 <!-- -->
@@ -1938,7 +1940,7 @@ We can obtain a linear majorizer by noting the convexity of $\log w(y)$. Its sec
 \right),
 \end{align*}
 <!-- -->
-which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathscr{D}_1 = (0, y_0]$ and $\mathscr{D}_2 = (y_0, \infty]$ so that all partitions considered thereafter consist of regions on which $\log w(y)$ is entirely concave or convex.
+which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-privacy-weight-convexity. We will assume that there are two initial regions $\mathscr{D}_1 = (0, y_0]$ and $\mathscr{D}_2 = (y_0, \infty]$ so that all partitions considered thereafter consist of regions on which $\log w(y)$ is entirely concave or convex.
 
 ```{r}
 #| prompt: true
@@ -1952,7 +1954,7 @@ printf("Convexity changes at y = %g.\n", y0)
 #|   Weight function for Lognormal-Normal example on the log-scale,
 #|   highlighting $y_0 = \exp(\mu - \sigma^2 + 1)$ where there is a change in
 #|   convexity.
-#| label: fig-ln-norm-weight-convexity
+#| label: fig-privacy-weight-convexity
 #| echo: false
 
 xlim = c(0, 2000)
@@ -2041,29 +2043,29 @@ M_j(s) = \exp(z s + s^2 \lambda^2 / 2)
 }.
 \end{align*}
 <!-- -->
-Adapting the code from @sec-vmf-linear to the present problem, we implement `LinearVWSRegion` as a subclass of the abstract `Region` base class (@sec-api-region). See the file `examples/ln-norm/LinearVWSRegion.h`. The code in `examples/ln-norm/ln-norm-v3.cpp` instantiates a proposal from this region type and proceeds with rejection sampling. This code is displayed below.
+Adapting the code from @sec-vmf-linear to the present problem, we implement `LinearVWSRegion` as a subclass of the abstract `Region` base class (@sec-api-region). See the file `examples/privacy/LinearVWSRegion.h`. The code in `examples/privacy/ln-norm-v3.cpp` instantiates a proposal from this region type and proceeds with rejection sampling. This code is displayed below.
 
-``` {.cpp include="examples/ln-norm/ln-norm-v3.cpp" code-line-numbers="true"}
+``` {.cpp include="examples/privacy/ln-norm-v3.cpp" code-line-numbers="true"}
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
-Rcpp::sourceCpp("examples/ln-norm/ln-norm-v3.cpp")
+Rcpp::sourceCpp("examples/privacy/ln-norm-v3.cpp")
 out3 = r_ln_norm_v3(n = 1000, z, mu, sigma, lambda, lo = 1e-8, 1e8,
 	N = 50, tol = 0.10)
 head(out3$draws)
 ```
 
-@fig-ln-norm-linear-draws plots the empirical distribution of the draws and compares them to the density. @fig-ln-norm-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
+@fig-privacy-linear-draws plots the empirical distribution of the draws and compares them to the density. @fig-privacy-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
 #|   Empirical distribution of draws (solid) versus target (dashed) for
 #|   lognormal-normal example with constant majorizer.
-#| label: fig-ln-norm-linear-draws
+#| label: fig-privacy-linear-draws
 #| echo: false
 
 data.frame(x = out1$draws) %>%
@@ -2079,7 +2081,7 @@ data.frame(x = out1$draws) %>%
 #| out-width: 60%
 #| fig-cap: |
 #|   Refinement for lognormal-normal example with constant majorizer.
-#| label: fig-ln-norm-refine
+#| label: fig-privacy-refine
 #| echo: false
 
 df1 = data.frame(sampler = "v1", bdd = exp(out1$lbdd)) %>% 
@@ -2103,7 +2105,7 @@ ggplot(df) +
 
 # Example: Bessel Count Distribution {#sec-bessel}
 
-Where Sections [-@sec-vmf] and [-@sec-ln-norm] considered continuous distributions, we now generate from a discrete target. The Bessel distribution [@YuanKalbfleisch2000] has density
+Where Sections [-@sec-vmf] and [-@sec-privacy] considered continuous distributions, we now generate from a discrete target. The Bessel distribution [@YuanKalbfleisch2000] has density
 <!-- -->
 \begin{align*}
 f(x) = \frac{(\lambda/2)^{2x+\nu}}{I_v(\lambda) \cdot x! \cdot \Gamma(x + \nu + 1)}
@@ -2530,7 +2532,7 @@ data.frame(x = xseq, h = out3$hx) %>%
 
 The samplers developed in previous sections each expose a function in R which can be used to generate samples. A new proposal is constructed each time the function is called and it exists only for the duration of the call. For the sake of efficiency or to maintain the state within a proposal, it may be desirable to have a persistent proposal that can be gradually refined and reused. This section demonstrates several Rcpp mechanisms to enable this workflow: first using external pointers then using using modules. The latter is based on object-oriented programming but is recommended over the former as it is less susceptible to crashing R. We demonstrate the two approaches by revisiting the example from @sec-vmf-const-default. For more information on external pointers and modules, refer to the vignette "Exposing C++ functions and classes with Rcpp modules" in the `Rcpp` package [@Rcpp] and section "External pointers and weak references" of the guide "Writing R Extensions" [@WritingRExtensions].
 
-The approach from @sec-persistent-module using Rcpp modules is used in @sec-ln-norm-within-gibbs to generate from an unfamiliar conditional within a Gibbs sampler.
+The approach from @sec-persistent-module using Rcpp modules is used in @sec-privacy-within-gibbs to generate from an unfamiliar conditional within a Gibbs sampler.
 
 ## External Pointers {#sec-persistent-xptr}
 
@@ -2752,19 +2754,52 @@ The lambdas `w`, `df`, `pf`, and `qf` in this code capture `kappa` and `d` by va
 
 \clearpage
 
-# Example: Lognormal-Normal within Gibbs {#sec-ln-norm-within-gibbs}
+# Example: Privacy Protected Data and use within Gibbs {#sec-privacy-within-gibbs}
 
-@saevws-2025
-
-@sec-ln-norm
-
-
+This section presents an example using the self-tuning method in @sec-self-tune. Consider again the setting from @sec-privacy and suppose there are $n$ tabulated observations. Let $y_i$ be the $i$th sensitive tabulation, $z_i$ be its privacy-protected counterpart, and $\vec{x}_i \in \mathbb{R}^d$ be a non-sensitive covariate which is associated with $y_i$. Consider the following hierarchical Bayesian model:
+<!-- -->
 \begin{align*}
 &z_i \sim \text{N}(y_i, \lambda_i^2), \\
 &y_i \sim \text{Lognormal}(\vec{x}_i^\top \vec{\beta}, \sigma^2), \\
 &\vec{\beta} \sim \text{N}(\vec{0}, \sigma_\beta^2 \vec{I}), \\
-&\sigma^2 \sim \text{IG}(a_\sigma, b_\sigma).
+&\sigma^2 \sim \text{IG}(a_\sigma, b_\sigma),
 \end{align*}
+<!-- -->
+where $\sigma_\beta^2$, $a_\sigma$, and $b_\sigma$ are hyperparameters which are assumed to be known. The variances $\lambda_i^2$ are also assumed to be known and provided with the data. Denote $\vec{\Lambda} = \text{Diag}(\lambda_1^2, \ldots, \lambda_n^2)$. To obtain a Gibbs sampler, the joint distribution of all random variables is
+<!-- -->
+\begin{align}
+f(\vec{z}, \vec{y}, \vec{\beta}, \sigma^2) =
+f_\text{N}(\vec{z} \mid \vec{y}, \vec{\Lambda}) \cdot
+f_\text{LN}(\vec{y} \mid \vec{X} \vec{\beta}, \sigma^2 \vec{I}) \cdot
+f_\text{N}(\vec{\beta} \mid \vec{0}, \sigma_\beta^2\vec{I}) \cdot
+f_\text{IG}(\sigma^2 \mid a_\sigma, b_\sigma),
+\label{eqn:privacy-joint}
+\end{align}
+<!-- -->
+where $f$ with subscripts "N", "LN", and "IG" denotes the normal, lognormal, and inverse gamma densities respectively. From \eqref{eqn:privacy-joint}, we obtain the following conditionals after some algebra:
+
+1. $[\vec{\beta} \mid \sigma^2, \vec{y}, \vec{z}] \sim \text{N}(\vec{\vartheta}, \vec{\Omega}^{-1})$ where $\vec{\Omega} = \sigma^{-2}\vec{X}^\top \vec{X} + \sigma_\beta^{-2} \vec{I}$ and $\vec{\vartheta} = \sigma^{-2} \vec{\Omega}^{-1} \vec{X}^\top (\log \vec{y})$.
+
+2. $[\sigma^2 \mid \vec{\beta}, \vec{y}, \vec{z}] \sim \text{IG}(a', b')$ where $a' = a_\sigma + n/2$ and $b' = b_\sigma + \lVert \log \vec{y} -\vec{X} \vec{\beta} \rVert^2 / 2$.
+
+3. $[\vec{y} \mid \vec{\beta}, \sigma^2, \vec{z}] = \prod_{i=1}^n [y_i \mid \vec{\beta}, \sigma^2, \vec{z}]$ where
+<!-- -->
+\begin{math}
+f(y_i \mid \vec{\beta}, \sigma^2, \vec{z}) \propto f_\text{N}(z_i \mid y_i, \lambda_i^2) \cdot
+f_\text{LN}(y_i \mid \vec{x}_i^\top \vec{\beta}, \sigma^2).
+\end{math}
+
+Steps 1 and 2 can make use of well-known normal and inverse gamma variate generation methods. For step 3, we will make use of VWS with a constant majorizer and minorizer as in @sec-privacy-const-custom; the maximizer and minimizer can be readily obtained without numerical optimization. 
+
+@sec-privacy-within-gibbs-r presents a version of the code where the Gibbs sampler is written in R and Rcpp modules are used to interact with VWS proposals written in C++, as in @sec-persistent-module. @sec-privacy-within-gibbs-cpp presents an alternative version of the code where the Gibbs sampler is written in C++ rather than R. The latter is substantially faster because it avoids the overhead of repeated calls between R and C++; however, it requires a much more C++ programming and cannot be debugged as readily as the first version.
+
+## Gibbs Sampler in R {#sec-privacy-within-gibbs-r}
+
+**TBD**: the time difference is more substantial when more time is spent in C++ and less is spent calling C++ from R. For example, when the whole Gibbs sampler is
+coded in C++, we were seeing the tuned version take about 20% as long. See the results in @saevws-2025.
+
+
+## Gibbs Sampler in C++ {#sec-privacy-within-gibbs-cpp}
 
 # References
 

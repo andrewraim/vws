@@ -1,6 +1,3 @@
-#ifndef LN_NORM_PROPOSAL_H
-#define LN_NORM_PROPOSAL_H
-
 // [[Rcpp::depends(vws, fntl)]]
 #include "vws.h"
 
@@ -37,9 +34,9 @@ private:
 RCPP_MODULE(vws_module) {
 	Rcpp::class_<ln_norm_proposal>("ln_norm_proposal")
 	.constructor<double,double,double,double>()
-	.method("update", &ln_norm_proposal::update)
 	.method("draw", &ln_norm_proposal::draw)
 	.method("draw_tune", &ln_norm_proposal::draw_tune)
+	.method("update", &ln_norm_proposal::update)
 	.method("size", &ln_norm_proposal::size)
 	;
 }
@@ -48,7 +45,7 @@ RCPP_MODULE(vws_module) {
 * Implementation of member functions is below
 */
 
-inline vws::rejection_result<double>
+vws::rejection_result<double>
 ln_norm_proposal::draw(unsigned int max_rejects)
 {
     vws::rejection_args args;
@@ -58,7 +55,7 @@ ln_norm_proposal::draw(unsigned int max_rejects)
 	return vws::rejection(*this, 1, args);
 }
 
-inline vws::rejection_result<double>
+vws::rejection_result<double>
 ln_norm_proposal::draw_tune(double tol_suff, double tol_merge, unsigned int max_rejects)
 {
 	vws::rejection_args args;
@@ -70,7 +67,7 @@ ln_norm_proposal::draw_tune(double tol_suff, double tol_merge, unsigned int max_
 	return vws::rejection_tune(*this, 1, args);
 }
 
-inline void ln_norm_proposal::update(double xbeta, double sigma)
+void ln_norm_proposal::update(double xbeta, double sigma)
 {
 	const vws::dfdb& w = [=](double y, bool log = true) -> double {
 		double out = (y > 0) ? R::dlnorm(y, xbeta, sigma, true) : R_NegInf;
@@ -109,7 +106,7 @@ inline void ln_norm_proposal::update(double xbeta, double sigma)
 	}
 }
 
-inline vws::real_const_region ln_norm_proposal::supp(
+vws::real_const_region ln_norm_proposal::supp(
 	double z,
 	double lambda,
 	double xbeta,
@@ -157,5 +154,3 @@ inline vws::real_const_region ln_norm_proposal::supp(
 	vws::real_const_region out(0, R_PosInf, w, helper, maxopt, minopt);
 	return out;
 }
-
-#endif

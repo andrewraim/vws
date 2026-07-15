@@ -3,9 +3,7 @@
 #include <vws.h>
 #include <chrono>
 #include "ln-norm-proposal.h"
-#include "mvnorm.h"
-#include "invgamma.h"
-#include "logger.h"
+#include "utils.h"
 
 const double SEC_PER_MICROSEC = 1e-6;
 
@@ -104,7 +102,6 @@ Rcpp::List gibbs_cpp(const arma::vec& z, const arma::vec& lambda,
 	{
 		// Draw [y | rest]
 		if (!fixed["y"]) {
-			// Rprintf("Begin Draw [y | rest]\n");
 			auto st = std::chrono::system_clock::now();
 
 			if (strcmp(inner_method.get_cstring(), "vws-tune") == 0) {
@@ -140,12 +137,10 @@ Rcpp::List gibbs_cpp(const arma::vec& z, const arma::vec& lambda,
 			auto et = std::chrono::system_clock::now();
 			auto td = std::chrono::duration_cast<std::chrono::microseconds>(et - st);
 			elapsed_y += td.count() * SEC_PER_MICROSEC;
-			// Rprintf("End Draw [y | rest]\n");
 		}
 
 		// Draw [beta | rest]
 		if (!fixed["beta"]) {
-			// Rprintf("Begin Draw [beta | rest]\n");
 			auto st = std::chrono::system_clock::now();
 			const arma::mat& Omega = (1 / sigma2) * XtX + (1 / sigma2_beta) * arma::eye(d,d);
 			const arma::vec& mm = arma::solve(Omega, X.t() * arma::log(y) / sigma2);
@@ -154,12 +149,10 @@ Rcpp::List gibbs_cpp(const arma::vec& z, const arma::vec& lambda,
 			auto et = std::chrono::system_clock::now();
 			auto td = std::chrono::duration_cast<std::chrono::microseconds>(et - st);
 			elapsed_beta += td.count() * SEC_PER_MICROSEC;
-			// Rprintf("End Draw [beta | rest]\n");
 		}
 
 		// Draw [sigma2 | rest]
 		if (!fixed["sigma2"]) {
-			// Rprintf("Begin Draw [sigma2 | rest]\n");
 			auto st = std::chrono::system_clock::now();
 			const arma::vec& e = arma::log(y) - Xbeta;
 			double aa = a_sigma + n / 2.0;
@@ -168,7 +161,6 @@ Rcpp::List gibbs_cpp(const arma::vec& z, const arma::vec& lambda,
 			auto et = std::chrono::system_clock::now();
 			auto td = std::chrono::duration_cast<std::chrono::microseconds>(et - st);
 			elapsed_sigma2 += td.count() * SEC_PER_MICROSEC;
-			// Rprintf("Begin Draw [sigma2 | rest]\n");
 		}
 
 		// Save total number of mixture components at this point

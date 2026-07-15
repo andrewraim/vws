@@ -15,27 +15,23 @@ y_true = rlnorm(n, Xbeta_true, sigma_true)
 lambda = rep(0.5, n)
 z = rnorm(n, y_true, lambda)
 
-# ----- Fit the model using self-tuned VWS -----
+# Some setup for both samplers
 fixed = fixed_gibbs()
-init = init_gibbs(n, d, y = y_true)
-inner = control_inner(tol_suff = 0.85, tol_merge = 0.01, tune = 100, , method = "vws-tune")
+init = init_gibbs(n, d)
 prior = prior_gibbs()
+
+# ----- Fit the model using self-tuned VWS -----
+inner = control_inner(tol_suff = 0.85, tol_merge = 0.01, tune = 100,
+	method = "vws-tune")
 control = control_gibbs(R = 3000, burn = 1000, report = 100, inner = inner,
 	save_latent = 1:10)
-
 gibbs_out = gibbs(z, lambda, X, init, prior, control, fixed)
 print(gibbs_out)
 
 # ----- Fit the model using basic VWS without tuning -----
-# Note this takes longer
-
-fixed = fixed_gibbs(y = FALSE)
-init = init_gibbs(n, d, y = y_true)
 inner = control_inner(tol_suff = 0.85, method = "vws-basic")
-prior = prior_gibbs()
 control = control_gibbs(R = 3000, burn = 1000, report = 100, inner = inner,
 	save_latent = 1:10)
-
 gibbs0_out = gibbs(z, lambda, X, init, prior, control, fixed)
 print(gibbs0_out)
 

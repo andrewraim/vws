@@ -1,5 +1,6 @@
-# Rcpp::sourceCpp("gibbs.cpp")
 source("mvnorm.R")
+sourceCpp("draw-ln-norm.cpp")
+sourceCpp("ln-norm-proposal.cpp")
 
 printf = function (fmt, ...)
 {
