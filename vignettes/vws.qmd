@@ -49,7 +49,7 @@ geometry:
   - top=0.75in
   - bottom=1.00in
 execute:
-  eval: true
+  eval: false
 code-block-bg: "#FAFAFA"
 code-block-border-left: "#B2DEED"
 filters:
@@ -1653,7 +1653,9 @@ ggplot(df) +
 
 # Example: Lognormal-Normal Conditional Distribution {#sec-ln-norm}
 
-Suppose an official statistics agency collects sensitive data from respondents in a survey or census. The agency then seeks to disseminate a tabulation to data users while protecting the privacy of the respondents. The agency can consider adding random noise $\gamma$ to the tabulation $Y$ and releasing $Z = Y + \gamma$. This setting is the basis of a modeling scenario considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025 where the distribution for $\gamma$ has been selected by the agency and the data have been disseminated; the objective in these works is to carry out inference on the unobserved $Y$ given observed $Z = z$. The field of differential privacy studies the design of noise mechanisms (including distributions of $\gamma$ in the present setting) to satisfy mathematical criteria for privacy [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$.
+Suppose an official statistics agency collects sensitive data from respondents in a survey or census. The agency then seeks to disseminate a tabulation to data users while protecting the privacy of the respondents. The agency can consider adding random noise $\gamma$ to the tabulation $Y$ and releasing $Z = Y + \gamma$. This setting is the basis of a modeling scenario considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025 where the distribution for $\gamma$ has been selected by the agency and the data have been disseminated; the objective in these works is to carry out inference on the unobserved $Y$ given observed $Z = z$. The field of differential privacy studies the design of noise mechanisms (including distributions of $\gamma$ in the present setting) to satisfy mathematical criteria for privacy [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census.
+
+Our present motivation is to focus on a specific target that arises in analysis of the released $z$. @sec-ln-norm-within-gibbs considers a data analysis situation with $n$ subjects and a regression underlying $y$. To reduce the amount of computation under repeated use within a Gibbs sampler, we will consider proposals that persist over the MCMC chain and get updated with the current state.
 
 Suppose $Y$ and $\gamma$ are independently distributed with $Y \sim \text{Lognormal}(\mu, \sigma^2)$ and $\gamma \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ is assumed to be known and provided with the noisy data. Such transparency into the noise mechanism is often featured in differential privacy.
 
@@ -1688,6 +1690,7 @@ w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
 \end{math}
 <!-- -->
 from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution whose density $g$ is $\text{N}(z, \lambda^2)$. The conditional $[\vec{y} \mid \sigma^2, \vec{\mu}, \vec{z}]$ in \eqref{eqn:ln-norm} would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:ln-norm}.
+
 
 Before proceeding, let us fix the following values for the parameters.
 
@@ -2525,7 +2528,9 @@ data.frame(x = xseq, h = out3$hx) %>%
 
 # Persistent Proposals in R {#sec-persistent}
 
-The samplers developed in previous sections each expose a function in R which can be used to generate samples. A proposal is constructed each time the function is called which exists only for the duration of the call. For purposes of efficiency and otherwise, it may be desirable to have a persistent proposal that can be gradually refined and reused. This section demonstrates several Rcpp mechanisms to enable this workflow: first using external pointers then using using modules. The latter is based on object-oriented programming but recommended over the former as it is less susceptible to crashing R. We demonstrate the two approaches by revisiting the example from @sec-vmf-const-default. For more information on external pointers and modules, refer to the vignette "Exposing C++ functions and classes with Rcpp modules" in the `Rcpp` package [@Rcpp] and section "External pointers and weak references" of the guide "Writing R Extensions" [@WritingRExtensions].
+The samplers developed in previous sections each expose a function in R which can be used to generate samples. A new proposal is constructed each time the function is called and it exists only for the duration of the call. For the sake of efficiency or to maintain the state within a proposal, it may be desirable to have a persistent proposal that can be gradually refined and reused. This section demonstrates several Rcpp mechanisms to enable this workflow: first using external pointers then using using modules. The latter is based on object-oriented programming but is recommended over the former as it is less susceptible to crashing R. We demonstrate the two approaches by revisiting the example from @sec-vmf-const-default. For more information on external pointers and modules, refer to the vignette "Exposing C++ functions and classes with Rcpp modules" in the `Rcpp` package [@Rcpp] and section "External pointers and weak references" of the guide "Writing R Extensions" [@WritingRExtensions].
+
+The approach from @sec-persistent-module using Rcpp modules is used in @sec-ln-norm-within-gibbs to generate from an unfamiliar conditional within a Gibbs sampler.
 
 ## External Pointers {#sec-persistent-xptr}
 
@@ -2746,6 +2751,20 @@ The lambdas `w`, `df`, `pf`, and `qf` in this code capture `kappa` and `d` by va
 :::
 
 \clearpage
+
+# Example: Lognormal-Normal within Gibbs {#sec-ln-norm-within-gibbs}
+
+@saevws-2025
+
+@sec-ln-norm
+
+
+\begin{align*}
+&z_i \sim \text{N}(y_i, \lambda_i^2), \\
+&y_i \sim \text{Lognormal}(\vec{x}_i^\top \vec{\beta}, \sigma^2), \\
+&\vec{\beta} \sim \text{N}(\vec{0}, \sigma_\beta^2 \vec{I}), \\
+&\sigma^2 \sim \text{IG}(a_\sigma, b_\sigma).
+\end{align*}
 
 # References
 

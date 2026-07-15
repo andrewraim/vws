@@ -11,18 +11,18 @@ class ln_norm_proposal : public vws::fmm_proposal<double, vws::real_const_region
 {
 public:
 	ln_norm_proposal(
-		double y,
+		double z,
 		double lambda,
 		double xbeta,
 		double sigma)
-	: vws::fmm_proposal<double, vws::real_const_region>(supp(y, lambda, xbeta, sigma))
+	: vws::fmm_proposal<double, vws::real_const_region>(supp(z, lambda, xbeta, sigma))
 	{
 	}
 
 	void update(double xbeta, double sigma);
 
 private:
-	vws::real_const_region supp(double y, double lambda, double xbeta, double sigma);
+	vws::real_const_region supp(double z, double lambda, double xbeta, double sigma);
 };
 
 /*
@@ -31,8 +31,8 @@ private:
 
 inline void ln_norm_proposal::update(double xbeta, double sigma)
 {
-	const vws::dfdb& w = [=](double mu, bool log = true) -> double {
-		double out = (mu > 0) ? R::dlnorm(mu, xbeta, sigma, true) : R_NegInf;
+	const vws::dfdb& w = [=](double y, bool log = true) -> double {
+		double out = (y > 0) ? R::dlnorm(y, xbeta, sigma, true) : R_NegInf;
 		return log ? out : std::exp(out);
 	};
 
@@ -69,26 +69,26 @@ inline void ln_norm_proposal::update(double xbeta, double sigma)
 }
 
 inline vws::real_const_region ln_norm_proposal::supp(
-	double y,
+	double z,
 	double lambda,
 	double xbeta,
 	double sigma)
 {
-	const vws::dfdb& w = [=](double mu, bool log = true) -> double {
-		double out = (mu > 0) ? R::dlnorm(mu, xbeta, sigma, true) : R_NegInf;
+	const vws::dfdb& w = [=](double y, bool log = true) -> double {
+		double out = (y > 0) ? R::dlnorm(y, xbeta, sigma, true) : R_NegInf;
 		return log ? out : std::exp(out);
 	};
 
-	const fntl::density& df = [=](double mu, bool log = false) {
-		return R::dnorm(mu, y, lambda, log);
+	const fntl::density& df = [=](double y, bool log = false) {
+		return R::dnorm(y, z, lambda, log);
 	};
 
 	const fntl::cdf& pf = [=](double q, bool lower = true, bool log = false) {
-		return R::pnorm(q, y, lambda, lower, log);
+		return R::pnorm(q, z, lambda, lower, log);
 	};
 
 	const fntl::quantile& qf = [=](double p, bool lower = true, bool log = false) {
-		return R::qnorm(p, y, lambda, lower, log);
+		return R::qnorm(p, z, lambda, lower, log);
 	};
 
 	// We have a simple closed-form max and min that we can use here.
