@@ -2765,7 +2765,7 @@ This section presents an example using the self-tuning method in @sec-self-tune.
 &\sigma^2 \sim \text{IG}(a_\sigma, b_\sigma),
 \end{align*}
 <!-- -->
-where $\sigma_\beta^2$, $a_\sigma$, and $b_\sigma$ are hyperparameters which are assumed to be known. The variances $\lambda_i^2$ are also assumed to be known and provided with the data. Denote $\vec{\Lambda} = \text{Diag}(\lambda_1^2, \ldots, \lambda_n^2)$. To obtain a Gibbs sampler, the joint distribution of all random variables is
+where $\sigma_\beta^2$, $a_\sigma$, and $b_\sigma$ are hyperparameters which are assumed to be known. The variances $\lambda_i^2$ are also assumed to be known and provided with the data. Denote $\vec{\Lambda} = \text{Diag}(\lambda_1^2, \ldots, \lambda_n^2)$ and $\log \vec{y} = (\log y_1, \ldots, \log y_n)$. To obtain a Gibbs sampler, the joint distribution of all random variables is
 <!-- -->
 \begin{align}
 f(\vec{z}, \vec{y}, \vec{\beta}, \sigma^2) =
@@ -2791,7 +2791,7 @@ f_\text{LN}(y_i \mid \vec{x}_i^\top \vec{\beta}, \sigma^2).
 
 Steps 1 and 2 can make use of well-known normal and inverse gamma variate generation methods. For step 3, we will make use of VWS with a constant majorizer and minorizer as in @sec-privacy-const-custom; the maximizer and minimizer can be readily obtained without numerical optimization. 
 
-@sec-privacy-within-gibbs-r presents a version of the code where the Gibbs sampler is written in R and Rcpp modules are used to interact with VWS proposals written in C++, as in @sec-persistent-module. @sec-privacy-within-gibbs-cpp presents an alternative version of the code where the Gibbs sampler is written in C++ rather than R. The latter is substantially faster because it avoids the overhead of repeated calls between R and C++; however, it requires a much more C++ programming and cannot be debugged as readily as the first version.
+@sec-privacy-within-gibbs-r presents a version of the code where the Gibbs sampler is written in R and Rcpp modules are used to interact with VWS proposals written in C++, as in @sec-persistent-module. @sec-privacy-within-gibbs-cpp presents an alternative version of the code where the Gibbs sampler is written in C++ rather than R. The latter is substantially faster because it avoids the overhead of repeated calls between R and C++; however, it requires a much more C++ programming and cannot be debugged as readily as the first version in R.
 
 ## Gibbs Sampler in R {#sec-privacy-within-gibbs-r}
 
