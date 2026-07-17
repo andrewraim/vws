@@ -1,9 +1,6 @@
 // [[Rcpp::depends(vws, fntl)]]
 #include "vws.h"
 
-/*
-* Define a subclass of fmm_proposal that we can expose to R via Modules
-*/
 class ln_norm_proposal : public vws::fmm_proposal<double, vws::real_const_region>
 {
 public:
@@ -18,7 +15,7 @@ public:
 
 	void update(double xbeta, double sigma);
 
-	vws::rejection_result<double> draw(unsigned int max_rejects);
+	vws::rejection_result<double> draw(unsigned int max_rejects) const;
 
 	vws::rejection_result<double> draw_tune(double tol_suff, double tol_merge,
 		unsigned int max_rejects);
@@ -46,7 +43,7 @@ RCPP_MODULE(vws_module) {
 */
 
 vws::rejection_result<double>
-ln_norm_proposal::draw(unsigned int max_rejects)
+ln_norm_proposal::draw(unsigned int max_rejects) const
 {
     vws::rejection_args args;
     args.max_rejects = max_rejects;
