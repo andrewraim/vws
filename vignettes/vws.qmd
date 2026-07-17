@@ -684,7 +684,7 @@ Rcpp::NumericVector refine(
 
 The two `refine` functions depend on methods `is_bifurcatable` and `bifurcate` of the region. These determine how to bifurcate the region and if it is eligible to be bifurcated. For a subclass `MyRegion` of `Region` whose elements are of type `T`, these methods should be defined as follows.
 
-```
+```{cpp}
 bool is_bifurcatable() const;                             // <1>
 std::pair<MyRegion,MyRegion> bifurcate() const;           // <2>
 std::pair<MyRegion,MyRegion> bifurcate(const T& x) const; // <3>
@@ -757,9 +757,9 @@ virtual std::vector<T> r(unsigned int n) const = 0;            // <2>
 virtual bool s(const T& x) const = 0;                          // <3>
 virtual double w(const T& x, bool log = true) const = 0;       // <4>
 virtual double w_major(const T& x, bool log = true) const = 0; // <5>
-virtual bool is_bifurcatable() const = 0;                      // <6>
-virtual double xi_upper(bool log = true) const = 0;            // <7>
-virtual double xi_lower(bool log = true) const = 0;            // <8>
+virtual double xi_upper(bool log = true) const = 0;            // <6>
+virtual double xi_lower(bool log = true) const = 0;            // <7>
+virtual double bound(bool log) const                           // <8>
 virtual std::string description() const = 0;                   // <9>
 ```
 
@@ -768,9 +768,9 @@ virtual std::string description() const = 0;                   // <9>
 3. Indicator of whether $x$ is in the support for $g_j$ specific to this region.
 4. The weight function $w$.
 5. Majorized weight function $\overline{w}_j$ for this region.
-6. Indicator of whether this region is bifurcatable into two smaller regions. This is used when refining a proposal; see @sec-vws-knots. One reason that a region should not be bifurcated is when one of the resulting regions will not have any points in the support. **TBD: delete?**
-7. The quantity $\overline{\xi}_j$ for this region.
-8. The quantity $\underline{\xi}_j$ for this region.
+6. The quantity $\overline{\xi}_j$ for this region.
+7. The quantity $\underline{\xi}_j$ for this region.
+8. Compute the portion $(\overline{\xi}_j - \underline{\xi}_j) / \overline{\xi}_j$ of bound \eqn{eqn:bound} specific to this region.
 9. A string that describes this region; used for printing to the console.
 
 The argument `log = true` in the methods above requests values to be returned on the log-scale.
@@ -783,19 +783,24 @@ class MyRegion : public Region<type>
 public:
     std::pair<MyRegion,MyRegion> bifurcate() const;              // <1>
     std::pair<MyRegion,MyRegion> bifurcate(const type& x) const; // <2>
-    MyRegion singleton(const type& x) const;                     // <3>
-    bool operator<(const MyRegion& x) const;                     // <4>
-    bool operator==(const MyRegion& x) const;                    // <5>
-    const MyRegion& operator=(const MyRegion& x);                // <6>
+    virtual bool is_bifurcatable() const;                        // <3>
+    virtual bool is_mergeable(const region<T>& x) const;         // <4>
+
+    MyRegion singleton(const type& x) const;                     // <5>
+    bool operator<(const MyRegion& x) const;                     // <6>
+    bool operator==(const MyRegion& x) const;                    // <7>
+    const MyRegion& operator=(const MyRegion& x);                // <8>
 ...
 };
 ```
 1. Bifurcate the current region into two regions; this version takes no arguments and should include logic to decide where to make the split.
 2. Bifurcate the current region into two regions; the argument `x` is used as the location to make the split.
-3. Return a region on the singleton set $(x,x]$ with the information in the current object.
-4. Comparison operator; used to order regions of this type.
-5. Equality operator; check whether two regions of this type are equal.
-6. Assignment operator; assign information from `x` to this object.
+3. Indicator of whether region can be bifurcated.
+4. Indicator of whether region can be merged with region `x`. For example, if regions are intervals, this condition may be equivalent to testing whether the current regions is adjacent to `x`.
+5. Return a region on the singleton set $(x,x]$ with the information in the current object.
+6. Comparison operator; used to order regions of this type.
+7. Equality operator; check whether two regions of this type are equal.
+8. Assignment operator; assign information from `x` to this object.
 
 ## Region on Real-Valued Support with Constant Majorizer {#sec-api-realconstregion}
 
@@ -883,13 +888,26 @@ The `is_mergeable` function is an indicator of whether the current region can be
 bool is_mergeable(const real_const_region& x) const;
 ```
 
-Several `set` functions are provided to update the weight function and univariate helper which represents the base distribution. The third form updates both in the same call, to eliminate some overhead of calling both the first two forms.
+Several functions are provided to update an existing region.
 
 ```{cpp}
-void set(const dfdb& w)
-void set(const univariate_helper& helper)
-void set(const dfdb& w, const univariate_helper& helper)
+void set_w(const dfdb& w);                         // <1>
+void set_helper(const univariate_helper& helper);  // <2>
+void set_maxopt(const optimizer& maxopt);          // <3>
+void set_minopt(const optimizer& minopt);          // <4>
+void set_mid(const vws::midpoint& mid);            // <5>
+void init();                                       // <6>
 ```
+1. Update the weight function.
+2. Update the univariate helper which represents the base distribution.
+3. Update the maximization routine for the majorizer.
+4. Update the minimization routine for the minorizer.
+5. Update the function to find the midpoint.
+6. Recompute saved quantities such as the majorization and minorization constants needed for rejection sampling.
+
+::: {.callout-important title="init"}
+The `init` method should be applied after using the set methods above, before the region is used in any other capacity. More than one set method may be used before calling `init`.
+:::
 
 The `singleton` method returns a singleton interval $(x, x]$, using the current object's member data.
 

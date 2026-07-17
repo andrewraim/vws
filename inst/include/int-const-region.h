@@ -150,4 +150,3 @@ inline const int_const_region& int_const_region::operator=(const int_const_regio
 }
 
 #endif
-

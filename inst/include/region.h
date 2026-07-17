@@ -50,29 +50,11 @@ public:
 	virtual double w_major(const T& x, bool log = true) const = 0;
 
 	/*
-	* Indicator of whether this region is bifurcatable.
-	*/
-	// virtual bool is_bifurcatable() const = 0;
-
-	/*
-	* Indicator of whether this region is mergeable with argument x.
-	*/
-	// virtual bool is_mergeable(const region<T>& x) const = 0;
-
-	/*
 	* The quantity $\overline{\xi}_j$ for this region.
 	* - `log`: if `true`, return value on the log-scale. Otherwise, return it
 	*   on the original scale.
 	*/
 	virtual double xi_upper(bool log = true) const = 0;
-
-	virtual double bound(bool log) const
-	{
-		double lxu = xi_upper(true);
-		double lxl = xi_lower(true);
-		double out = log_sub2_exp(lxu, lxl) - lxu;
-		return log ? out : exp(out);
-	}
 
 	/*
 	* The quantity $\underline{\xi}_j$ for this region.
@@ -80,6 +62,20 @@ public:
 	*   on the original scale.
 	*/
 	virtual double xi_lower(bool log = true) const = 0;
+
+	/*
+	 * The portion $(\overline{\xi}_j - \underline{\xi}_j) / \overline{\xi}_j$
+	 * of the rejection bound specific to this region.
+ 	 * - `log`: if `true`, return value on the log-scale. Otherwise, return it
+	 *   on the original scale.
+	 */
+	virtual double bound(bool log) const
+	{
+		double lxu = xi_upper(true);
+		double lxl = xi_lower(true);
+		double out = log_sub2_exp(lxu, lxl) - lxu;
+		return log ? out : exp(out);
+	}
 
 	/*
 	* A string that describes this region.

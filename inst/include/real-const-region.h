@@ -77,7 +77,12 @@ public:
 	std::string description() const;
 
 	/*
-	* TBD
+	* Set methods for updating existing regions.
+	*
+	* Important: the init function should be called after using set methods and
+	* before the region is used for sampling. The init method recomputes saved
+	* quantities such as the majorization and minorization constants needed for
+	* rejection sampling.
 	*/
 	void set_w(const dfdb& w);
 	void set_helper(const univariate_helper& helper);

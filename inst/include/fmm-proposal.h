@@ -36,7 +36,7 @@ public:
 	fmm_proposal(const R& region);
 
 	/*
-	* TBD: copy constructor
+	* Copy constructor.
 	*/
 	fmm_proposal(const fmm_proposal& p);
 
@@ -160,7 +160,9 @@ public:
 	void print(unsigned int n = 5) const;
 
 	/*
-	* TBD
+	* Merge regions with indices i and j (zero-based). Return the new bound for
+	* the rejection probability. If `log = true`, the bound is returned on the
+	* log-scale.
 	*/
 	double merge(unsigned int i, unsigned int j, bool log = true);
 
@@ -218,8 +220,7 @@ template <class T, class R>
 double fmm_proposal<T,R>::merge(unsigned int i, unsigned int j, bool log)
 {
 	// Merge the regions with the given indices. Remove the two individual
-	// regions and add the merged region. Call recache to update internal data
-	// structures.
+	// regions and add the merged region.
 	auto itr1 = std::next(_regions.begin(), i);
 	auto itr2 = std::next(_regions.begin(), j);
 	const R& merged = itr1->merge(*itr2);
@@ -338,9 +339,6 @@ Rcpp::NumericVector fmm_proposal<T,R>::refine(unsigned int N, double tol,
 		const R& r = *std::next(_regions.begin(), jdx);
 
 		// Split the target region and make another proposal with it.
-		//
-		// TBD: we may not need to recache each time through the loop.
-		// Perhaps we can insert into the end and zero out the removed entries?
 		const std::pair<R,R>& bif_out = r.bifurcate();
 		auto itr = _regions.find(r);
 		_regions.erase(itr);
