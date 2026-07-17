@@ -2752,11 +2752,9 @@ The lambdas `w`, `df`, `pf`, and `qf` in this code capture `kappa` and `d` by va
 \remarkqed
 :::
 
-\clearpage
-
 # Example: Privacy Protected Data and use within Gibbs {#sec-privacy-within-gibbs}
 
-This section presents an example using the self-tuned VWS method described in @sec-self-tune. Consider again the setting from @sec-privacy and suppose there are $n$ tabulated observations. Let $y_i$ be the $i$th sensitive tabulation, $z_i$ be its privacy-protected counterpart, and $\vec{x}_i \in \mathbb{R}^d$ be a non-sensitive covariate which is associated with $y_i$. Consider the following hierarchical Bayesian model:
+This section presents an example using the self-tuned VWS method described in @sec-self-tune. Consider again the setting from @sec-privacy and suppose there are $n$ tabulations. Let $y_i$ be the $i$th sensitive tabulation, $z_i$ be its privacy-protected counterpart, and $\vec{x}_i \in \mathbb{R}^d$ be a non-sensitive covariate which is associated with $y_i$. Consider the following hierarchical Bayesian model:
 <!-- -->
 \begin{align*}
 &z_i \sim \text{N}(y_i, \lambda_i^2), \\
@@ -2773,7 +2771,7 @@ f_\text{N}(\vec{z} \mid \vec{y}, \vec{\Lambda}) \cdot
 f_\text{N}(\log \vec{y} \mid \vec{X} \vec{\beta}, \sigma^2 \vec{I}) \cdot
 f_\text{N}(\vec{\beta} \mid \vec{0}, \sigma_\beta^2\vec{I}) \cdot
 f_\text{IG}(\sigma^2 \mid a_\sigma, b_\sigma) \cdot
-\left\{ \prod_{i=1}^n \frac{1}{y_i} \right\},
+\prod_{i=1}^n \frac{1}{y_i},
 \label{eqn:privacy-joint}
 \end{align}
 <!-- -->
@@ -2790,15 +2788,13 @@ f(y_i \mid \vec{\beta}, \sigma^2, \vec{z}) \propto f_\text{N}(z_i \mid y_i, \lam
 f_\text{LN}(y_i \mid \vec{x}_i^\top \vec{\beta}, \sigma^2).
 \end{math}
 
-Steps 1 and 2 can make use of well-known normal and inverse gamma variate generation methods. For step 3, we will make use of VWS with a constant majorizer and minorizer as in @sec-privacy-const-custom; the maximizer and minimizer can be readily obtained without numerical optimization. 
+Steps 1 and 2 can make use of well-known normal and inverse gamma variate generation methods. For step 3, we will use VWS with a constant majorizer and minorizer as in @sec-privacy-const-custom; these can be readily obtained without numerical optimization. 
 
-@sec-privacy-within-gibbs-r presents a version of the code where the Gibbs sampler is written in R and Rcpp modules are used to interact with VWS proposals written in C++, as in @sec-persistent-module. @sec-privacy-within-gibbs-cpp presents an alternative version of the code where the Gibbs sampler is written in C++ rather than R. The latter is substantially faster because it avoids the overhead of repeated calls between R and C++; however, it requires more C++ programming and cannot be debugged as readily as the first version in R.
-
-Several timings are mentioned; they were measured in Windows using a laptop with a Intel Core i7-1185G7 3.0GHz CPU with four CPU cores.
+@sec-privacy-within-gibbs-r presents a version of the code where the Gibbs sampler is written in R with Rcpp modules to interact with VWS proposals written in C++, as in @sec-persistent-module. @sec-privacy-within-gibbs-cpp presents an alternative version where the Gibbs sampler is written in C++ rather than R. The latter is substantially faster because it avoids the overhead of repeated calls between R and C++; however, it requires more C++ programming and cannot be debugged as readily as the former. Several timings are mentioned; they were measured in Windows using a laptop with a Intel Core i7-1185G7 3.0GHz CPU with four CPU cores.
 
 ## Gibbs Sampler in R {#sec-privacy-within-gibbs-r}
 
-This version of the code implements the Gibbs sampler in R and utilizes VWS via Rcpp. We implement two versions of VWS. One version uses persistent proposals that are updated with current parameters from the Gibbs sampler and make use of the self-tuning method from @sec-self-tune. The second version uses the more basic method of constructing new proposals each time they are needed. Code for this example is given in the folder `examples/privacy-gibbs/v1-R`.
+This version of the code implements the Gibbs sampler in R and utilizes VWS via Rcpp. We consider two implementations of VWS. One uses persistent proposals that are updated with current parameters from the Gibbs sampler. It makes use of the self-tuning method from @sec-self-tune. The other implementation uses the more basic method of constructing new proposals each time they are needed. Code for this example is given in the folder `examples/privacy-gibbs/v1-R`.
 
 The function `draw_ln_norm` in `draw-ln-norm.cpp` draws a variate from the conditional distribution $[y_i \mid \text{---}]$ using the current values of $z_i$, $\lambda_i$, $x_i^\top \vec{\beta}$, and $\sigma^2$. The remaining arguments are specific to VWS: `tol` and `N` correspond to the tolerance and maximum number of knots in Algorithm \ref{alg:refine}; `max_rejects` is the maximum number of rejections permitted in the `rejection` function. The return value is a list with the contents of a `rejection_result<double>`.
 
@@ -2814,7 +2810,7 @@ Rcpp::List draw_ln_norm(
 );
 ```
 
-The class `ln_norm_proposal` in `ln-norm-proposal.cpp` is a proposal which defines a few additional functions that are exposed to R and contains state that will persist between R calls. The interface of the class is as follows.
+The class `ln_norm_proposal` in `ln-norm-proposal.cpp` is an `fmm_proposal` which defines a few additional functions that are exposed to R and contains state that should persist between calls from R. The interface of the class is as follows.
 
 ```{cpp}
 class ln_norm_proposal : public vws::fmm_proposal<double, vws::real_const_region>
@@ -2873,7 +2869,6 @@ inner = control_inner(tol_suff = 0.85, method = "vws-basic")
 control = control_gibbs(R = 3000, burn = 1000, report = 100, inner = inner,
 	save_latent = 1:10)
 gibbs_out = gibbs(z, lambda, X, control = control)
-print(gibbs_out)
 ```
 
 Note that the setting `tol_suff = 0.85` ensures that each proposal is tuned to have a rejection rate no larger than 85% before rejection sampling. The following snippet illustrates self-tuned VWS using `ln_norm_proposal` (`method = "vws-tune"`).
@@ -2886,7 +2881,9 @@ control = control_gibbs(R = 3000, burn = 1000, report = 100, inner = inner,
 gibbs_out = gibbs(z, lambda, X, control = control)
 ```
 
-The settings in `control_inner` select the self-tuning method with adjustments made during the first 100 iterations of the MCMC, using $\epsilon_1 = 0.85$ and $\epsilon_2 = 0.01$. See the file `driver.R` script for details. A particular run of each yielded elapsed times of 30 seconds for `vws-basic` and 25 seconds for `vws-tune`. Much of the gain in efficiency due to self-tuning is negated by the overhead from frequent calls from R to C++. This could be mitigated by passing the list of $n$ proposals to C++ at each iteration of the Gibbs sampler. The following section avoids the overhead further by implementing the Gibbs sampler in C++.
+The settings in `control_inner` select the self-tuning method with adjustments made during the first 100 iterations of the MCMC, using $\epsilon_1 = 0.85$ and $\epsilon_2 = 0.01$. See the file `driver.R` script for details.
+
+A particular run of both methods yielded elapsed times of 30 seconds for `vws-basic` and 25 seconds for `vws-tune`. Much of the gain in efficiency due to self-tuning is negated by the overhead from frequent calls between R and C++. This could be mitigated by passing the list of $n$ proposals to C++ at each iteration of the Gibbs sampler. The following section avoids the overhead further by implementing the Gibbs sampler in C++.
 
 ## Gibbs Sampler in C++ {#sec-privacy-within-gibbs-cpp}
 
@@ -2913,11 +2910,13 @@ public:
 1. Constructor from initial values of $z_i$, $\lambda_i$, $x_i^\top \vec{\beta}$, and $\sigma^2$.
 2. Update the proposal with values of $x_i^\top \vec{\beta}$ and $\sigma^2$. These values change at each iteration of the Gibbs sampler. The proposal must update its representation of weight function $w$ with these values and recompute the majorizer and minorizer to be an envelope for rejection sampling.
 
-This version of `ln_norm_proposal` is simpler than the one in @sec-privacy-within-gibbs-r. When programming in C++, we can directly make use of the fact that it inherits from `fmm_proposal` as a base class. For example, we can call the `fmm_proposal::r` method to generate draws and pass `ln_norm_proposal` objects to the `rejection` or `rejection_tune` functions.
+This version of `ln_norm_proposal` is simpler than the one in @sec-privacy-within-gibbs-r. When programming in C++, we can directly make use of the fact that it inherits from `fmm_proposal` as a base class. For example, we can call the `fmm_proposal::r` method to generate draws. We can also pass objects of class `ln_norm_proposal` to the `rejection` or `rejection_tune` functions.
 
 The files `gibbs.cpp` and `gibbs.R` contain code for the Gibbs sampler and helper functions: `gibbs.cpp` implements the Gibbs sampler itself in C++ using RcppArmadillo [@RcppArmadillo] for matrix algebra, while helper functions are implemented in R in `gibbs.R`. Refer to the Roxygen comments in `gibbs.R` for details.
 
 The script `driver.R` generates a dataset from the model and runs two versions of the Gibbs sampler, `"vws-basic"` and `"vws-tune"`, as in @sec-privacy-within-gibbs-r. Here, a run of each yielded elapsed times of 28 seconds for `vws-basic` and 6.2 seconds for `vws-tune`. This represents a reduction of $(28 - 6.2) / 28 = 77.9\%$ compared to $(30 - 25) / 30 = 16.67\%$ seen in @sec-privacy-within-gibbs-r.
+
+\clearpage
 
 # References
 
