@@ -92,7 +92,7 @@ public:
 	void init();
 
 	/*
-	* TBD
+	* Return a region that consists of this one merged with argument `x`.
 	*/
 	real_const_region merge(const real_const_region& x) const;
 
