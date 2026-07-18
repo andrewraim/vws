@@ -342,13 +342,13 @@ gibbs = function(z, lambda, X,
 				idx = seq(s, rep)
 				rejects = sum(rejects_hist[idx])
 				tunes = sum(tunes_hist[idx])
-				vws::logger("[%d] avg-N: %0.4f  tunes: %d  rejects: %d\n", rep,
+				logger("[%d] avg-N: %0.4f  tunes: %d  rejects: %d\n", rep,
 					avg_comps, tunes, rejects)
 			} else {
 				s = ifelse(rep > report, rep - report, 1)
 				idx = seq(s, rep)
 				rejects = sum(rejects_hist[idx])
-				vws::logger("[%d] rejects: %d\n", rep, rejects)
+				logger("[%d] rejects: %d\n", rep, rejects)
 			}
 		}
 	}

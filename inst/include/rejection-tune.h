@@ -8,7 +8,7 @@
 #include "result.h"
 #include "typedefs.h"
 #include "rejection-args.h"
-#include "logger.h"
+#include "fntl.h"
 
 /*
 * Helper function to merge (at most) one pair of regions in a proposal h.
@@ -140,7 +140,7 @@ rejection_tune(
 			// Report progress after `report` candidates
 			unsigned int N_accepts = i + accept;
 			if ((N_rejects + N_accepts) % report == 0) {
-				logger("%d candidates  %d accepts  %d rejects  %d regions\n",
+				fntl::logger("%d candidates  %d accepts  %d rejects  %d regions\n",
 					N_accepts + N_rejects, N_accepts, N_rejects, N_regions);
 			}
 

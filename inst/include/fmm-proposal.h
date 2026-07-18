@@ -6,7 +6,7 @@
 #include "log-sum-exp.h"
 #include "categ.h"
 #include "region.h"
-#include "logger.h"
+#include "fntl.h"
 #include <iterator>
 
 namespace vws {
@@ -348,7 +348,7 @@ Rcpp::NumericVector fmm_proposal<T,R>::refine(unsigned int N, double tol,
 		lbdd_hist.push_back(bound(true));
 
 		if (j % report == 0 && report < fntl::uint_max) {
-			logger("After %d steps log Pr{rejection} <= %g\n", j,
+			fntl::logger("After %d steps log Pr{rejection} <= %g\n", j,
 				lbdd_hist[j+1]);
 		}
 	}

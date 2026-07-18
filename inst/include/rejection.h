@@ -8,7 +8,7 @@
 #include "result.h"
 #include "typedefs.h"
 #include "rejection-args.h"
-#include "logger.h"
+#include "fntl.h"
 
 namespace vws {
 
@@ -69,7 +69,7 @@ rejection(const fmm_proposal<T,R>& h, unsigned int n, const rejection_args& args
 			// Report progress after `report` candidates
 			unsigned int N_accepts = i + accept;
 			if ((N_rejects + N_accepts) % report == 0) {
-				logger("%d candidates  %d accepts  %d rejects\n",
+				fntl::logger("%d candidates  %d accepts  %d rejects\n",
 					N_accepts + N_rejects, N_accepts,
 					N_rejects);
 			}

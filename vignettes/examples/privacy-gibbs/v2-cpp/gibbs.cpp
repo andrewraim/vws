@@ -209,12 +209,12 @@ Rcpp::List gibbs_cpp(const arma::vec& z, const arma::vec& lambda,
 				unsigned int s = (rep >= report) ? rep - report : 0;
 				unsigned int rejects = arma::sum(rejects_hist(arma::span(s, rep)));
 				unsigned int tunes = arma::sum(tunes_hist(arma::span(s, rep)));
-				vws::logger("[%d] avg-N: %0.4f  tunes: %d  rejects: %d\n",
+				fntl::logger("[%d] avg-N: %0.4f  tunes: %d  rejects: %d\n",
 					rep + 1, avg_comps, tunes, rejects);
 			} else {
 				unsigned int s = (rep >= report) ? rep - report : 0;
 				unsigned int rejects = arma::sum(rejects_hist(arma::span(s, rep)));
-				vws::logger("[%d] rejects: %d\n", rep + 1, rejects);
+				fntl::logger("[%d] rejects: %d\n", rep + 1, rejects);
 			}
 		}
 

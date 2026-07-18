@@ -1370,16 +1370,6 @@ Rcpp::NumericVector r_gumbel(
 7. Logical; if `true`, probability arguments and return values are on the log-scale
 8. Logical; if `true`, probability arguments and return values are lower tailed in the form $P[X \leq x]$; otherwise, $P[X > x]$.
 
-## Formatted Print with Timestamp {#sec-api-logger}
-
-The following function writes a formatted message to the console preceded by a timestamp. 
-
-```{cpp}
-void logger(const char* fmt, ...);
-```
-
-The arguments should be used in the same way as the C function `printf`. The timestamp is formatted as `"%Y-%m-%d %H:%M:%S"` and is in the local time zone of the machine. A dash `"-"` is displayed between the timestamp and the formatted message with one space of padding on each side. A reference for formatted messages can be found in R under the manual page `?sprintf`; for dates and times, see the manual page `?strptime`.
-
 # Example: Von Mises Fisher Distribution {#sec-vmf}
 
 Let us consider generating from the von Mises Fisher (VMF) distribution as in @vws-2026. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$ [e.g., @Mardia-Jupp-1999]. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
