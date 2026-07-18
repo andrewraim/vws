@@ -6,7 +6,7 @@
 #include "fntl.h"
 #include "mgf-truncnorm.h"
 
-class LinearVWSRegion : public vws::Region<double>
+class linear_vws_region : public vws::region<double>
 {
 private:
 	double _a;
@@ -21,8 +21,8 @@ private:
 	double _beta1_max;
 
 public:
-	LinearVWSRegion(double a, double b, double z, double mu, double sigma, double lambda);
-	LinearVWSRegion(double a, double z, double mu, double sigma, double lambda);
+	linear_vws_region(double a, double b, double z, double mu, double sigma, double lambda);
+	linear_vws_region(double a, double z, double mu, double sigma, double lambda);
 	void init();
 
 	double midpoint() const;
@@ -56,12 +56,12 @@ public:
 	double xi_upper(bool log = true) const;
 	double xi_lower(bool log = true) const;
 
-	std::pair<LinearVWSRegion,LinearVWSRegion> bifurcate() const {
+	std::pair<linear_vws_region,linear_vws_region> bifurcate() const {
 		double x = midpoint();
 		return bifurcate(x);
 	}
 
-	std::pair<LinearVWSRegion,LinearVWSRegion> bifurcate(const double& x) const;
+	std::pair<linear_vws_region,linear_vws_region> bifurcate(const double& x) const;
 
 	std::string description() const {
 		char buf[32];
@@ -69,26 +69,26 @@ public:
 		return buf;
 	}
 
-	LinearVWSRegion singleton(const double& x) const {
-		return LinearVWSRegion(x, _z, _mu, _sigma, _lambda);
+	linear_vws_region singleton(const double& x) const {
+		return linear_vws_region(x, _z, _mu, _sigma, _lambda);
 	}
 
 	void print() const {
 		printf("Linear VWS Region (%g, %g]\n", _a, _b);
 	}
 
-	bool operator<(const LinearVWSRegion& x) const {
+	bool operator<(const linear_vws_region& x) const {
 		return _a < x._a;
 	}
 
-	bool operator==(const LinearVWSRegion& x) const {
+	bool operator==(const linear_vws_region& x) const {
 		return _a == x._a && _b == x._b;
 	}
 
-	const LinearVWSRegion& operator=(const LinearVWSRegion& x);
+	const linear_vws_region& operator=(const linear_vws_region& x);
 };
 
-inline double LinearVWSRegion::w(const double& x, bool log) const
+inline double linear_vws_region::w(const double& x, bool log) const
 {
 	double out = R_NegInf;
 	if (x > 0) {
@@ -97,12 +97,12 @@ inline double LinearVWSRegion::w(const double& x, bool log) const
 	return log ? out : std::exp(out);
 }
 
-inline double LinearVWSRegion::d_base(const double& x, bool log) const
+inline double linear_vws_region::d_base(const double& x, bool log) const
 {
 	return R::dnorm(x, _z, _lambda, log);
 }
 
-inline double LinearVWSRegion::d(const double& x, bool log) const
+inline double linear_vws_region::d(const double& x, bool log) const
 {
 	double lambda2 = _lambda * _lambda;
 	double mean = _z + lambda2 * _beta1_max;
@@ -118,7 +118,7 @@ inline double LinearVWSRegion::d(const double& x, bool log) const
 	return fntl::d_trunc(x, _a, _b, f, F, log);
 }
 
-inline std::vector<double> LinearVWSRegion::r(unsigned int n) const
+inline std::vector<double> linear_vws_region::r(unsigned int n) const
 {
 	double lambda2 = _lambda * _lambda;
 	double mean = _z + lambda2 * _beta1_max;
@@ -137,13 +137,13 @@ inline std::vector<double> LinearVWSRegion::r(unsigned int n) const
 	return Rcpp::as<std::vector<double>>(out);
 }
 
-inline double LinearVWSRegion::w_major(const double& x, bool log) const
+inline double linear_vws_region::w_major(const double& x, bool log) const
 {
 	double out = s(x) ? _beta0_max + _beta1_max * x : R_NegInf;
 	return log ? out : std::exp(out);
 }
 
-inline double LinearVWSRegion::midpoint() const
+inline double linear_vws_region::midpoint() const
 {
 	double out;
 
@@ -163,7 +163,7 @@ inline double LinearVWSRegion::midpoint() const
 	return out;
 }
 
-inline LinearVWSRegion::LinearVWSRegion(double a, double b, double z,
+inline linear_vws_region::linear_vws_region(double a, double b, double z,
 	double mu, double sigma, double lambda)
 : _a(a), _b(b), _z(z), _mu(mu), _sigma(sigma), _lambda(lambda),
 	_beta0_min(), _beta1_min(), _beta0_max(), _beta1_max()
@@ -171,7 +171,7 @@ inline LinearVWSRegion::LinearVWSRegion(double a, double b, double z,
 	init();
 }
 
-inline LinearVWSRegion::LinearVWSRegion(double a, double z,
+inline linear_vws_region::linear_vws_region(double a, double z,
 	double mu, double sigma, double lambda)
 : _a(a), _b(a), _z(z), _mu(mu), _sigma(sigma), _lambda(lambda),
 	_beta0_min(), _beta1_min(), _beta0_max(), _beta1_max()
@@ -183,7 +183,7 @@ inline LinearVWSRegion::LinearVWSRegion(double a, double z,
 	_beta1_max = 0;
 }
 
-inline void LinearVWSRegion::init()
+inline void linear_vws_region::init()
 {
 	double sigma2 = _sigma * _sigma;
 
@@ -271,7 +271,7 @@ inline void LinearVWSRegion::init()
 	}
 }
 
-inline double LinearVWSRegion::xi_upper(bool log) const
+inline double linear_vws_region::xi_upper(bool log) const
 {
 	// Compute the probability using both lower or upper tail CDF. If one is
 	// unstable, it will return a -Inf and the other will be used.
@@ -290,7 +290,7 @@ inline double LinearVWSRegion::xi_upper(bool log) const
 	return log ? out : exp(out);
 }
 
-inline double LinearVWSRegion::xi_lower(bool log) const
+inline double linear_vws_region::xi_lower(bool log) const
 {
 	// Compute the probability using both lower or upper tail CDF. If one is
 	// unstable, it will return a -Inf and the other will be used.
@@ -312,7 +312,7 @@ inline double LinearVWSRegion::xi_lower(bool log) const
 	// lower to be equal to upper.
 	double log_xi_upper = xi_upper(true);
 	if (log_xi_upper < out) {
-		Rprintf("LinearVWSRegion: log_xi_lower (%g) <- log_xi_upper (%g)\n",
+		Rprintf("linear_vws_region: log_xi_lower (%g) <- log_xi_upper (%g)\n",
 			out, log_xi_upper);
 		out = log_xi_upper;
 	}
@@ -320,14 +320,14 @@ inline double LinearVWSRegion::xi_lower(bool log) const
 	return log ? out : exp(out);
 }
 
-inline std::pair<LinearVWSRegion,LinearVWSRegion> LinearVWSRegion::bifurcate(const double& x) const
+inline std::pair<linear_vws_region,linear_vws_region> linear_vws_region::bifurcate(const double& x) const
 {
-	LinearVWSRegion r1(_a, x, _z, _mu, _sigma, _lambda);
-	LinearVWSRegion r2(x, _b, _z, _mu, _sigma, _lambda);
+	linear_vws_region r1(_a, x, _z, _mu, _sigma, _lambda);
+	linear_vws_region r2(x, _b, _z, _mu, _sigma, _lambda);
 	return std::make_pair(r1, r2);
 }
 
-inline const LinearVWSRegion& LinearVWSRegion::operator=(const LinearVWSRegion& x)
+inline const linear_vws_region& linear_vws_region::operator=(const linear_vws_region& x)
 {
 	_a = x._a;
 	_b = x._b;
@@ -343,3 +343,4 @@ inline const LinearVWSRegion& LinearVWSRegion::operator=(const LinearVWSRegion& 
 }
 
 #endif
+

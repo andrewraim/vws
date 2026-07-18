@@ -14,3 +14,5 @@
 ^vignettes/Makefile$
 ^vignettes/vws.*\.pdf$
 ^vignettes/software-design$
+^\.positai$
+^\.claude$

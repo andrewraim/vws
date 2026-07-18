@@ -30,9 +30,9 @@ Rcpp::List r_ln_norm_v1(unsigned int n, double z, double mu,
 		return R::qnorm(p, z, lambda, lower, log);
 	};
 
-	vws::UnivariateHelper helper(df, pf, qf);
-	vws::RealConstRegion supp(0, R_PosInf, w, helper);
-	vws::FMMProposal<double, vws::RealConstRegion> h(supp);
+	vws::univariate_helper helper(df, pf, qf);
+	vws::real_const_region supp(0, R_PosInf, w, helper);
+	vws::fmm_proposal<double, vws::real_const_region> h(supp);
 
 	auto lbdd = h.refine(N - 1, tol);
 	const vws::rejection_result<double>& out = vws::rejection(h, n, args);

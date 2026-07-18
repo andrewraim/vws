@@ -51,12 +51,25 @@ struct optimize_hybrid_result {
 *  - `draws`: vector of draws.
 *  - `rejects`: vector of rejection counts. The $i$th element contains the
 *    count of rejections to obtain the $i$th element of `draws`.
+*  - `tunes`: vector of counts of tuning adjustments. The $i$th element
+*    contains the number of adjustments to obtain the $i$th element of `draws`.
+*  - `regions`: vector of counts of proposal regions. The $i$th element
+*    contains the number of regions in the proposal when the $i$th element of
+*    `draws` was accepted.
+*  - `log_bounds`: vector of bounds for rejection probabilities. The $i$th
+*    element contains the bound when the $i$th element of `draws` was accepted.
+*
+*  The fields `tunes`, `regions`, and `log_bounds` are specific to
+*  `rejection_tune`. These vectors are left empty in `rejection`.
 */
 template <typename T>
 struct rejection_result
 {
 	std::vector<T> draws;
 	std::vector<unsigned int> rejects;
+	std::vector<unsigned int> tunes;
+	std::vector<unsigned int> regions;
+	std::vector<double> log_bounds;
 
 	operator SEXP() const;
 };
@@ -87,7 +100,10 @@ inline rejection_result<T>::operator SEXP() const
 {
 	return Rcpp::List::create(
 		Rcpp::Named("draws") = draws,
-		Rcpp::Named("rejects") = rejects
+		Rcpp::Named("rejects") = rejects,
+		Rcpp::Named("tunes") = tunes,
+		Rcpp::Named("regions") = regions,
+		Rcpp::Named("log_bounds") = log_bounds
 	);
 }
 

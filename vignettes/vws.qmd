@@ -4,7 +4,7 @@ author: Andrew M. Raim
 format:
   pdf:
     mathspec: true
-    fontsize: 12pt
+    fontsize: 11pt
     indent: false
     toc: true
     number-sections: true
@@ -27,7 +27,7 @@ classoption: abstract
 abstract: |
   The `vws` package facilitates the vertical weighted strips (VWS) method in R.
   VWS is an approach to construct proposals for rejection sampling which is
-  explored in @VWS2025. The `vws` package provides an API to program the
+  explored in @vws-2026. The `vws` package provides an API to program the
   necessary components for the proposal and carry out rejection sampling. The
   API of the `vws` package is in C++ and makes use of templates and
   object-oriented programming; a working understanding of these techniques is
@@ -67,7 +67,7 @@ set.seed(1234)
 
 # Disclaimer and Acknowledgments {.unnumbered}
 
-This document is released to inform interested parties of ongoing research and to encourage discussion of work in progress. Any views expressed are those of the authors and not those of the U.S. Census Bureau.
+This document is released to inform interested parties of ongoing research and to encourage discussion of work in progress. Any views expressed are those of the author and not of the U.S. Census Bureau.
 
 The author is grateful to Drs. James Livsey and Kyle Irimata for discussions that motivated development of this package. Thanks to Drs. Kyle Irimata and Tommy Wright for their reviews of this manuscript.
 
@@ -75,11 +75,11 @@ Although there are no guarantees of correctness of the `vws` package, reasonable
 
 # Introduction
 
-The `vws` package facilitates vertical weighted strips (VWS) sampling [@VWS2025]. VWS is an approach to construct proposal distributions for rejection sampling. Here, the target density is regarded as a weighted density - the product of a nonnegative weight function and a base density. The weight function is majorized by a given function (which bounds it above) to yield an envelope which is recombined with the base density to form a proposal distribution. If it is convenient to generate draws from the proposal, and the distance between the original and majorized weight function is not too large, such a proposal can be effectively used in rejection sampling. When the weight function is majorized in a piecewise manner over the support, the resulting proposal can be regarded as a finite mixture. Such a mixture can be refined to reduce the rejection probability to an acceptable tolerance. The term "vertical weighted strips" emphasizes that it is an extension of a method referred to as "vertical strips" in Section 3.6.1 of @MartinoLuengoMiguez2018, and was previously described in Chapter VIII of @Devroye1986. Partitioning in VWS is done to facilitate majorization of the weight function rather than to majorize the entire target density as in vertical strips.
+The `vws` package facilitates vertical weighted strips (VWS) sampling [@vws-2026]. VWS is an approach to construct proposal distributions for rejection sampling. Here, the target density is regarded as a weighted density - the product of a nonnegative weight function and a base density. The weight function is majorized by a given function (which bounds it above) to yield an envelope which is recombined with the base density to form a proposal distribution. If it is convenient to generate draws from the proposal, and the distance between the original and majorized weight function is not too large, such a proposal can be effectively used in rejection sampling. When the weight function is majorized in a piecewise manner over the support, the resulting proposal can be regarded as a finite mixture. Such a mixture can be refined to reduce the rejection probability to an acceptable tolerance. The term "vertical weighted strips" emphasizes that it is an extension of a method referred to as "vertical strips" in Section 3.6.1 of @Martino-Luengo-Miguez-2018, and was previously described in Chapter VIII of @Devroye-1986. Partitioning in VWS is done to facilitate majorization of the weight function rather than to majorize the entire target density as in vertical strips.
 
-The `vws` package provides tools to construct and utilize VWS proposal distributions. Variate generation functions are constructed in C++ and may be exposed for use in R via the Rcpp package [@Eddelbuettel2103]. C++ is taken as the primary programming language because of its efficiency as a compiled language and its formal approach to object-orientation and template programming. The `fntl` package [@fntl] is integral to `vws` usage; it provides a simplified C++ interface to useful routines in the R application programming interface (API) which is described in @RExtensions, as well as other useful numerical routines, where functions are supplied as lambdas. The `vws` package has been designed primarily to generate from univariate distributions (both continuous and discrete). It is also possible to construct proposals for multivariate distributions using the VWS approach; the `vws` package is intended to support code development for such settings as well.
+The `vws` package provides tools to construct and utilize VWS proposal distributions. Variate generation functions are constructed in C++ and may be exposed for use in R via the Rcpp package [@Eddelbuettel-2103]. C++ is taken as the primary programming language because of its efficiency as a compiled language and its formal approach to object-orientation and template programming. The `fntl` package [@fntl] is integral to `vws` usage; it provides a simplified C++ interface to useful routines in the R application programming interface (API) which is described in @R-ext, as well as other useful numerical routines, where functions are supplied as lambdas. The `vws` package has been designed primarily to generate from univariate distributions (both continuous and discrete). It is also possible to construct proposals for multivariate distributions using the VWS approach; the `vws` package is intended to support code development for such settings as well.
 
-This vignette presents an overview of the package, its API, and several examples of working samplers. An `R>` prompt is shown in some code displays to emphasize interaction via the console. Examples make liberal use of the `tidyverse` [@Tidyverse2019], especially `ggplot2` to plot and `dplyr` to manipulate tables. Some of the lengthier codes for the examples are not presented in this document; however, complete codes are provided with the package. They can be accessed in the `doc/examples` folder of the installed `vws` package. This path can be accessed in R with the following command.
+This vignette presents an overview of the package, its API, and several examples of working samplers. An `R>` prompt is shown in some code displays to emphasize interaction via the console. Examples make liberal use of the `tidyverse` [@Tidyverse-2019], especially `ggplot2` to plot and `dplyr` to manipulate tables. Some of the lengthier codes for the examples are not presented in this document; however, complete codes are provided with the package. They can be accessed in the `doc/examples` folder of the installed `vws` package. This path can be accessed in R with the following command.
 
 ```{r}
 #| eval: false
@@ -87,7 +87,7 @@ This vignette presents an overview of the package, its API, and several examples
 file.path(path.package("vws"), "doc", "examples")
 ```
 
-The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @VWS2025. @sec-ln-norm develops samplers in a disclosure avoidance setting relevant to the U.S. Census Bureau, which is considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002]. In some applications, it may be desirable to have a persistent VWS proposal object that can gradually be refined and reused to draw samples; @sec-persistent presents several mechanisms to achieve this.
+The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @vws-2026. @sec-privacy develops samplers in a disclosure avoidance setting relevant to the U.S. Census Bureau, which is considered by @Direct-Sampling-DAS-2021, @DP-Simulation-2022, and @DAS-Methods-2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye-2002]. In some applications, it may be desirable to have a persistent VWS proposal object in R that can gradually be refined and reused to draw samples; @sec-persistent presents several mechanisms to achieve this. @sec-privacy-within-gibbs extends the example from @sec-privacy to a Gibbs sampler and demonstrates VWS-within-Gibbs. The first variant uses persistent proposals, as in @sec-persistent, with a Gibbs sampler written in R and VWS implemented in C++. The second variant implements both in C++.
 
 ::: {.callout-tip title="Quick Start"}
 Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described with the highest amount of detail.
@@ -167,7 +167,7 @@ Note that the majorizer and minorizer need not have the same functional form. Wh
 \label{eqn:bound}
 \end{align}
 <!-- -->
-The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to $\rho_+$. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling; if it is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in the remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear. @sec-vws-knots reviews several knot selection methods.
+The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to $\rho_+$. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling; if it is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @vws-2026 and will be reviewed in the remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear. @sec-vws-knots reviews several knot selection methods.
 
 ## Constant Majorizer {#sec-vws-constant}
 
@@ -263,7 +263,7 @@ Suppose $w$ is log-convex on $\mathscr{D}_j$. A majorizer and minorizer are obta
 \remarkqed
 :::
 
-The following remark describes one possible choice for the expansion point $c$ which will be utilized in the examples in Sections [-@sec-vmf-linear], [-@sec-ln-norm-linear], and [-@sec-bessel-linear].
+The following remark describes one possible choice for the expansion point $c$ which will be utilized in the examples in Sections [-@sec-vmf-linear], [-@sec-privacy-linear], and [-@sec-bessel-linear].
 
 ::: {#rem-expansion-point}
 For a majorizer in the log-concave case, we choose $c$ to minimize the L1 distance between unnormalized densities,
@@ -336,7 +336,7 @@ where
 
 ## Knot Selection {#sec-vws-knots}
 
-After selecting a decomposition of the target into weighted form \eqref{eqn:weighted-target}, the choice of knots is important to obtain an efficient proposal distribution. One option is to specify knots at known locations. For example, we can consider using evenly spaced points on a given interval within the support; however, this may not take into account important features of the target and add wasteful components to the finite mixture which do not contribute much to the quality of the approximation. An automated option that often achieves much better results is the rule of thumb proposed by @VWS2025, shown here as Algorithm \ref{alg:refine}. This method sequentially refines an initial partition of the support consisting of one or more regions. At each step a region is selected and bifurcated at its midpoint. The selection is probabilistic, with probabilities proportional to $\rho_1, \ldots, \rho_N$. A deterministic ("greedy") variation can be considered by instead always selecting a region $\ell$ whose value $\rho_\ell$ is largest.
+After selecting a decomposition of the target into weighted form \eqref{eqn:weighted-target}, the choice of knots is important to obtain an efficient proposal distribution. One option is to specify knots at known locations. For example, we can consider using evenly spaced points on a given interval within the support; however, this may not take into account important features of the target and add wasteful components to the finite mixture which do not contribute much to the quality of the approximation. An automated option that often achieves much better results is the rule of thumb proposed by @vws-2026, shown here as Algorithm \ref{alg:refine}. This method sequentially refines an initial partition of the support consisting of one or more regions. At each step a region is selected and bifurcated at its midpoint. The selection is probabilistic, with probabilities proportional to $\rho_1, \ldots, \rho_N$. A deterministic ("greedy") variation can be considered by instead always selecting a region $\ell$ whose value $\rho_\ell$ is largest.
 
 Bifurcation at a midpoint is mostly straightforward in univariate settings where the support is a subset of the real line. However, there may be multiple ways to characterize this operation when the support is multivariate, perhaps with more structure like a multinomial sample space. The necessary operations can be coded for such settings within the `vws` framework; however, this document does not consider such cases in detail.
 
@@ -359,48 +359,111 @@ Bifurcation at a midpoint is mostly straightforward in univariate settings where
 \end{algorithmic}
 \end{algorithm}
 
+## Self Tuning {#sec-self-tune}
+
+VWS may be used to generate from conditional distributions in a Gibbs sampler; however, the amount of computation can become arduous if new proposals are constructed in each step of the Gibbs sampler. In this setting, @saevws-2025 consider a persistent VWS proposal that is gradually tuned to track a particular conditional distribution in the Gibbs sampler as the MCMC chain evolves. If the target does not change much as the chain approaches the posterior distribution, the amount of tuning needed to maintain a rejection rate which is sufficiently below 1 should also diminish.
+
+Two types of updates are considered when a proposed draw $x$ is rejected. If bound $\rho_+$ is larger than a given threshold $\epsilon_1 \in (0,1)$, $x$ is used to refine the current set of regions. The region $\mathscr{D}_j$ containing $x$ is selected for bifurcation, but the specific way that $x$ is used to bifurcate depends on the nature of the regions. For example, there are a number of possibilities to bifurcate a multivariate region at point $x$. On the other hand, if $\rho_+$ is smaller than $\epsilon_1$, we check for regions with small contributions of $\rho_\ell$ to $\rho_+$. In particular regions with $\rho_\ell$ smaller than a given threshold $\epsilon_2 \in (0,1)$ are coarsened (i.e., merged with a neighboring region) if doing so does not increase $\rho_+$ beyond $\epsilon_1$. This process is repeated until no further merges can be completed. 
+
+To emphasize, $\epsilon_1$ represents a threshold for a sufficiently small rejection rate while $\epsilon_2$ represents a tolerance for low contribution. In practice, a sufficiently small rejection rate need not be far from 1 if rejections are computationally inexpensive; a value such as $\epsilon_1 = 0.85$ may yield good performance.
+
+Algorithm \ref{alg:self-tune} represents rejection sampling with self-tuning described in the manner above. It makes use of Algorithm \ref{alg:merge} to handle merges. Note that only certain pairs of regions are eligible to be merged, and eligibility is determined by the particular type of region. For example, the regions implemented in @sec-api-realconstregion and @sec-api-intconstregion are based on univariate intervals; here, only adjacent intervals having a common endpoint can be merged together. There may be multiple merges possible with a given partition, where different choices on line  \ref{step:merge} of Algorithm \ref{alg:merge} yield different configurations after the loop on line \ref{step:merge-loop} of Algorithm \ref{alg:self-tune}. For the sake of simplicity, the current implementation performs the first eligible merge in each traversal of the loop rather than considering all possible merges.
+
+@saevws-2025 present several examples where tuning can effectively be limited to an initial part of the MCMC chain and discontinued for the remainder of the chain. Here the number of rejections per iteration can be monitored to ensure that proposals remain adequate as the chain progresses. If rejections increase dramatically after tuning is halted, a longer tuning period may be needed.
+
+\begin{algorithm}
+\caption{Generate a single draw from $f$ using self-tuned VWS with tolerances $\epsilon_1$ and $\epsilon_2$.}
+\label{alg:self-tune}
+\begin{algorithmic}[1]
+\Function{RejectionTune}{$h$ by reference, $\epsilon_1$, $\epsilon_2$}
+\Do
+\State Draw $u$ from $\text{Uniform}(0,1)$ and $x$ from $h$.
+\State $\text{Accept} \gets \ind\{ u \leq f_0(x) / h_0(x) \}$ where $f_0(x) = w(x) g(x)$ and $h_0(x) = \overline{w}(x) g(x)$.
+\State Let $\rho_{+}$ be the current value of bound \eqref{eqn:bound}.
+\If{$\text{Accept} = 0$ and $\rho_{+} < \epsilon_1$}
+\Do
+\label{step:merge-loop}
+\State $\text{Repeat} \leftarrow \text{MergeOnce}(h, \epsilon_1, \epsilon_2)$.
+\doWhile{$\text{Repeat} = 1$}
+\ElsIf{$\text{Accept} = 0$ and $\rho_{+} \geq \epsilon_1$}
+\State Refine $h$ at $x$.
+\EndIf
+\doWhile{$\text{Accept} = 0$}
+\State \Return $x$ and $h$.
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Attempt to merge a single pair of regions in $h$. Return $1$ if a merge was completed and $0$ otherwise.}
+\label{alg:merge}
+\begin{algorithmic}[1]
+\Function{MergeOnce}{$h$ by reference, $\epsilon_1$, $\epsilon_2$}
+\State Let $\mathscr{D}_1, \ldots, \mathscr{D}_N$ be the regions corresponding to current mixture components of $h$.
+\State Let $\rho_{+}$ be the current value of bound \eqref{eqn:bound} and $\rho_1, \ldots, \rho_N$ be contribution of each region.
+\For{$j = 1, \ldots, N$}
+\If{$\rho_j < \epsilon_2$}
+\State Let $\ell$ ($\neq j$) be the index of a region that can be merged with $\mathscr{D}_j$.
+\label{step:merge}
+\State Let $\tilde{h}$ be equal to $h$ with regions $\mathscr{D}_j$ and $\mathscr{D}_\ell$ merged.
+\State Let $\tilde{\rho}_+$ be the bound \eqref{eqn:bound} for $\tilde{h}$.
+\If{$\tilde{\rho}_+ < \epsilon_1$}
+\State Modify $h$ to $\tilde{h}$.
+\State \Return $1$.
+\EndIf
+\EndIf
+\EndFor
+\State \Return $0$.
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
 # Overview of Package {#sec-overview}
 
-The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples.
+The `vws` package aims to support the methodology which was described in the previous section. The present section will describe tools in the package which can be used to formulate a problem, construct a proposal, and generate samples. Some useful preliminaries are also presented.
 
-Use of the `vws` package centers on two classes. The `FMMProposal` class represents a finite mixture of the form \eqref{eqn:fmm-proposal} and encapsulates the operations needed for rejection sampling. The `Region` class represents region $\mathscr{D}_j$ and the operations required for VWS. `Region` itself is an abstract base class which defines an interface needed by the framework. All problem-specific logic is coded within a subclass of `Region`: either by using one of the provided subclasses or by coding a new subclass. The subclasses `RealConstRegion` and `IntConstRegion` provide implementations of the constant majorizer from @sec-vws-constant, for continuous and discrete univariate distributions, respectively. The linear majorizer described in @sec-vws-linear requires more customization than the constant majorizer; here, users should create a subclass of `Region`. An `FMMProposal` object is created from $N \geq 1$ `Region` objects that represent the partition $\mathscr{D}_1, \ldots, \mathscr{D}_N$ of $\Omega$.
+## Design {#sec-overview-design}
 
-The `rejection` function takes an object `h` of class `FMMProposal` and carries out rejection sampling to obtain $n$ draws. The `rejection` function returns a vector of accepted draws along with information about the number of rejections. @fig-software-design displays a diagram of the high-level design just described.
+Use of the `vws` package centers on two classes. The `fmm_proposal` class represents a finite mixture of the form \eqref{eqn:fmm-proposal} and encapsulates the operations needed for rejection sampling. The `Region` class represents region $\mathscr{D}_j$ and the operations required for VWS. `Region` itself is an abstract base class which defines an interface needed by the framework. All problem-specific logic is coded within a subclass of `Region`: either by using one of the provided subclasses or by coding a new subclass. The subclasses `real_const_region` and `int_const_region` provide implementations of the constant majorizer from @sec-vws-constant, for continuous and discrete univariate distributions, respectively. The linear majorizer described in @sec-vws-linear requires more customization than the constant majorizer; here, users should create a subclass of `Region`. An `fmm_proposal` object is created from $N \geq 1$ `Region` objects that represent the partition $\mathscr{D}_1, \ldots, \mathscr{D}_N$ of $\Omega$.
+
+The `rejection` function takes an object `h` of class `fmm_proposal` and carries out rejection sampling to obtain $n$ draws. The `rejection` function returns a vector of accepted draws along with information about the number of rejections. @fig-software-design displays a diagram of the high-level design just described.
 
 ![Design of `vws` package.](software-design.pdf){#fig-software-design}
+
+## Typical Workflow {#sec-overview-workflow}
 
 The following display outlines a typical workflow for VWS rejection sampling in C++. Some of the lines are labeled with numbers; descriptions of these labels are given after the code.
 
 ```{cpp}
-// [[Rcpp::depends(vws, fntl)]]                 // <1>
-#include "vws.h"                                // <2>
+// [[Rcpp::depends(vws, fntl)]]                  // <1>
+#include "vws.h"                                 // <2>
 #include "MyRegion.h"
 
-// [[Rcpp::export]]                             // <3>
+// [[Rcpp::export]]                              // <3>
 Rcpp::List sample(unsigned int n)
 {
-    MyRegion supp( ... );                       // <4>
-    vws::FMMProposal<double, MyRegion> h(supp); // <5>
-    h.refine(N - 1, 0.01);                      // <6>
-    auto out = vws::rejection(h, n);            // <7>
+    MyRegion supp( ... );                        // <4>
+    vws::fmm_proposal<double, MyRegion> h(supp); // <5>
+    h.refine(N - 1, 0.01);                       // <6>
+    auto out = vws::rejection(h, n);             // <7>
 
-    return Rcpp::List::create(                  // <8>
+    return Rcpp::List::create(                   // <8>
         Rcpp::Named("draws") = out.draws,
         Rcpp::Named("rejects") = out.rejects
     );
 }
 ```
 
-1.  This annotation ensures that `vws` and `fntl` packages are linked during compilation. `fntl` is not explicitly used in this example, but it is needed for linking by the `vws` library regardless.
-2.  Include the main header for the `vws` package so that the API is accessible.
-3.  This annotation exports the `sample` function for use in R. This is not needed if the `sample` function will be used only in C++.
-4.  Construct a region of type `MyRegion` which we have presumably defined in `MyRegion.h`. The symbol `...` here is a placeholder for any arguments needed by the constructor.
-5.  Construct an `FMMProposal` based on a single region `supp`. Note that it is a template class that needs two template arguments: the first (`double`) indicates the data type of the distribution and the second (`MyRegion`) indicates the type of region it will contain.
-6.  Refine the proposal using Algorithm \ref{alg:refine} up to $N-1$ times or until tolerance `0.01` is achieved for \eqref{eqn:bound}.
-7.  Carry out rejection sampling with the refined proposal `h`.
-8.  Pack elements of the struct `out` into an `Rcpp::List` and return them to the caller.
+1. This annotation ensures that `vws` and `fntl` packages are linked during compilation. `fntl` is not explicitly used in this example, but it is needed for linking by the `vws` library regardless.
+2. Include the main header for the `vws` package so that the API is accessible.
+3. This annotation exports the `sample` function for use in R. This is not needed if the `sample` function will be used only in C++.
+4. Construct a region of type `MyRegion` which we have presumably defined in `MyRegion.h`. The symbol `...` here is a placeholder for any arguments needed by the constructor.
+5. Construct an `fmm_proposal` based on a single region `supp`. Note that it is a template class that needs two template arguments: the first (`double`) indicates the data type of the distribution and the second (`MyRegion`) indicates the type of region it will contain.
+6. Refine the proposal using Algorithm \ref{alg:refine} up to $N-1$ times or until tolerance `0.01` is achieved for \eqref{eqn:bound}.
+7. Carry out rejection sampling with the refined proposal `h`.
+8. Pack elements of the struct `out` into an `Rcpp::List` and return them to the caller.
 
-Note that the `FMMProposal` class, the `rejection` function, and other elements of the `vws` API are accessed in the `vws` namespace. Details for the API are given in @sec-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual. Suppose the code in the previous display is saved is in a file named `sample.cpp`.
+Note that the `fmm_proposal` class, the `rejection` function, and other elements of the `vws` API are accessed in the `vws` namespace. Details for the API are given in @sec-api. Once the `sample` function is successfully exported as an R function, we may invoke it as usual. Suppose the code in the previous display is saved is in a file named `sample.cpp`.
 
 ```{r}
 #| eval: false
@@ -412,12 +475,11 @@ head(out$rejects)
 ```
 
 ::: {.callout-tip title="Working Examples"}
-A complete VWS example is given in @sec-vmf-const-default; this demonstrates the use of `RealConstRegion` to implement a sampler with a minimal amount of coding. @sec-vmf-const-custom is an improvement which requires more coding; here we provide functions to determine values of the constant majorizer and minorizer analytically. Finally, @sec-vmf-linear demonstrates how to subclass `Region` to implement a linear majorizer, which requires more intricate coding. Subsequent examples are given in @sec-ln-norm and @sec-bessel, but with less explanation.
+A complete VWS example is given in @sec-vmf-const-default; this demonstrates the use of `real_const_region` to implement a sampler with a minimal amount of coding. @sec-vmf-const-custom is an improvement which requires more coding; here we provide functions to determine values of the constant majorizer and minorizer analytically. Finally, @sec-vmf-linear demonstrates how to subclass `Region` to implement a linear majorizer, which requires more intricate coding. Subsequent examples are given in @sec-privacy and @sec-bessel, but with less explanation.
 :::
 
-It is useful to mention several other preliminaries for the `vws` package; see the following remarks.
+## Lambdas {#sec-overview-lambdas}
 
-::: {#rem-lambdas}
 Lambdas in C++ are functions which can be defined within the course of a program, regarded as objects which can be passed to other functions, and capture variables in the environment so that they do not need to be passed as arguments. They should feel very familiar to R programmers who likely use R functions in this way. Here is a snippet with several examples of lambdas.
 
 ```{cpp}
@@ -438,21 +500,20 @@ double out = f1(1, 2);
 The typedef `dfdd` is given as a shorthand for a Standard Template Library (STL) [`function`](https://en.cppreference.com/w/cpp/utility/functional/function.html) which takes two `double` variables as arguments and returns a `double`. An STL `function` can be passed to other functions like any other variable. Function `f1` explicitly states the return type of the lambda using `-> double` while it is omitted in the others to be inferred by the compiler. The variable `z` is *captured* by `f1`, `f2`, and `f3`; in other words, it is "baked in" to the function definition without needing to be passed as an argument. Functions `f1` and `f2` capture `z` by reference while `f3` captures `z` by value, indicated with the syntaxes `[&]` and `[=]` respectively. Function `f4` uses empty square brackets `[]` to indicate that it does not capture any outside variables.
 
 The `fntl` package defines several function typedefs used in the `vws` package, and also provides access to numerical tools such as integration, differentiation, and optimization which take STL `function`s as arguments. \remarkqed
-:::
 
-::: {#rem-logscale}
+## Computations on the Log-Scale {#sec-logscale}
+
 Many of the computations in this vignette and within the `vws` package are carried out on the logarithmic scale. This is to avoid loss of precision when working with very large or small magnitude numbers. Several functions to support log-scale arithmetic are given in @sec-api-logscale. \remarkqed
-:::
 
-::: {#rem-optimization}
-To help automate computation of constant majorizers and minorizers for use with `RealConstRegion` and `IntConstRegion`, the default is to use numerical optimization to find appropriate constants on each region in the partition. The particular optimization method is presented in @sec-api-opt. This can be somewhat of a computational burden; it can sometimes be avoided when there is a closed form solution or other informed way to arrive at maximizing / minimizing constants. The API for `RealConstRegion` and `IntConstRegion` accepts user-specified lambdas to specify alternative methods. \remarkqed
-:::
+## Optimization {#sec-overview-optimization}
+
+To help automate computation of constant majorizers and minorizers for use with `real_const_region` and `int_const_region`, the default is to use numerical optimization to find appropriate constants on each region in the partition. The particular optimization method is presented in @sec-api-opt. This can be somewhat of a computational burden; it can sometimes be avoided when there is a closed form solution or other informed way to arrive at maximizing / minimizing constants. The API for `real_const_region` and `int_const_region` accepts user-specified lambdas to specify alternative methods. \remarkqed
 
 # C++ API {#sec-api}
 
 This section documents functions, classes, and other components in the C++ API. Note that some functions in the C++ API are also exposed as R functions; see the `vws` package manual for these.
 
-## Typedefs {#sec-api-typedefs}
+## Typedefs and Aliases {#sec-api-typedefs}
 
 The following typedef is used to represent functions that take `double` and `bool` arguments and return a `double`. It is used as the type for weight functions in particular, with `x` the argument of the weight function and `log = true` if the result is to be returned on the log-scale.
 
@@ -471,10 +532,10 @@ typedef std::function<double(
 )> optimizer;
 ```
 
-1.  A weight function.
-2.  Lower bound of the interval; may be `R_NegInf`.
-3.  Upper bound of the interval; may be `R_PosInf`.
-4.  Logical; `log = true` specifies that the result should be the optimal value $\log w(x^*)$, given on the log-scale. Otherwise, the result should be the optimal value $w(x^*)$ on the original scale.
+1. A weight function.
+2. Lower bound of the interval; may be `R_NegInf`.
+3. Upper bound of the interval; may be `R_PosInf`.
+4. Logical; `log = true` specifies that the result should be the optimal value $\log w(x^*)$, given on the log-scale. Otherwise, the result should be the optimal value $w(x^*)$ on the original scale.
 
 The following typedef represents a function that computes the midpoint of a given interval. Note that this type name can clash with the `midpoint` function in the STL; therefore, it is referenced using its namespace `vws::midpoint` within the `vws` package.
 
@@ -482,17 +543,31 @@ The following typedef represents a function that computes the midpoint of a give
 typedef std::function<double(double a, double b)> midpoint;
 ```
 
+The initial release of the `vws` package used a "camelcase" convention for class names, which has since changed to lowercase with underscores. The following aliases are defined for backward compatibility.
+
+```{cpp}
+template<class T, class R>
+using FMMProposal = fmm_proposal<T,R>;
+
+template<class T>
+using Region = region<T>;
+
+using RealConstRegion = real_const_region;
+using IntConstRegion = int_const_region;
+using UnivariateHelper = univariate_helper;
+```
+
 ## Finite Mixture Proposal {#sec-api-proposal}
 
-The class `FMMProposal` represents a VWS proposal in the form of \eqref{eqn:fmm-proposal}.
+The class `fmm_proposal` represents a VWS proposal in the form of \eqref{eqn:fmm-proposal}.
 
 ### Class Definition {.unlisted}
 
-`FMMProposal` has two template arguments: `T` is the data type for the underlying distribution (e.g., `T = double` for a real-valued univariate random variable) and `R` is the type of region which the proposal will be based upon.
+`fmm_proposal` has two template arguments: `T` is the data type for the underlying distribution (e.g., `T = double` for a real-valued univariate random variable) and `R` is the type of region which the proposal will be based upon.
 
 ```{cpp}
 template <class T, class R>
-class FMMProposal { ... };
+class fmm_proposal { ... };
 ```
 
 ### Constructor {.unlisted}
@@ -500,13 +575,19 @@ class FMMProposal { ... };
 The primary constructor takes a vector of regions of type `R`. There must be at least one region in the vector. These regions are expected to be a partition of the support $\Omega$.
 
 ```{cpp}
-FMMProposal(const std::vector<R>& regions);
+fmm_proposal(const std::vector<R>& regions)
 ```
 
 A second constructor takes a single region. This is a special case of the previous one which is provided for convenience.
 
 ```{cpp}
-FMMProposal(const R& region);
+fmm_proposal(const R& region)
+```
+
+A copy constructor is also provided.
+
+```{cpp}
+fmm_proposal(const fmm_proposal& p)
 ```
 
 ### Distribution Methods {.unlisted}
@@ -522,11 +603,11 @@ double w_major(const T& x, bool log = true) const;                    // <4>
 double d_target_unnorm(const T& x, bool log = true) const;            // <5>
 ```
 
-1.  Draw $n$ variates of type `T` from the proposal.
-2.  Draw $n$ variates of type `T` from the proposal and retain the indices of the regions used in each draw. The result is an STL pair whose first element is the vector of draws and second element is the vector of indices.
-3.  Evaluate the density $h$ on the given $x$. If `normalize = false`, $h_0(x)$ is computed; otherwise $h(x)$ is computed.
-4.  Evaluate the majorized weight function $\overline{w}(x)$.
-5.  Evaluate the unnormalized target $f_0(x) = w(x) g(x)$.
+1. Draw $n$ variates of type `T` from the proposal.
+2. Draw $n$ variates of type `T` from the proposal and retain the indices of the regions used in each draw. The result is an STL pair whose first element is the vector of draws and second element is the vector of indices.
+3. Evaluate the density $h$ on the given $x$. If `normalize = false`, $h_0(x)$ is computed; otherwise $h(x)$ is computed.
+4. Evaluate the majorized weight function $\overline{w}(x)$.
+5. Evaluate the unnormalized target $f_0(x) = w(x) g(x)$.
 
 For the `log` argument, the value on the log-scale is returned if `true`; otherwise, the value on the original scale is returned.
 
@@ -538,43 +619,36 @@ The following accessors are provided.
 Rcpp::NumericVector xi_upper(bool log = true) const;        // <1>
 Rcpp::NumericVector xi_lower(bool log = true) const;        // <2>
 Rcpp::LogicalVector bifurcatable() const;                   // <3>
-Rcpp::NumericVector pi(bool log = false) const;             // <4>
-Rcpp::NumericVector bound_contrib(bool log = false) const;  // <5>
-double bound(bool log = false) const;                       // <6>
-double nc(bool log = false) const;                          // <7>
-unsigned int size() const;                                  // <8>
+Rcpp::IntegerVector mergeable(unsigned int i) const;        // <4>
+Rcpp::NumericVector pi(bool log = false) const;             // <5>
+Rcpp::NumericVector bound_contrib(bool log = false) const;  // <6>
+double bound(bool log = false) const;                       // <7>
+double nc(bool log = false) const;                          // <8>
+unsigned int size() const;                                  // <9>
 ```
 
 1. Get the constants $\overline{\xi}_1, \ldots, \overline{\xi}_N$.
 2. Get the constants $\underline{\xi}_1, \ldots, \underline{\xi}_N$.
 3. Get a vector of $N$ logical values indicating whether the corresponding regions can be bifurcated. For example, when the support `T` is `int`, a region $(a,b]$ containing one integer should not be bifurcated because one of the two resulting regions will not contain any points of the support.
-4. Get the mixing proportions $\pi_1, \ldots, \pi_N$.
-5. Get the contributions $\rho_1, \ldots, \rho_N$ to bound \eqref{eqn:bound} corresponding to the $N$ regions.
-6. Get the overall rejection bound \eqref{eqn:bound}.
-7. Get the normalizing constant $\psi_N$
-8. Get the number of regions $N$.
+4. Get a vector of zero-based indices corresponding to regions which are mergeable to the region with index `i`. This vector does not include `i` itself and may be empty.
+5. Get the mixing proportions $\pi_1, \ldots, \pi_N$.
+6. Get the contributions $\rho_1, \ldots, \rho_N$ to bound \eqref{eqn:bound} corresponding to the $N$ regions.
+7. Get the overall rejection bound \eqref{eqn:bound}.
+8. Get the normalizing constant $\psi_N$
+9. Get the number of regions $N$.
 
 Methods above with the a `log` argument return values on the log-scale when `log = true`; values are returned on the original scale otherwise.
 
 ### Iterators {.unlisted}
 
-The following methods can be used to get (read-only) iterators to internal data structures. These can be more efficient than the accessors in @sec-api-proposal because they do not make a copy of the data.
+The following methods provide iterators to the set of regions in the proposal: const for read-only access and non-const for read and write access. Using them can be more efficient than the accessors in @sec-api-proposal because they do not make a copy of the data.
 
 ```{cpp}
-std::set<R>::const_iterator regions_begin() const;               // <1>
-std::set<R>::const_iterator regions_end() const;
-Rcpp::NumericVector::const_iterator log_xi_upper_begin() const;  // <2>
-Rcpp::NumericVector::const_iterator log_xi_upper_end() const;
-Rcpp::NumericVector::const_iterator log_xi_lower_begin() const;  // <3>
-Rcpp::NumericVector::const_iterator log_xi_lower_end() const;
-Rcpp::LogicalVector::const_iterator bifurcatable_begin() const;  // <4>
-Rcpp::LogicalVector::const_iterator bifurcatable_end() const;
+std::set<R>::const_iterator begin() const;
+std::set<R>::const_iterator end() const;
+std::set<R>::iterator begin() const;
+std::set<R>::iterator end() const;
 ```
-
-1.  The start and end of the set of regions (of template type `R`) in the proposal.
-2.  The start and end of the vector $(\overline{\xi}_1, \ldots, \overline{\xi}_N)$.
-3.  The start and end of the vector $(\underline{\xi}_1, \ldots, \underline{\xi}_N)$.
-4.  The start and end of the vector of indicators for whether regions are bifurcatable.
 
 ### Refining the Proposal {.unlisted}
 
@@ -584,13 +658,13 @@ Two functions are provided to refine the proposal from $\mathscr{D}_1, \ldots, \
 Rcpp::NumericVector refine(
 	const std::vector<T>& knots, // <1>
 	bool log = true              // <2>
-);
+)
 ```
 
-1.  A vector of knots.
-2.  If `log = true` return bound values on the log-scale.
+1. A vector of knots.
+2. If `log = true` return bound values on the log-scale.
 
-The second variant uses the rule of thumb for sequential knot selection from @VWS2025. Refining will halt when \eqref{eqn:bound} reduces below `tol`; which is possible when `tol` is positive; otherwise, refining halts after `N` steps.
+The second variant uses the rule of thumb for sequential knot selection from @vws-2026. Refining will halt when \eqref{eqn:bound} reduces below `tol`; which is possible when `tol` is positive; otherwise, refining halts after `N` steps.
 
 ```{cpp}
 Rcpp::NumericVector refine(
@@ -599,21 +673,49 @@ Rcpp::NumericVector refine(
 	bool greedy = false,                   // <3>
 	unsigned int report = fntl::uint_max,  // <4>
 	bool log = true                        // <5>
-);
+)
 ```
 
-1.  Maximum number of refinements to make.
-2.  Tolerance for \eqref{eqn:bound}; refinement will halt if $\rho_+$ reaches this.
-3.  If `greedy = true`, the region with the largest $\rho_\ell$ is always selected for partitioning; otherwise, regions are selected with probabilities proportional to $\rho_1, \ldots, \rho_N$.
-4.  If `log = true` return bound values $\rho_+^{(0)}, \ldots, \rho_+^{(N)}$ on the log-scale.
-5.  The period at which progress is reported to the console. E.g., use `period = 2` to report progress every two selections.
+1. Maximum number of refinements to make.
+2. Tolerance for \eqref{eqn:bound}; refinement will halt if $\rho_+$ reaches this.
+3. If `greedy = true`, the region with the largest $\rho_\ell$ is always selected for partitioning; otherwise, regions are selected with probabilities proportional to $\rho_1, \ldots, \rho_N$.
+4. If `log = true` return bound values $\rho_+^{(0)}, \ldots, \rho_+^{(N)}$ on the log-scale.
+5. The period at which progress is reported to the console. E.g., use `period = 2` to report progress every two selections.
+
+The two `refine` functions depend on methods `is_bifurcatable` and `bifurcate` of the region. These determine how to bifurcate the region and if it is eligible to be bifurcated. For a subclass `MyRegion` of `Region` whose elements are of type `T`, these methods should be defined as follows.
+
+```{cpp}
+bool is_bifurcatable() const;                             // <1>
+std::pair<MyRegion,MyRegion> bifurcate() const;           // <2>
+std::pair<MyRegion,MyRegion> bifurcate(const T& x) const; // <3>
+```
+1. Indicator of whether the current region can be bifurcated.
+2. Bifurcate the current region, but without specifying a point of reference as an argument.
+3. Bifurcate the current region using `x` as a point of reference.
 
 The `seq` function is provided as a convenience to generate equally-spaced knots for univariate real-valued intervals.
 
 ```{cpp}
 std::vector<double> seq(double lo, double hi, unsigned int N,
-	bool endpoints = false);
+	bool endpoints = false)
 ```
+
+### Coarsening the Proposal {.unlisted}
+
+The `merge` function merges the pair of regions with indices `i` and `j` so that number of regions $N$ in the proposal is reduced by one. The return value is the updated value of bound \eqref{eqn:bound} after merging; this value is returned on the log-scale if argument `log = true`.
+
+```{cpp}
+double merge(unsigned int i, unsigned int j, bool log = true)
+```
+
+The `merge` function depends on methods `is_mergeable` and `merge` of the region. These determine how to merge two regions and whether they are eligible to merged. For a subclass `MyRegion` of `Region`, these methods should be defined as follows.
+
+```
+bool is_mergeable(const MyRegion& x) const; // <1>
+MyRegion merge(const MyRegion& x) const;    // <2>
+```
+1. Indicator of whether the region in argument `x` can be merged with this region.
+2. Construct a region by merging the region in argument `x` with this region.
 
 ### Summary Methods {.unlisted}
 
@@ -624,8 +726,8 @@ Rcpp::DataFrame summary() const;       // <1>
 void print(unsigned int n = 5) const;  // <2>
 ```
 
-1.  Get a data frame with the summary.
-2.  Print summary to the console.
+1. Get a data frame with the summary.
+2. Print summary to the console.
 
 | Column | Description |
 |-----|-----|
@@ -634,7 +736,7 @@ void print(unsigned int n = 5) const;  // <2>
 `log_xi_lower` | $\log \underline{\xi}_j$
 `log_volume` | $\log \rho_j$
 
-: Data frame returned by summary method of `FMMProposal`. {#tbl-summary tbl-colwidths="\[30,70\]"}
+: Data frame returned by summary method of `fmm_proposal`. {#tbl-summary tbl-colwidths="\[30,70\]"}
 
 ## Region Base Class {#sec-api-region}
 
@@ -655,21 +757,21 @@ virtual std::vector<T> r(unsigned int n) const = 0;            // <2>
 virtual bool s(const T& x) const = 0;                          // <3>
 virtual double w(const T& x, bool log = true) const = 0;       // <4>
 virtual double w_major(const T& x, bool log = true) const = 0; // <5>
-virtual bool is_bifurcatable() const = 0;                      // <6>
-virtual double xi_upper(bool log = true) const = 0;            // <7>
-virtual double xi_lower(bool log = true) const = 0;            // <8>
+virtual double xi_upper(bool log = true) const = 0;            // <6>
+virtual double xi_lower(bool log = true) const = 0;            // <7>
+virtual double bound(bool log) const                           // <8>
 virtual std::string description() const = 0;                   // <9>
 ```
 
-1.  Evaluate the density function $g$ of the base distribution.
-2.  Generate a vector of $n$ draws from $g_j$ specific to this region.
-3.  Indicator of whether $x$ is in the support for $g_j$ specific to this region.
-4.  The weight function $w$.
-5.  Majorized weight function $\overline{w}_j$ for this region.
-6.  Indicator of whether this region is bifurcatable into two smaller regions. This is used when refining a proposal; see @sec-vws-knots. One reason that a region should not be bifurcated is when one of the resulting regions will not have any points in the support.
-7.  The quantity $\overline{\xi}_j$ for this region.
-8.  The quantity $\underline{\xi}_j$ for this region.
-9.  A string that describes this region; used for printing to the console.
+1. Evaluate the density function $g$ of the base distribution.
+2. Generate a vector of $n$ draws from $g_j$ specific to this region.
+3. Indicator of whether $x$ is in the support for $g_j$ specific to this region.
+4. The weight function $w$.
+5. Majorized weight function $\overline{w}_j$ for this region.
+6. The quantity $\overline{\xi}_j$ for this region.
+7. The quantity $\underline{\xi}_j$ for this region.
+8. Compute the portion $(\overline{\xi}_j - \underline{\xi}_j) / \overline{\xi}_j$ of bound \eqref{eqn:bound} specific to this region.
+9. A string that describes this region; used for printing to the console.
 
 The argument `log = true` in the methods above requests values to be returned on the log-scale.
 
@@ -681,47 +783,52 @@ class MyRegion : public Region<type>
 public:
     std::pair<MyRegion,MyRegion> bifurcate() const;              // <1>
     std::pair<MyRegion,MyRegion> bifurcate(const type& x) const; // <2>
-    MyRegion singleton(const type& x) const;                     // <3>
-    bool operator<(const MyRegion& x) const;                     // <4>
-    bool operator==(const MyRegion& x) const;                    // <5>
-    const MyRegion& operator=(const MyRegion& x);                // <6>
+    virtual bool is_bifurcatable() const;                        // <3>
+    virtual bool is_mergeable(const region<T>& x) const;         // <4>
+
+    MyRegion singleton(const type& x) const;                     // <5>
+    bool operator<(const MyRegion& x) const;                     // <6>
+    bool operator==(const MyRegion& x) const;                    // <7>
+    const MyRegion& operator=(const MyRegion& x);                // <8>
 ...
 };
 ```
 1. Bifurcate the current region into two regions; this version takes no arguments and should include logic to decide where to make the split.
 2. Bifurcate the current region into two regions; the argument `x` is used as the location to make the split.
-3. Return a region on the singleton set $(x,x]$ with the information in the current object.
-4. Comparison operator; used to order regions of this type.
-5. Equality operator; check whether two regions of this type are equal.
-6. Assignment operator; assign information from `x` to this object.
+3. Indicator of whether region can be bifurcated.
+4. Indicator of whether region can be merged with region `x`. For example, if regions are intervals, this condition may be equivalent to testing whether the current regions is adjacent to `x`.
+5. Return a region on the singleton set $(x,x]$ with the information in the current object.
+6. Comparison operator; used to order regions of this type.
+7. Equality operator; check whether two regions of this type are equal.
+8. Assignment operator; assign information from `x` to this object.
 
 ## Region on Real-Valued Support with Constant Majorizer {#sec-api-realconstregion}
 
-`RealConstRegion` is a subclass of `Region`, defined in @sec-api-region, specifically for univariate problems with continuous support where $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. It assumes a constant minorizer $\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$. The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical optimization by default; however, user-supplied methods can be supplied to identify these values when it is possible.
+`real_const_region` is a subclass of `Region`, defined in @sec-api-region, specifically for univariate problems with continuous support where $\overline{w}(x) = \sum_{j=1}^N \overline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\overline{w}_1, \ldots, \overline{w}_N$. It assumes a constant minorizer $\underline{w}(x) = \sum_{j=1}^N \underline{w}_j \ind\{x \in \mathscr{D}_j\}$ is constructed from constants $\underline{w}_1, \ldots, \underline{w}_N$. The $\overline{w}_j$ and $\underline{w}_j$ are obtained using numerical optimization by default; however, user-supplied methods can be supplied to identify these values when it is possible.
 
 ### Constructors {.unlisted #sec-api-realconstregion-constructors}
 
-`RealConstRegion` has the following constructors. The first creates a region based on the interval $(a,b]$; the second creates a region based on the singleton set $\{a\}$, which is intended primarily for internal use.
+`real_const_region` has the following constructors. The first creates a region based on the interval $(a,b]$; the second creates a region based on the singleton set $\{a\}$, which is intended primarily for internal use.
 
 ```{cpp}
-RealConstRegion(
+real_const_region(
 	double a,                                 // <1>
 	double b,                                 // <2>
 	const dfdb& w,                            // <3>
-	const UnivariateHelper& helper,           // <4>
+	const univariate_helper& helper,          // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
-);
+)
 
-RealConstRegion(
+real_const_region(
 	double a,                                 // <1>
 	const dfdb& w,                            // <3>
-	const UnivariateHelper& helper            // <4>
+	const univariate_helper& helper,          // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
-);
+)
 ```
 
 1. Lower limit of interval that defines this region.
@@ -753,14 +860,14 @@ where $\text{sign}(x) = \ind(x > 0) - \ind(x < 0)$. If both endpoints are infini
 The `midpoint` method returns a midpoint for the current region.
 
 ```{cpp}
-double RealConstRegion::midpoint() const
+double real_const_region::midpoint() const
 ```
 
 The `bifurcate` method returns two disjoint regions whose union is the current region. The result is given as an STL pair. The first version bifurcates at the midpoint of the current region, determined by the `midpoint` method. The second version partitions at the given $x$.
 
 ```{cpp}
-std::pair<RealConstRegion,RealConstRegion> bifurcate() const;
-std::pair<RealConstRegion,RealConstRegion> bifurcate(const double& x) const;
+std::pair<real_const_region,real_const_region> bifurcate() const;
+std::pair<real_const_region,real_const_region> bifurcate(const double& x) const;
 ```
 
 The `is_bifurcatable` function always returns `true` in the case of a continuous support.
@@ -769,56 +876,89 @@ The `is_bifurcatable` function always returns `true` in the case of a continuous
 bool is_bifurcatable() const;
 ```
 
+The `merge` method produces a region consisting of the current region and the argument `x` merged together.
+
+```{cpp}
+real_const_region merge(const real_const_region& x) const;
+```
+
+The `is_mergeable` function is an indicator of whether the current region can be merged with the argument `x`. This equates to `true` if and only if the two regions are adjacent intervals whose endpoints meet at a common value (on either side).
+
+```{cpp}
+bool is_mergeable(const real_const_region& x) const;
+```
+
+Several functions are provided to update an existing region.
+
+```{cpp}
+void set_w(const dfdb& w);                         // <1>
+void set_helper(const univariate_helper& helper);  // <2>
+void set_maxopt(const optimizer& maxopt);          // <3>
+void set_minopt(const optimizer& minopt);          // <4>
+void set_mid(const vws::midpoint& mid);            // <5>
+void init();                                       // <6>
+```
+1. Update the weight function.
+2. Update the univariate helper which represents the base distribution.
+3. Update the maximization routine for the majorizer.
+4. Update the minimization routine for the minorizer.
+5. Update the function to find the midpoint.
+6. Recompute saved quantities such as the majorization and minorization constants needed for rejection sampling.
+
+::: {.callout-important title="init"}
+The `init` method should be applied after using the set methods above, before the region is used in any other capacity. More than one set method may be used before calling `init`.
+:::
+
 The `singleton` method returns a singleton interval $(x, x]$, using the current object's member data.
 
 ```{cpp}
-RealConstRegion singleton(const double& x) const;
+real_const_region singleton(const double& x) const
 ```
 
 The following methods determine an ordering of the current region and an another region specified as argument `x`. Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $b_1 \leq a_2$. The regions are considered equal if $a_1 = a_2$ and $b_1 = b_2$. Note that other elements such as $w$ are $g$ are not explicitly checked, and are assumed to be the same.
 
 ```{cpp}
-bool operator<(const RealConstRegion& x) const;
-bool operator==(const RealConstRegion& x) const;
+bool operator<(const real_const_region& x) const
+bool operator==(const real_const_region& x) const
 ```
 
 The following method assigns the current region to be equal to the argument `x`.
 
 ```{cpp}
-const RealConstRegion& operator=(const RealConstRegion& x);
+const real_const_region& operator=(const real_const_region& x)
 ```
 
 ## Region on Integer-Valued Support with Constant Majorizer {#sec-api-intconstregion}
 
-The class `IntConstRegion` is a subclass of `RealConstRegion` that is specialized to integer-valued distributions.
+The class `int_const_region` is a subclass of `real_const_region` that is specialized to integer-valued distributions.
 
 ```{cpp}
-class IntConstRegion : public RealConstRegion { ... };
+class int_const_region : public real_const_region { ... };
 ```
 
 ### Constructors {.unlisted}
 
-`IntConstRegion` has the following constructors.
+`int_const_region` has the following constructors.
 
 ```{cpp}
-IntConstRegion(
+int_const_region(
 	double a,                                 // <1>
 	double b,                                 // <2>
 	const dfdb& w,                            // <3>
-	const UnivariateHelper& helper,           // <4>
+	const univariate_helper& helper,          // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
-);
+)
 
-IntConstRegion(
+int_const_region(
 	double a,                                 // <1>
 	const dfdb& w,                            // <3>
-	const UnivariateHelper& helper            // <4>
+	const univariate_helper& helper,          // <4>
     const optimizer& maxopt = maxopt_default, // <5>
     const optimizer& minopt = minopt_default, // <6>
 	const midpoint& mid = midpoint_default    // <7>
-);
+)
 ```
 
 1. Lower limit of interval that defines this region.
@@ -833,11 +973,11 @@ The arguments here are analogous to those in @sec-api-realconstregion-constructo
 
 ### Methods {.unlisted}
 
-The following methods are specialized from `RealConstRegion`.
+The following methods are specialized from `real_const_region`.
 
 ```{cpp}
-std::pair<IntConstRegion,IntConstRegion> bifurcate() const;
-std::pair<IntConstRegion,IntConstRegion> bifurcate(const double& x) const;
+std::pair<int_const_region,int_const_region> bifurcate() const;
+std::pair<int_const_region,int_const_region> bifurcate(const double& x) const;
 ```
 
 The `is_bifurcatable` function returns `false` for regions whose width is smaller than $1$.
@@ -849,40 +989,40 @@ bool is_bifurcatable() const;
 The `singleton` method returns a singleton interval $(x, x]$, using the current object's weight function, base distribution, etc.
 
 ```{cpp}
-IntConstRegion singleton(const double& x) const;
+int_const_region singleton(const double& x) const;
 ```
 
 The following methods determine an ordering of the current region and an another region specified as argument `x`. Region $(a_1, b_1]$ is considered "less than" $(a_2, b_2]$ if $b_1 \leq a_2$. The regions are considered equal if $a_1 = a_2$ and $b_1 = b_2$. Note that other elements such as $w$ are $g$ are not explicitly checked, and are assumed to be the same.
 
 ```{cpp}
 
-bool operator<(const IntConstRegion& x) const;
-bool operator==(const IntConstRegion& x) const;
+bool operator<(const int_const_region& x) const
+bool operator==(const int_const_region& x) const
 ```
 
 The following method assigns the current region to be equal to the argument `x`.
 
 ```{cpp}
-const IntConstRegion& operator=(const IntConstRegion& x);
+const int_const_region& operator=(const int_const_region& x)
 ```
 
 ## Univariate Helper {#sec-api-helper}
 
-The class `UnivariateHelper` is intended for use with `RealConstRegion` and `IntConstRegion`. It encapsulates several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
+The class `univariate_helper` is intended for use with `real_const_region` and `int_const_region`. It encapsulates several operations needed from the base distribution $g$. These operations are specified as lambdas in the constructor.
 
 ```{cpp}
-UnivariateHelper(
+univariate_helper(
 	const fntl::density& d,  // <1>
 	const fntl::cdf& p,      // <2>
 	const fntl::quantile& q  // <3>
-);
+)
 ```
 
-1.  A function to evaluate density $g$.
-2.  A function to evaluate the cumulative distribution function (CDF) $G$.
-3.  A function to evaluate the quantile function $G^{-}$.
+1. A function to evaluate density $g$.
+2. A function to evaluate the cumulative distribution function (CDF) $G$.
+3. A function to evaluate the quantile function $G^{-}$.
 
-The following methods on `UnivariateHelper` utilize the lambdas specified above.
+The following methods on `univariate_helper` utilize the lambdas specified above.
 
 ```{cpp}
 double d(double x, bool log = false) const;                     // <1>
@@ -890,34 +1030,63 @@ double p(double q, bool lower = true, bool log = false) const;  // <2>
 double q(double p, bool lower = true, bool log = false) const;  // <3>
 ```
 
-1.  Evaluate the density function at argument $x$. Result is on the log-scale if `log = true`.
-2.  Evaluate the CDF at argument $q$. Result is on the log-scale if `log = true`. Result represents $P(X \leq q)$ if `lower = true` and $P(X > q)$ otherwise.
-3.  Evaluate the quantile function at argument $p$. Assume $p$ is specified on the log-scale if `log = true`. Request $p$ quantile if `lower = true` and $1-p$ quantile otherwise.
+1. Evaluate the density function at argument $x$. Result is on the log-scale if `log = true`.
+2. Evaluate the CDF at argument $q$. Result is on the log-scale if `log = true`. Result represents $P(X \leq q)$ if `lower = true` and $P(X > q)$ otherwise.
+3. Evaluate the quantile function at argument $p$. Assume $p$ is specified on the log-scale if `log = true`. Request $p$ quantile if `lower = true` and $1-p$ quantile otherwise.
 
 ## Rejection Sampling {#sec-api-rejection}
 
-The following functions perform rejection sampling using a VWS proposal described in @sec-api-proposal.
+### Without Tuning {#sec-api-rejection-basic}
+
+The following functions perform rejection sampling using a VWS proposal described in @sec-vws.
 
 ```{cpp}
 template <typename T, typename R>
 rejection_result<T> rejection(
-	const FMMProposal<T,R>& h,         // <1>
+	const fmm_proposal<T,R>& h,        // <1>
 	unsigned int n,                    // <2>
 	const rejection_args& args         // <3>
-);
+)
 
 template <typename T, typename R>
 rejection_result<T> rejection(
-	const FMMProposal<T,R>& h,         // <1>
-	unsigned int n                     // <2>
-);
+	const fmm_proposal<T,R>& h,        // <1>
+	unsigned int n = 1                 // <2>
+)
 ```
+1. An `fmm_proposal` object to use as the proposal.
+2. The number of desired draws.
+3. Additional arguments for rejection sampling. Default values are assumed in the second form.
 
-1.  An `FMMProposal` object to use as the proposal.
-2.  The number of desired draws.
-3.  Additional arguments for rejection sampling. Default values are assumed in the second form.
+Template arguments `T` and `R` correspond to the given proposal `h` and are described in @sec-api-proposal.
 
-Template arguments `T` and `R` correspond to the given proposal `h` and are described in @sec-api-proposal. Additional arguments to `rejection` are provided via the following struct.
+### With Tuning {#sec-api-rejection-tune}
+
+The following functions perform rejection sampling with tuning as described in @sec-self-tune.
+
+```{cpp}
+template <typename T, typename R>
+rejection_result<T> rejection_tune(
+	fmm_proposal<T,R>& h,       // <1>
+	unsigned int n,             // <2>
+	const rejection_args& args  // <3>
+)
+
+template <typename T, typename R>
+rejection_result<T> rejection_tune(
+	const fmm_proposal<T,R>& h, // <1>
+	unsigned int n = 1          // <2>
+)
+```
+1. An `fmm_proposal` object to use as the proposal.
+2. The number of desired draws.
+3. Additional arguments for rejection sampling. Default values are assumed in the second form.
+
+Template arguments `T` and `R` correspond to the given proposal `h` and are described in @sec-api-proposal.
+
+### Additional Arguments {#sec-api-rejection-args}
+
+Additional arguments to `rejection` and `rejection_tune` are provided via the following struct.
 
 ```{cpp}
 struct rejection_args {
@@ -925,20 +1094,27 @@ struct rejection_args {
 	unsigned int report = std::numeric_limits<unsigned int>::max();      // <2>
 	double ratio_ub = std::exp(1e-5);                                    // <3>
 	fntl::error_action action = fntl::error_action::STOP;                // <4>
+	double tol_suff = 0.85;                                              // <5>
+	double tol_merge = 0.01;                                             // <6>
+	bool metrics = true;                                                 // <7>
 
-	rejection_args() { };                                                // <5>
-	rejection_args(SEXP obj);                                            // <6>
-	operator SEXP() const;                                               // <7>
+	rejection_args() { };                                                // <8>
+	rejection_args(SEXP obj);                                            // <9>
+	operator SEXP() const;                                               // <10>
 };
 ```
 
-1.  Maximum number of rejections to tolerate overall (among all $n$ attempted draws) before bailing out.
-2.  Determines period at which progress is logged to the console.
-3.  Maximum allowed value for the ratio $f_0(x) / h_0(x)$, which may be slightly larger than 1 due to numerical precision. An error is thrown if the ratio is larger than this value.
-4.  The action to take if `max_rejects` rejections is exceeded; see @tbl-action. The definition of the enum `fntl::error_action` is given in Section 2 of @fntl.
-5.  Constructor that takes no arguments and initializes to default values.
-6.  Convert an `Rcpp::List` to a `rejection_args` struct.
-7.  Return a `Rcpp::List` from a `rejection_args` struct.
+1. Maximum number of rejections to tolerate overall (among all $n$ attempted draws) before bailing out.
+2. Determines period at which progress is logged to the console.
+3. Maximum allowed value for the ratio $f_0(x) / h_0(x)$, which may be slightly larger than 1 due to numerical precision. An error is thrown if the ratio is larger than this value.
+4. The action to take if `max_rejects` rejections is exceeded; see @tbl-action. The definition of the enum `fntl::error_action` is given in Section 2 of @fntl.
+5. Tolerance $\epsilon_1$ in Algorithm \ref{alg:self-tune} used to determine whether rejection rate is sufficiently below 1. This is used only in `rejection_tune`.
+6. Tolerance $\epsilon_2$ in Algorithm \ref{alg:self-tune} used to determine whether a region's contribution is low enough to be merged with another region.
+This is used only in `rejection_tune`.
+7. Determines whether to save additional metrics. If `true`, non-essential metrics in `rejection_result` will be populated. Otherwise, only `draws` will be populated with the generated variates.
+8. Constructor that takes no arguments and initializes to default values.
+9. Convert an `Rcpp::List` to a `rejection_args` struct.
+10. Return a `Rcpp::List` from a `rejection_args` struct.
 
 | Action | Effect |
 |-----|-----|
@@ -949,7 +1125,9 @@ struct rejection_args {
 
 : Value of `action` used in `rejection_args.action` and its effect in `rejection`. {#tbl-action tbl-colwidths="\[35,65\]"}
 
-The return value of `rejection` is a struct of the following type.
+### Results {#sec-api-rejection-results}
+
+The return value of `rejection` and `rejection_tune` is a struct of the following type.
 
 ```{cpp}
 template <typename T>
@@ -957,16 +1135,23 @@ struct rejection_result
 {
 	std::vector<T> draws;               // <1>
 	std::vector<unsigned int> rejects;  // <2>
+	std::vector<unsigned int> tunes;    // <3>
+	std::vector<unsigned int> regions;  // <4>
+	std::vector<double> log_bounds;     // <5>
 
-	operator SEXP() const;              // <3>
+	operator SEXP() const;
 };
 ```
 
-1.  Vector of draws.
-2.  Vector of rejection counts; the $i$th element represents number of rejections observed before accepting the $i$th draw.
-3.  Return a `Rcpp::List` from a `rejection_args` struct.
+1. Vector of draws.
+2. Vector of rejection counts; the $i$th element represents number of rejections observed before accepting the $i$th draw.
+3. Vector of tuning counts; the $i$th element represents number of tuning adjustments made before accepting the $i$th draw.
+4. Vector of region counts; the $i$th element represents number of regions in the proposal when accepting the $i$th draw.
+5. Return a `Rcpp::List` from a `rejection_args` struct.
 
-If the maximum number og rejections are reached and `fntl::error_action::STOP`, the length of the vectors `draws` and `rejects` will be less than $n$.
+The `tunes`, `regions`, and `log_bounds` fields are only relevant to `rejection_tune`; they are left empty in `rejection`. Furthermore, all fields aside from `draws` are left empty when `metrics = false` in `rejection_args`.
+
+If the maximum number of rejections are reached and `rejection_args` specifies `action = fntl::error_action::STOP`, the length of the vectors `draws` and `rejects` will be less than $n$.
 
 ## Optimization on an Interval {#sec-api-opt}
 
@@ -980,15 +1165,15 @@ optimize_hybrid_result optimize_hybrid(
 	double upper,             // <4>
 	bool maximize,            // <5>
 	unsigned maxiter = 100000 // <6>
-);
+)
 ```
 
-1.  Objective function.
-2.  Initial value used with BFGS.
-3.  Lower bound $a$ of domain $[a,b]$.
-4.  Upper bound $b$ of domain $[a,b]$.
-5.  Logical; if `true`, optimization will be a maximization. Otherwise it is a minimization.
-6.  Maximum number of iterations.
+1. Objective function.
+2. Initial value used with BFGS.
+3. Lower bound $a$ of domain $[a,b]$.
+4. Upper bound $b$ of domain $[a,b]$.
+5. Logical; if `true`, optimization will be a maximization. Otherwise it is a minimization.
+6. Maximum number of iterations.
 
 The result is a `optimize_hybrid_result` struct which is defined as follows.
 
@@ -1003,11 +1188,11 @@ struct optimize_hybrid_result {
 };
 ```
 
-1.  Final value of the optimization variable $x$.
-2.  Final value of the objective function $f(x)$.
-3.  Description of the method used to obtain the result; see @tbl-method for possible values.
-4.  Corresponds to a code from BFGS if it is used as `method`; otherwise $0$.
-5.  Return an `Rcpp::List` from a `optimize_hybrid_result` struct.
+1. Final value of the optimization variable $x$.
+2. Final value of the objective function $f(x)$.
+3. Description of the method used to obtain the result; see @tbl-method for possible values.
+4. Corresponds to a code from BFGS if it is used as `method`; otherwise $0$.
+5. Return an `Rcpp::List` from a `optimize_hybrid_result` struct.
 
 | Message | Description |
 |-----|-----|
@@ -1026,12 +1211,12 @@ struct optimize_hybrid_result {
 
 ## Log-Scale Arithmetic {#sec-api-logscale}
 
-As mentioned in @rem-logscale, calculations in the package are carried out on the log-scale, where possible, to avoid issues from floating point numbers with very small or very large magnitudes. Users may want to follow this convention when implementing their own sampling problems. Several included functions help to avoid explicit exponentiation.
+As mentioned in @sec-logscale, calculations in the package are carried out on the log-scale, where possible, to avoid issues from floating point numbers with very small or very large magnitudes. Users may want to follow this convention when implementing their own sampling problems. Several included functions help to avoid explicit exponentiation.
 
 The following computes the scalar $f(x) = \log\{ \sum_{i=1}^n \exp(x_i) \}$ from a vector $x \in \mathbb{R}^n$ using the method described in [this StackExchange post](https://stats.stackexchange.com/a/381937).
 
 ```{cpp}
-double log_sum_exp(const Rcpp::NumericVector& x);
+double log_sum_exp(const Rcpp::NumericVector& x)
 ```
 
 The following functions carry out addition on the log scale using the property
@@ -1044,16 +1229,17 @@ The following functions carry out addition on the log scale using the property
 The first form takes scalar arguments $x$ and $y$. The second and third forms take $x, y \in \mathbb{R}^n$ and produce a vector with elements $\log(e^{x_i} + e^{y_i})$, $i = 1, \ldots, n$.
 
 ```{cpp}
-double log_add2_exp(double x, double y);
+double log_add2_exp(double x, double y)
 
 std::vector<double> log_add2_exp(
 	const std::vector<double>& x,
 	const std::vector<double>& y
-);
+)
+
 Rcpp::NumericVector log_add2_exp(
 	const Rcpp::NumericVector& x,
 	const Rcpp::NumericVector& y
-);
+)
 ```
 
 The following carry out subtraction on the log scale using the property
@@ -1065,21 +1251,22 @@ The following carry out subtraction on the log scale using the property
 When $x$ is smaller than $y$, the results is assumed to be `nan`. The first form takes scalar arguments $x$ and $y$. The second and third forms take $x, y \in \mathbb{R}^n$ and produce a vector with elements $\log(e^{x_i} - e^{y_i})$, $i = 1, \ldots, n$. 
 
 ```{cpp}
-double log_sub2_exp(double x, double y);
+double log_sub2_exp(double x, double y)
 
 std::vector<double> log_sub2_exp(
 	const std::vector<double>& x,
 	const std::vector<double>& y
-);
+)
+
 Rcpp::NumericVector log_sub2_exp(
 	const Rcpp::NumericVector& x,
 	const Rcpp::NumericVector& y
-);
+)
 ```
 
 ## Generating from a Discrete Distribution {#sec-api-discrete}
 
-We make use of the Gumbel trick [e.g., @HuijbenEtAl2023] to draw from a discrete distribution with probabilities $p_1, \ldots, p_k$. This approach allows probabilities to be specified on the log-scale without the need to exponentiate or normalize them so that they sum to $1$. The Gumbel trick generates a draw $x$ from the desired discrete distribution via
+We make use of the Gumbel trick [e.g., @Huijben-EtAl-2023] to draw from a discrete distribution with probabilities $p_1, \ldots, p_k$. This approach allows probabilities to be specified on the log-scale without the need to exponentiate or normalize them so that they sum to $1$. The Gumbel trick generates a draw $x$ from the desired discrete distribution via
 <!-- -->
 $$
 X = \argmax \{ Z_1 + \log p_1, \ldots, Z_k + \log p_k \},
@@ -1097,19 +1284,20 @@ unsigned int r_categ(
 	const Rcpp::NumericVector& p,  // <2>
 	bool log = false,              // <3>
 	bool one_based = false         // <4>
-);
+)
+
 Rcpp::IntegerVector r_categ(
 	unsigned int n,                // <1>
 	const Rcpp::NumericVector& p,  // <2>
 	bool log = false,              // <3>
 	bool one_based = false         // <4>
-);
+)
 ```
 
-1.  Desired sample size.
-2.  Vector of probabilities $p_1, \ldots, p_k$.
-3.  Logical; if `true`, argument `p` is interpreted as $\log p_1, \ldots, \log p_k$. Otherwise, it is interpreted as $p_1, \ldots, p_k$ on the original scale.
-4.  Logical; if `true`, support is assumed to be $\{ 1, \ldots, k \}$, where $k$ is length of the given `p`. Otherwise it is assumed to be $\{ 0, \ldots, k-1 \}$. The former is useful to generate indices in C++ while the latter is useful for indices in R.
+1. Desired sample size.
+2. Vector of probabilities $p_1, \ldots, p_k$.
+3. Logical; if `true`, argument `p` is interpreted as $\log p_1, \ldots, \log p_k$. Otherwise, it is interpreted as $p_1, \ldots, p_k$ on the original scale.
+4. Logical; if `true`, support is assumed to be $\{ 1, \ldots, k \}$, where $k$ is length of the given `p`. Otherwise it is assumed to be $\{ 0, \ldots, k-1 \}$. The former is useful to generate indices in C++ while the latter is useful for indices in R.
 
 ### Gumbel Distribution {.unlisted}
 
@@ -1121,51 +1309,57 @@ double d_gumbel(
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool log = false               // <7>
-);
+)
+
 double p_gumbel(
 	double q,                      // <2>
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool lower = true,             // <8>
 	bool log = false               // <7>
-);
+)
+
 double q_gumbel(
 	double p,                      // <3>
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool lower = true,             // <8>
 	bool log = false               // <7>
-);
+)
+
 double r_gumbel(
 	double mu = 0,                 // <5>
 	double sigma = 1               // <7>
-);
+)
 
 Rcpp::NumericVector d_gumbel(
 	const Rcpp::NumericVector& x,  // <1>
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool log = false               // <7>
-);
+)
+
 Rcpp::NumericVector p_gumbel(
 	const Rcpp::NumericVector& q,  // <2>
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool lower = true,             // <8>
 	bool log = false               // <7>
-);
+)
+
 Rcpp::NumericVector q_gumbel(
 	const Rcpp::NumericVector& p,  // <3>
 	double mu = 0,                 // <5>
 	double sigma = 1,              // <6>
 	bool lower = true,             // <8>
 	bool log = false               // <7>
-);
+)
+
 Rcpp::NumericVector r_gumbel(
 	unsigned int n,                // <4>
 	double mu = 0,                 // <5>
 	double sigma = 1               // <6>
-);
+)
 ```
 1. Argument to the density.
 2. Argument to the CDF.
@@ -1176,9 +1370,19 @@ Rcpp::NumericVector r_gumbel(
 7. Logical; if `true`, probability arguments and return values are on the log-scale
 8. Logical; if `true`, probability arguments and return values are lower tailed in the form $P[X \leq x]$; otherwise, $P[X > x]$.
 
+## Formatted Print with Timestamp {#sec-api-logger}
+
+The following function writes a formatted message to the console preceded by a timestamp. 
+
+```{cpp}
+void logger(const char* fmt, ...);
+```
+
+The arguments should be used in the same way as the C function `printf`. The timestamp is formatted as `"%Y-%m-%d %H:%M:%S"` and is in the local time zone of the machine. A dash `"-"` is displayed between the timestamp and the formatted message with one space of padding on each side. A reference for formatted messages can be found in R under the manual page `?sprintf`; for dates and times, see the manual page `?strptime`.
+
 # Example: Von Mises Fisher Distribution {#sec-vmf}
 
-Let us consider generating from the von Mises Fisher (VMF) distribution as in @VWS2025. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$ [e.g., @MardiaJupp1999]. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
+Let us consider generating from the von Mises Fisher (VMF) distribution as in @vws-2026. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$ [e.g., @Mardia-Jupp-1999]. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
 <!-- -->
 \begin{align*}
 f_{\text{VMF}}(\vec{v}) = \frac{
@@ -1250,7 +1454,7 @@ g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \ind(-1 < x < 1)
 @sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions. Codes for this example are in the folder `examples/vmf`. C++ functions for the $\text{Exp}_{(a,b)}(\kappa)$ distribution from @def-texp are given in the file `examples/vmf/texp.h`.
 
 ::: {#rem-vmf-caveat}
-A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \infty$ as $x$ approaches $\pm 1$. One way to avoid this is by truncating the support to $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for a small $\epsilon > 0$. Rejection sampling can proceed using the truncated support if the exclusion of $(-1, -1 + \epsilon] \cup (1 - \epsilon, 1]$ is known to have a negligible impact on the result. Otherwise, @VWS2025 mention another strategy where the support is initially truncated and gradually expanded as rejections are encountered. In this document, we assume $(\alpha_0, \alpha_N] = (-1, 1]$ for $d > 3$ and a fixed truncation $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for $d < 3$.
+A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \infty$ as $x$ approaches $\pm 1$. One way to avoid this is by truncating the support to $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for a small $\epsilon > 0$. Rejection sampling can proceed using the truncated support if the exclusion of $(-1, -1 + \epsilon] \cup (1 - \epsilon, 1]$ is known to have a negligible impact on the result. Otherwise, @vws-2026 mention another strategy where the support is initially truncated and gradually expanded as rejections are encountered. In this document, we assume $(\alpha_0, \alpha_N] = (-1, 1]$ for $d > 3$ and a fixed truncation $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for $d < 3$.
 :::
 
 ```{r}
@@ -1266,16 +1470,16 @@ We now give our first example demonstrating the `vws` package. We consider a con
 ``` {.cpp include="examples/vmf/vmf-v1.cpp" code-line-numbers="true"}
 ```
 
-1.  Ensure that this code links with the `vws` and `fntl` packages during compilation.
-2.  Include the header for C++ framework in `vws`.
-3.  Include `texp.h`, which provides functions described in @def-texp.
-4.  Define a C++ function which invokes the sampler and export it for use in R.
-5.  Prepare a struct with extra arguments for rejection sampling.
-6.  Define the weight function as a lambda. We are careful to avoid `nan` values that can occur when $x = \pm 1$. Computations are carried out on the log-scale to avoid numerical loss of precision.
-7.  Specify the density, CDF, and quantile function of the base distribution $\text{Exp}_{(-1,1)}(\kappa)$. The density, CDF, and quantile function types are defined in @sec-api-typedefs.
-8.  Create a "helper" object as a container for the distribution functions.
-9.  Construct a `RealConstRegion` which contains all problem-specific logic of the sampler. We construct one initial region which contains the entire support $(-1,1]$.
-10. Construct an `FMMProposal` based on our initial region `supp`. The first template argument specifies that the data type of the support is `double`; the second specifies that regions (which include the logic of the sampler) are of type `RealConstRegion`.
+1. Ensure that this code links with the `vws` and `fntl` packages during compilation.
+2. Include the header for C++ framework in `vws`.
+3. Include `texp.h`, which provides functions described in @def-texp.
+4. Define a C++ function which invokes the sampler and export it for use in R.
+5. Prepare a struct with extra arguments for rejection sampling.
+6. Define the weight function as a lambda. We are careful to avoid `nan` values that can occur when $x = \pm 1$. Computations are carried out on the log-scale to avoid numerical loss of precision.
+7. Specify the density, CDF, and quantile function of the base distribution $\text{Exp}_{(-1,1)}(\kappa)$. The density, CDF, and quantile function types are defined in @sec-api-typedefs.
+8. Create a "helper" object as a container for the distribution functions.
+9. Construct a `real_const_region` which contains all problem-specific logic of the sampler. We construct one initial region which contains the entire support $(-1,1]$.
+10. Construct an `fmm_proposal` based on our initial region `supp`. The first template argument specifies that the data type of the support is `double`; the second specifies that regions (which include the logic of the sampler) are of type `real_const_region`.
 11. Request the proposal `h` to refine itself `N-1` times using Algorithm \ref{alg:refine} so that there are `N` regions.
 12. Carry out rejection sampling with proposal `h`.
 13. Assemble an `Rcpp::List` to return to the caller. It contains the draws in element `draws`, a vector of rejection counts in `rejects` where the $i$th element represents the number of rejections for the $i$th draw, and a vector in element `lbdd` with the $N$ bounds $\rho_+^{(1)}, \ldots, \rho_+^{(N)}$, where $\rho_+^{(j)}$ is the value achieved with $j$ regions.
@@ -1380,8 +1584,8 @@ if (d >= 3) {
 Finally, we create the initial region `supp`. The `maxopt` and `minopt` functions are provided to the constructor as additional arguments. Note that we dereference our pointers and pass the function objects themselves (which are taken as references by the constructor).
 
 ```{cpp}
-vws::UnivariateHelper helper(df, pf, qf);
-vws::RealConstRegion supp(-1, 1, w, helper, *maxopt, *minopt);
+vws::univariate_helper helper(df, pf, qf)
+vws::real_const_region supp(-1, 1, w, helper, *maxopt, *minopt)
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
@@ -1496,9 +1700,11 @@ ggplot(df) +
 	theme_minimal()
 ```
 
-# Example: Lognormal-Normal Conditional Distribution {#sec-ln-norm}
+# Example: Privacy Protected Data {#sec-privacy}
 
-Suppose an official statistics agency collects sensitive data from respondents in a survey or census. The agency then seeks to disseminate a tabulation to data users while protecting the privacy of the respondents. The agency can consider adding random noise $\gamma$ to the tabulation $Y$ and releasing $Z = Y + \gamma$. This setting is the basis of a modeling scenario considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025 where the distribution for $\gamma$ has been selected by the agency and the data have been disseminated; the objective in these works is to carry out inference on the unobserved $Y$ given observed $Z = z$. The field of differential privacy studies the design of noise mechanisms (including distributions of $\gamma$ in the present setting) to satisfy mathematical criteria for privacy [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census. Our present motivation is to consider a simple but nontrivial sampling problem that arises in analysis of the released $z$.
+Suppose an official statistics agency collects sensitive data from respondents in a survey or census. The agency then seeks to disseminate a tabulation to data users while protecting the privacy of the respondents. The agency can consider adding random noise $\gamma$ to the tabulation $Y$ and releasing $Z = Y + \gamma$. This setting is the basis of a modeling scenario considered by @Direct-Sampling-DAS-2021, @DP-Simulation-2022, and @DAS-Methods-2025 where the distribution for $\gamma$ has been selected by the agency and the data have been disseminated; the objective in these works is to carry out inference on the unobserved $Y$ given observed $Z = z$. The field of differential privacy studies the design of noise mechanisms (including distributions of $\gamma$ in the present setting) to satisfy mathematical criteria for privacy [e.g., @Dwork-Roth-2014]. @Abowd-EtAl-2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census.
+
+Our present motivation is to focus on a specific target that arises in analysis of the released $z$. @sec-privacy-within-gibbs considers a data analysis situation with $n$ subjects and a regression underlying $y$. To reduce the amount of computation under repeated use within a Gibbs sampler, we will consider proposals that persist over the MCMC chain and get updated with the current state.
 
 Suppose $Y$ and $\gamma$ are independently distributed with $Y \sim \text{Lognormal}(\mu, \sigma^2)$ and $\gamma \sim \text{N}(0, \lambda^2)$. The variance $\lambda^2$ is assumed to be known and provided with the noisy data. Such transparency into the noise mechanism is often featured in differential privacy.
 
@@ -1522,7 +1728,7 @@ f(y \mid z, \mu, \sigma^2)
 \underbrace{\frac{1}{y} \exp\left\{
 -\frac{1}{2\sigma^2} (\log y - \mu)^2
 \right\} \ind(y > 0)}_{w(y)}.
-\label{eqn:ln-norm}
+\label{eqn:privacy}
 \end{align}
 <!-- -->
 We have decomposed $f$ into weight function
@@ -1532,7 +1738,8 @@ w(y) = \frac{1}{y} \exp\left\{ -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right\}
 \ind\{ y \in (0,\infty) \},
 \end{math}
 <!-- -->
-from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution whose density $g$ is $\text{N}(z, \lambda^2)$. The conditional $[\vec{y} \mid \sigma^2, \vec{\mu}, \vec{z}]$ in \eqref{eqn:ln-norm} would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:ln-norm}.
+from the Lognormal component---dropping some of the terms in its normalizing constant---and base distribution whose density $g$ is $\text{N}(z, \lambda^2)$. The conditional $[\vec{y} \mid \sigma^2, \vec{\mu}, \vec{z}]$ in \eqref{eqn:privacy} would be encountered in a Gibbs sampler for the posterior distribution $[\vec{y}, \vec{\mu}, \sigma^2 \mid \vec{z}]$, based on an observed sample $\vec{z} = (z_1, \ldots, z_n)$ with augmented data $\vec{y} = (y_1, \ldots, y_n)$. The remaining conditionals $[\vec{\mu} \mid \sigma^2, \vec{y}, \vec{z}]$ and $[\sigma^2 \mid \vec{\mu}, \vec{y}, \vec{z}]$ may be straightforward to generate if a convenient prior distribution is selected; therefore, we will focus on \eqref{eqn:privacy}.
+
 
 Before proceeding, let us fix the following values for the parameters.
 
@@ -1547,13 +1754,13 @@ Jointly draw values of $Y$ and $Z$ from the model; $Z$ will be observed by users
 
 ```{r}
 #| prompt: true
-source("examples/ln-norm/functions.R")
+source("examples/privacy/functions.R")
 y_true = rlnorm(1, mu, sigma)
 z = rnorm(1, y_true, lambda)
 vws::printf("y_true = %g and z = %g\n", y_true, z)
 ```
 
-Coding the target density is helpful to evaluate the distribution of the draws. To compute the normalizing constant, we use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
+Coding the target density is helpful to evaluate the distribution of the draws. To compute the normalizing constant, we use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth-2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
 <!-- -->
 \begin{align*}
 \psi &= \int_{-\infty}^\infty w(y) g(y) dy \\
@@ -1579,9 +1786,9 @@ q(x) = \ind\left( z > \sqrt{2} \lambda x \right)
 <!-- -->
 is used with `gauss.quad`.
 
-We will consider three variations of a VWS sampler, progressing from easier-to-implement to more computationally efficient. @sec-ln-norm-const-default considers a constant majorizer where the constant for each region is obtained by numerical optimization. @sec-ln-norm-const-custom replaces numerical optimization with code for a closed-form solution. @sec-ln-norm-linear makes use of a linear majorizer which subclasses the abstract `Region` class. All codes for this example are in the folder `examples/ln-norm`. The function `d_target` defined in `examples/ln-norm/functions.R` computes the target density.
+We will consider three variations of a VWS sampler, progressing from easier-to-implement to more computationally efficient. @sec-privacy-const-default considers a constant majorizer where the constant for each region is obtained by numerical optimization. @sec-privacy-const-custom replaces numerical optimization with code for a closed-form solution. @sec-privacy-linear makes use of a linear majorizer which subclasses the abstract `Region` class. All codes for this example are in the folder `examples/privacy`. The function `d_target` defined in `examples/privacy/functions.R` computes the target density.
 
-## Constant Majorizer with Numerical Optimization {#sec-ln-norm-const-default}
+## Constant Majorizer with Numerical Optimization {#sec-privacy-const-default}
 
 We may adapt the code from @sec-vmf-const-default to the target density in the present problem. The present weight function may be coded as follows.
 
@@ -1596,7 +1803,7 @@ const vws::dfdb& w = [&](double x, bool log = true) {
 };
 ```
 
-The base distribution's density, CDF, and quantile function are coded as lambdas and packaged into a `UnivariateHelper` object. Here we can make use of the implementations of the normal distribution in R's API.
+The base distribution's density, CDF, and quantile function are coded as lambdas and packaged into a `univariate_helper` object. Here we can make use of the implementations of the normal distribution in R's API.
 
 ```{cpp}
 fntl::density df = [&](double x, bool log = false) {
@@ -1609,25 +1816,25 @@ fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
 	return R::qnorm(p, z, lambda, lower, log);
 };
 
-vws::UnivariateHelper helper(df, pf, qf);
+vws::univariate_helper helper(df, pf, qf);
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
-Rcpp::sourceCpp("examples/ln-norm/ln-norm-v1.cpp")
+Rcpp::sourceCpp("examples/privacy/ln-norm-v1.cpp")
 out1 = r_ln_norm_v1(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
 head(out1$draws)
 ```
 
-@fig-ln-norm-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`. @fig-ln-norm-const-draws plots the empirical distribution of the draws and compares them to the density. It displays an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
+@fig-privacy-const-refine plots the bound for the rejection probability during the refinement process, which is captured in the variable `out$lbdd`. @fig-privacy-const-draws plots the empirical distribution of the draws and compares them to the density. It displays an interval based on the $0.025$ and $0.975$ quantiles of the distribution $[Y \mid Z = z]$ approximated from the empirical quantiles of the draws. The value of the observed $z$ and the latent $y$ are also highlighted for reference.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
 #|   Refinement for lognormal-normal example with constant majorizer.
-#| label: fig-ln-norm-const-refine
+#| label: fig-privacy-const-refine
 #| echo: false
 
 df = data.frame(bdd = exp(out1$lbdd)) %>%
@@ -1648,7 +1855,7 @@ ggplot(df) +
 #|   for lognormal-normal example with constant majorizer. Observed value of
 #|   $z$ (blue line) and latent value of $y$ (red line) are displayed along
 #|   with a 95\% interval (blue ribbon) based on draws from $[Y \mid Z = z]$.
-#| label: fig-ln-norm-const-draws
+#| label: fig-privacy-const-draws
 #| echo: false
 
 interval_lo = quantile(out1$draws, probs = 0.025)
@@ -1667,9 +1874,9 @@ data.frame(x = out1$draws) %>%
 	theme_minimal()
 ```
 
-## Constant Majorizer with Custom Optimization {#sec-ln-norm-const-custom}
+## Constant Majorizer with Custom Optimization {#sec-privacy-const-custom}
 
-The log-weight function can be both maximized and minimized in closed form. Coding it explicitly reduces computational overhead and avoids convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `RealConstRegion`.
+The log-weight function can be both maximized and minimized in closed form. Coding it explicitly reduces computational overhead and avoids convergence issues from numerical optimization. This section will demonstrate how to override the default `optimize` method of `real_const_region`.
 
 We have first derivative
 <!-- -->
@@ -1688,7 +1895,7 @@ for $y \in (0, \infty)$. Let $y^* = \exp(\mu - \sigma^2)$; it is seen that $\fra
 &= -\mu + \sigma^2 / 2.
 \end{align*}
 <!-- -->
-Therefore, on a region $\mathscr{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$. @fig-ln-norm-weight displays a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
+Therefore, on a region $\mathscr{D}_j = (\alpha_{j-1}, \alpha_j]$ where both endpoints are smaller than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_j)$ and the minimum is $\log w(\alpha_{j-1})$. On the other hand, for a region where both endpoints are larger than $y^*$, the maximum of $\log w(y)$ is $\log w(\alpha_{j-1})$ and the minimum is $\log w(\alpha_j)$. @fig-privacy-weight displays a plot of $\log w(y)$ with our selected $\mu$ and $\sigma^2$ values.
 
 ```{r}
 #| prompt: true
@@ -1703,7 +1910,7 @@ vws::printf("Maximizer y = %g obtains value log w(%g) = %g.\n",
 #| fig-cap: |
 #|   Weight function for Lognormal-Normal example on the log-scale, with the
 #|   maximizer $y^* = \exp(\mu - \sigma^2)$ highlighted.
-#| label: fig-ln-norm-weight
+#| label: fig-privacy-weight
 #| echo: false
 
 xlim = y_star + c(-10,10)
@@ -1755,22 +1962,22 @@ const vws::optimizer& minopt = [&](const vws::dfdb& w, double lo,
 };
 ```
 
-We can construct the proposal using a single `RealConstRegion` that represents the support; the `maxopt` and `minopt` arguments are specified here.
+We can construct the proposal using a single `real_const_region` that represents the support; the `maxopt` and `minopt` arguments are specified here.
 
 ```{cpp}
-vws::RealConstRegion supp(0, R_PosInf, w, helper, maxopt, minopt);
+vws::real_const_region supp(0, R_PosInf, w, helper, maxopt, minopt);
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
-Rcpp::sourceCpp("examples/ln-norm/ln-norm-v2.cpp")
+Rcpp::sourceCpp("examples/privacy/ln-norm-v2.cpp")
 out2 = r_ln_norm_v2(n = 1000, z, mu, sigma, lambda, N = 50, tol = 0.10)
 head(out2$draws)
 ```
 
-## Linear Majorizer {#sec-ln-norm-linear}
+## Linear Majorizer {#sec-privacy-linear}
 
 We can obtain a linear majorizer by noting the convexity of $\log w(y)$. Its second derivative is seen to be
 <!-- -->
@@ -1780,7 +1987,7 @@ We can obtain a linear majorizer by noting the convexity of $\log w(y)$. Its sec
 \right),
 \end{align*}
 <!-- -->
-which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-ln-norm-weight-convexity. We will assume that there are two initial regions $\mathscr{D}_1 = (0, y_0]$ and $\mathscr{D}_2 = (y_0, \infty]$ so that all partitions considered thereafter consist of regions on which $\log w(y)$ is entirely concave or convex.
+which has root $y_0 = \exp\{ \mu - \sigma^2 + 1 \}$. The weight function $w$ is log-concave for $y < y_0$ and log-convex for $y > y_0$. This is plotted in @fig-privacy-weight-convexity. We will assume that there are two initial regions $\mathscr{D}_1 = (0, y_0]$ and $\mathscr{D}_2 = (y_0, \infty]$ so that all partitions considered thereafter consist of regions on which $\log w(y)$ is entirely concave or convex.
 
 ```{r}
 #| prompt: true
@@ -1794,7 +2001,7 @@ printf("Convexity changes at y = %g.\n", y0)
 #|   Weight function for Lognormal-Normal example on the log-scale,
 #|   highlighting $y_0 = \exp(\mu - \sigma^2 + 1)$ where there is a change in
 #|   convexity.
-#| label: fig-ln-norm-weight-convexity
+#| label: fig-privacy-weight-convexity
 #| echo: false
 
 xlim = c(0, 2000)
@@ -1883,29 +2090,29 @@ M_j(s) = \exp(z s + s^2 \lambda^2 / 2)
 }.
 \end{align*}
 <!-- -->
-Adapting the code from @sec-vmf-linear to the present problem, we implement `LinearVWSRegion` as a subclass of the abstract `Region` base class (@sec-api-region). See the file `examples/ln-norm/LinearVWSRegion.h`. The code in `examples/ln-norm/ln-norm-v3.cpp` instantiates a proposal from this region type and proceeds with rejection sampling. This code is displayed below.
+Adapting the code from @sec-vmf-linear to the present problem, we implement `LinearVWSRegion` as a subclass of the abstract `Region` base class (@sec-api-region). See the file `examples/privacy/LinearVWSRegion.h`. The code in `examples/privacy/ln-norm-v3.cpp` instantiates a proposal from this region type and proceeds with rejection sampling. This code is displayed below.
 
-``` {.cpp include="examples/ln-norm/ln-norm-v3.cpp" code-line-numbers="true"}
+``` {.cpp include="examples/privacy/ln-norm-v3.cpp" code-line-numbers="true"}
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
 
 ```{r}
 #| prompt: true
-Rcpp::sourceCpp("examples/ln-norm/ln-norm-v3.cpp")
+Rcpp::sourceCpp("examples/privacy/ln-norm-v3.cpp")
 out3 = r_ln_norm_v3(n = 1000, z, mu, sigma, lambda, lo = 1e-8, 1e8,
 	N = 50, tol = 0.10)
 head(out3$draws)
 ```
 
-@fig-ln-norm-linear-draws plots the empirical distribution of the draws and compares them to the density. @fig-ln-norm-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
+@fig-privacy-linear-draws plots the empirical distribution of the draws and compares them to the density. @fig-privacy-refine plots the bound for the rejection probability for this sampler after each step of refining, along with those from the previous two versions. A substantial improvement in efficiency is seem here; fewer regions are needed to achieve a small rejection probability. Although versions 1 and 2 of the sampler are based on the same proposal, the changes to their bounds are seen to differ due to randomness in knot selection.
 
 ```{r}
 #| out-width: 60%
 #| fig-cap: |
 #|   Empirical distribution of draws (solid) versus target (dashed) for
 #|   lognormal-normal example with constant majorizer.
-#| label: fig-ln-norm-linear-draws
+#| label: fig-privacy-linear-draws
 #| echo: false
 
 data.frame(x = out1$draws) %>%
@@ -1921,7 +2128,7 @@ data.frame(x = out1$draws) %>%
 #| out-width: 60%
 #| fig-cap: |
 #|   Refinement for lognormal-normal example with constant majorizer.
-#| label: fig-ln-norm-refine
+#| label: fig-privacy-refine
 #| echo: false
 
 df1 = data.frame(sampler = "v1", bdd = exp(out1$lbdd)) %>% 
@@ -1945,7 +2152,7 @@ ggplot(df) +
 
 # Example: Bessel Count Distribution {#sec-bessel}
 
-Where Sections [-@sec-vmf] and [-@sec-ln-norm] considered continuous distributions, we now generate from a discrete target. The Bessel distribution [@YuanKalbfleisch2000] has density
+Where Sections [-@sec-vmf] and [-@sec-privacy] considered continuous distributions, we now generate from a discrete target. The Bessel distribution [@Yuan-Kalbfleisch-2000] has density
 <!-- -->
 \begin{align*}
 f(x) = \frac{(\lambda/2)^{2x+\nu}}{I_v(\lambda) \cdot x! \cdot \Gamma(x + \nu + 1)}
@@ -1960,7 +2167,7 @@ where $\mathbb{N} = \{ 0, 1, 2, \ldots \}$ is the set of nonnegative integers an
 I_v(\lambda) = \sum_{x=0}^\infty \frac{(\lambda/2)^{2x+\nu}}{x! \cdot \Gamma(x + \nu + 1)}
 \end{align*}
 <!-- -->
-is a modified Bessel function of the first kind. Let $X \sim \text{Bessel}(\lambda, \nu)$ denote a random variable with density $f$. @Devroye2002 develops a rejection sampling method to generate draws of $X$ using properties of the distribution. Here we implement several VWS samplers which do not require as much insight. Our approach is to decompose the density into
+is a modified Bessel function of the first kind. Let $X \sim \text{Bessel}(\lambda, \nu)$ denote a random variable with density $f$. @Devroye-2002 develops a rejection sampling method to generate draws of $X$ using properties of the distribution. Here we implement several VWS samplers which do not require as much insight. Our approach is to decompose the density into
 <!-- -->
 \begin{align*}
 f(x)
@@ -2004,7 +2211,7 @@ const vws::dfdb& w = [&](double x, bool log = true) {
 };
 ```
 
-The base distribution’s density, CDF, and quantile function may be supplied as a `UnivariateHelper` object using Poisson functions in the R API.
+The base distribution’s density, CDF, and quantile function may be supplied as a `univariate_helper` object using Poisson functions in the R API.
 
 ```{cpp}
 fntl::density df = [&](double x, bool log = false) {
@@ -2017,7 +2224,7 @@ fntl::quantile qf = [&](double p, bool lower = true, bool log = false) {
 	return R::qpois(p, mean, lower, log);
 };
 
-vws::UnivariateHelper helper(df, pf, qf);
+vws::univariate_helper helper(df, pf, qf);
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
@@ -2093,10 +2300,10 @@ const vws::optimizer& minopt = [](const vws::dfdb& w, double lo,
 };
 ```
 
-We can construct the proposal using a single `IntConstRegion` that represents the support; the `maxopt` and `minopt` arguments are specified here. Also note that we have specified a lower endpoint $\alpha_0$ below zero to ensure that the support $(\alpha_0, \alpha_N]$ contains zero.
+We can construct the proposal using a single `int_const_region` that represents the support; the `maxopt` and `minopt` arguments are specified here. Also note that we have specified a lower endpoint $\alpha_0$ below zero to ensure that the support $(\alpha_0, \alpha_N]$ contains zero.
 
 ```{cpp}
-vws::IntConstRegion supp(-0.1, R_PosInf, w, helper, maxopt, minopt);
+vws::int_const_region supp(-0.1, R_PosInf, w, helper, maxopt, minopt);
 ```
 
 The following R snippet builds the C++ code and invokes the sampling function.
@@ -2110,10 +2317,10 @@ head(out2$draws)
 
 ## Linear Majorizer {#sec-bessel-linear}
 
-Our decomposition of $f$ into the given $w$ and $g$ lends itself well to a linear majorizer because the function $\log w(x) = -\log \Gamma(x + \nu + 1)$ is log-concave. In fact, a theorem attributed to @BohrMollerup1922 states that the function $q(x) = \Gamma(x)$ is uniquely characterized as the only function on $(0, \infty)$ which is log-convex with $q(1) = 1$ and $q(x+1) = x q(x)$. The following remark is also useful to formulate the linear majorizer.
+Our decomposition of $f$ into the given $w$ and $g$ lends itself well to a linear majorizer because the function $\log w(x) = -\log \Gamma(x + \nu + 1)$ is log-concave. In fact, a theorem attributed to @Bohr-Mollerup-1922 states that the function $q(x) = \Gamma(x)$ is uniquely characterized as the only function on $(0, \infty)$ which is log-convex with $q(1) = 1$ and $q(x+1) = x q(x)$. The following remark is also useful to formulate the linear majorizer.
 
 ::: {#rem-incgamma}
-By rearranging equation 6.5.13 of @AbramowitzStegun1972, the cdf of $T \sim \text{Poisson}(\lambda)$ can be written as
+By rearranging equation 6.5.13 of @Abramowitz-Stegun-1972, the cdf of $T \sim \text{Poisson}(\lambda)$ can be written as
 <!-- -->
 \begin{displaymath}
 F(x \mid \lambda)
@@ -2370,16 +2577,18 @@ data.frame(x = xseq, h = out3$hx) %>%
 
 # Persistent Proposals in R {#sec-persistent}
 
-The samplers developed in previous sections each expose a function in R which can be used to generate samples. A proposal is constructed each time the function is called which exists only for the duration of the call. For purposes of efficiency and otherwise, it may be desirable to have a persistent proposal that can be gradually refined and reused. This section demonstrates several Rcpp mechanisms to enable this workflow: first using external pointers then using using modules. The latter is based on object-oriented programming but recommended over the former as it is less susceptible to crashing R. We demonstrate the two approaches by revisiting the example from @sec-vmf-const-default. For more information on external pointers and modules, refer to the vignette "Exposing C++ functions and classes with Rcpp modules" in the `Rcpp` package [@Rcpp] and section "External pointers and weak references" of the guide "Writing R Extensions" [@WritingRExtensions].
+The samplers developed in previous sections each expose a function in R which can be used to generate samples. A new proposal is constructed each time the function is called and it exists only for the duration of the call. For the sake of efficiency or to maintain the state within a proposal, it may be desirable to have a persistent proposal that can be gradually reused and refined. This section demonstrates several Rcpp mechanisms to enable this workflow: first using external pointers then using using modules. The latter is based on object-oriented programming but is recommended over the former as it is less susceptible to crashing R. We demonstrate the two approaches by revisiting the example from @sec-vmf-const-default. For more information on external pointers and modules, refer to the vignette "Exposing C++ functions and classes with Rcpp modules" in the `Rcpp` package [@Rcpp] and section "External pointers and weak references" of the guide "Writing R Extensions" [@R-ext].
+
+The approach from @sec-persistent-module using Rcpp modules is used in @sec-privacy-within-gibbs to generate from an unfamiliar conditional within a Gibbs sampler.
 
 ## External Pointers {#sec-persistent-xptr}
 
-An Rcpp external pointer (`XPtr`) can be used to construct objects in C++ and return them to R so that they persist and can be accessed in subsequent calls to C++. This is especially useful for use with complicated data structures that are not easy to directly represent as R objects. A VWS proposal is an example of such as structure. The full C++ code is given in `examples/vmf/vmf-v1-xptr.cpp`. Here we describe the components of that file.
+An Rcpp external pointer (`XPtr`) can be used to construct objects in C++ and return them to R so that they persist and can be accessed in subsequent calls to C++. This is especially useful with complicated data structures that are not easy to directly represent as R objects. A VWS proposal is an example of such as structure. The full C++ code is given in `examples/vmf/vmf-v1-xptr.cpp`. Here we describe the components of that file.
 
 The following typedefs provide more readable names for the proposal and its `XPtr`.
 
 ```{cpp}
-typedef vws::FMMProposal<double, vws::RealConstRegion> t_proposal;
+typedef vws::fmm_proposal<double, vws::real_const_region> t_proposal;
 typedef Rcpp::XPtr<t_proposal> t_proposal_xptr;
 ```
 
@@ -2410,8 +2619,8 @@ t_proposal_xptr vmf_pre_v1_xptr(double kappa, double d)                  // <1>
 		return q_texp(p, kappa, -1, 1, lower, log);
 	};
 
-	vws::UnivariateHelper helper(df, pf, qf);
-	vws::RealConstRegion supp(-1, 1, w, helper);
+	vws::univariate_helper helper(df, pf, qf);
+	vws::real_const_region supp(-1, 1, w, helper);
 
 	auto p = new t_proposal(supp);                                       // <3>
 	auto out = t_proposal_xptr(p, true);
@@ -2420,9 +2629,9 @@ t_proposal_xptr vmf_pre_v1_xptr(double kappa, double d)                  // <1>
 }
 ```
 1. The function returns an `XPtr` to a proposal rather than the result of sample generation.
-2. Capture by value with the lambdas here using `[=]`. Variables `kappa` and `d` may not be available in the environment when evaluating the lambdas later; this ensure that they can still be accessed by the lambdas.
+2. Capture by value with the lambdas here using `[=]`. Variables `kappa` and `d` may not be available in the environment when evaluating the lambdas later. Capture by value ensures that variables can still be accessed by the lambdas.
 3. Create a proposal object on the heap using `new` and wrap it in an `XPtr` to be returned to R.
-4. The function `set_tag` a utility we will define; more explanation is provided below.
+4. The function `set_tag` is a utility we will define; more explanation is provided below.
 
 The following functions make use of the proposal `XPtr`. The `refine` function
 modifies the proposal by applying up to `N` refinement steps of Algorithm \ref{alg:refine} until toleration `tol` is achieved. The `draw` function draws
@@ -2495,7 +2704,7 @@ print(lbdd)
 head(out$draws)
 ```
 
-For demonstration purposes, let us define a C++ function that returns an `XPtr` to a vector. When an `XPtr` to a proposal is expected but an `XPtr` to a vector is encountered, ensure that an appropriate exception is thrown.
+For demonstration purposes, let us define a C++ function that returns an `XPtr` to a vector (i.e., something which is not a proposal object). When an `XPtr` to a proposal is expected but an `XPtr` to a vector is encountered, ensure that an appropriate exception is thrown.
 
 ```{cpp}
 // [[Rcpp::export]]
@@ -2531,16 +2740,16 @@ The external pointer approach in @sec-persistent-xptr lets us operate on a propo
 The following typedef provides a more readable name for the proposal.
 
 ```{cpp}
-typedef vws::FMMProposal<double, vws::RealConstRegion> t_proposal;
+typedef vws::fmm_proposal<double, vws::real_const_region> t_proposal;
 ```
 
-We now define a class named `RcppProposal` which will be exposed as an Rcpp module. This class inherits from ("is a") `t_proposal`. Its constructor, `refine` operation, and `draw` operation are analogous to those in @sec-persistent-xptr.
+We now define a class named `rcpp_proposal` which will be exposed as an Rcpp module. This class inherits from `t_proposal`. (I.e., `rcpp_proposal` "is a" `t_proposal`.) Its constructor, `refine` operation, and `draw` operation are analogous to those in @sec-persistent-xptr.
 
 ```{cpp}
-class RcppProposal : t_proposal
+class rcpp_proposal : t_proposal
 {
 public:
-	RcppProposal(double kappa, double d)
+	rcpp_proposal(double kappa, double d)
 	: t_proposal(supp(kappa, d))
 	{
 	}
@@ -2553,20 +2762,20 @@ public:
 	}
 
 private:
-	vws::RealConstRegion supp(double kappa, double d);            // <2>
+	vws::real_const_region supp(double kappa, double d);            // <2>
 };
 ```
-1. `t_proposal::refine` is the method in the base class; it is possible to expose this directly from the module, but we opt to call it from `RcppProposal::refine` for simplicity.
-2. The `supp` function handles most of the constructor work; it returns a single region `supp` with all of the necessary operations. The `RcppProposal` constructor creates an instance of itself from region.
+1. `t_proposal::refine` is the method in the base class; it is possible to expose this directly from the module, but we opt to call it from `rcpp_proposal::refine` for simplicity.
+2. The `supp` function handles most of the constructor work; it returns a single region `supp` with all of the necessary operations. The `rcpp_proposal` constructor creates an instance of itself from region.
 
-The following code exposes `RcppProposal` as an Rcpp module.
+The following code exposes `rcpp_proposal` as an Rcpp module.
 
 ```{cpp}
 RCPP_MODULE(vws_module) {
-	Rcpp::class_<RcppProposal>("RcppProposal")
+	Rcpp::class_<rcpp_proposal>("rcpp_proposal")
 	.constructor<double,double>()
-	.method("draw", &RcppProposal::draw)
-	.method("refine", &RcppProposal::refine)
+	.method("draw", &rcpp_proposal::draw)
+	.method("refine", &rcpp_proposal::refine)
 	;
 }
 ```
@@ -2578,7 +2787,7 @@ Now let us demonstrate use of these functions from R.
 ```{r}
 #| prompt: true
 Rcpp::sourceCpp("examples/vmf/vmf-v1-module.cpp")
-h = new(RcppProposal, kappa = 5, d = 4)
+h = new(rcpp_proposal, kappa = 5, d = 4)
 lbdd = h$refine(N = 50 - 1, tol = 0.10)
 out = h$draw(n = 1000, max_rejects = 1000, max_rejects = 10000)
 print(lbdd)
@@ -2586,9 +2795,175 @@ head(out$draws)
 ```
 
 ::: {#rem-capture-value-2}
-The lambdas `w`, `df`, `pf`, and `qf` in this code capture `kappa` and `d` by value as in @sec-persistent-xptr, which can lead to unwanted overhead from copying mentioned in @rem-capture-value. In the present case, we can consider storing a single copy of any large objects as member variables of the `RcppProposal` class and capturing them by reference (rather than by value) in the lambdas.
+The lambdas `w`, `df`, `pf`, and `qf` in this code capture `kappa` and `d` by value as in @sec-persistent-xptr, which can lead to unwanted overhead from copying mentioned in @rem-capture-value. In the present case, we can consider storing a single copy of any large objects as member variables of the `rcpp_proposal` class and capturing them by reference (rather than by value) in the lambdas.
 \remarkqed
 :::
+
+# Example: Privacy Protected Data and Sampling within Gibbs {#sec-privacy-within-gibbs}
+
+This section presents an example using the self-tuned VWS method described in @sec-self-tune. Consider again the setting from @sec-privacy and suppose there are $n$ tabulations. Let $y_i$ be the $i$th sensitive tabulation, $z_i$ be its privacy-protected counterpart, and $\vec{x}_i \in \mathbb{R}^d$ be a non-sensitive covariate which is associated with $y_i$. Consider the following hierarchical Bayesian model:
+<!-- -->
+\begin{align*}
+&z_i \sim \text{N}(y_i, \lambda_i^2), \\
+&y_i \sim \text{Lognormal}(\vec{x}_i^\top \vec{\beta}, \sigma^2), \\
+&\vec{\beta} \sim \text{N}(\vec{0}, \sigma_\beta^2 \vec{I}), \\
+&\sigma^2 \sim \text{IG}(a_\sigma, b_\sigma),
+\end{align*}
+<!-- -->
+for $i = 1, \ldots, n$, where $\sigma_\beta^2$, $a_\sigma$, and $b_\sigma$ are hyperparameters which are assumed to be known. The variances $\lambda_i^2$ are assumed to be known and provided with the data. Denote $\vec{\Lambda} = \text{Diag}(\lambda_1^2, \ldots, \lambda_n^2)$ and $\log \vec{y} = (\log y_1, \ldots, \log y_n)$. To obtain a Gibbs sampler, the joint distribution of all random variables is
+<!-- -->
+\begin{align}
+f(\vec{z}, \vec{y}, \vec{\beta}, \sigma^2) =
+f_\text{N}(\vec{z} \mid \vec{y}, \vec{\Lambda}) \cdot
+f_\text{N}(\log \vec{y} \mid \vec{X} \vec{\beta}, \sigma^2 \vec{I}) \cdot
+f_\text{N}(\vec{\beta} \mid \vec{0}, \sigma_\beta^2\vec{I}) \cdot
+f_\text{IG}(\sigma^2 \mid a_\sigma, b_\sigma) \cdot
+\prod_{i=1}^n \frac{1}{y_i},
+\label{eqn:privacy-joint}
+\end{align}
+<!-- -->
+where $f$ with subscripts "N", "LN", and "IG" denotes the normal, lognormal, and inverse gamma densities respectively. From \eqref{eqn:privacy-joint}, we obtain the following conditionals after some algebra:
+
+1. $[\vec{\beta} \mid \sigma^2, \vec{y}, \vec{z}] \sim \text{N}(\vec{\vartheta}, \vec{\Omega}^{-1})$ where $\vec{\Omega} = \sigma^{-2}\vec{X}^\top \vec{X} + \sigma_\beta^{-2} \vec{I}$ and $\vec{\vartheta} = \sigma^{-2} \vec{\Omega}^{-1} \vec{X}^\top (\log \vec{y})$.
+
+2. $[\sigma^2 \mid \vec{\beta}, \vec{y}, \vec{z}] \sim \text{IG}(a', b')$ where $a' = a_\sigma + n/2$ and $b' = b_\sigma + \lVert \log \vec{y} -\vec{X} \vec{\beta} \rVert^2 / 2$.
+
+3. $[\vec{y} \mid \vec{\beta}, \sigma^2, \vec{z}] = \prod_{i=1}^n [y_i \mid \vec{\beta}, \sigma^2, \vec{z}]$ where
+<!-- -->
+\begin{math}
+f(y_i \mid \vec{\beta}, \sigma^2, \vec{z}) \propto f_\text{N}(z_i \mid y_i, \lambda_i^2) \cdot
+f_\text{LN}(y_i \mid \vec{x}_i^\top \vec{\beta}, \sigma^2).
+\end{math}
+
+Steps 1 and 2 can make use of well-known normal and inverse gamma variate generation methods. For step 3, we will use VWS with a constant majorizer and minorizer as in @sec-privacy-const-custom; these can be readily obtained without numerical optimization. 
+
+@sec-privacy-within-gibbs-r presents a version of the code where the Gibbs sampler is written in R with Rcpp modules to interact with VWS proposals written in C++, as in @sec-persistent-module. @sec-privacy-within-gibbs-cpp presents an alternative version where the Gibbs sampler is written in C++ rather than R. The latter is substantially faster because it avoids the overhead of repeated calls between R and C++; however, it requires more C++ programming and cannot be debugged as readily as the former. Several timings are mentioned; they were measured in Windows using a laptop with a Intel Core i7-1185G7 3.0GHz CPU with four CPU cores.
+
+## Gibbs Sampler in R {#sec-privacy-within-gibbs-r}
+
+This version of the code implements the Gibbs sampler in R and utilizes VWS via Rcpp. We consider two implementations of VWS. One uses persistent proposals that are updated with current parameters from the Gibbs sampler. It makes use of the self-tuning method from @sec-self-tune. The other implementation uses the more basic method of constructing new proposals each time they are needed. Code for this example is given in the folder `examples/privacy-gibbs/v1-R`.
+
+The function `draw_ln_norm` in `draw-ln-norm.cpp` draws a variate from the conditional distribution $[y_i \mid \text{---}]$ using the current values of $z_i$, $\lambda_i$, $x_i^\top \vec{\beta}$, and $\sigma^2$. The remaining arguments are specific to VWS: `tol` and `N` correspond to the tolerance and maximum number of knots in Algorithm \ref{alg:refine}; `max_rejects` is the maximum number of rejections permitted in the `rejection` function. The return value is a list with the contents of a `rejection_result<double>`.
+
+```{cpp}
+Rcpp::List draw_ln_norm(
+	double z,
+	double lambda,
+	double xbeta,
+	double sigma,
+	double tol,
+	unsigned int N,
+	unsigned int max_rejects
+);
+```
+
+The class `ln_norm_proposal` in `ln-norm-proposal.cpp` is an `fmm_proposal` which defines a few additional functions that are exposed to R and contains state that should persist between calls from R. The interface of the class is as follows.
+
+```{cpp}
+class ln_norm_proposal : public vws::fmm_proposal<double, vws::real_const_region>
+{
+public:
+	ln_norm_proposal(                         // <1>
+		double z,
+		double lambda,
+		double xbeta,
+		double sigma);
+
+	void update(                              // <2>
+		double xbeta,
+		double sigma
+	);
+
+	vws::rejection_result<double> draw(       // <3>
+		unsigned int max_rejects
+	) const;
+
+	vws::rejection_result<double> draw_tune(  // <4>
+		double tol_suff,
+		double tol_merge,
+		unsigned int max_rejects
+	);
+
+	unsigned int size() const;                // <5>
+};
+```
+1. Constructor from initial values of $z_i$, $\lambda_i$, $x_i^\top \vec{\beta}$, and $\sigma^2$.
+2. Update the proposal with values of $x_i^\top \vec{\beta}$ and $\sigma^2$. These values change at each iteration of the Gibbs sampler. The proposal must update its representation of weight function $w$ with these values and recompute the majorizer and minorizer to be an envelope for rejection sampling.
+3. Generate a single draw using the `rejection` function.
+4. Generate a single draw and self-tune using the `rejection_tune` function. 
+5. Return the number of regions in the proposal.
+
+The following snippet in `ln-norm-proposal.cpp` defines an Rcpp Module which exposes functions to R.
+
+```{cpp}
+RCPP_MODULE(vws_module) {
+	Rcpp::class_<ln_norm_proposal>("ln_norm_proposal")
+	.constructor<double,double,double,double>()
+	.method("draw", &ln_norm_proposal::draw)
+	.method("draw_tune", &ln_norm_proposal::draw_tune)
+	.method("update", &ln_norm_proposal::update)
+	.method("size", &ln_norm_proposal::size)
+	;
+}
+```
+
+The file `gibbs.R` contains R code for the Gibbs sampler and some helper functions. See the Roxygen comments that accompany each function for a brief description.
+
+The script `driver.R` generates a dataset from the model and illustrates several calls to the Gibbs sampler. The following snippet uses transient proposals via `draw_ln_norm` (`method = "vws-basic"`), with some details omitted.
+
+```{r}
+#| eval: false
+inner = control_inner(tol_suff = 0.85, method = "vws-basic")
+control = control_gibbs(R = 3000, burn = 1000, report = 100, inner = inner,
+	save_latent = 1:10)
+out = gibbs(z, lambda, X, control = control)
+```
+
+Note that the setting `tol_suff = 0.85` ensures that each proposal is tuned to have a rejection rate no larger than 85% before rejection sampling. The following snippet illustrates self-tuned VWS using `ln_norm_proposal` (`method = "vws-tune"`).
+
+```{r}
+#| eval: false
+inner = control_inner(tol_suff = 0.85, tol_merge = 0.01, tune = 100,
+	method = "vws-tune")
+control = control_gibbs(R = 3000, burn = 1000, report = 100, inner = inner,
+	save_latent = 1:10)
+out = gibbs(z, lambda, X, control = control)
+```
+
+The settings in `control_inner` select the self-tuning method with adjustments made during the first 100 iterations of the MCMC, using $\epsilon_1 = 0.85$ and $\epsilon_2 = 0.01$. See the file `driver.R` script for details.
+
+A particular run of both methods yielded elapsed times of 30 seconds for `vws-basic` and 25 seconds for `vws-tune`. Much of the gain in efficiency due to self-tuning is negated by the overhead from frequent calls between R and C++. This could be mitigated by passing the list of $n$ proposals to C++ at each iteration of the Gibbs sampler. The following section avoids the overhead further by implementing the Gibbs sampler in C++.
+
+## Gibbs Sampler in C++ {#sec-privacy-within-gibbs-cpp}
+
+This version of the code implements the Gibbs sampler in C++ so that it is not necessary to expose VWS proposals to R. Code for this example is given in the folder `examples/privacy-gibbs/v2-cpp`.
+
+The class `ln_norm_proposal` in `ln-norm-proposal.h` defines a VWS proposal as follows.
+
+```{cpp}
+class ln_norm_proposal : public vws::fmm_proposal<double, vws::real_const_region>
+{
+public:
+	ln_norm_proposal(                         // <1>
+		double z,
+		double lambda,
+		double xbeta,
+		double sigma);
+
+	void update(                              // <2>
+		double xbeta,
+		double sigma
+	);
+};
+```
+1. Constructor from initial values of $z_i$, $\lambda_i$, $x_i^\top \vec{\beta}$, and $\sigma^2$.
+2. Update the proposal with values of $x_i^\top \vec{\beta}$ and $\sigma^2$. These values change at each iteration of the Gibbs sampler. The proposal must update its representation of weight function $w$ with these values and recompute the majorizer and minorizer to be an envelope for rejection sampling.
+
+This version of `ln_norm_proposal` is simpler than the one in @sec-privacy-within-gibbs-r. When programming in C++, we can directly make use of the fact that it inherits from `fmm_proposal` as a base class. For example, we can call the `fmm_proposal::r` method to generate draws. We can also pass objects of class `ln_norm_proposal` to the `rejection` or `rejection_tune` functions.
+
+The files `gibbs.cpp` and `gibbs.R` contain code for the Gibbs sampler and helper functions: `gibbs.cpp` implements the Gibbs sampler itself in C++ using RcppArmadillo [@RcppArmadillo] for matrix algebra, while helper functions are implemented in R in `gibbs.R`. Refer to the Roxygen comments in `gibbs.R` for details.
+
+The script `driver.R` generates a dataset from the model and runs two versions of the Gibbs sampler, `"vws-basic"` and `"vws-tune"`, as in @sec-privacy-within-gibbs-r. Here, a run of each yielded elapsed times of 28 seconds for `vws-basic` and 6.2 seconds for `vws-tune`. This represents a reduction of $(28 - 6.2) / 28 = 77.9\%$ compared to $(30 - 25) / 30 = 16.67\%$ seen in @sec-privacy-within-gibbs-r.
 
 \clearpage
 

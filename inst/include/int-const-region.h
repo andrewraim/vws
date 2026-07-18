@@ -3,9 +3,9 @@
 
 #include <Rcpp.h>
 #include "typedefs.h"
-#include "RealConstRegion.h"
-#include "RealConstRegion-defaults.h"
-#include "UnivariateHelper.h"
+#include "real-const-region.h"
+#include "real-const-region-defaults.h"
+#include "univariate-helper.h"
 
 namespace vws {
 
@@ -16,7 +16,7 @@ namespace vws {
 * for the weight function. This version is for integer supports. It uses
 * doubles for its domain but values are integers.
 */
-class IntConstRegion : public RealConstRegion
+class int_const_region : public real_const_region
 {
 public:
 	/*
@@ -33,8 +33,8 @@ public:
 	* If `mid` is not specified, we use a version of the arithmetic midpoint
 	* with special handling of infinite endpoints.
 	*/
-	IntConstRegion(double a, const dfdb& w,
-		const UnivariateHelper& helper,
+	int_const_region(double a, const dfdb& w,
+		const univariate_helper& helper,
 		const optimizer& maxopt = maxopt_default,
 		const optimizer& minopt = minopt_default,
 		const vws::midpoint& mid = midpoint_default);
@@ -54,14 +54,14 @@ public:
 	* If `mid` is not specified, we use a version of the arithmetic midpoint
 	* with special handling of infinite endpoints.
 	*/
-	IntConstRegion(double a, double b, const dfdb& w,
-		const UnivariateHelper& helper,
+	int_const_region(double a, double b, const dfdb& w,
+		const univariate_helper& helper,
 		const optimizer& maxopt = maxopt_default,
 		const optimizer& minopt = minopt_default,
 		const vws::midpoint& mid = midpoint_default);
 
 	/*
-	* The following functions override methods in `RealConstRegion`. See that
+	* The following functions override methods in `real_const_region`. See that
 	* class' documentation for their interfaces.
 	*/
 	bool is_bifurcatable() const;
@@ -70,84 +70,83 @@ public:
 	* Return a pair of regions that result from bifurcating this region. The
 	* bifurcation point is chosen to be the midpoint of $(a, b]$.
 	*/
-	std::pair<IntConstRegion,IntConstRegion> bifurcate() const;
+	std::pair<int_const_region,int_const_region> bifurcate() const;
 
 	/*
 	* Return a pair of regions that result from bifurcating this region at $x$.
 	*/
-	std::pair<IntConstRegion,IntConstRegion> bifurcate(const double& x) const;
+	std::pair<int_const_region,int_const_region> bifurcate(const double& x) const;
 
 	/*
 	* Return a region based on the singleton interval $(x, x]$, using this
 	* object's weight function, base distribution, etc.
 	*/
-	IntConstRegion singleton(const double& x) const;
+	int_const_region singleton(const double& x) const;
 
 	/*
-	* See RealConstRegion for documentation of the following.
+	* See real_const_region for documentation of the following.
 	*/
-	bool operator<(const IntConstRegion& x) const;
-	bool operator==(const IntConstRegion& x) const;
-	const IntConstRegion& operator=(const IntConstRegion& x);
+	bool operator<(const int_const_region& x) const;
+	bool operator==(const int_const_region& x) const;
+	const int_const_region& operator=(const int_const_region& x);
 };
 
-inline IntConstRegion::IntConstRegion(double a,
-	const dfdb& w, const UnivariateHelper& helper,
+inline int_const_region::int_const_region(double a,
+	const dfdb& w, const univariate_helper& helper,
 	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
-: RealConstRegion(a, w, helper, maxopt, minopt, mid)
+: real_const_region(a, w, helper, maxopt, minopt, mid)
 {
 }
 
-inline IntConstRegion::IntConstRegion(double a, double b,
-	const dfdb& w, const UnivariateHelper& helper,
+inline int_const_region::int_const_region(double a, double b,
+	const dfdb& w, const univariate_helper& helper,
 	const optimizer& maxopt, const optimizer& minopt, const vws::midpoint& mid)
-: RealConstRegion(a, b, w, helper, maxopt, minopt, mid)
+: real_const_region(a, b, w, helper, maxopt, minopt, mid)
 {
 }
 
-inline std::pair<IntConstRegion,IntConstRegion>
-IntConstRegion::bifurcate() const
+inline std::pair<int_const_region,int_const_region>
+int_const_region::bifurcate() const
 {
 	return bifurcate(midpoint());
 }
 
-inline std::pair<IntConstRegion,IntConstRegion>
-IntConstRegion::bifurcate(const double& x) const
+inline std::pair<int_const_region,int_const_region>
+int_const_region::bifurcate(const double& x) const
 {
-	IntConstRegion r1(_a, x, _w, _helper, _maxopt, _minopt, _mid);
-	IntConstRegion r2(x, _b, _w, _helper, _maxopt, _minopt, _mid);
+	int_const_region r1(_a, x, _w, _helper, _maxopt, _minopt, _mid);
+	int_const_region r2(x, _b, _w, _helper, _maxopt, _minopt, _mid);
 	return std::make_pair(r1, r2);
 }
 
-inline IntConstRegion IntConstRegion::singleton(const double& x) const
+inline int_const_region int_const_region::singleton(const double& x) const
 {
-	return IntConstRegion(x, _w, _helper, _maxopt, _minopt, _mid);
+	return int_const_region(x, _w, _helper, _maxopt, _minopt, _mid);
 }
 
-inline bool IntConstRegion::is_bifurcatable() const
+inline bool int_const_region::is_bifurcatable() const
 {
 	// Return true if the distance between a and b allows for two or more
 	// integers
 	return _b - _a > 1;
 }
 
-inline bool IntConstRegion::operator<(const IntConstRegion& x) const
+inline bool int_const_region::operator<(const int_const_region& x) const
 {
-	return RealConstRegion::operator<(x);
+	return real_const_region::operator<(x);
 }
 
-inline bool IntConstRegion::operator==(const IntConstRegion& x) const
+inline bool int_const_region::operator==(const int_const_region& x) const
 {
-	return RealConstRegion::operator==(x);
+	return real_const_region::operator==(x);
 }
 
-inline const IntConstRegion& IntConstRegion::operator=(const IntConstRegion& x)
+inline const int_const_region& int_const_region::operator=(const int_const_region& x)
 {
-	RealConstRegion::operator=(x);
+	real_const_region::operator=(x);
 	return *this;
 }
 
 }
 
 #endif
-

@@ -53,3 +53,4 @@ inst/doc
 docs
 
 *.o
+.positai

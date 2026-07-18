@@ -28,9 +28,9 @@ Rcpp::List r_bessel_v1(unsigned int n, double lambda, double nu, unsigned int N,
 		return R::qpois(p, mean, lower, log);
 	};
 
-	vws::UnivariateHelper helper(df, pf, qf);
-	vws::IntConstRegion supp(-0.1, R_PosInf, w, helper);
-	vws::FMMProposal<double, vws::IntConstRegion> h(supp);
+	vws::univariate_helper helper(df, pf, qf);
+	vws::int_const_region supp(-0.1, R_PosInf, w, helper);
+	vws::fmm_proposal<double, vws::int_const_region> h(supp);
 
 	auto lbdd = h.refine(N - 1, tol);
 	auto out = vws::rejection(h, n, args);
@@ -49,9 +49,9 @@ Rcpp::List r_bessel_v1(unsigned int n, double lambda, double nu, unsigned int N,
 	Rcpp::NumericVector lwmin(N);
 	Rcpp::NumericVector lwmax(N);
 
-	std::set<vws::IntConstRegion>::const_iterator itr = h.regions_begin();
+	auto itr = h.begin();
 	unsigned int i = 0;
-	for (; itr != h.regions_end(); itr++) {
+	for (; itr != h.end(); itr++) {
 		lo(i) = itr->lower();
 		hi(i) = itr->upper();
 		lwmin(i) = itr->w_minor(itr->midpoint());

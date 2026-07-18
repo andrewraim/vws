@@ -18,4 +18,9 @@ Useful links:
 \author{
 \strong{Maintainer}: Andrew M. Raim \email{andrew.raim@gmail.com}
 
+Authors:
+\itemize{
+  \item Andrew M. Raim \email{andrew.raim@gmail.com}
+}
+
 }

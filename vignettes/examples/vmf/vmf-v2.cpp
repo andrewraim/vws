@@ -61,9 +61,9 @@ Rcpp::List r_vmf_pre_v2(unsigned int n, double kappa, double d, unsigned int N,
 		maxopt = &opt2;
 	}
 
-	vws::UnivariateHelper helper(df, pf, qf);
-	vws::RealConstRegion supp(-1, 1, w, helper, *maxopt, *minopt);
-	vws::FMMProposal<double, vws::RealConstRegion> h(supp);
+	vws::univariate_helper helper(df, pf, qf);
+	vws::real_const_region supp(-1, 1, w, helper, *maxopt, *minopt);
+	vws::fmm_proposal<double, vws::real_const_region> h(supp);
 
 	auto lbdd = h.refine(N - 1, tol);
 	auto out = vws::rejection(h, n, args);

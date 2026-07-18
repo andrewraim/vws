@@ -2,12 +2,13 @@
 #define VWS_REJECTION_H
 
 #include <Rcpp.h>
-#include "timestamp.h"
-#include "Region.h"
-#include "FMMProposal.h"
+#include "fntl.h"
+#include "region.h"
+#include "fmm-proposal.h"
 #include "result.h"
 #include "typedefs.h"
 #include "rejection-args.h"
+#include "logger.h"
 
 namespace vws {
 
@@ -22,10 +23,9 @@ namespace vws {
 */
 template <typename T, typename R>
 inline rejection_result<T>
-rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
+rejection(const fmm_proposal<T,R>& h, unsigned int n, const rejection_args& args)
 {
-	std::vector<T> draws;
-	std::vector<unsigned int> rejects;
+	rejection_result<T> out;
 
 	unsigned int N_rejects = 0;
 	bool accept = false;
@@ -34,6 +34,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 	unsigned int report = args.report;
 	fntl::error_action action = args.action;
 	double log_ratio_ub = std::exp(args.ratio_ub);
+	bool metrics = args.metrics;
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
@@ -41,7 +42,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 	for (unsigned int i = 0; i < n && N_rejects <= max_rejects; i++)
 	{
 		accept = false;
-		rejects.push_back(0L);
+		if (metrics) { out.rejects.push_back(0L); }
 
 		while (!accept && N_rejects <= max_rejects)
 		{
@@ -52,23 +53,25 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 			double log_ratio = log_fx - log_hx - log_M;
 
 			if (log_ratio > log_ratio_ub) {
-				Rcpp::stop("log_ratio %g exceeded %g; with x = %g, log f(x) = %g, and log h(x) = %g",
+				Rcpp::stop("log_ratio %g exceeded %g; with x = %g, "
+					"log f(x) = %g, and log h(x) = %g",
 					log_ratio, log_ratio_ub, x, log_fx, log_hx);
 			} else if (log(v) < log_ratio) {
 				// Accept x as a draw from f(x)
-				draws.push_back(x);
+				out.draws.push_back(x);
 				accept = true;
 			} else {
-				// Reject x and refine the proposal
+				// Reject x
 				N_rejects++;
-				rejects[i]++;
+				if (metrics) { out.rejects[i]++; }
 			}
 
 			// Report progress after `report` candidates
 			unsigned int N_accepts = i + accept;
 			if ((N_rejects + N_accepts) % report == 0) {
-				Rprintf("%s - After %d candidates, %d accepts and %d rejects\n",
-					timestamp().c_str(), N_accepts + N_rejects, N_accepts, N_rejects);
+				logger("%d candidates  %d accepts  %d rejects\n",
+					N_accepts + N_rejects, N_accepts,
+					N_rejects);
 			}
 		}
 	}
@@ -89,9 +92,6 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 		}
 	}
 
-	rejection_result<T> out;
-	out.draws = draws;
-	out.rejects = rejects;
 	return out;
 }
 
@@ -104,7 +104,7 @@ rejection(const FMMProposal<T,R>& h, unsigned int n, const rejection_args& args)
 *  Returns a structure with saved draws and rejection counts.
 */
 template <typename T, typename R>
-inline rejection_result<T> rejection(const FMMProposal<T,R>& h, unsigned int n)
+inline rejection_result<T> rejection(const fmm_proposal<T,R>& h, unsigned int n = 1)
 {
 	rejection_args ctrl;
 	return rejection(h, n, ctrl);

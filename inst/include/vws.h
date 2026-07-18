@@ -14,22 +14,39 @@
 #include "result.h"
 
 #include "categ.h"
-#include "FMMProposal.h"
+#include "fmm-proposal.h"
 #include "gumbel.h"
-#include "IntConstRegion.h"
+#include "int-const-region.h"
+#include "logger.h"
 #include "log-sum-exp.h"
 #include "logit.h"
 #include "optimize-hybrid.h"
-#include "Region.h"
-#include "RealConstRegion.h"
-#include "RealConstRegion-defaults.h"
+#include "region.h"
+#include "real-const-region.h"
+#include "real-const-region-defaults.h"
 #include "rect.h"
 #include "rejection.h"
 #include "rejection-args.h"
+#include "rejection-tune.h"
 #include "seq.h"
-#include "timestamp.h"
 #include "typedefs.h"
-#include "UnivariateHelper.h"
+#include "univariate-helper.h"
+
+/*
+* Aliases for original camel case class names.
+*/
+
+namespace vws {
+	template<class T, class R>
+	using FMMProposal = fmm_proposal<T,R>;
+
+	template<class T>
+	using Region = region<T>;
+
+	using RealConstRegion = real_const_region;
+	using IntConstRegion = int_const_region;
+	using UnivariateHelper = univariate_helper;
+}
 
 #endif
 

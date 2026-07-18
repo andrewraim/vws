@@ -6,10 +6,10 @@
 
 namespace vws {
 
-class UnivariateHelper
+class univariate_helper
 {
 public:
-	UnivariateHelper(fntl::density d, fntl::cdf p, fntl::quantile q)
+	univariate_helper(fntl::density d, fntl::cdf p, fntl::quantile q)
 	: _d(d), _p(p), _q(q)
 	{
 	}
@@ -23,7 +23,7 @@ public:
 	double q(double p, bool lower = true, bool log = false) const {
 		return _q(p, lower, log);
 	}
-	const UnivariateHelper& operator=(const UnivariateHelper& x) {
+	const univariate_helper& operator=(const univariate_helper& x) {
 		_d = x._d;
 		_p = x._p;
 		_q = x._q;

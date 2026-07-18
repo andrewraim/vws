@@ -30,9 +30,9 @@ Rcpp::List r_vmf_pre_v1(unsigned int n, double kappa, double d,
         return q_texp(p, kappa, -1, 1, lower, log);
     };
 
-    vws::UnivariateHelper helper(df, pf, qf);               // <8>
-    vws::RealConstRegion supp(-1, 1, w, helper);            // <9>
-    vws::FMMProposal<double, vws::RealConstRegion> h(supp); // <10>
+    vws::univariate_helper helper(df, pf, qf);               // <8>
+    vws::real_const_region supp(-1, 1, w, helper);            // <9>
+    vws::fmm_proposal<double, vws::real_const_region> h(supp); // <10>
 
     auto lbdd = h.refine(N - 1, tol);                       // <11>
     auto out = vws::rejection(h, n, args);                  // <12>
