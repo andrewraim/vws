@@ -51,6 +51,16 @@ struct optimize_hybrid_result {
 *  - `draws`: vector of draws.
 *  - `rejects`: vector of rejection counts. The $i$th element contains the
 *    count of rejections to obtain the $i$th element of `draws`.
+*  - `tunes`: vector of counts of tuning adjustments. The $i$th element
+*    contains the number of adjustments to obtain the $i$th element of `draws`.
+*  - `regions`: vector of counts of proposal regions. The $i$th element
+*    contains the number of regions in the proposal when the $i$th element of
+*    `draws` was accepted.
+*  - `log_bounds`: vector of bounds for rejection probabilities. The $i$th
+*    element contains the bound when the $i$th element of `draws` was accepted.
+*
+*  The fields `tunes`, `regions`, and `log_bounds` are specific to
+*  `rejection_tune`. These vectors are left empty in `rejection`.
 */
 template <typename T>
 struct rejection_result

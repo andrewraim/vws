@@ -3,9 +3,31 @@
 #include <vws.h>
 #include <chrono>
 #include "ln-norm-proposal.h"
-#include "utils.h"
 
 const double SEC_PER_MICROSEC = 1e-6;
+
+// [[Rcpp::export]]
+double r_invgamma(double a, double b)
+{
+    return 1 / R::rgamma(a, 1 / b);
+}
+
+// [[Rcpp::export]]
+arma::mat r_mvnorm_prec(const arma::vec& mu, const arma::mat& Omega)
+{
+	if (mu.n_elem != Omega.n_rows) {
+		Rcpp::stop("mu.n_elem != Omega.n_rows");
+	}
+
+	if (Omega.n_rows != Omega.n_cols) {
+		Rcpp::stop("Omega.n_rows != Omega.n_cols");
+	}
+
+    unsigned int k = mu.n_elem;
+    const arma::vec& z = arma::randn(k);
+    const arma::mat& A = arma::chol(Omega);
+    return arma::solve(A, z) + mu;
+}
 
 // [[Rcpp::export]]
 Rcpp::List gibbs_cpp(const arma::vec& z, const arma::vec& lambda,
@@ -187,12 +209,12 @@ Rcpp::List gibbs_cpp(const arma::vec& z, const arma::vec& lambda,
 				unsigned int s = (rep >= report) ? rep - report : 0;
 				unsigned int rejects = arma::sum(rejects_hist(arma::span(s, rep)));
 				unsigned int tunes = arma::sum(tunes_hist(arma::span(s, rep)));
-				logger("[%d] avg-N: %0.4f  tunes: %d  rejects: %d\n", rep + 1,
-					avg_comps, tunes, rejects);
+				vws::logger("[%d] avg-N: %0.4f  tunes: %d  rejects: %d\n",
+					rep + 1, avg_comps, tunes, rejects);
 			} else {
 				unsigned int s = (rep >= report) ? rep - report : 0;
 				unsigned int rejects = arma::sum(rejects_hist(arma::span(s, rep)));
-				logger("[%d] rejects: %d\n", rep + 1, rejects);
+				vws::logger("[%d] rejects: %d\n", rep + 1, rejects);
 			}
 		}
 

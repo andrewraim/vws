@@ -17,6 +17,7 @@
 #include "fmm-proposal.h"
 #include "gumbel.h"
 #include "int-const-region.h"
+#include "logger.h"
 #include "log-sum-exp.h"
 #include "logit.h"
 #include "optimize-hybrid.h"
@@ -28,7 +29,6 @@
 #include "rejection-args.h"
 #include "rejection-tune.h"
 #include "seq.h"
-#include "timestamp.h"
 #include "typedefs.h"
 #include "univariate-helper.h"
 

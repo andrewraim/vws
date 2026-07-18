@@ -42,6 +42,17 @@ namespace vws {
 *    greater than zero. This condition should not occur otherwise, and usually
 *    indicates a mistake in user code. This argument is the maximum value
 *    allowed where an exception will not be thrown.
+*
+* - `tol_suff`: tolerance used in `rejection_tune` to determine whether
+*   rejection rate is sufficiently low.
+*
+* - `tol_merge`: tolerance used in `rejection_tune` to determine whether
+*   the contribution of a given region is small enough to consider merging it
+*   with another region (and simplify the proposal).
+*
+* - `metrics`: whether to save non-essential metrics to the result. Metrics are
+*   recorded per draw. If not desired, the overhead of storing them can be
+*   avoided by setting this to `false`.
 */
 struct rejection_args
 {
@@ -51,6 +62,7 @@ struct rejection_args
 	fntl::error_action action = fntl::error_action::STOP;
 	double tol_suff = 0.85;
 	double tol_merge = 0.01;
+	bool metrics = true;
 
 	rejection_args() { };
 	rejection_args(SEXP obj);
@@ -71,7 +83,7 @@ inline rejection_args::rejection_args(SEXP obj)
 	const Rcpp::List& x = Rcpp::as<Rcpp::List>(obj);
 
 	const Rcpp::StringVector& ex_names = { "max_rejects", "report",
-		"ratio_ub", "action", "N", "tol", "maxopt", "minopt"};
+		"ratio_ub", "action", "tol_suff", "tol_merge", "metrics"};
 	const Rcpp::StringVector& ac_names = x.names();
 	const auto& diff = Rcpp::setdiff(ac_names, ex_names);
 	if (diff.size() > 0) {
@@ -86,6 +98,9 @@ inline rejection_args::rejection_args(SEXP obj)
 	max_rejects = x.containsElementNamed("max_rejects") ? x["max_rejects"] : max_rejects;
 	report = x.containsElementNamed("report") ? x["report"] : report;
 	ratio_ub = x.containsElementNamed("ratio_ub") ? x["ratio_ub"] : ratio_ub;
+	tol_suff = x.containsElementNamed("tol_suff") ? x["tol_suff"] : tol_suff;
+	tol_merge = x.containsElementNamed("tol_merge") ? x["tol_merge"] : tol_merge;
+	metrics = x.containsElementNamed("metrics") ? x["metrics"] : metrics;
 }
 
 /*
@@ -98,7 +113,10 @@ inline rejection_args::operator SEXP() const
 		Rcpp::Named("max_rejects") = max_rejects,
 		Rcpp::Named("report") = report,
 		Rcpp::Named("ratio_ub") = ratio_ub,
-		Rcpp::Named("action") = static_cast<unsigned int>(action)
+		Rcpp::Named("action") = static_cast<unsigned int>(action),
+		Rcpp::Named("tol_suff") = tol_suff,
+		Rcpp::Named("tol_merge") = tol_merge,
+		Rcpp::Named("metrics") = metrics
 	);
 }
 

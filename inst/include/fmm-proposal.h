@@ -5,8 +5,8 @@
 #include "typedefs.h"
 #include "log-sum-exp.h"
 #include "categ.h"
-#include "timestamp.h"
 #include "region.h"
+#include "logger.h"
 #include <iterator>
 
 namespace vws {
@@ -348,8 +348,8 @@ Rcpp::NumericVector fmm_proposal<T,R>::refine(unsigned int N, double tol,
 		lbdd_hist.push_back(bound(true));
 
 		if (j % report == 0 && report < fntl::uint_max) {
-			Rprintf("%s - After %d steps log Pr{rejection} <= %g\n",
-				timestamp().c_str(), j, lbdd_hist[j+1]);
+			logger("After %d steps log Pr{rejection} <= %g\n", j,
+				lbdd_hist[j+1]);
 		}
 	}
 

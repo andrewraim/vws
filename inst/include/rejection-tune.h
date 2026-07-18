@@ -1,9 +1,20 @@
 #ifndef VWS_REJECTION_TUNE_H
 #define VWS_REJECTION_TUNE_H
 
+#include <Rcpp.h>
+#include "fntl.h"
+#include "region.h"
+#include "fmm-proposal.h"
+#include "result.h"
+#include "typedefs.h"
+#include "rejection-args.h"
+#include "logger.h"
+
 /*
+* Helper function to merge (at most) one pair of regions in a proposal h.
+*
 * For regions that contribute very little (i.e., whose log-bound contribution
-* is smaller than tol_merge), merge them with other regions. Only do this merge
+* is smaller than tol_merge), merge them with another region. Only do this
 * if the overall bound is small enough, and dropping the region would not put
 * us back over tol_suff threshold.
 *
@@ -12,7 +23,7 @@
 * iterators and indices when the underlying data is modified.
 */
 template <typename T, typename R>
-unsigned int merge_once(
+unsigned int merge_one(
 	vws::fmm_proposal<T,R>& h,
 	const T& x,
 	double tol_suff,
@@ -89,6 +100,7 @@ rejection_tune(
 	double log_ratio_ub = std::exp(args.ratio_ub);
 	double tol_suff = args.tol_suff;
 	double tol_merge = args.tol_merge;
+	bool metrics = args.metrics;
 
 	// The constant M in the acceptance ratio is always M = 1.
 	double log_M = 0;
@@ -96,9 +108,11 @@ rejection_tune(
 	for (unsigned int i = 0; i < n && N_rejects <= max_rejects; i++)
 	{
 		accept = false;
-		out.rejects.push_back(0L);
-		out.tunes.push_back(0L);
-		out.regions.push_back(0L);
+		if (metrics) {
+			out.rejects.push_back(0L);
+			out.tunes.push_back(0L);
+			out.regions.push_back(0L);
+		}
 
 		while (!accept && N_rejects <= max_rejects)
 		{
@@ -109,77 +123,71 @@ rejection_tune(
 			double log_ratio = log_fx - log_hx - log_M;
 
 			if (log_ratio > log_ratio_ub) {
-				// Rprintf("%d: N_rejects  %d  x: %f\n", i, N_rejects, x);
 				Rcpp::stop("log_ratio %g exceeded %g; with x = %g, "
 					"log f(x) = %g, and log h(x) = %g",
 					log_ratio, log_ratio_ub, x, log_fx, log_hx);
 			} else if (log(v) < log_ratio) {
 				// Accept x as a draw from f(x)
 				out.draws.push_back(x);
-				out.log_bounds.push_back(h.bound(true));
+				if (metrics) { out.log_bounds.push_back(h.bound(true)); }
 				accept = true;
 			} else {
 				// Reject x
 				N_rejects++;
-				out.rejects[i]++;
+				if (metrics) { out.rejects[i]++; }
 			}
 
 			// Report progress after `report` candidates
 			unsigned int N_accepts = i + accept;
 			if ((N_rejects + N_accepts) % report == 0) {
-				Rprintf("%s - %d candidates  %d accepts  %d rejects  %d regions\n",
-					timestamp().c_str(), N_accepts + N_rejects, N_accepts,
-					N_rejects, N_regions);
+				logger("%d candidates  %d accepts  %d rejects  %d regions\n",
+					N_accepts + N_rejects, N_accepts, N_rejects, N_regions);
 			}
 
 			/*
-			 *  Consider tuning the proposal.
-			 *
-			 * If the draw was rejected and the bound for rejection
-			 * rate is "sufficient", see if we can merge some of the regions
-			 * to simplify the proposal. We merge two regions at a time,
-			 * repeating until the next merge would make the rejection bound
-			 * "insufficient".
-			 *
-			 *
-			 * Otherwise, if the draw was rejected and the bound for rejection
-			 * rate is is "insufficient", partition using the rejected x.
-			 *
-			 * Note that we do not do both on a single rejection.
+			*  Consider tuning the proposal.
+			*
+			* If the draw was rejected and the bound for rejection
+			* rate is "sufficient", see if we can merge some of the regions
+			* to simplify the proposal. We merge two regions at a time,
+			* repeating until the next merge would make the rejection bound
+			* "insufficient".
+			*
+			* Otherwise, if the draw was rejected and the bound for rejection
+			* rate is is "insufficient", partition using the rejected x.
+			*
+			* Note that we do not do both on a single rejection.
 			*/
 
 			if (!accept && h.bound(true) < log(tol_suff))
 			{
-				// Rprintf("Merge some regions ...\n");
-
-				// Identify regions that contribute very little and merge them
-				// with other regions.
 				bool repeat = true;
 
 				/*
-				* Go through all mergeable pairs and check if we should merge, using our
-				* criteria, without modifying the proposal. If we find a match, do the
-				* merge in the proposal and start the process over. Repeat until we find no
-				* more pairs to merge.
+				* Identify regions that contribute very little and merge them
+				* with other regions.
+				*
+				* Go through all mergeable pairs and check if we should merge,
+				* using our criteria, without modifying the proposal. If we
+				* find a match, do the merge in the proposal and start the
+				* process over. Repeat until we find no more pairs to merge.
 				*/
 				while (repeat) {
-					bool merged = ::merge_once(h, x, tol_suff, tol_merge);
+					bool merged = ::merge_one(h, x, tol_suff, tol_merge);
 					repeat = merged;
-					out.tunes[i] += merged;
+					if (metrics) { out.tunes[i] += merged; }
 				}
 			}
 			else if (!accept && h.bound(true) >= log(tol_suff))
 			{
-				// Rprintf("Refine at x = %g ...\n", x);
-
-				// Add the rejected draw as a knot
+				/* Add the rejected draw as a knot */
 				const std::vector<T>& knots = { x };
 				h.refine(knots);
-				out.tunes[i]++;
+				if (metrics) { out.tunes[i]++; }
 				N_tunes++;
 			}
 
-			out.regions[i] = h.size();
+			if (metrics) { out.regions[i] = h.size(); }
 			N_regions = h.size();
 		}
 	}

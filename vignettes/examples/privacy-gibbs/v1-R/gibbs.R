@@ -1,6 +1,28 @@
-source("mvnorm.R")
-sourceCpp("draw-ln-norm.cpp")
-sourceCpp("ln-norm-proposal.cpp")
+Rcpp::sourceCpp("draw-ln-norm.cpp")
+Rcpp::sourceCpp("ln-norm-proposal.cpp")
+
+#' r_mvnorm_prec
+#'
+#' Generate one multivariate normal variate using the specified mean vector and
+#' precision matrix.
+#'
+#' @param mu Vector which represents the mean.
+#' @param Omega Matrix which represents the precision.
+#'
+#' @returns A vector
+#' @export
+r_mvnorm_prec = function(mu, Omega)
+{
+	stopifnot(length(mu) == nrow(Omega))
+	stopifnot(nrow(Omega) == ncol(Omega))
+
+    k = length(mu)
+    z = rnorm(k)
+    A = chol(Omega)
+    out = solve(A, z) + mu
+
+	return(out)
+}
 
 #' printf
 #'
@@ -411,9 +433,8 @@ print.gibbs = function(x, pr = c(0.05, 0.95), ...)
 	if (!x$fixed$y && x$method == "vws-tune") {
 		cat("----\n")
 		printf("y step\n")
-		printf("   Proposed: %d  Rejected: %d\n", sum(x$rejects) + x$R * x$n,
-			sum(x$rejects))
-		printf("   Rejection rate: %g%%\n",
+		printf("   Proposed: %d  Rejected: %d  Rate: %0.2f%%\n",
+			sum(x$rejects) + x$R * x$n, sum(x$rejects),
 			100 * sum(x$rejects) / (sum(x$rejects) + x$R * x$n))
 		printf("   Avg regions: %g\n", sum(x$comps) / (x$R * x$n))
 	} else if (!x$fixed$y && x$method == "vws-basic") {

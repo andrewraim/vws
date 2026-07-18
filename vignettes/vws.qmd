@@ -4,7 +4,7 @@ author: Andrew M. Raim
 format:
   pdf:
     mathspec: true
-    fontsize: 10pt
+    fontsize: 11pt
     indent: false
     toc: true
     number-sections: true
@@ -27,7 +27,7 @@ classoption: abstract
 abstract: |
   The `vws` package facilitates the vertical weighted strips (VWS) method in R.
   VWS is an approach to construct proposals for rejection sampling which is
-  explored in @VWS2025. The `vws` package provides an API to program the
+  explored in @vws-2026. The `vws` package provides an API to program the
   necessary components for the proposal and carry out rejection sampling. The
   API of the `vws` package is in C++ and makes use of templates and
   object-oriented programming; a working understanding of these techniques is
@@ -49,7 +49,7 @@ geometry:
   - top=0.75in
   - bottom=1.00in
 execute:
-  eval: false
+  eval: true
 code-block-bg: "#FAFAFA"
 code-block-border-left: "#B2DEED"
 filters:
@@ -67,7 +67,7 @@ set.seed(1234)
 
 # Disclaimer and Acknowledgments {.unnumbered}
 
-This document is released to inform interested parties of ongoing research and to encourage discussion of work in progress. Any views expressed are those of the authors and not those of the U.S. Census Bureau.
+This document is released to inform interested parties of ongoing research and to encourage discussion of work in progress. Any views expressed are those of the author and not of the U.S. Census Bureau.
 
 The author is grateful to Drs. James Livsey and Kyle Irimata for discussions that motivated development of this package. Thanks to Drs. Kyle Irimata and Tommy Wright for their reviews of this manuscript.
 
@@ -75,11 +75,11 @@ Although there are no guarantees of correctness of the `vws` package, reasonable
 
 # Introduction
 
-The `vws` package facilitates vertical weighted strips (VWS) sampling [@VWS2025]. VWS is an approach to construct proposal distributions for rejection sampling. Here, the target density is regarded as a weighted density - the product of a nonnegative weight function and a base density. The weight function is majorized by a given function (which bounds it above) to yield an envelope which is recombined with the base density to form a proposal distribution. If it is convenient to generate draws from the proposal, and the distance between the original and majorized weight function is not too large, such a proposal can be effectively used in rejection sampling. When the weight function is majorized in a piecewise manner over the support, the resulting proposal can be regarded as a finite mixture. Such a mixture can be refined to reduce the rejection probability to an acceptable tolerance. The term "vertical weighted strips" emphasizes that it is an extension of a method referred to as "vertical strips" in Section 3.6.1 of @MartinoLuengoMiguez2018, and was previously described in Chapter VIII of @Devroye1986. Partitioning in VWS is done to facilitate majorization of the weight function rather than to majorize the entire target density as in vertical strips.
+The `vws` package facilitates vertical weighted strips (VWS) sampling [@vws-2026]. VWS is an approach to construct proposal distributions for rejection sampling. Here, the target density is regarded as a weighted density - the product of a nonnegative weight function and a base density. The weight function is majorized by a given function (which bounds it above) to yield an envelope which is recombined with the base density to form a proposal distribution. If it is convenient to generate draws from the proposal, and the distance between the original and majorized weight function is not too large, such a proposal can be effectively used in rejection sampling. When the weight function is majorized in a piecewise manner over the support, the resulting proposal can be regarded as a finite mixture. Such a mixture can be refined to reduce the rejection probability to an acceptable tolerance. The term "vertical weighted strips" emphasizes that it is an extension of a method referred to as "vertical strips" in Section 3.6.1 of @Martino-Luengo-Miguez-2018, and was previously described in Chapter VIII of @Devroye-1986. Partitioning in VWS is done to facilitate majorization of the weight function rather than to majorize the entire target density as in vertical strips.
 
-The `vws` package provides tools to construct and utilize VWS proposal distributions. Variate generation functions are constructed in C++ and may be exposed for use in R via the Rcpp package [@Eddelbuettel2103]. C++ is taken as the primary programming language because of its efficiency as a compiled language and its formal approach to object-orientation and template programming. The `fntl` package [@fntl] is integral to `vws` usage; it provides a simplified C++ interface to useful routines in the R application programming interface (API) which is described in @RExtensions, as well as other useful numerical routines, where functions are supplied as lambdas. The `vws` package has been designed primarily to generate from univariate distributions (both continuous and discrete). It is also possible to construct proposals for multivariate distributions using the VWS approach; the `vws` package is intended to support code development for such settings as well.
+The `vws` package provides tools to construct and utilize VWS proposal distributions. Variate generation functions are constructed in C++ and may be exposed for use in R via the Rcpp package [@Eddelbuettel-2103]. C++ is taken as the primary programming language because of its efficiency as a compiled language and its formal approach to object-orientation and template programming. The `fntl` package [@fntl] is integral to `vws` usage; it provides a simplified C++ interface to useful routines in the R application programming interface (API) which is described in @R-ext, as well as other useful numerical routines, where functions are supplied as lambdas. The `vws` package has been designed primarily to generate from univariate distributions (both continuous and discrete). It is also possible to construct proposals for multivariate distributions using the VWS approach; the `vws` package is intended to support code development for such settings as well.
 
-This vignette presents an overview of the package, its API, and several examples of working samplers. An `R>` prompt is shown in some code displays to emphasize interaction via the console. Examples make liberal use of the `tidyverse` [@Tidyverse2019], especially `ggplot2` to plot and `dplyr` to manipulate tables. Some of the lengthier codes for the examples are not presented in this document; however, complete codes are provided with the package. They can be accessed in the `doc/examples` folder of the installed `vws` package. This path can be accessed in R with the following command.
+This vignette presents an overview of the package, its API, and several examples of working samplers. An `R>` prompt is shown in some code displays to emphasize interaction via the console. Examples make liberal use of the `tidyverse` [@Tidyverse-2019], especially `ggplot2` to plot and `dplyr` to manipulate tables. Some of the lengthier codes for the examples are not presented in this document; however, complete codes are provided with the package. They can be accessed in the `doc/examples` folder of the installed `vws` package. This path can be accessed in R with the following command.
 
 ```{r}
 #| eval: false
@@ -87,7 +87,7 @@ This vignette presents an overview of the package, its API, and several examples
 file.path(path.package("vws"), "doc", "examples")
 ```
 
-The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @VWS2025. @sec-privacy develops samplers in a disclosure avoidance setting relevant to the U.S. Census Bureau, which is considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye2002]. In some applications, it may be desirable to have a persistent VWS proposal object that can gradually be refined and reused to draw samples; @sec-persistent presents several mechanisms to achieve this.
+The remainder of the vignette proceeds as follows. @sec-vws briefly reviews VWS sampling. @sec-overview gives an overview of the package, its major components, and important preliminaries for programming. @sec-api provides a detailed specification of the C++ API. @sec-vmf develops several VWS samplers to generate from the Von Mises Fisher (VMF) distribution following the application in @vws-2026. @sec-privacy develops samplers in a disclosure avoidance setting relevant to the U.S. Census Bureau, which is considered by @Direct-Sampling-DAS-2021, @DP-Simulation-2022, and @DAS-Methods-2025. @sec-bessel develops VWS samplers for the Bessel count distribution [@Devroye-2002]. In some applications, it may be desirable to have a persistent VWS proposal object in R that can gradually be refined and reused to draw samples; @sec-persistent presents several mechanisms to achieve this. @sec-privacy-within-gibbs extends the example from @sec-privacy to a Gibbs sampler and demonstrates VWS-within-Gibbs. The first variant uses persistent proposals, as in @sec-persistent, with a Gibbs sampler written in R and VWS implemented in C++. The second variant implements both in C++.
 
 ::: {.callout-tip title="Quick Start"}
 Readers looking for a quick start can go directly to the first example in @sec-vmf-const-default whose contents are described with the highest amount of detail.
@@ -167,7 +167,7 @@ Note that the majorizer and minorizer need not have the same functional form. Wh
 \label{eqn:bound}
 \end{align}
 <!-- -->
-The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to $\rho_+$. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling; if it is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @VWS2025 and will be reviewed in the remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear. @sec-vws-knots reviews several knot selection methods.
+The quantities $\rho_1, \ldots, \rho_N$ are the contributions of each region to $\rho_+$. The bound $\rho_+$ can be used to determine whether a VWS proposal will be viable for rejection sampling; if it is not much less than 1, rejections may be too frequent for practical use. The proposal may be refined by altering the partitioning or considering a different majorizer. Several specific choices of majorizer are considered by @vws-2026 and will be reviewed in the remainder of this section. @sec-vws-constant discusses the use of a constant majorizing function. A linear majorizing function is discussed in @sec-vws-linear. @sec-vws-knots reviews several knot selection methods.
 
 ## Constant Majorizer {#sec-vws-constant}
 
@@ -336,7 +336,7 @@ where
 
 ## Knot Selection {#sec-vws-knots}
 
-After selecting a decomposition of the target into weighted form \eqref{eqn:weighted-target}, the choice of knots is important to obtain an efficient proposal distribution. One option is to specify knots at known locations. For example, we can consider using evenly spaced points on a given interval within the support; however, this may not take into account important features of the target and add wasteful components to the finite mixture which do not contribute much to the quality of the approximation. An automated option that often achieves much better results is the rule of thumb proposed by @VWS2025, shown here as Algorithm \ref{alg:refine}. This method sequentially refines an initial partition of the support consisting of one or more regions. At each step a region is selected and bifurcated at its midpoint. The selection is probabilistic, with probabilities proportional to $\rho_1, \ldots, \rho_N$. A deterministic ("greedy") variation can be considered by instead always selecting a region $\ell$ whose value $\rho_\ell$ is largest.
+After selecting a decomposition of the target into weighted form \eqref{eqn:weighted-target}, the choice of knots is important to obtain an efficient proposal distribution. One option is to specify knots at known locations. For example, we can consider using evenly spaced points on a given interval within the support; however, this may not take into account important features of the target and add wasteful components to the finite mixture which do not contribute much to the quality of the approximation. An automated option that often achieves much better results is the rule of thumb proposed by @vws-2026, shown here as Algorithm \ref{alg:refine}. This method sequentially refines an initial partition of the support consisting of one or more regions. At each step a region is selected and bifurcated at its midpoint. The selection is probabilistic, with probabilities proportional to $\rho_1, \ldots, \rho_N$. A deterministic ("greedy") variation can be considered by instead always selecting a region $\ell$ whose value $\rho_\ell$ is largest.
 
 Bifurcation at a midpoint is mostly straightforward in univariate settings where the support is a subset of the real line. However, there may be multiple ways to characterize this operation when the support is multivariate, perhaps with more structure like a multinomial sample space. The necessary operations can be coded for such settings within the `vws` framework; however, this document does not consider such cases in detail.
 
@@ -369,7 +369,7 @@ To emphasize, $\epsilon_1$ represents a threshold for a sufficiently small rejec
 
 Algorithm \ref{alg:self-tune} represents rejection sampling with self-tuning described in the manner above. It makes use of Algorithm \ref{alg:merge} to handle merges. Note that only certain pairs of regions are eligible to be merged, and eligibility is determined by the particular type of region. For example, the regions implemented in @sec-api-realconstregion and @sec-api-intconstregion are based on univariate intervals; here, only adjacent intervals having a common endpoint can be merged together. There may be multiple merges possible with a given partition, where different choices on line  \ref{step:merge} of Algorithm \ref{alg:merge} yield different configurations after the loop on line \ref{step:merge-loop} of Algorithm \ref{alg:self-tune}. For the sake of simplicity, the current implementation performs the first eligible merge in each traversal of the loop rather than considering all possible merges.
 
-@saevws-2025 present several examples where tuning can effectively be limited to an initial part of the MCMC chain and discontinued for the remainder of the chain. The number of rejections per iteration can be monitored to ensure that the proposals remain adequate as the chain progresses. If rejections increase dramatically after tuning is halted, a longer tuning period may be needed.
+@saevws-2025 present several examples where tuning can effectively be limited to an initial part of the MCMC chain and discontinued for the remainder of the chain. Here the number of rejections per iteration can be monitored to ensure that proposals remain adequate as the chain progresses. If rejections increase dramatically after tuning is halted, a longer tuning period may be needed.
 
 \begin{algorithm}
 \caption{Generate a single draw from $f$ using self-tuned VWS with tolerances $\epsilon_1$ and $\epsilon_2$.}
@@ -664,7 +664,7 @@ Rcpp::NumericVector refine(
 1. A vector of knots.
 2. If `log = true` return bound values on the log-scale.
 
-The second variant uses the rule of thumb for sequential knot selection from @VWS2025. Refining will halt when \eqref{eqn:bound} reduces below `tol`; which is possible when `tol` is positive; otherwise, refining halts after `N` steps.
+The second variant uses the rule of thumb for sequential knot selection from @vws-2026. Refining will halt when \eqref{eqn:bound} reduces below `tol`; which is possible when `tol` is positive; otherwise, refining halts after `N` steps.
 
 ```{cpp}
 Rcpp::NumericVector refine(
@@ -770,7 +770,7 @@ virtual std::string description() const = 0;                   // <9>
 5. Majorized weight function $\overline{w}_j$ for this region.
 6. The quantity $\overline{\xi}_j$ for this region.
 7. The quantity $\underline{\xi}_j$ for this region.
-8. Compute the portion $(\overline{\xi}_j - \underline{\xi}_j) / \overline{\xi}_j$ of bound \eqn{eqn:bound} specific to this region.
+8. Compute the portion $(\overline{\xi}_j - \underline{\xi}_j) / \overline{\xi}_j$ of bound \eqref{eqn:bound} specific to this region.
 9. A string that describes this region; used for printing to the console.
 
 The argument `log = true` in the methods above requests values to be returned on the log-scale.
@@ -1036,19 +1036,21 @@ double q(double p, bool lower = true, bool log = false) const;  // <3>
 
 ## Rejection Sampling {#sec-api-rejection}
 
+### Without Tuning {#sec-api-rejection-basic}
+
 The following functions perform rejection sampling using a VWS proposal described in @sec-vws.
 
 ```{cpp}
 template <typename T, typename R>
 rejection_result<T> rejection(
-	const fmm_proposal<T,R>& h,         // <1>
+	const fmm_proposal<T,R>& h,        // <1>
 	unsigned int n,                    // <2>
 	const rejection_args& args         // <3>
 )
 
 template <typename T, typename R>
 rejection_result<T> rejection(
-	const fmm_proposal<T,R>& h,         // <1>
+	const fmm_proposal<T,R>& h,        // <1>
 	unsigned int n = 1                 // <2>
 )
 ```
@@ -1058,12 +1060,13 @@ rejection_result<T> rejection(
 
 Template arguments `T` and `R` correspond to the given proposal `h` and are described in @sec-api-proposal.
 
+### With Tuning {#sec-api-rejection-tune}
+
 The following functions perform rejection sampling with tuning as described in @sec-self-tune.
 
 ```{cpp}
 template <typename T, typename R>
-rejection_result<T>
-rejection_tune(
+rejection_result<T> rejection_tune(
 	fmm_proposal<T,R>& h,       // <1>
 	unsigned int n,             // <2>
 	const rejection_args& args  // <3>
@@ -1079,7 +1082,11 @@ rejection_result<T> rejection_tune(
 2. The number of desired draws.
 3. Additional arguments for rejection sampling. Default values are assumed in the second form.
 
-Additional arguments to `rejection` are provided via the following struct.
+Template arguments `T` and `R` correspond to the given proposal `h` and are described in @sec-api-proposal.
+
+### Additional Arguments {#sec-api-rejection-args}
+
+Additional arguments to `rejection` and `rejection_tune` are provided via the following struct.
 
 ```{cpp}
 struct rejection_args {
@@ -1089,10 +1096,11 @@ struct rejection_args {
 	fntl::error_action action = fntl::error_action::STOP;                // <4>
 	double tol_suff = 0.85;                                              // <5>
 	double tol_merge = 0.01;                                             // <6>
+	bool metrics = true;                                                 // <7>
 
-	rejection_args() { };                                                // <7>
-	rejection_args(SEXP obj);                                            // <8>
-	operator SEXP() const;                                               // <9>
+	rejection_args() { };                                                // <8>
+	rejection_args(SEXP obj);                                            // <9>
+	operator SEXP() const;                                               // <10>
 };
 ```
 
@@ -1100,11 +1108,13 @@ struct rejection_args {
 2. Determines period at which progress is logged to the console.
 3. Maximum allowed value for the ratio $f_0(x) / h_0(x)$, which may be slightly larger than 1 due to numerical precision. An error is thrown if the ratio is larger than this value.
 4. The action to take if `max_rejects` rejections is exceeded; see @tbl-action. The definition of the enum `fntl::error_action` is given in Section 2 of @fntl.
-5. Tolerance $\epsilon_1$ in Algorithm \ref{alg:self-tune} used to determine whether rejection rate is sufficiently below 1.
+5. Tolerance $\epsilon_1$ in Algorithm \ref{alg:self-tune} used to determine whether rejection rate is sufficiently below 1. This is used only in `rejection_tune`.
 6. Tolerance $\epsilon_2$ in Algorithm \ref{alg:self-tune} used to determine whether a region's contribution is low enough to be merged with another region.
-7. Constructor that takes no arguments and initializes to default values.
-8. Convert an `Rcpp::List` to a `rejection_args` struct.
-9. Return a `Rcpp::List` from a `rejection_args` struct.
+This is used only in `rejection_tune`.
+7. Determines whether to save additional metrics. If `true`, non-essential metrics in `rejection_result` will be populated. Otherwise, only `draws` will be populated with the generated variates.
+8. Constructor that takes no arguments and initializes to default values.
+9. Convert an `Rcpp::List` to a `rejection_args` struct.
+10. Return a `Rcpp::List` from a `rejection_args` struct.
 
 | Action | Effect |
 |-----|-----|
@@ -1115,7 +1125,9 @@ struct rejection_args {
 
 : Value of `action` used in `rejection_args.action` and its effect in `rejection`. {#tbl-action tbl-colwidths="\[35,65\]"}
 
-The return value of `rejection` is a struct of the following type.
+### Results {#sec-api-rejection-results}
+
+The return value of `rejection` and `rejection_tune` is a struct of the following type.
 
 ```{cpp}
 template <typename T>
@@ -1123,16 +1135,23 @@ struct rejection_result
 {
 	std::vector<T> draws;               // <1>
 	std::vector<unsigned int> rejects;  // <2>
+	std::vector<unsigned int> tunes;    // <3>
+	std::vector<unsigned int> regions;  // <4>
+	std::vector<double> log_bounds;     // <5>
 
-	operator SEXP() const;              // <3>
+	operator SEXP() const;
 };
 ```
 
 1. Vector of draws.
 2. Vector of rejection counts; the $i$th element represents number of rejections observed before accepting the $i$th draw.
-3. Return a `Rcpp::List` from a `rejection_args` struct.
+3. Vector of tuning counts; the $i$th element represents number of tuning adjustments made before accepting the $i$th draw.
+4. Vector of region counts; the $i$th element represents number of regions in the proposal when accepting the $i$th draw.
+5. Return a `Rcpp::List` from a `rejection_args` struct.
 
-If the maximum number of rejections are reached and `fntl::error_action::STOP`, the length of the vectors `draws` and `rejects` will be less than $n$.
+The `tunes`, `regions`, and `log_bounds` fields are only relevant to `rejection_tune`; they are left empty in `rejection`. Furthermore, all fields aside from `draws` are left empty when `metrics = false` in `rejection_args`.
+
+If the maximum number of rejections are reached and `rejection_args` specifies `action = fntl::error_action::STOP`, the length of the vectors `draws` and `rejects` will be less than $n$.
 
 ## Optimization on an Interval {#sec-api-opt}
 
@@ -1247,7 +1266,7 @@ Rcpp::NumericVector log_sub2_exp(
 
 ## Generating from a Discrete Distribution {#sec-api-discrete}
 
-We make use of the Gumbel trick [e.g., @HuijbenEtAl2023] to draw from a discrete distribution with probabilities $p_1, \ldots, p_k$. This approach allows probabilities to be specified on the log-scale without the need to exponentiate or normalize them so that they sum to $1$. The Gumbel trick generates a draw $x$ from the desired discrete distribution via
+We make use of the Gumbel trick [e.g., @Huijben-EtAl-2023] to draw from a discrete distribution with probabilities $p_1, \ldots, p_k$. This approach allows probabilities to be specified on the log-scale without the need to exponentiate or normalize them so that they sum to $1$. The Gumbel trick generates a draw $x$ from the desired discrete distribution via
 <!-- -->
 $$
 X = \argmax \{ Z_1 + \log p_1, \ldots, Z_k + \log p_k \},
@@ -1351,9 +1370,19 @@ Rcpp::NumericVector r_gumbel(
 7. Logical; if `true`, probability arguments and return values are on the log-scale
 8. Logical; if `true`, probability arguments and return values are lower tailed in the form $P[X \leq x]$; otherwise, $P[X > x]$.
 
+## Formatted Print with Timestamp {#sec-api-logger}
+
+The following function writes a formatted message to the console preceded by a timestamp. 
+
+```{cpp}
+void logger(const char* fmt, ...);
+```
+
+The arguments should be used in the same way as the C function `printf`. The timestamp is formatted as `"%Y-%m-%d %H:%M:%S"` and is in the local time zone of the machine. A dash `"-"` is displayed between the timestamp and the formatted message with one space of padding on each side. A reference for formatted messages can be found in R under the manual page `?sprintf`; for dates and times, see the manual page `?strptime`.
+
 # Example: Von Mises Fisher Distribution {#sec-vmf}
 
-Let us consider generating from the von Mises Fisher (VMF) distribution as in @VWS2025. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$ [e.g., @MardiaJupp1999]. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
+Let us consider generating from the von Mises Fisher (VMF) distribution as in @vws-2026. VMF is useful in modeling directional data whose support is the sphere $\mathbb{S}^{d-1} = \{ \vec{v} \in \mathbb{R}^d : \vec{v}^\top \vec{v} = 1 \}$ [e.g., @Mardia-Jupp-1999]. A random variable $\vec{V}$ with distribution $\text{VMF}_d(\vec{\mu}, \kappa)$ has density
 <!-- -->
 \begin{align*}
 f_{\text{VMF}}(\vec{v}) = \frac{
@@ -1425,7 +1454,7 @@ g(x) = \frac{\kappa e^{\kappa x}}{e^\kappa - e^{-\kappa}} \cdot \ind(-1 < x < 1)
 @sec-vmf-const-default obtains a VWS sampler with this decomposition using a constant majorizer. @sec-vmf-const-custom replaces the default numerical optimization with custom code, which reduces the amount of computational overhead. @sec-vmf-linear considers a linear majorizer which is substantially more involved but also obtains substantially lower rejection rates with a moderate number of regions. Codes for this example are in the folder `examples/vmf`. C++ functions for the $\text{Exp}_{(a,b)}(\kappa)$ distribution from @def-texp are given in the file `examples/vmf/texp.h`.
 
 ::: {#rem-vmf-caveat}
-A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \infty$ as $x$ approaches $\pm 1$. One way to avoid this is by truncating the support to $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for a small $\epsilon > 0$. Rejection sampling can proceed using the truncated support if the exclusion of $(-1, -1 + \epsilon] \cup (1 - \epsilon, 1]$ is known to have a negligible impact on the result. Otherwise, @VWS2025 mention another strategy where the support is initially truncated and gradually expanded as rejections are encountered. In this document, we assume $(\alpha_0, \alpha_N] = (-1, 1]$ for $d > 3$ and a fixed truncation $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for $d < 3$.
+A caveat of this decomposition is that, in the $d < 3$ case, $w(x) \rightarrow \infty$ as $x$ approaches $\pm 1$. One way to avoid this is by truncating the support to $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for a small $\epsilon > 0$. Rejection sampling can proceed using the truncated support if the exclusion of $(-1, -1 + \epsilon] \cup (1 - \epsilon, 1]$ is known to have a negligible impact on the result. Otherwise, @vws-2026 mention another strategy where the support is initially truncated and gradually expanded as rejections are encountered. In this document, we assume $(\alpha_0, \alpha_N] = (-1, 1]$ for $d > 3$ and a fixed truncation $(\alpha_0, \alpha_N] = (-1 + \epsilon, 1 - \epsilon]$ for $d < 3$.
 :::
 
 ```{r}
@@ -1673,7 +1702,7 @@ ggplot(df) +
 
 # Example: Privacy Protected Data {#sec-privacy}
 
-Suppose an official statistics agency collects sensitive data from respondents in a survey or census. The agency then seeks to disseminate a tabulation to data users while protecting the privacy of the respondents. The agency can consider adding random noise $\gamma$ to the tabulation $Y$ and releasing $Z = Y + \gamma$. This setting is the basis of a modeling scenario considered by @DirectSamplingDAS2021, @DPSimulation2022, and @DASMethods2025 where the distribution for $\gamma$ has been selected by the agency and the data have been disseminated; the objective in these works is to carry out inference on the unobserved $Y$ given observed $Z = z$. The field of differential privacy studies the design of noise mechanisms (including distributions of $\gamma$ in the present setting) to satisfy mathematical criteria for privacy [e.g., @DworkRoth2014]. @AbowdEtAl2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census.
+Suppose an official statistics agency collects sensitive data from respondents in a survey or census. The agency then seeks to disseminate a tabulation to data users while protecting the privacy of the respondents. The agency can consider adding random noise $\gamma$ to the tabulation $Y$ and releasing $Z = Y + \gamma$. This setting is the basis of a modeling scenario considered by @Direct-Sampling-DAS-2021, @DP-Simulation-2022, and @DAS-Methods-2025 where the distribution for $\gamma$ has been selected by the agency and the data have been disseminated; the objective in these works is to carry out inference on the unobserved $Y$ given observed $Z = z$. The field of differential privacy studies the design of noise mechanisms (including distributions of $\gamma$ in the present setting) to satisfy mathematical criteria for privacy [e.g., @Dwork-Roth-2014]. @Abowd-EtAl-2022 describe work by the U.S. Census Bureau to implement differential privacy in the release of data from the decennial census.
 
 Our present motivation is to focus on a specific target that arises in analysis of the released $z$. @sec-privacy-within-gibbs considers a data analysis situation with $n$ subjects and a regression underlying $y$. To reduce the amount of computation under repeated use within a Gibbs sampler, we will consider proposals that persist over the MCMC chain and get updated with the current state.
 
@@ -1731,7 +1760,7 @@ z = rnorm(1, y_true, lambda)
 vws::printf("y_true = %g and z = %g\n", y_true, z)
 ```
 
-Coding the target density is helpful to evaluate the distribution of the draws. To compute the normalizing constant, we use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
+Coding the target density is helpful to evaluate the distribution of the draws. To compute the normalizing constant, we use Hermite quadrature via the `gauss.quad` function in the `statmod` package [@Smyth-2005]. The integral $\psi = \int_{-\infty}^\infty q(x) e^{-x^2} dx$ is approximated as $\psi \approx \sum_{j=1}^Q \omega_j q(x_j)$ using quadrature points $x_1, \ldots, x_Q$ and weights $\omega_1, \ldots, \omega_Q$; to identify the function $q$, we have
 <!-- -->
 \begin{align*}
 \psi &= \int_{-\infty}^\infty w(y) g(y) dy \\
@@ -2123,7 +2152,7 @@ ggplot(df) +
 
 # Example: Bessel Count Distribution {#sec-bessel}
 
-Where Sections [-@sec-vmf] and [-@sec-privacy] considered continuous distributions, we now generate from a discrete target. The Bessel distribution [@YuanKalbfleisch2000] has density
+Where Sections [-@sec-vmf] and [-@sec-privacy] considered continuous distributions, we now generate from a discrete target. The Bessel distribution [@Yuan-Kalbfleisch-2000] has density
 <!-- -->
 \begin{align*}
 f(x) = \frac{(\lambda/2)^{2x+\nu}}{I_v(\lambda) \cdot x! \cdot \Gamma(x + \nu + 1)}
@@ -2138,7 +2167,7 @@ where $\mathbb{N} = \{ 0, 1, 2, \ldots \}$ is the set of nonnegative integers an
 I_v(\lambda) = \sum_{x=0}^\infty \frac{(\lambda/2)^{2x+\nu}}{x! \cdot \Gamma(x + \nu + 1)}
 \end{align*}
 <!-- -->
-is a modified Bessel function of the first kind. Let $X \sim \text{Bessel}(\lambda, \nu)$ denote a random variable with density $f$. @Devroye2002 develops a rejection sampling method to generate draws of $X$ using properties of the distribution. Here we implement several VWS samplers which do not require as much insight. Our approach is to decompose the density into
+is a modified Bessel function of the first kind. Let $X \sim \text{Bessel}(\lambda, \nu)$ denote a random variable with density $f$. @Devroye-2002 develops a rejection sampling method to generate draws of $X$ using properties of the distribution. Here we implement several VWS samplers which do not require as much insight. Our approach is to decompose the density into
 <!-- -->
 \begin{align*}
 f(x)
@@ -2288,10 +2317,10 @@ head(out2$draws)
 
 ## Linear Majorizer {#sec-bessel-linear}
 
-Our decomposition of $f$ into the given $w$ and $g$ lends itself well to a linear majorizer because the function $\log w(x) = -\log \Gamma(x + \nu + 1)$ is log-concave. In fact, a theorem attributed to @BohrMollerup1922 states that the function $q(x) = \Gamma(x)$ is uniquely characterized as the only function on $(0, \infty)$ which is log-convex with $q(1) = 1$ and $q(x+1) = x q(x)$. The following remark is also useful to formulate the linear majorizer.
+Our decomposition of $f$ into the given $w$ and $g$ lends itself well to a linear majorizer because the function $\log w(x) = -\log \Gamma(x + \nu + 1)$ is log-concave. In fact, a theorem attributed to @Bohr-Mollerup-1922 states that the function $q(x) = \Gamma(x)$ is uniquely characterized as the only function on $(0, \infty)$ which is log-convex with $q(1) = 1$ and $q(x+1) = x q(x)$. The following remark is also useful to formulate the linear majorizer.
 
 ::: {#rem-incgamma}
-By rearranging equation 6.5.13 of @AbramowitzStegun1972, the cdf of $T \sim \text{Poisson}(\lambda)$ can be written as
+By rearranging equation 6.5.13 of @Abramowitz-Stegun-1972, the cdf of $T \sim \text{Poisson}(\lambda)$ can be written as
 <!-- -->
 \begin{displaymath}
 F(x \mid \lambda)
@@ -2548,7 +2577,7 @@ data.frame(x = xseq, h = out3$hx) %>%
 
 # Persistent Proposals in R {#sec-persistent}
 
-The samplers developed in previous sections each expose a function in R which can be used to generate samples. A new proposal is constructed each time the function is called and it exists only for the duration of the call. For the sake of efficiency or to maintain the state within a proposal, it may be desirable to have a persistent proposal that can be gradually refined and reused. This section demonstrates several Rcpp mechanisms to enable this workflow: first using external pointers then using using modules. The latter is based on object-oriented programming but is recommended over the former as it is less susceptible to crashing R. We demonstrate the two approaches by revisiting the example from @sec-vmf-const-default. For more information on external pointers and modules, refer to the vignette "Exposing C++ functions and classes with Rcpp modules" in the `Rcpp` package [@Rcpp] and section "External pointers and weak references" of the guide "Writing R Extensions" [@WritingRExtensions].
+The samplers developed in previous sections each expose a function in R which can be used to generate samples. A new proposal is constructed each time the function is called and it exists only for the duration of the call. For the sake of efficiency or to maintain the state within a proposal, it may be desirable to have a persistent proposal that can be gradually reused and refined. This section demonstrates several Rcpp mechanisms to enable this workflow: first using external pointers then using using modules. The latter is based on object-oriented programming but is recommended over the former as it is less susceptible to crashing R. We demonstrate the two approaches by revisiting the example from @sec-vmf-const-default. For more information on external pointers and modules, refer to the vignette "Exposing C++ functions and classes with Rcpp modules" in the `Rcpp` package [@Rcpp] and section "External pointers and weak references" of the guide "Writing R Extensions" [@R-ext].
 
 The approach from @sec-persistent-module using Rcpp modules is used in @sec-privacy-within-gibbs to generate from an unfamiliar conditional within a Gibbs sampler.
 
@@ -2770,7 +2799,7 @@ The lambdas `w`, `df`, `pf`, and `qf` in this code capture `kappa` and `d` by va
 \remarkqed
 :::
 
-# Example: Privacy Protected Data and use within Gibbs {#sec-privacy-within-gibbs}
+# Example: Privacy Protected Data and Sampling within Gibbs {#sec-privacy-within-gibbs}
 
 This section presents an example using the self-tuned VWS method described in @sec-self-tune. Consider again the setting from @sec-privacy and suppose there are $n$ tabulations. Let $y_i$ be the $i$th sensitive tabulation, $z_i$ be its privacy-protected counterpart, and $\vec{x}_i \in \mathbb{R}^d$ be a non-sensitive covariate which is associated with $y_i$. Consider the following hierarchical Bayesian model:
 <!-- -->
@@ -2883,20 +2912,22 @@ The file `gibbs.R` contains R code for the Gibbs sampler and some helper functio
 The script `driver.R` generates a dataset from the model and illustrates several calls to the Gibbs sampler. The following snippet uses transient proposals via `draw_ln_norm` (`method = "vws-basic"`), with some details omitted.
 
 ```{r}
+#| eval: false
 inner = control_inner(tol_suff = 0.85, method = "vws-basic")
 control = control_gibbs(R = 3000, burn = 1000, report = 100, inner = inner,
 	save_latent = 1:10)
-gibbs_out = gibbs(z, lambda, X, control = control)
+out = gibbs(z, lambda, X, control = control)
 ```
 
 Note that the setting `tol_suff = 0.85` ensures that each proposal is tuned to have a rejection rate no larger than 85% before rejection sampling. The following snippet illustrates self-tuned VWS using `ln_norm_proposal` (`method = "vws-tune"`).
 
 ```{r}
+#| eval: false
 inner = control_inner(tol_suff = 0.85, tol_merge = 0.01, tune = 100,
 	method = "vws-tune")
 control = control_gibbs(R = 3000, burn = 1000, report = 100, inner = inner,
 	save_latent = 1:10)
-gibbs_out = gibbs(z, lambda, X, control = control)
+out = gibbs(z, lambda, X, control = control)
 ```
 
 The settings in `control_inner` select the self-tuning method with adjustments made during the first 100 iterations of the MCMC, using $\epsilon_1 = 0.85$ and $\epsilon_2 = 0.01$. See the file `driver.R` script for details.

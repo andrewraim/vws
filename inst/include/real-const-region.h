@@ -223,7 +223,7 @@ inline double real_const_region::d_base(const double& x, bool log) const
 inline std::vector<double> real_const_region::r(unsigned int n) const
 {
 	// Generate a draw from $g_j$; i.e., the density $g$ truncated to this
-	// region. Compute g$q((pb - pa) * u + pa) on the log scale.
+	// region. Compute q((pb - pa) * u + pa) on the log scale.
 	const Rcpp::NumericVector& u = Rcpp::runif(n);
 	double log_pa = _helper.p(_a, true, true);
 	const Rcpp::NumericVector& log_p = log_add2_exp(_log_prob + log(u), Rcpp::rep(log_pa, n));

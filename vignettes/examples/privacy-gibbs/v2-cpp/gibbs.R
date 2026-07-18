@@ -236,9 +236,8 @@ print.gibbs = function(x, pr = c(0.05, 0.95), ...)
 	if (!x$fixed$y && x$method == "vws-tune") {
 		cat("----\n")
 		printf("y step\n")
-		printf("   Proposed: %d  Rejected: %d\n", sum(x$rejects) + x$R * x$n,
-			sum(x$rejects))
-		printf("   Rejection rate: %g%%\n",
+		printf("   Proposed: %d  Rejected: %d  Rate: %0.2f%%\n",
+			sum(x$rejects) + x$R * x$n, sum(x$rejects),
 			100 * sum(x$rejects) / (sum(x$rejects) + x$R * x$n))
 		printf("   Avg regions: %g\n", sum(x$comps) / (x$R * x$n))
 	} else if (!x$fixed$y && x$method == "vws-basic") {
