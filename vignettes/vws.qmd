@@ -15,6 +15,10 @@ format:
     include-in-header:
       text: |
         \usepackage{common}
+    cite-method: natbib
+    biblio-style: plainnat
+    natbiboptions:
+      - round
 pdf-engine: pdflatex
 vignette: >
   %\VignetteIndexEntry{vws}
@@ -2853,28 +2857,12 @@ The class `ln_norm_proposal` in `ln-norm-proposal.cpp` is an `fmm_proposal` whic
 class ln_norm_proposal : public vws::fmm_proposal<double, vws::real_const_region>
 {
 public:
-	ln_norm_proposal(                         // <1>
-		double z,
-		double lambda,
-		double xbeta,
-		double sigma);
-
-	void update(                              // <2>
-		double xbeta,
-		double sigma
-	);
-
-	vws::rejection_result<double> draw(       // <3>
-		unsigned int max_rejects
-	) const;
-
-	vws::rejection_result<double> draw_tune(  // <4>
-		double tol_suff,
-		double tol_merge,
-		unsigned int max_rejects
-	);
-
-	unsigned int size() const;                // <5>
+	ln_norm_proposal(double z, double lambda, double xbeta, double sigma); // <1>
+	void update(double xbeta, double sigma);                               // <2>
+	vws::rejection_result<double> draw(unsigned int max_rejects) const;    // <3>
+	vws::rejection_result<double> draw_tune(double tol_suff,
+		double tol_merge, unsigned int max_rejects);                       // <4>
+	unsigned int size() const;                                             // <5>
 };
 ```
 1. Constructor from initial values of $z_i$, $\lambda_i$, $x_i^\top \vec{\beta}$, and $\sigma^2$.
@@ -2934,16 +2922,8 @@ The class `ln_norm_proposal` in `ln-norm-proposal.h` defines a VWS proposal as f
 class ln_norm_proposal : public vws::fmm_proposal<double, vws::real_const_region>
 {
 public:
-	ln_norm_proposal(                         // <1>
-		double z,
-		double lambda,
-		double xbeta,
-		double sigma);
-
-	void update(                              // <2>
-		double xbeta,
-		double sigma
-	);
+	ln_norm_proposal(double z, double lambda, double xbeta, double sigma); // <1>
+	void update(double xbeta, double sigma);                               // <2>
 };
 ```
 1. Constructor from initial values of $z_i$, $\lambda_i$, $x_i^\top \vec{\beta}$, and $\sigma^2$.
