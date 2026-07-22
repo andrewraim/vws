@@ -911,8 +911,8 @@ void init();                                       // <6>
 5. Update the function to find the midpoint.
 6. Recompute saved quantities such as the majorization and minorization constants needed for rejection sampling.
 
-::: {.callout-important title="init"}
-The `init` method should be applied after using the set methods above, before the region is used in any other capacity. More than one set method may be used before calling `init`.
+::: {.callout-important title="Important"}
+The `init` method should be applied after using the set methods above and before the region is used in any other capacity. More than one set method may be used before calling `init`.
 :::
 
 The `singleton` method returns a singleton interval $(x, x]$, using the current object's member data.
